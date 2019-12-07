@@ -1,0 +1,51 @@
+
+
+Basic Idea:
+    Hire heroes to go on adventures for treasure, power and fame.
+    Explore your guild hall and reclaim it from the monsters then upgrade it to increase your guilds overall power and fame.
+    Use your fame to attract new and more powerful recruits.
+    Test your guilds power by attempting various end game challenges.
+
+
+
+You start with a random hero in front of the guild hall. Eventually you'll have a welcoming NPC that explains they are giving you an abandoned guild hall, but you will have to clear the monsters out yourself before you can use each room.
+
+Clearing the first room gives you access to:
+    Map: send heroes on adventures to get coins/anima and level up with new skills. The world map doubles as a shared skill tree for all heroes. Completing an adventure gives that hero divinity based on difficulty and performance. Each new skill/level (a character levels up by learning a new skill) requires a scaling amount of divinity so a hero may need to repeat older missions to get higher divinity scores to get enough divinity for their next skill. The hero only gains divinity based on their improvement over their previous score. The uncapped endless mode allows heroes to gain even more divinity from each area if the are strong enough, but the difficulty increases rapidly, so one would typically wait until the hero is much stronger before repeating the same mission, otherwise they aren't likely to get much benefit.
+
+    Coin+Anima Storage: The guild hall furniture provides some guild wide stats. The coin containers increase maximum number of coins, and similarly for anima storage. Coin upgrade costs are structured so that players will be forced to explore the guild hall to find more containers before they will be able to increase their maximum coins, limiting their crafting options. There is only a single anima storage container, but it cannot be fully upgraded unless the player recycles a certain number of jewels, each of which increases maximum anima capacity by a certain %.
+
+    Item crafting (done through "Shrine of Fortune"): Spend coin to craft items randomly from selected pools. Crafting is cheaper the lower level the pool and the wider the items. Each craft gives you a choice of 3 items to select and you can reroll all 3 at a steep discount. As you craft each item type, you reveal all the possible item outcomes on the grid. You can craft higher level items based on the highest level adventure a hero has completed. Heroes can only equip items at our below their level.
+
+    Items can be enchanted using anima. The enchantment table will be unlocked later on and has to be upgraded to unlock all features. Basically it boils down to adding and removing modifiers to the base gear like in a diablo or path of exile style game.
+
+    Hero Applications: Shows heroes that can be hired. Costs coins to hire or to dismiss and seek a new hero. The older an application gets the cheaper it is to replace with a new application. You can't actually hire new heroes until you have enough beds for them. Applications should probably be hidden until you discover your second bed.
+
+    Trophy Altar: Can mount trophies from achievements to give global bonuses to all heroes. There is supposed to be a similar element that lets you mount wall trophies. Both of these double as decorations.
+
+    Bed: Allows guild to have one member, more will be found in other rooms.
+
+Clearing the second room gives more of common furniture items as well as access to the jewel board through the "Shrine of Creation"
+    Jewel board tracks a characters growth. Each hero starts with a core ability on a "Fixed" Onyx jewel with some additional empty spaces that can be filled with common jewels. In order to level, a character expends divinity at the shrine of some god to attach a new section to their jewel board which comes with a "Fixed" (that is immovable) jewel representing the new skill they are learning as well as empty sections for more common jewels.
+    Common jewels all grant basic stats based on their color (red=strength, green=dexterity, blue=intelligence) and higher quality+larger jewels grant larger stat boosts. In addition to these basic stats, jewels will give different bonuses based on how many adjacent jewels are all entirely different colors, or all match the color of the current jewel. There are many different bonuses, but in general, similar colors create defensive boosts and different colors create offensive boosts.
+    Experienced players would carefully choose how to add new segments to their jewel board (a permanent choice each time for that character) to maximize bonuses, but the game is designed so that this isn't essential for regular progression.
+
+"Adventure" controls
+    Basic controls are click to move, click and hold to follow the cursor, click an enemy to autobattle it (or just be idle and in range of it), click an element (furniture, chest, god statue) to interact with it.
+    In the top left there are some controls, the most important of which is the auto adventure toggle which will cause the hero to take actions automatically within each adventure. This can be combined with fast forward and repeat and adventure options to keep a character grinding for coins/anima.
+    There is also a pause action which both pauses an adventure but also allows for a tactical action based game play where time will pass so long as you are instructing your hero to do something, for instance move to a location, or perform a single attack or skill.
+    Activatable skills for each hero appear with 1-9 key bindings at the bottom of the screen and can be toggled to be automatically used based on some built in logic for each skill (IE heal when it won't be wasted or your health is critical), or only used when instructed.
+
+
+There are a few keyboard shortcuts:
+    M toggles map screen
+    J toggles jewel board
+    I toggles equipment screen
+    ESC closes any of the above overlays
+    S sells the item your cursor is over
+
+
+
+
+
+
