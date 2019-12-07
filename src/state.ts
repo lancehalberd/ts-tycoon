@@ -1,7 +1,8 @@
 import { enterArea } from 'app/adventure';
 import { initializeVariableObject } from 'app/bonuses';
 import { checkIfAltarTrophyIsAvailable } from 'app/content/achievements';
-import { guildYardEntrance } from 'app/content/guild';
+import { allApplications, allBeds } from 'app/content/furniture';
+import { getDefaultGuildAreas, guildYardEntrance } from 'app/content/guild';
 import { Jewel } from 'app/jewels';
 import { changedPoints } from 'app/points';
 import { exportCharacter, exportItem, exportJewel } from 'app/saveGame';

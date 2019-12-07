@@ -1,6 +1,7 @@
 import { drawJewel } from 'app/drawJewel';
 import { drawAbilityIcon } from 'app/images';
 import { jewelInventoryState } from 'app/jewelInventory';
+import { jewelTierLevels } from 'app/jewels';
 
 function drawShapesPath(context, shapes, fill, stroke) {
     for (var shape of shapes) {

@@ -1,4 +1,5 @@
 
+import { readBoardFromData } from 'app/character';
 import { jewelsCanvas, mainContext, previewContext } from 'app/dom';
 import { drawBoardJewels, drawBoardJewelsProper } from 'app/drawBoard';
 import { drawCraftingCanvas } from 'app/equipmentCrafting';

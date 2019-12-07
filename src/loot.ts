@@ -5,15 +5,14 @@ import {
     titleDiv, updateConfirmSkillConfirmationButtons,
 } from 'app/dom';
 import { drawJewel } from 'app/drawJewel';
-import { drawBoardPreview } from 'app/drawBoard';
 import { GROUND_Y, MAX_Z, MIN_Z } from 'app/gameConstants';
 import { requireImage } from 'app/images';
-import { addJewelToInventory, snapBoardToBoard } from 'app/jewelInventory';
+import { addJewelToInventory } from 'app/jewelInventory';
 import { JewelTier, makeJewel } from 'app/jewels';
 import { gain } from 'app/points';
 import { rectangle } from 'app/utils/index';
 import { getMousePosition } from 'app/utils/mouse';
-import { centerShapesInRectangle, isPointInPoints, ShapeType } from 'app/utils/polygon';
+import { ShapeType } from 'app/utils/polygon';
 import Random from 'app/utils/Random';
 
 const image = requireImage('gfx/moneyIcon.png');
@@ -105,7 +104,7 @@ function coinsLootDrop(amount) {
         }
     }
 }
-function coinsLoot(range) {
+export function coinsLoot(range) {
     return {
         type: 'coinsLoot',
         generateLootDrop() {
@@ -245,46 +244,3 @@ const loots = {
     simpleEmeraldLoot,
     simpleSaphireLoot
 };
-
-function adventureBoardPreview(boardPreview, character) {
-    return {
-        'x': 0,
-        'y': 0,
-        'solid': false,
-        'type': 'button',
-        'width': 150,
-        'height': 150,
-        boardPreview,
-        update(area) {
-        },
-        isOver(x, y) {
-            for (var shape of this.boardPreview.fixed.map(j => j.shape).concat(this.boardPreview.spaces)) {
-                if (isPointInPoints([x, y], shape.points)) {
-                    return true;
-                }
-            }
-            return false;
-        },
-        onClick(character) {
-            centerShapesInRectangle(this.boardPreview.fixed.map(j => j.shape).concat(this.boardPreview.spaces), rectangle(0, 0, character.boardCanvas.width, character.boardCanvas.height));
-            snapBoardToBoard(this.boardPreview, character.board);
-            character.board.boardPreview = this.boardPreview;
-            // This will show the confirm skill button if this character is selected.
-            updateConfirmSkillConfirmationButtons();
-            setContext('jewel');
-        },
-        draw(area) {
-            // Remove the preview from the character if we draw it to the adventure screen since they both use the same coordinate variables
-            // and displaying it in the adventure screen will mess up the display of it on the character's board. I think this will be okay
-            // since they can't look at both screens at once.
-            character.board.boardPreview = null;
-            updateConfirmSkillConfirmationButtons();
-            centerShapesInRectangle(this.boardPreview.fixed.map(j => j.shape).concat(this.boardPreview.spaces), rectangle(this.x - area.cameraX - 5, GROUND_Y - this.y -5, 10, 10));
-            drawBoardPreview(mainContext, [0, 0], this.boardPreview, true);
-        },
-        helpMethod() {
-            return titleDiv('Divine Blessing')
-                + bodyDiv("Click on this Jewel Board Augmentation to preview adding it to this hero's Jewel Board." + divider + "Confirm the Augmentation to learn the ability and Level Up.");
-        }
-    };
-}

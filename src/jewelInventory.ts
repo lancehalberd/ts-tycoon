@@ -3,7 +3,10 @@ import {
     jewelsCanvas, query, queryAll
 } from 'app/dom';
 import { getState } from 'app/state';
-import { Jewel, JewelComponents, JewelTier, makeJewel, updateAdjacentJewels, updateJewelBonuses } from 'jewels';
+import {
+    Jewel, JewelComponents, JewelTier, jewelTierLevels,
+    makeJewel, updateAdjacentJewels, updateJewelBonuses,
+} from 'jewels';
 import { hidePointsPreview, previewPointsChange } from 'app/points';
 import { ifdefor, isPointInRectObject, rectangle } from 'app/utils/index';
 import { getMousePosition } from 'app/utils/mouse';

@@ -1,5 +1,6 @@
 // Load any graphic assets needed by the game here.
 import { enterArea } from 'app/adventure';
+import { allApplications } from 'app/content/furniture';
 import { guildYardEntrance } from 'app/content/guild';
 import { initializeMonsters } from 'app/content/monsters';
 import { initializeLevelEditing } from 'app/development/editLevel';

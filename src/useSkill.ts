@@ -1,4 +1,6 @@
 import { recomputeDirtyStats } from 'app/bonuses';
+import { initializeActorForAdventure } from 'app/character';
+import { makeMonster } from 'app/content/monsters';
 
 /**
  * Checks whether an actor may use a skill on a given target.

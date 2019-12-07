@@ -57,7 +57,7 @@ function removeAdventureEffects(actor) {
     initializeActorForAdventure(actor);
     recomputeDirtyStats(actor);
 }
-function initializeActorForAdventure(actor) {
+export function initializeActorForAdventure(actor) {
     actor.isActor = true;
     setActorHealth(actor, actor.maxHealth);
     actor.maxReflectBarrier = actor.reflectBarrier = 0;
@@ -213,12 +213,12 @@ function makeAdventurerFromJob(job, level, equipment) {
     updateAdventurer(adventurer);
     return adventurer;
 }
-function readBoardFromData(boardData, character, ability, confirmed) {
+export function readBoardFromData(boardData, character, ability, confirmed = false) {
     return {
         'fixed': boardData.fixed.map(convertShapeDataToShape)
             .map(function(fixedJewelData) {
                 var fixedJewel = makeFixedJewel(fixedJewelData, character, ability);
-                fixedJewel.confirmed = ifdefor(confirmed, false);
+                fixedJewel.confirmed = confirmed;
                 return fixedJewel;
             }),
         'spaces': boardData.fixed.concat(boardData.spaces).map(convertShapeDataToShape),

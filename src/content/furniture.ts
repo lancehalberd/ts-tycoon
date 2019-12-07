@@ -1,4 +1,6 @@
-import { enterArea } from 'app/adventure';
+import { enterArea, messageCharacter } from 'app/adventure';
+import { addBonusSourceToObject, removeBonusSourceFromObject } from 'app/bonuses';
+import { recomputeAllCharacterDirtyStats } from 'app/character';
 import { getIsAltarTrophyAvailable, setChoosingTrophyAltar, trophySelectionRectangle } from 'app/content/achievements';
 import { map } from 'app/content/mapData';
 import { setContext } from 'app/context';
@@ -6,7 +8,12 @@ import { mainCanvas, mainContext, mouseContainer, titleDiv } from 'app/dom';
 import { bonusSourceHelpText } from 'app/helpText';
 import { GROUND_Y } from 'app/gameConstants';
 import { createNewHeroApplicant, hideHeroApplication, showApplication } from 'app/heroApplication';
-import { drawImage, drawRectangleBackground, drawSourceWithOutline, drawTitleRectangle, requireImage } from 'app/images';
+import {
+    drawImage,
+    drawOutlinedImage,
+    drawRectangleBackground, drawSourceWithOutline,
+    drawTintedImage,
+    drawTitleRectangle, requireImage } from 'app/images';
 import { attemptToApplyCost, canAffordCost, costHelpText, hidePointsPreview, previewCost } from 'app/points';
 import { getCanvasPopupTarget, removePopup } from 'app/popup';
 import { saveGame } from 'app/saveGame';
@@ -15,7 +22,44 @@ import { toolTipColor } from 'app/utils/colors';
 import { fillRectangle, isPointInRectObject, rectangle, shrinkRectangle } from 'app/utils/index';
 import { getMousePosition } from 'app/utils/mouse';
 
+
+export interface Exit {
+    // The area to enter when using this exit.
+    areaKey: string,
+    // The target location to appear when entering the next area.
+    x?: number,
+    z?: number,
+}
+export interface FixedObject {
+    fixed: true,
+    base: any,
+    key: string,
+    scale: number,
+    xScale?: number,
+    yScale?: number,
+    width: number,
+    height: number,
+    depth: number,
+    x: number,
+    y: number,
+    z: number,
+    exit?: Exit,
+    // The level for the object, if it can be upgraded.
+    level?: number,
+    isEnabled: Function,
+    draw: Function,
+    helpMethod: Function,
+    target: {
+        width: number,
+        height: number,
+    },
+    loot?: any,
+    area?: any,
+}
+
 const guildImage = requireImage('gfx/guildhall.png');
+export const allApplications = [];
+export const allBeds = [];
 /*
  Fixed object properties are a little different than the properties used for actors at the moment.
  I'm not sure which is better. Actors support defining a center point to rotate around, which is not
@@ -304,7 +348,25 @@ const areaObjects = {
     'downstairs': {'source': objectSource(guildImage, [300, 94], [30, 51, 0]), 'action': useDoor, 'isEnabled': isGuildExitEnabled},
 
     'skillShrine': {'name': 'Shrine of Divinity', 'source': objectSource(guildImage, [360, 180], [60, 60, 4], {'actualWidth': 30, 'yOffset': -6}), 'action': activateShrine},
-    'closedChest': {'name': 'Treasure Chest', 'source': objectSource(requireImage('gfx/treasureChest.png'), [0, 0], [64, 64, 64], {'yOffset': -6}), 'action': openChest},
+    'closedChest': {
+        'name': 'Treasure Chest', 'source': objectSource(requireImage('gfx/treasureChest.png'), [0, 0], [64, 64, 64], {'yOffset': -6}),
+        action(actor) {
+            // The loot array is an array of objects that can generate specific loot drops. Iterate over each one, generate a
+            // drop and then give the loot to the player and display it on the screen.
+            let delay = 0;
+            for (let i = 0; i < this.loot.length; i++) {
+                const drop = this.loot[i].generateLootDrop();
+                drop.gainLoot(actor);
+                var xOffset = (this.loot.length > 1) ? - 50 + 100 * i / (this.loot.length - 1) : 0;
+                drop.addTreasurePopup(actor, this.x + xOffset, this.y + 64, this.z, delay += 5);
+            }
+            // Replace this chest with an opened chest in the same location.
+            const openedChest = fixedObject('openChest', [this.x, this.y, this.z], {isEnabled: () => true, 'scale': this.scale || 1});
+            openedChest.area = this.area;
+            this.area.objects[this.area.objects.indexOf(this)] = openedChest;
+            this.area.chestOpened = true;
+        }
+    },
     'openChest': {'name': 'Opened Treasure Chest', 'source': objectSource(requireImage('gfx/treasureChest.png'), [64, 0], [64, 64, 64], {'yOffset': -6}), action(actor) {
         messageCharacter(actor.character, 'Empty');
     }},
@@ -315,22 +377,22 @@ const areaObjects = {
 function drawFixedObject(area) {
     var imageSource = this.source;
     if (this.lastScale !== this.scale) {
-        this.width = ifdefor(imageSource.actualWidth, imageSource.width) * this.scale;
-        this.height = ifdefor(imageSource.actualHeight, imageSource.height) * this.scale;
+        this.width = (imageSource.actualWidth || imageSource.width) * this.scale;
+        this.height = (imageSource.actualHeight || imageSource.height) * this.scale;
         this.target.width = imageSource.width * this.scale;
         this.target.height = imageSource.height * this.scale;
         this.lastScale = this.scale;
     }
     // Calculate the left/top values from x/y/z coords, which drawImage will use.
     this.target.left = this.x - this.target.width / 2 - area.cameraX + imageSource.xOffset * this.scale;
-    this.target.top = groundY - this.y - this.target.height - this.z / 2 - imageSource.yOffset * this.scale;
+    this.target.top = GROUND_Y - this.y - this.target.height - this.z / 2 - imageSource.yOffset * this.scale;
     if (getCanvasPopupTarget() === this) drawOutlinedImage(mainContext, imageSource.image, '#fff', 2, imageSource, this.target);
     else if (this.flashColor) drawTintedImage(mainContext, imageSource.image, this.flashColor, .5 + .2 * Math.sin(now() / 150), imageSource, this.target);
     else drawImage(mainContext, imageSource.image, imageSource, this.target);
 }
 function isGuildObjectEnabled() {
     if (!this.area) debugger;
-    return state.unlockedGuildAreas[this.area.key] && !this.area.enemies.length;
+    return getState().savedState.unlockedGuildAreas[this.area.key] && !this.area.enemies.length;
 }
 function isGuildExitEnabled() {
     //if (this.area.key === 'guildFoyer') debugger;
@@ -338,39 +400,7 @@ function isGuildExitEnabled() {
     if (isGuildObjectEnabled.call(this)) return true;
     //if (this.area.key === 'guildFoyer') debugger;
     // It can also be used if the area it is connected to is unlocked.
-    return state.unlockedGuildAreas[this.exit.areaKey];
-}
-
-export interface Exit {
-    // The area to enter when using this exit.
-    areaKey: string,
-    // The target location to appear when entering the next area.
-    x?: number,
-    z?: number,
-}
-export interface FixedObject {
-    fixed: true,
-    base: any,
-    key: string,
-    scale: number,
-    xScale?: number,
-    yScale?: number,
-    width: number,
-    height: number,
-    depth: number,
-    x: number,
-    y: number,
-    z: number,
-    exit?: Exit,
-    // The level for the object, if it can be upgraded.
-    level?: number,
-    isEnabled: Function,
-    draw: Function,
-    helpMethod: Function,
-    target: {
-        width: number,
-        height: number,
-    },
+    return getState().savedState.unlockedGuildAreas[this.exit.areaKey];
 }
 export function fixedObject(baseObjectKey, coords, properties: Partial<FixedObject> = {}): FixedObject {
     const base = areaObjects[baseObjectKey];
@@ -400,13 +430,13 @@ export function fixedObject(baseObjectKey, coords, properties: Partial<FixedObje
     newFixedObject.height *= newFixedObject.scale;
     newFixedObject.target.width *= newFixedObject.scale;
     newFixedObject.target.height *= newFixedObject.scale;
-    // TODO: track these in a better place.
-    /*if (baseObjectKey === 'heroApplication') {
+    // TODO: Make sure these reset when defaultGuildAreas is reset.
+    if (baseObjectKey === 'heroApplication') {
         allApplications.push(newFixedObject);
     }
     if (baseObjectKey === 'bed') {
         allBeds.push(newFixedObject);
-    }*/
+    }
     return newFixedObject;
 }
 function fixedObjectHelpText(object) {
@@ -415,6 +445,7 @@ function fixedObjectHelpText(object) {
 
 function addFurnitureBonuses(furniture, recompute) {
     if (!furniture.getActiveBonusSources) return;
+    const state = getState();
     var bonusSources = furniture.getActiveBonusSources();
     for (var bonusSource of bonusSources) {
         // Multiple copies of the same furniture will have the same bonus source, so this check is not valid.
@@ -423,7 +454,7 @@ function addFurnitureBonuses(furniture, recompute) {
             console.log(guildBonusSources);
             throw new Error('bonus source was already present in guildBonusSources!');
         }*/
-        guildBonusSources.push(bonusSource);
+        state.guildBonusSources.push(bonusSource);
         addBonusSourceToObject(state.guildStats, bonusSource);
         for (var character of state.characters) {
             addBonusSourceToObject(character.adventurer, bonusSource);
@@ -433,14 +464,15 @@ function addFurnitureBonuses(furniture, recompute) {
 }
 function removeFurnitureBonuses(furniture, recompute) {
     if (!furniture.getActiveBonusSources) return;
+    const state = getState();
     var bonusSources = furniture.getActiveBonusSources();
     for (var bonusSource of bonusSources) {
-        if (guildBonusSources.indexOf(bonusSource) < 0) {
+        if (state.guildBonusSources.indexOf(bonusSource) < 0) {
             console.log(bonusSource);
-            console.log(guildBonusSources);
+            console.log(state.guildBonusSources);
             throw new Error('bonus source was not found in guildBonusSources!');
         }
-        guildBonusSources.splice(guildBonusSources.indexOf(bonusSource), 1);
+        state.guildBonusSources.splice(state.guildBonusSources.indexOf(bonusSource), 1);
         removeBonusSourceFromObject(state.guildStats, bonusSource);
         for (var character of state.characters) {
             removeBonusSourceFromObject(character.adventurer, bonusSource);
@@ -450,11 +482,14 @@ function removeFurnitureBonuses(furniture, recompute) {
 }
 
 function addAllUnlockedFurnitureBonuses() {
-    for (var areaKey in state.unlockedGuildAreas) addAreaFurnitureBonuses(guildAreas[areaKey]);
+    const state = getState();
+    for (let areaKey in state.savedState.unlockedGuildAreas) {
+        addAreaFurnitureBonuses(state.guildAreas[areaKey]);
+    }
     recomputeAllCharacterDirtyStats();
 }
 
-function addAreaFurnitureBonuses(guildArea, recompute) {
+function addAreaFurnitureBonuses(guildArea, recompute = false) {
     for (var object of guildArea.objects) addFurnitureBonuses(object, false);
     if (recompute) recomputeAllCharacterDirtyStats();
 }

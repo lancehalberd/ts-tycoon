@@ -1,7 +1,9 @@
 import { showAreaMenu } from 'app/areaMenu';
+import { initializeActorForAdventure } from 'app/character';
 import { Exit } from 'app/content/furniture';
 import { guildYardEntrance } from 'app/content/guild';
 import { map } from 'app/content/mapData';
+import { makeMonster } from 'app/content/monsters';
 import { drawBoardBackground } from 'app/drawBoard';
 import { FRAME_LENGTH, MIN_Z, MAX_Z } from 'app/gameConstants';
 import { appendTextPopup } from 'app/performAttack';
@@ -95,12 +97,12 @@ export function enterArea(actor, {x, z, areaKey}: Exit) {
     actor.enemies = area.enemies;
     actor.activity = null;
 }
-function addMonstersToArea(area, monsters, extraBonuses = [], specifiedRarity) {
+export function addMonstersToArea(area, monsters, extraBonuses = [], specifiedRarity = 0) {
     area.enemies = [];
-    for (var monsterData of (monsters || [])) {
-        var bonusSources = (monsterData.bonusSources || []).concat(extraBonuses);
-        var rarity = ifdefor(monsterData.rarity, specifiedRarity);
-        var newMonster = makeMonster(monsterData.key, monsterData.level, bonusSources, rarity);
+    for (const monsterData of (monsters || [])) {
+        const bonusSources = (monsterData.bonusSources || []).concat(extraBonuses);
+        const rarity = monsterData.rarity || specifiedRarity;
+        const newMonster = makeMonster(monsterData.key, monsterData.level, bonusSources, rarity);
         newMonster.heading = [-1, 0, 0]; // Monsters move right to left
         newMonster.x = monsterData.location[0];
         newMonster.y = monsterData.location[1];

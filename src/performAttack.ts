@@ -1,3 +1,5 @@
+import { makeMonster } from 'app/content/monsters';
+
 function getBasicAttack(adventurer) {
     return findActionByTag(adventurer.actions, 'basic');
 }

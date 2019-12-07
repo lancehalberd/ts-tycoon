@@ -332,7 +332,14 @@ const jewelDefinitions = [
     {'name': 'Diamond'}
 ];
 // Levels that jewels of each tier drop from.
-const jewelTierLevels = [0, 1, 10, 20, 40, 60];
+export const jewelTierLevels = [0, 1, 10, 20, 40, 60];
+export function getJewelTiewerForLevel(level): JewelTier {
+    if (level >= jewelTierLevels[5]) return 5;
+    else if (level >= jewelTierLevels[4]) return 4;
+    else if (level >= jewelTierLevels[3]) return 3;
+    else if (level >= jewelTierLevels[2]) return 2;
+    return 1;
+}
 
 let maxAnimaJewelBonus;
 function setMaxAnimaJewelBonus(value) {

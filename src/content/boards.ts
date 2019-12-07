@@ -54,7 +54,7 @@ const complexTemplateBoards = [
     {'size': 8, 'shapes': [{"k":"triangle","p":[206.05771365940052,78],"t":-30},{"k":"rhombus","p":[258.01923788646684,48],"t":0},{"k":"triangle","p":[232.03847577293368,33],"t":30},{"k":"square","p":[202.03847577293368,63],"t":-90},{"k":"square","p":[232.03847577293368,63],"t":0},{"k":"rhombus","p":[202.03847577293368,63],"t":0}]},
     {'size': 9, 'shapes': [{"k":"rhombus","p":[359,37.01923788646684],"t":-30},{"k":"rhombus","p":[318.01923788646684,48],"t":30},{"k":"square","p":[318.01923788646684,48],"t":-60},{"k":"rhombus","p":[359,88.98076211353316],"t":90},{"k":"square","p":[344,63],"t":-30},{"k":"square","p":[314,63],"t":0}]}
 ];
-function getBoardDataForLevel(level) {
+export function getBoardDataForLevel(level) {
     let safety = 0;
     const levelDegrees = 180 * Math.atan2(level.coords[1], level.coords[0]) / Math.PI;
     // 30 degrees = red leyline, 150 degrees = blue leyline, 270 degrees = green leyline.

@@ -40,8 +40,6 @@ export interface GuildArea {
 type GuildAreas = {[key: string]: GuildArea};
 
 export const guildYardEntrance = {areaKey: 'guildYard'};
-export const allApplications = [];
-export const allBeds = [];
 
 const wallOriginCoords = [-71, 213];
 const wallDepth = 120;

@@ -1,12 +1,35 @@
-import { MAX_LEVEL } from 'app/gameConstants';
-import { requireImage } from 'app/images';
+import { addMonstersToArea, messageCharacter } from 'app/adventure';
+import { BonusSource } from 'app/bonuses';
+import { readBoardFromData, totalCostForNextLevel } from 'app/character';
+import { abilities } from 'app/content/abilities';
+import { getBoardDataForLevel } from 'app/content/boards';
+import { fixedObject } from 'app/content/furniture';
+import { map } from 'app/content/mapData';
+import { bossMonsterBonuses, easyBonuses, hardBonuses, monsters } from 'app/content/monsters';
+import { setContext } from 'app/context';
+import { bodyDiv, mainContext, titleDiv, updateConfirmSkillConfirmationButtons } from 'app/dom';
+import { drawBoardPreview } from 'app/drawBoard';
+import { GROUND_Y, MAX_LEVEL } from 'app/gameConstants';
+import { drawImage, requireImage } from 'app/images';
+import { getJewelTiewerForLevel } from 'app/jewels';
+import { snapBoardToBoard } from 'app/jewelInventory';
+import { coinsLoot, jewelLoot } from 'app/loot';
+import { abbreviate } from 'app/utils/formatters';
+import { getThetaDistance, rectangle } from 'app/utils/index';
+import { centerShapesInRectangle, isPointInPoints } from 'app/utils/polygon';
 import Random from 'app/utils/Random';
 
 var closedChestSource = {image: requireImage('gfx/chest-closed.png'), source: rectangle(0, 0, 32, 32)};
 var openChestSource = {image: requireImage('gfx/chest-open.png'), source: rectangle(0, 0, 32, 32)};
-
+interface MonsterSpawn {
+    key: string,
+    level: number,
+    location: [number, number, number],
+    bonusSources?: BonusSource[],
+    rarity?: number,
+}
 export function instantiateLevel(levelData, levelDifficulty, difficultyCompleted, level) {
-    level = ifdefor(level, levelData.level);
+    level = level || levelData.level;
     var levelDegrees = (360 + 180 * Math.atan2(levelData.coords[1], levelData.coords[0]) / Math.PI) % 360;
     var possibleMonsters = levelData.monsters.slice();
     var strengthMonsters = ['skeleton','skeletalBuccaneer','undeadPaladin','undeadWarrior', 'stealthyCaterpillar'];
@@ -75,6 +98,7 @@ export function instantiateLevel(levelData, levelDifficulty, difficultyCompleted
     while (true) {
         var area = {
             key: `area${areas.size}`,
+            isBossArea: false,
             left: 0,
             width: 800,
             backgroundPatterns: {0: levelData.background},
@@ -104,15 +128,22 @@ export function instantiateLevel(levelData, levelDifficulty, difficultyCompleted
         var areaMonsters = [];
         // Add random monsters to the beginning of the area to fill it up the desired amount.
         while (areaMonsters.length < numberOfMonsters - eventMonsters.length) {
-            var monster = {key: Random.element(possibleMonsters), level, location: [area.width + Random.range(0, 200), 0, 40]};
+            const monster: MonsterSpawn = {
+                key: Random.element(possibleMonsters),
+                level,
+                location: [area.width + Random.range(0, 200), 0, 40]
+            };
             areaMonsters.push(monster);
             area.width = monster.location[0] + 50;
             if (maxLoops-- < 0) debugger;
         }
         // Add the predtermined monsters towards the end of the area.
         while (eventMonsters.length) {
-            var bonusSources = eventsLeft.length ? [] : [bossMonsterBonuses];
-            var monster = {key: eventMonsters.shift(), level, location: [area.width + Random.range(0, 200), 0, 40]};
+            const monster: MonsterSpawn = {
+                key: eventMonsters.shift(),
+                level,
+                location: [area.width + Random.range(0, 200), 0, 40]
+            };
             if (area.isBossArea) {
                 monster.bonusSources = [bossMonsterBonuses];
                 monster.rarity = 0; // Bosses cannot be enchanted or imbued.
@@ -148,7 +179,7 @@ export function instantiateLevel(levelData, levelDifficulty, difficultyCompleted
         var allComponent = Math.abs(levelData.coords[2]) / 60;
         // component can be as high as 120 so if it is at least 90 we are within 30 degrees of a primary leyline
         var maxComponent = Math.max(redComponent, blueComponent, greenComponent);
-        var tier = getJewelTiewerForLevel(level);
+        const tier = getJewelTiewerForLevel(level);
         var components = [[(redComponent + allComponent) * 0.9, (redComponent + allComponent) * 1.1],
                           [(greenComponent + allComponent) * 0.9, (greenComponent + allComponent) * 1.1],
                           [(blueComponent + allComponent) * 0.9, (blueComponent + allComponent) * 1.1]];
@@ -193,7 +224,7 @@ export function instantiateLevel(levelData, levelDifficulty, difficultyCompleted
     lastArea.width += 250;
     lastArea.objects.push(fixedObject('stoneBridge', [lastArea.width + 20, 0, 0], {isEnabled, exit: {areaKey: 'worldMap'}}));
     areas.forEach(area => {
-        for (object of area.objects)
+        for (const object of area.objects)
             object.area = area;
     });
     return {
@@ -203,14 +234,6 @@ export function instantiateLevel(levelData, levelDifficulty, difficultyCompleted
         entrance: {areaKey: 'area0', x: 120, z: 0},
         areas,
     };
-}
-function getJewelTiewerForLevel(level) {
-    var tier = 1;
-    if (level >= jewelTierLevels[5]) tier = 5
-    else if (level >= jewelTierLevels[4]) tier = 4
-    else if (level >= jewelTierLevels[3]) tier = 3
-    else if (level >= jewelTierLevels[2]) tier = 2
-    return tier;
 }
 
 var militaryIcons = requireImage('gfx/militaryIcons.png');
@@ -247,7 +270,7 @@ function activateShrine(actor) {
     }
     var divinityNeeded = totalCostForNextLevel(character, level) - character.divinity;
     if (divinityNeeded > 0) {
-        messageCharacter(character, 'Still need ' + divinityNeeded.abbreviate() + ' Divinity');
+        messageCharacter(character, 'Still need ' + abbreviate(divinityNeeded) + ' Divinity');
         return;
     }
     // TBD: Make this number depend on the game state so it can be improved over time.
@@ -278,41 +301,27 @@ function finishShrine(character) {
     }
     character.isStuckAtShrine = false;
 }
-function openChest(actor) {
-    // The loot array is an array of objects that can generate specific loot drops. Iterate over each one, generate a
-    // drop and then give the loot to the player and display it on the screen.
-    var delay = 0;
-    for (var i = 0; i < this.loot.length; i++) {
-        var drop = this.loot[i].generateLootDrop();
-        drop.gainLoot(actor);
-        var xOffset = (this.loot.length > 1) ? - 50 + 100 * i / (this.loot.length - 1) : 0;
-        drop.addTreasurePopup(actor, this.x + xOffset, this.y + 64, this.z, delay += 5);
-    }
-    // Replace this chest with an opened chest in the same location.
-    var openedChest = fixedObject('openChest', [this.x, this.y, this.z], {isEnabled: () => true, 'scale': ifdefor(this.scale, 1)});
-    openedChest.area = this.area;
-    this.area.objects[this.area.objects.indexOf(this)] = openedChest;
-    this.area.chestOpened = true;
-}
 
 function iconButton(iconSource, width, height, onClick, helpText) {
     var self = {
         'x': 0,
         'y': 0,
+        left: 0,
+        top: 0,
         'type': 'button',
         'solid': false,
         width,
         height,
         update(area) {
             self.left = Math.round(self.x - area.cameraX - self.width / 2);
-            self.top = Math.round(groundY - self.y - self.height / 2);
+            self.top = Math.round(GROUND_Y - self.y - self.height / 2);
         },
         onClick,
         draw(area) {
             drawImage(mainContext, iconSource.image, iconSource, self);
         },
         helpMethod() {
-            return ifdefor(helpText, '');
+            return helpText || '';
         }
     };
     return self;
@@ -331,8 +340,52 @@ function objectText(text) {
             mainContext.textBaseline = "middle";
             mainContext.textAlign = 'center'
             mainContext.font = "30px sans-serif";
-            mainContext.fillText(text, self.x - area.cameraX, groundY - self.y);
+            mainContext.fillText(text, self.x - area.cameraX, GROUND_Y - self.y);
         }
     };
     return self;
 }
+
+function adventureBoardPreview(boardPreview, character) {
+    return {
+        'x': 0,
+        'y': 0,
+        'solid': false,
+        'type': 'button',
+        'width': 150,
+        'height': 150,
+        boardPreview,
+        update(area) {
+        },
+        isOver(x, y) {
+            for (var shape of this.boardPreview.fixed.map(j => j.shape).concat(this.boardPreview.spaces)) {
+                if (isPointInPoints([x, y], shape.points)) {
+                    return true;
+                }
+            }
+            return false;
+        },
+        onClick(character) {
+            centerShapesInRectangle(this.boardPreview.fixed.map(j => j.shape).concat(this.boardPreview.spaces), rectangle(0, 0, character.boardCanvas.width, character.boardCanvas.height));
+            snapBoardToBoard(this.boardPreview, character.board);
+            character.board.boardPreview = this.boardPreview;
+            // This will show the confirm skill button if this character is selected.
+            updateConfirmSkillConfirmationButtons();
+            setContext('jewel');
+        },
+        draw(area) {
+            // Remove the preview from the character if we draw it to the adventure screen since they both use the same coordinate variables
+            // and displaying it in the adventure screen will mess up the display of it on the character's board. I think this will be okay
+            // since they can't look at both screens at once.
+            character.board.boardPreview = null;
+            updateConfirmSkillConfirmationButtons();
+            centerShapesInRectangle(this.boardPreview.fixed.map(j => j.shape).concat(this.boardPreview.spaces), rectangle(this.x - area.cameraX - 5, GROUND_Y - this.y -5, 10, 10));
+            drawBoardPreview(mainContext, [0, 0], this.boardPreview, true);
+        },
+        helpMethod() {
+            return titleDiv('Divine Blessing')
+                + bodyDiv("Click on this Jewel Board Augmentation to preview adding it to this hero's Jewel Board." + divider + "Confirm the Augmentation to learn the ability and Level Up.");
+        }
+    };
+}
+
