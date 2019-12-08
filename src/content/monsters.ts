@@ -1,5 +1,10 @@
-import { BonusSource, recomputeDirtyStats } from 'app/bonuses';
+import { BonusSource, initializeVariableObject, addBonusSourceToObject, recomputeDirtyStats } from 'app/bonuses';
+import { actorHelpText, addActions, coreStatBonusSource, personFrames, recomputeActorTags } from 'app/character';
+import { abilities, leapAndAct } from 'app/content/abilities';
+import { map } from 'app/content/mapData';
 import { createCanvas } from 'app/dom';
+import { makeAffix } from 'app/enchanting';
+import { equipmentSlots, itemsByKey, makeItem } from 'app/inventory';
 import { ifdefor } from 'app/utils/index';
 import Random from 'app/utils/Random';
 import { requireImage, setupSource } from 'app/images';
@@ -78,7 +83,7 @@ export function makeMonster(monsterData, level, extraSkills, specifiedRarity) {
         'aggroRadius': 600,
         percentHealth: 1,
         percentTargetHealth: 1,
-        helpMethod: actorHelpText
+        helpMethod: actorHelpText,
     };
     var baseMonster;
     if (typeof(monsterData) == 'string') {
@@ -186,7 +191,7 @@ function updateMonster(monster) {
     monster.name = monster.base.name;
     // Add the character's current equipment to bonuses and graphics
     equipmentSlots.forEach(function (type) {
-        var equipment = ifdefor(monster.equipment[type]);
+        const equipment = monster.equipment[type];
         if (!equipment) {
             return;
         }
@@ -262,7 +267,7 @@ function getMonsterBonuses(monster) {
         '+anima': Random.range(1, Math.floor((growth + 1) * Math.pow(1.15, growth + 1)))
     };
 }
-function setupActorSource(source) {
+export function setupActorSource(source) {
     if (!source.walkFrames) {
         source.walkFrames = [];
         for (var i = 0; i < source.frames; i++) source.walkFrames[i] = i;
@@ -572,7 +577,7 @@ export function initializeMonsters() {
 }
 
 if (window.location.search.substr(1) === 'test') {
-    map.testLevelData = {
+    map['testLevelData'] = {
         name: "Test Area", description: "Area for testing monsters", background: "cave", unlocks: [], coords: [-443,-152,-375],
         minMonstersPerArea: 2, maxMonstersPerArea: 2,
         noTreasure: true,

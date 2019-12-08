@@ -1,9 +1,13 @@
+import { pause } from 'app/adventureButtons';
+import { getEndlessLevel } from 'app/areaMenu';
 import { makeMonster } from 'app/content/monsters';
+import { abbreviate, fixedDigits, percent } from 'app/utils/formatters';
+import Random from 'app/utils/Random';
 
-function getBasicAttack(adventurer) {
+export function getBasicAttack(adventurer) {
     return findActionByTag(adventurer.actions, 'basic');
 }
-function findActionByTag(actions, tag) {
+export function findActionByTag(actions, tag) {
     for (var action of actions) {
         if (action.tags[tag]) {
             return action;
@@ -11,7 +15,7 @@ function findActionByTag(actions, tag) {
     }
     return null;
 }
-export function updateDamageInfo(character, $statsPanel, monsterLevel) {
+export function updateDamageInfo(character, statsPanelElement, monsterLevel = 0) {
     var adventurer = character.adventurer;
     if (!adventurer || !adventurer.actions) return;
     var attack = getBasicAttack(adventurer);
@@ -20,41 +24,48 @@ export function updateDamageInfo(character, $statsPanel, monsterLevel) {
     var damageMultiplier =  (1 - attack.critChance) + (1 + attack.critDamage) * attack.critChance;
     var accuracyMultiplier = (1 - attack.critChance) + (1 + attack.critAccuracy) * attack.critChance;
     var physical =  (attack.minPhysicalDamage + attack.maxPhysicalDamage) / 2, physicalAfterblock;
-    var magic = (attack.minMagicDamage + attack.maxMagicDamage) / 2;
+    let magic = (attack.minMagicDamage + attack.maxMagicDamage) / 2;
 
-    var attackSpeed = Math.min(1 / ifdefor(attack.cooldown, .001), attack.attackSpeed);
+    var attackSpeed = Math.min(1 / (attack.cooldown || .001), attack.attackSpeed);
     var rawPhysicalDPS = damageMultiplier * physical * attackSpeed;
     var rawMagicDPS = damageMultiplier * magic * attackSpeed;
 
     var sections = [];
     if (attack.minPhysicalDamage) {
-        sections.push('Physical damage ' + attack.minPhysicalDamage.format(1).abbreviate() + ' - ' + attack.maxPhysicalDamage.format(1).abbreviate());
+        sections.push('Physical damage ' + abbreviate(fixedDigits(attack.minPhysicalDamage, 1)) + ' - ' + attack.maxPhysicalDamage.format(1).abbreviate());
     }
     if (attack.minMagicDamage) {
-        sections.push('Magic damage ' + attack.minMagicDamage.format(1).abbreviate() + ' - ' + attack.maxMagicDamage.format(1).abbreviate());
+        sections.push('Magic damage ' + abbreviate(fixedDigits(attack.minMagicDamage, 1)) + ' - ' + attack.maxMagicDamage.format(1).abbreviate());
     }
-    if (ifdefor(attack.cooldown)) {
-        sections.push('Can be used once every' + attack.cooldown.format(1) + ' seconds');
+    if (attack.cooldown) {
+        sections.push('Can be used once every' + attack.cooldown.toFixed(1) + ' seconds');
     } else {
-        sections.push(attackSpeed.format(2) + ' attacks per second.');
+        sections.push(attackSpeed.toFixed(2) + ' attacks per second.');
     }
-    sections.push(attack.accuracy.format(1) + ' accuracy rating.');
-    if (ifdefor(attack.critChance)) {
+    sections.push(attack.accuracy.toFixed(1) + ' accuracy rating.');
+    if (attack.critChance) {
         sections.push('');
-        sections.push(attack.critChance.percent(1) + ' chance to crit for:');
+        sections.push(percent(attack.critChance, 1) + ' chance to crit for:');
         if (attack.minPhysicalDamage) {
-            sections.push('Physical damage ' + (attack.minPhysicalDamage * (1 + attack.critDamage)).format(1).abbreviate() + ' - ' + (attack.maxPhysicalDamage * (1 + attack.critDamage)).format(1).abbreviate());
+            const minPhysicalDamage = attack.minPhysicalDamage * (1 + attack.critDamage);
+            const maxPhysicalDamage = attack.maxPhysicalDamage * (1 + attack.critDamage);
+            sections.push('Physical damage ' + abbreviate(fixedDigits(minPhysicalamage, 1)) + ' - ' + abbreviate(fixedDigits(maxPhysicalDamage, 1)));
         }
         if (attack.minMagicDamage) {
-            sections.push('Magic damage ' + (attack.minMagicDamage * (1 + attack.critDamage)).format(1).abbreviate() + ' - ' + (attack.maxMagicDamage * (1 + attack.critDamage)).format(1).abbreviate());
+            const minMagicDamage = attack.minMagicDamage * (1 + attack.critDamage);
+            const maxMagicDamage = attack.maxMagicDamage * (1 + attack.critDamage);
+            sections.push('Magic damage ' + abbreviate(fixedDigits(minMagicDamage, 1)) + ' - ' + abbreviate(fixedDigits(maxMagicDamage, 1)));
         }
-        sections.push((attack.accuracy * (1 + attack.critAccuracy)).format(1) + ' accuracy');
+        sections.push((attack.accuracy * (1 + attack.critAccuracy)).toFixed(1) + ' accuracy');
     }
     sections.push('');
     if (rawPhysicalDPS && rawMagicDPS) {
-        sections.push('Total Average DPS is ' +  (rawPhysicalDPS + rawMagicDPS).format(1).abbreviate() + '(' + rawPhysicalDPS.format(1).abbreviate() + ' physical + ' + rawMagicDPS.format(1).abbreviate() + ' magic)');
+        sections.push('Total Average DPS is ' +
+            abbreviate(fixedDigits(rawPhysicalDPS + rawMagicDPS, 1)) +
+            '(' + abbreviate(fixedDigits(rawPhysicalDPS, 1)) + ' physical + ' +
+            abbreviate(fixedDigits(rawMagicDPS, 1)) + ' magic)');
     } else {
-        sections.push('Total Average DPS is ' + (rawPhysicalDPS + rawMagicDPS).format(1).abbreviate());
+        sections.push('Total Average DPS is ' + abbreviate(fixedDigits(rawPhysicalDPS + rawMagicDPS, 1)));
     }
 
     // Expected damage against an 'average' monster of the adventurer's level.
@@ -83,7 +94,7 @@ export function updateDamageInfo(character, $statsPanel, monsterLevel) {
         var overRollChance = (accuracy - evasion) / accuracy;
         hitPercent = overRollChance + (1 - overRollChance) / 2;
     }
-    if (ifdefor(attack.alwaysHits)) {
+    if (attack.alwaysHits) {
         hitPercent = 1;
     }
     var expectedPhysical = Math.max(0, damageMultiplier * physical - dummy.block / 2);
@@ -96,18 +107,21 @@ export function updateDamageInfo(character, $statsPanel, monsterLevel) {
     sections.push('');
     sections.push('Expected hit rate is ' + hitPercent.percent(1));
     if (attack.minPhysicalDamage && attack.minMagicDamage) {
-        sections.push('Total Expected DPS is ' + (expectedPhysicalDPS + expectedMagicDPS).format(1).abbreviate() + '(' + expectedPhysicalDPS.format(1).abbreviate() + ' physical + ' + expectedMagicDPS.format(1).abbreviate() + ' magic)');
+        sections.push('Total Expected DPS is ' + abbreviate(expectedPhysicalDPS + expectedMagicDPS, 1) +
+            '(' + abbreviate(expectedPhysicalDPS, 1) + ' physical + ' +
+            abbreviate(expectedMagicDPS, 1) + ' magic)');
     } else {
-        sections.push('Total Expected DPS is ' + (expectedPhysicalDPS + expectedMagicDPS).format(1).abbreviate());
+        sections.push('Total Expected DPS is ' + abbreviate(expectedPhysicalDPS + expectedMagicDPS, 1));
     }
-    var $damage =  $statsPanel.find('.js-damage');
+    var $damage =  statsPanelElement.find('.js-damage');
     $damage.text((expectedPhysicalDPS + expectedMagicDPS).format(1).abbreviate());
     $damage.parent().attr('helptext', sections.join('<br/>'));
 
     attack = getBasicAttack(dummy);
 
-    var $protection =  $statsPanel.find('.js-protection');
+    var $protection =  statsPanelElement.find('.js-protection');
     physical = attack.maxPhysicalDamage;
+    let physicalAfterBlock;
     if (adventurer.block <= physical) {
         physicalAfterBlock = physical - adventurer.block / 2;
     } else {
@@ -118,17 +132,17 @@ export function updateDamageInfo(character, $statsPanel, monsterLevel) {
     var armorProtection = 1 - physical / attack.maxPhysicalDamage;
     physical = applyArmorToDamage(physicalAfterBlock, adventurer.armor);
     var physicalProtection = 1 - physical / attack.maxPhysicalDamage;
-    $protection.text(physicalProtection.percent(1));
+    $protection.text(percent(physicalProtection, 1));
     sections = ['This is an estimate of your physical damage reduction.', '']
-    sections.push(adventurer.block + ' Block (' + blockProtection.percent(1) + ')');
-    sections.push(adventurer.armor + ' Armor (' + armorProtection.percent(1) + ')');
+    sections.push(adventurer.block + ' Block (' + percent(blockProtection, 1) + ')');
+    sections.push(adventurer.armor + ' Armor (' + percent(armorProtection, 1) + ')');
     sections.push('');
-    sections.push(physicalProtection.percent(1) + ' combined reduction');
-    sections.push(attack.maxPhysicalDamage.format(1) + ' damage reduced to ' + physical.format(1) );
+    sections.push(percent(physicalProtection, 1) + ' combined reduction');
+    sections.push(attack.maxPhysicalDamage.toFixed(1) + ' damage reduced to ' + physical.toFixed(1) );
     $protection.parent().attr('helptext', sections.join('<br/>'));
 
-    var $resistance =  $statsPanel.find('.js-resistance');
-    var magic = attack.maxMagicDamage;
+    var $resistance =  statsPanelElement.find('.js-resistance');
+    magic = attack.maxMagicDamage;
     if (adventurer.magicBlock <= magic) {
         magic = magic - adventurer.magicBlock / 2;
     } else {
@@ -137,13 +151,13 @@ export function updateDamageInfo(character, $statsPanel, monsterLevel) {
     var magicBlockResistance = 1 - magic / attack.maxMagicDamage;
     magic = magic * Math.max(0, 1 - adventurer.magicResist);
     var magicResistance = 1 - magic / attack.maxMagicDamage;
-    $resistance.text(magicResistance.percent(1));
+    $resistance.text(percent(magicResistance, 1));
     sections = ['This is an estimate of your magic damage reduction.', ''];
-    sections.push(adventurer.magicResist.percent(1) + ' Magic Resistance');
-    sections.push(adventurer.magicBlock + ' Magic Block (' + magicBlockResistance.percent(1) + ')');
+    sections.push(percent(adventurer.magicResist, 1) + ' Magic Resistance');
+    sections.push(adventurer.magicBlock + ' Magic Block (' + percent(magicBlockResistance, 1) + ')');
     sections.push('');
-    sections.push(magicResistance.percent(1) + ' combined reduction');
-    sections.push(attack.maxMagicDamage.format(1) + ' damage reduced to ' + magic.format(1));
+    sections.push(percent(magicResistance, 1) + ' combined reduction');
+    sections.push(attack.maxMagicDamage.toFixed(1) + ' damage reduced to ' + magic.toFixed(1));
     $resistance.parent().attr('helptext', sections.join('<br/>'));
 
 
@@ -158,19 +172,19 @@ export function updateDamageInfo(character, $statsPanel, monsterLevel) {
         var overRollChance = (accuracy - evasion) / accuracy;
         hitPercent = overRollChance + (1 - overRollChance) / 2;
     }
-    var $evasion =  $statsPanel.find('.js-evasion');
-    $evasion.text((1 - hitPercent).percent(1));
-    $evasion.parent().attr('helptext', adventurer.evasion + ' Evasion<br/><br/>' + (1 - hitPercent).percent(1) + ' estimated chance to evade attacks.');
+    var $evasion =  statsPanelElement.find('.js-evasion');
+    $evasion.text(percent(1 - hitPercent, 1));
+    $evasion.parent().attr('helptext', adventurer.evasion + ' Evasion<br/><br/>' + percent(1 - hitPercent, 1) + ' estimated chance to evade attacks.');
 }
 
 function createAttackStats(attacker, attack, target) {
     var isCritical = Math.random() <= attack.critChance;
-    if (ifdefor(attack.firstStrike) && target && target.isActor) {
+    if (attack.firstStrike && target && target.isActor) {
         isCritical = isCritical || target.health >= target.maxHealth;
     }
     var damage = Random.range(attack.minPhysicalDamage, attack.maxPhysicalDamage);
     var magicDamage = Random.range(attack.minMagicDamage, attack.maxMagicDamage);
-    var sacrificedHealth = Math.floor(attacker.health * ifdefor(attack.healthSacrifice, 0));
+    var sacrificedHealth = Math.floor(attacker.health * (attack.healthSacrifice || 0));
     damage += sacrificedHealth;
     var accuracy = Math.random() * attack.accuracy;
     if (isCritical) {
@@ -178,7 +192,7 @@ function createAttackStats(attacker, attack, target) {
         magicDamage *= (1 + attack.critDamage);
         accuracy *= (1 + attack.critAccuracy);
     }
-    var animation = ifdefor(attack.base.animation);
+    var animation = attack.base.animation;
     var attackType = (attacker.equipment.weapon && attacker.equipment.weapon.base.type) || (attacker.character && 'unarmed');
     var sound = attack.base.sound || attackSounds[attackType];
     if (!animation && attacker.equipment.weapon) {
@@ -333,7 +347,7 @@ function castAttackSpell(attacker, spell, target) {
     if (attacker.imprintSpell) attacker.imprintedSpell = spell;
     return attackStats;
 }
-function performAttackProper(attackStats, target) {
+export function performAttackProper(attackStats, target) {
     var attacker = attackStats.source;
     var area = attacker.area;
     if (attackStats.sound) {
@@ -414,7 +428,7 @@ function getAttackY(attacker) {
     var height = ifdefor(attacker.source.height, 64);
     return attacker.scale * ifdefor(attacker.source.attackY, height - ifdefor(attacker.source.yCenter, height / 2));
 }
-function applyAttackToTarget(attackStats, target) {
+export function applyAttackToTarget(attackStats, target) {
     var attack = attackStats.attack;
     var imprintedSpell = attackStats.imprintedSpell;
     var attacker = attackStats.source;

@@ -1,6 +1,9 @@
-import { recomputeDirtyStats } from 'app/bonuses';
-import { initializeActorForAdventure } from 'app/character';
+import { getDistance } from 'app/adventure';
+import { addBonusSourceToObject, recomputeDirtyStats, removeBonusSourceFromObject} from 'app/bonuses';
+import { addActions, initializeActorForAdventure } from 'app/character';
 import { makeMonster } from 'app/content/monsters';
+import { performAttackProper } from 'app/performAttack';
+import Random from 'app/utils/Random';
 
 /**
  * Checks whether an actor may use a skill on a given target.
@@ -15,8 +18,8 @@ export function canUseSkillOnTarget(actor, skill, target) {
     if (!target) throw new Error('No target was passed to canUseSkillOnTarget');
     if (skill.readyAt > actor.time) return false; // Skill is still on cool down.
     if (skill.tags['basic'] && actor.healingAttacks) return false;
-    if (!!ifdefor(skill.base.targetDeadUnits) !== !!target.isDead) return false; // targetDeadUnits must match target.isDead.
-    for (var i = 0; i < ifdefor(skill.base.restrictions, []).length; i++) {
+    if (!!skill.base.targetDeadUnits !== !!target.isDead) return false; // targetDeadUnits must match target.isDead.
+    for (var i = 0; i < (skill.base.restrictions || []).length; i++) {
         if (!actor.tags[skill.base.restrictions[i]]) {
             return false;
         }
@@ -24,11 +27,11 @@ export function canUseSkillOnTarget(actor, skill, target) {
     if (actor.cannotAttack && skill.tags['attack']) return false; // Jujutsu prevents a user from using active attacks.
     // Make sure target matches the target type of the skill.
     if (target.isActor && !skill.tags.field) {
-        if (ifdefor(skill.base.target) === 'self' && actor !== target) return false;
-        if (ifdefor(skill.base.target) === 'otherAllies' && (actor === target || actor.allies.indexOf(target) < 0)) return false;
-        if (ifdefor(skill.base.target) === 'allies' && actor.allies.indexOf(target) < 0) return false;
-        if (ifdefor(skill.base.target, 'enemies') === 'enemies' && actor.enemies.indexOf(target) < 0) return false;
-        if (ifdefor(skill.base.target, 'enemies') === 'enemies' && target.cloaked) return false;
+        if (skill.base.target === 'self' && actor !== target) return false;
+        if (skill.base.target === 'otherAllies' && (actor === target || actor.allies.indexOf(target) < 0)) return false;
+        if (skill.base.target === 'allies' && actor.allies.indexOf(target) < 0) return false;
+        if ((skill.base.target || 'enemies') === 'enemies' && actor.enemies.indexOf(target) < 0) return false;
+        if ((skill.base.target || 'enemies') === 'enemies' && target.cloaked) return false;
     }
     var skillDefinition = skillDefinitions[skill.base.type];
     if (!skillDefinition) return false; // Invalid skill, maybe from a bad/old save file.
@@ -42,7 +45,7 @@ export function canUseSkillOnTarget(actor, skill, target) {
  * @param object skill       The skill being performed.
  * @param object target      The target to attack for active abilities.
  */
-function canUseReaction(actor, reaction, attackStats) {
+export function canUseReaction(actor, reaction, attackStats) {
     if (!actor) throw new Error('No actor was passed to canUseReaction');
     if (!reaction) throw new Error('No reaction was passed to canUseReaction');
     if (!attackStats) throw new Error('No attackStats was passed to canUseReaction');
@@ -64,13 +67,13 @@ function canUseReaction(actor, reaction, attackStats) {
  * @param object skill       The skill being performed.
  * @param object target      The target to attack for active abilities.
  */
-function isTargetInRangeOfSkill(actor, skill, pointOrTarget) {
+export function isTargetInRangeOfSkill(actor, skill, pointOrTarget) {
     if (skill.base.target === 'none') return true;
     var isAOE = skill.cleave || skill.tags['nova'] || skill.tags['field'] || skill.tags['blast'] || skill.tags['rain'];
     // Nova skills use area instead of range for checking for valid targets.
     if (skill.tags['nova']) return getDistance(actor, pointOrTarget) < skill.area * 32 / 2;
     if (skill.tags['field']) return getDistance(actor, pointOrTarget) < skill.area * 32 / 2;
-    return getDistance(actor, pointOrTarget) <= (skill.range + ifdefor(skill.teleport, 0)) * 32;
+    return getDistance(actor, pointOrTarget) <= (skill.range + (skill.teleport || 0)) * 32;
 }
 
 function isActorDying(actor) {
@@ -97,7 +100,7 @@ function isActorDying(actor) {
  *
  * @return boolean True if the skill was used.
  */
-function shouldUseSkillOnTarget(actor, skill, target) {
+export function shouldUseSkillOnTarget(actor, skill, target) {
     if (!actor.character && target.character) return true; // Enemies always use skills on the hero, since they win if the hero dies.
     if ((skill.base.target || 'enemies') === 'enemies') {
         var percentHealth = target.health / target.maxHealth;
@@ -161,7 +164,7 @@ function shouldUseSkillOnTarget(actor, skill, target) {
  *
  * @return boolean True if the skill was used. Only false if the ability is probabilistic like raise dead.
  */
-function prepareToUseSkillOnTarget(actor, skill, target) {
+export function prepareToUseSkillOnTarget(actor, skill, target) {
     if (target.isActor && ifdefor(skill.base.consumeCorpse) && target.isDead) {
         removeActor(target);
     }
@@ -201,7 +204,7 @@ function prepareToUseSkillOnTarget(actor, skill, target) {
  *
  * @return boolean True if the skill was used. Only false if the ability is probabilistic like raise dead.
  */
-function useSkill(actor) {
+export function useSkill(actor) {
     var skill = actor.skillInUse;
     var target = actor.skillTarget
     if (!skill || !target) {
@@ -229,7 +232,7 @@ function useSkill(actor) {
  * @param object skill  The skill being performed.
  * @param object target The target to attack for active abilities.
  */
-function useReaction(actor, reaction, attackStats) {
+export function useReaction(actor, reaction, attackStats) {
     reaction.readyAt = actor.time + ifdefor(reaction.cooldown, 0);
     // Show the name of the skill. When skills have distinct visible animations, we should probably remove this.
     if (reaction.base.showName) {
@@ -785,7 +788,7 @@ skillDefinitions.reflect = {
     }
 };
 
-function gainReflectionBarrier(actor, amount) {
+export function gainReflectionBarrier(actor, amount) {
     actor.maxReflectBarrier = actor.maxHealth;
     actor.reflectBarrier = Math.min(actor.maxReflectBarrier, ifdefor(actor.reflectBarrier, 0) + amount);
 }

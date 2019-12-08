@@ -6,6 +6,7 @@ import { MAP_LEFT, MAP_TOP, MAP_WIDTH, MAP_HEIGHT, WORLD_RADIUS } from 'app/game
 import { drawAbilityIcon, requireImage } from 'app/images';
 import { mapLocation } from 'app/map';
 import { drawTextureMap } from 'app/render/drawTextureMap';
+import { abbreviate } from 'app/utils/formatters';
 import { rectangle } from 'app/utils/index';
 import Vector from 'app/utils/Vector';
 import { worldCamera } from 'app/worldCamera';
@@ -261,7 +262,7 @@ function drawMap() {
             context.fillStyle = 'white';
             context.font = '10px sans-serif';
             context.textAlign = 'center'
-            context.fillText(divinityScore.abbreviate(), levelData.left + 20, levelData.top + 42);
+            context.fillText(abbreviate(divinityScore), levelData.left + 20, levelData.top + 42);
             if (divinityScore >= Math.round(difficultyBonusMap.hard * 1.2 * baseDivinity(levelData.level))) {
                 source = goldSource;
             } else if (divinityScore >= Math.round(baseDivinity(levelData.level))) {

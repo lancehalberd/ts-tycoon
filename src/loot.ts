@@ -79,7 +79,7 @@ function coinTreasurePopup(coin, x, y, z, vx, vy, vz, delay) {
     };
 }
 
-function coinsLootDrop(amount) {
+export function coinsLootDrop(amount) {
     return {
         gainLoot(hero) {
             gain('coins', Math.round(amount * (1 + hero.increasedDrops)));
@@ -142,7 +142,7 @@ function animaTreasurePopup(hero, coin, x, y, z, vx, vy, vz, delay) {
         }
     };
 }
-function animaLootDrop(amount) {
+export function animaLootDrop(amount) {
     return {
         gainLoot(hero) {
             gain('anima', Math.round(amount * (1 + hero.increasedDrops)));

@@ -70,7 +70,7 @@ function selectDifficulty(difficulty) {
     startLevel(state.selectedCharacter, state.selectedCharacter.selectedLevelKey);
 }
 
-function getEndlessLevel(character, level) {
+export function getEndlessLevel(character, level) {
     const times = character.levelTimes[level.levelKey] || {};
     return times['endless'] || level.level + 5;
 }

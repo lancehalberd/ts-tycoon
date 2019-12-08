@@ -1,6 +1,8 @@
 import { initializeVariableObject } from 'app/bonuses';
-import { makeJewelProper } from 'app/jewels';
-import { importState } from 'app/state';
+import { actorHelpText } from 'app/character';
+import { itemsByKey } from 'app/inventory';
+import { makeJewelProper, makeFixedJewel } from 'app/jewels';
+import { exportState, getState, importState, SavedState } from 'app/state';
 import { makeShape } from 'app/utils/polygon';
 
 export function loadSavedData() {
@@ -9,14 +11,14 @@ export function loadSavedData() {
     }
     const importedSaveData = window.localStorage.getItem("savedGame");
     if (importedSaveData) {
-        importState(importedSaveData);
+        importState(JSON.parse(importedSaveData));
         return true;
     }
     return false;
 }
 
 export function saveGame() {
-    window.localStorage.setItem('savedGame', exportState(state));
+    window.localStorage.setItem('savedGame', exportState(getState()));
 }
 export function eraseSave() {
     window.localStorage.clear()
@@ -37,7 +39,7 @@ export function exportCharacter(character) {
         applicationAge: character.applicationAge || 0,
     };
 }
-function importCharacter(characterData) {
+export function importCharacter(characterData) {
     var character = {};
     // Old saves used adventurer instead of hero.
     character.hero = character.adventurer = importAdventurer(characterData.hero || characterData.adventurer);
@@ -115,7 +117,7 @@ export function exportItem(item) {
     return data;
 }
 function importItem(itemData) {
-    var baseItem = itemsByKey[itemData.itemKey];
+    const baseItem = itemsByKey[itemData.itemKey];
     // This can happen if a base item was removed since they last saved the game.
     if (!baseItem) return null;
     var item = {

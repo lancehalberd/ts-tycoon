@@ -1,10 +1,13 @@
 import { showAreaMenu } from 'app/areaMenu';
+import { addBonusSourceToObject, removeBonusSourceFromObject} from 'app/bonuses';
 import { map } from 'app/content/mapData';
 import { setContext } from 'app/context';
 import {
+    editingMapState,
     handleEditMapMouseDown,
     handleEditMapMouseMove,
     handleEditMapMouseUp,
+    startEditingLevel,
 } from 'app/development/editLevel';
 import {
     handleChildEvent,
@@ -21,17 +24,16 @@ import { hidePointsPreview, previewPointsChange } from 'app/points';
 import { saveGame } from 'app/saveGame';
 import { getState } from 'app/state';
 import { isPointInRect } from 'app/utils/index';
+import { isMouseDown, isRightMouseDown } from 'app/utils/mouse';
 import SphereVector from 'app/utils/SphereVector';
 import Vector from 'app/utils/Vector';
 import { worldCamera } from 'app/WorldCamera';
 
 export const mapLocation = new SphereVector(WORLD_RADIUS);
-let editingMap = false;
-let movedMap = true;
 
 var mapCenteringTarget = null, centerInstantly = false;
 function updateMap() {
-    if (draggedMap) {
+    if (mapState.draggedMap) {
         return;
     }
     if (mapCenteringTarget) {
@@ -68,31 +70,34 @@ function updateMap() {
 export function centerMapOnLevel(levelData, instant = false) {
     centerInstantly = instant;
     mapCenteringTarget = levelData;
-    movedMap = true;
+    mapState.movedMap = true;
 }
 
 export const mapState = {
     draggedMap: false,
     visibleNodes: {},
     currentMapTarget: null,
+    mapDragX: null,
+    mapDragY: null,
+    movedMap: true,
 };
 
 function getMapPopupTarget(x, y) {
     var newMapTarget = null;
-    if (!draggedMap) {
+    if (!mapState.draggedMap) {
         newMapTarget = getMapPopupTargetProper(x, y);
     }
-    if (newMapTarget !== currentMapTarget) {
+    if (newMapTarget !== mapState.currentMapTarget) {
         const state = getState();
         var level = newMapTarget ? (newMapTarget.isShrine ? newMapTarget.level.level : newMapTarget.level) : undefined;
         updateDamageInfo(state.selectedCharacter, $('.js-characterColumn .js-stats'), level);
     }
-    if ((currentMapTarget && currentMapTarget.isShrine) && !(newMapTarget && newMapTarget.isShrine)) {
+    if ((mapState.currentMapTarget && mapState.currentMapTarget.isShrine) && !(newMapTarget && newMapTarget.isShrine)) {
         hidePointsPreview();
     }
-    currentMapTarget = newMapTarget;
-    mainCanvas.classList.toggle('clickable', !!currentMapTarget);
-    return currentMapTarget;
+    mapState.currentMapTarget = newMapTarget;
+    mainCanvas.classList.toggle('clickable', !!mapState.currentMapTarget);
+    return mapState.currentMapTarget;
 }
 function getMapPopupTargetProper(x, y) {
     if (editingLevel) {
@@ -179,95 +184,75 @@ export function getMapTarget(x, y) {
     return target;
 }
 
-function toggleLevelLink(levelA, levelB) {
-    var index = levelA.unlocks.indexOf(levelB.levelKey);
-    if (index >= 0) {
-        levelA.unlocks.splice(index, 1);
-    } else {
-        levelA.unlocks.push(levelB.levelKey);
-    }
-}
-
-var mapDragX = mapDragY = null, draggedMap = false;
-var selectionStartPoint = null;
-var originalSelectedNodes = [];
-
 // Disable context menu while editing the map because the right click is used for making nodes and edges.
 mainCanvas.oncontextmenu = function (event) {
     return !editingMap;
 };
 function handleMapMouseDown(x, y, event) {
-    //console.log(camera.unprojectPoint(x + mapLeft, y + mapTop, WORLD_RADIUS));
+    //console.log(camera.unprojectPoint(x + MAP_LEFT, y + MAP_TOP, WORLD_RADIUS));
     const newMapTarget = getMapTarget(x, y);
     if (editingMap) {
         handleEditMapMouseDown(x, y, event, newMapTarget);
     }
     if (event.which != 1) return; // Handle only left click.
     if (!editingMap && newMapTarget) {
-        if (currentMapTarget.levelKey === 'guild') {
-            currentMapTarget = null;
+        if (mapState.currentMapTarget.levelKey === 'guild') {
+            mapState.currentMapTarget = null;
             setContext('guild');
             return;
-        } else if (currentMapTarget.isShrine) {
+        } else if (mapState.currentMapTarget.isShrine) {
             // Show them the area menu if they click on the shrine from a different area.
-            state.selectedCharacter.selectedLevelKey = currentMapTarget.level.levelKey;
+            state.selectedCharacter.selectedLevelKey = mapState.currentMapTarget.level.levelKey;
             showAreaMenu();
-            currentMapTarget = null;
+            mapState.currentMapTarget = null;
             $('.js-mainCanvas').toggleClass('clickable', false);
             return;
-        } else if (currentMapTarget.levelKey) {
-            state.selectedCharacter.selectedLevelKey = currentMapTarget.levelKey;
+        } else if (mapState.currentMapTarget.levelKey) {
+            state.selectedCharacter.selectedLevelKey = mapState.currentMapTarget.levelKey;
             showAreaMenu();
-            currentMapTarget = null;
+            mapState.currentMapTarget = null;
             $('.js-mainCanvas').toggleClass('clickable', false);
             return;
         }
     }
-    draggedMap = false;
-    mapDragX = x;
-    mapDragY = y;
+    mapState.draggedMap = false;
+    mapState.mapDragX = x;
+    mapState.mapDragY = y;
 }
-$('.js-mouseContainer').on('dblclick', '.js-mainCanvas', function (event) {
-    var x = event.pageX - $(this).offset().left;
-    var y = event.pageY - $(this).offset().top;
-    if (editingMap) {
-        startEditingLevel(getMapTarget(x, y));
-    }
-});
 /*$('.js-mouseContainer').on('click', '.js-mainCanvas', function (event) {
     console.log('click');
 });*/
 document.addEventListener('mouseup', function (event) {
     var x = event.pageX - $('.js-mainCanvas').offset().left;
     var y = event.pageY - $('.js-mainCanvas').offset().top;
-    mapDragX = mouseDragY = null;
-    if (editingMap) {
+    mapState.mapDragX = mapState.mapDragY = null;
+    if (editingMapState.editingMap) {
         handleEditMapMouseUp(x, y, event);
     }
     if (mapState.draggedMap) {
-        mapStatedraggedMap = false;
+        mapState.draggedMap = false;
         return;
     }
 });
 $('.js-mouseContainer').on('mousemove', function (event) {
-    if (!mouseDown && !rightMouseDown) return;
-    if (state.selectedCharacter.context !== 'map') return;
-    draggedMap = true;
+    if (!isMouseDown() && !isRightMouseDown()) return;
+    if (getState().selectedCharacter.context !== 'map') return;
+    mapState.draggedMap = true;
     var x = event.pageX - $(this).offset().left;
     var y = event.pageY - $(this).offset().top;
-    if (editingMap) {
+    if (editingMapState.editingMap) {
         handleEditMapMouseMove(x, y, event);
-    } else if (mapDragX !== null && mapDragY !== null) {
-        mapLocation.moveRight((mapDragX - x));
-        mapLocation.moveUp(-(mapDragY - y));
-        movedMap = true;
-        mapDragX = x;
-        mapDragY = y;
+    } else if (mapState.mapDragX !== null && mapState.mapDragY !== null) {
+        mapLocation.moveRight((mapState.mapDragX - x));
+        mapLocation.moveUp(-(mapState.mapDragY - y));
+        mapState.movedMap = true;
+        mapState.mapDragX = x;
+        mapState.mapDragY = y;
     }
 });
 
 $('body').on('click', '.js-confirmSkill', function (event) {
-    var character = state.selectedCharacter;
+    var character = getState().selectedCharacter;
     var level = map[character.currentLevelKey];
     var skill = character.board.boardPreview.fixed[0].ability;
     character.divinity -= totalCostForNextLevel(character, level);
@@ -295,7 +280,7 @@ $('body').on('click', '.js-confirmSkill', function (event) {
 handleChildEvent('click', document.body, '.js-cancelSkill', () => {
     setContext('adventure');
 });
-function unlockMapLevel(levelKey) {
-    state.visibleLevels[levelKey] = true;
+export function unlockMapLevel(levelKey) {
+    getState().visibleLevels[levelKey] = true;
 }
 

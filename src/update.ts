@@ -1,6 +1,7 @@
 import { initializeGame } from 'app/initialize';
 import { areAllImagesLoaded } from 'app/images';
-import { areAllSoundsLoaded } from 'app/sounds';
+import { getMousePosition, isMouseDown } from 'app/utils/mouse';
+import { areAllSoundsLoaded } from 'app/utils/sounds';
 import { mainCanvas } from 'app/dom';
 
 let isGameInitialized = false;
@@ -42,7 +43,7 @@ export function update() {
     }
     if (state.selectedCharacter.context === 'adventure' || state.selectedCharacter.context === 'guild') {
         var hero = state.selectedCharacter.adventurer;
-        if (mouseDown && state.selectedCharacter.hero.area && clickedToMove) {
+        if (isMouseDown() && state.selectedCharacter.hero.area && clickedToMove) {
             var targetZ = -(mousePosition[1] - groundY) * 2;
             if (targetZ >= -200 || targetZ <= 200) {
                 setActorDestination(hero, {'x': hero.area.cameraX + mousePosition[0], 'z': targetZ});
@@ -60,7 +61,7 @@ export function update() {
         debugger;
     }*/
 }
-/*
+
 function updateAreaCamera(area, hero) {
     // Only update the camera for the guild for the selected character, but
     // always update the camera for characters in adventure areas.
@@ -70,11 +71,11 @@ function updateAreaCamera(area, hero) {
     }
 }
 
-const getTargetCameraX = (actor) => {
-    var mousePosition = relativeMousePosition($(mainCanvas));
+export const getTargetCameraX = (actor) => {
+    const [x, y] = getMousePosition(mainCanvas);
     var area = actor.area;
     var centerX = actor.x;
-    var mouseX = Math.max(0, Math.min(800, mousePosition[0]));
+    var mouseX = Math.max(0, Math.min(800, x));
     if (actor.activity && actor.activity.type === 'move') {
         centerX = (centerX + actor.activity.x) / 2;
     } else if (actor.goalTarget && !actor.goalTarget.isDead) {
@@ -101,4 +102,4 @@ function isCharacterPaused(character) {
     if (hero.chargeEffect) return false;
     if (!hero.area.enemies) return false;
     return true;
-}*/
+}

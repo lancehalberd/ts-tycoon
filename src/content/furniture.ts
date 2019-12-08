@@ -489,7 +489,7 @@ function addAllUnlockedFurnitureBonuses() {
     recomputeAllCharacterDirtyStats();
 }
 
-function addAreaFurnitureBonuses(guildArea, recompute = false) {
+export function addAreaFurnitureBonuses(guildArea, recompute = false) {
     for (var object of guildArea.objects) addFurnitureBonuses(object, false);
     if (recompute) recomputeAllCharacterDirtyStats();
 }

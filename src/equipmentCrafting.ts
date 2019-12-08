@@ -2,14 +2,16 @@ import { addPopup, getPopup, removePopup } from 'app/popup';
 import { craftingCanvas, craftingContext, query, tag, tagElement, titleDiv, bodyDiv } from 'app/dom';
 import { bonusSourceHelpText } from 'app/helpText';
 import { drawTintedImage, images } from 'app/images';
+import { makeItem } from 'app/inventory';
 import { hidePointsPreview, points, previewPointsChange, spend } from 'app/points';
 import { saveGame } from 'app/saveGame';
+import { getState } from 'app/state';
 import { ifdefor } from 'app/utils/index';
 import { fixedDigits } from 'app/utils/formatters';
 import { getMousePosition } from 'app/utils/mouse';
 
-const CRAFTED_NORMAL = 1;
-const CRAFTED_UNIQUE = 2;
+export const CRAFTED_NORMAL = 1;
+export const CRAFTED_UNIQUE = 2;
 
 var overCraftingItem = null;
 var lastCraftedItem = null;
@@ -422,7 +424,8 @@ function checkToShowCraftingToopTip() {
     addPopup(overCraftingItem, titleDiv(title) + sections.join('<br/>'));
 }
 
-function unlockItemLevel(level) {
+export function unlockItemLevel(level) {
+    const state = getState();
     if (level <= state.maxCraftingLevel) {
         return
     }

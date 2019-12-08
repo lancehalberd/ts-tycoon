@@ -1,24 +1,25 @@
 import { hidePointsPreview, points, previewPointsChange, spend } from 'app/points';
 import { saveGame } from 'app/saveGame';
+import Random from 'app/utils/Random';
 
-var prefixes = [];
-var prefixesByKey = {};
+const prefixes = [];
+export const prefixesByKey = {};
 var allEnchantments = [];
 function addPrefix(level, name, tags, bonuses) {
     var bonusesKey = '';
     for (var bonusKey in bonuses) bonusesKey += bonusKey;
     var affix = {level, 'name':name, 'tags':tags, bonuses, 'prefix': true, bonusesKey};
-    prefixes[level] = ifdefor(prefixes[level], []);
+    prefixes[level] = prefixes[level] || [];
     prefixes[level].push(affix);
     allEnchantments.push(affix);
 }
-var suffixes = [];
-var suffixesByKey = {};
+const suffixes = [];
+export const suffixesByKey = {};
 function addSuffix(level, name, tags, bonuses) {
     var bonusesKey = '';
     for (var bonusKey in bonuses) bonusesKey += bonusKey;
     var affix = {level, 'name':name, 'tags':tags, bonuses, 'suffix': true, bonusesKey};
-    suffixes[level] = ifdefor(suffixes[level], []);
+    suffixes[level] = suffixes[level] || [];
     suffixes[level].push(affix);
     allEnchantments.push(affix);
 }
@@ -356,7 +357,7 @@ addSuffix(12, 'Minor Versitility', 'diamondring', {'+dexterity': [3, 6], '+intel
 addSuffix(32, 'Major Versitility', 'diamondring', {'+dexterity': [7, 10], '+intelligince': [7, 10], '+strength': [7, 10]});
 addSuffix(62, 'Peerless Versitility', 'diamondring', {'+dexterity': [11, 16], '+intelligince': [11, 16], '+strength': [11, 16]});
 
-var affixesByKey = {};
+export const affixesByKey = {};
 for (var affix of allEnchantments) {
     var key = affix.name.replace(/\s*/g, '').toLowerCase();
     if (affixesByKey[key]) throw new Error('affix key ' + key + ' is already used.');
@@ -365,14 +366,14 @@ for (var affix of allEnchantments) {
     affixesByKey[key] = affix;
     affix.key = key;
 }
-function makeAffix(baseAffix) {
+export function makeAffix(baseAffix) {
     var affix = {
         'base': baseAffix,
         'bonuses': {}
     };
     $.each(baseAffix.bonuses, function (key, value) {
         if (Array.isArray(value)) {
-            affix.bonuses[key] = Random.range(value[0], value[1]) / ifdefor(value[2], 1);
+            affix.bonuses[key] = Random.range(value[0], value[1]) / (value[2] || 1);
         } else {
             affix.bonuses[key] = value;
         }

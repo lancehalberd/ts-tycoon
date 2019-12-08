@@ -1,3 +1,4 @@
+import { addBonusSourceToObject, removeBonusSourceFromObject} from 'app/bonuses';
 import { createCanvas, divider, query, tagElement } from 'app/dom';
 import { fixedDigits, percent } from 'app/utils/formatters';
 import { getState } from 'app/state';
@@ -38,6 +39,10 @@ export interface Jewel {
 const originalJewelScale = 30;
 const displayJewelShapeScale = 30;
 const qualifierNames: JewelQualifierName[] = ['Perfect', 'Brilliant', 'Shining', '', 'Dull'];
+
+export function convertShapeDataToShape(shapeData) {
+    return makeShape(shapeData.p[0] * displayJewelShapeScale / originalJewelScale, shapeData.p[1] * displayJewelShapeScale / originalJewelScale, (shapeData.t % 360 + 360) % 360, shapeDefinitions[shapeData.k][0], displayJewelShapeScale);
+}
 
 export function makeJewel(tier: JewelTier, shapeType: ShapeType, components: JewelComponents, quality: number): Jewel {
     const shapeDefinition = shapeDefinitions[shapeType][0];
@@ -287,7 +292,7 @@ export function updateJewelBonuses(character) {
             = bonusSourceHelpText(character.jewelBonuses, character.adventurer);
     }
 }
-function makeFixedJewel(shape, character, ability) {
+export function makeFixedJewel(shape, character, ability) {
     shape.color = '#333333';
     return {
         shape,

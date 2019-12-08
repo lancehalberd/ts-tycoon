@@ -1,3 +1,6 @@
+import { affixesByKey, makeAffix, prefixesByKey, suffixesByKey } from 'app/enchanting';
+import { itemsByKey } from 'app/inventory';
+
 function addUnique(itemKey, initialChance, incrementChance, displayName, prefixes, suffixes) {
     for (var prefix of prefixes) {
         if (!prefixesByKey[prefix]) throw new Error("no prefix called " + prefix);
@@ -16,7 +19,7 @@ function addUnique(itemKey, initialChance, incrementChance, displayName, prefixe
     };
 }
 function checkToMakeItemUnique(item) {
-    var uniqueData = ifdefor(item.base.unique);
+    const uniqueData = item.base.unique;
     if (!uniqueData) {
         return;
     }
@@ -30,7 +33,7 @@ function checkToMakeItemUnique(item) {
     makeItemUnique(item);
 }
 function makeItemUnique(item) {
-    var uniqueData = ifdefor(item.base.unique);
+    const uniqueData = item.base.unique;
     if (!uniqueData) {
         return;
     }

@@ -1,17 +1,49 @@
-import { recomputeDirtyStats } from 'app/bonuses';
-import { jewelsCanvas, updateConfirmSkillConfirmationButtons } from 'app/dom';
+import { updateActorDimensions } from 'app/adventure';
+import { updateAdventureButtons } from 'app/adventureButtons';
+import {
+    addBonusSourceToObject, addVariableChildToObject, BonusSource,
+    findVariableChildForBaseObject,
+    initializeVariableObject,
+    recomputeDirtyStats, removeBonusSourceFromObject
+} from 'app/bonuses';
+import { abilities } from 'app/content/abilities';
+import { updateTrophy } from 'app/content/achievements';
+import { characterClasses } from 'app/content/jobs';
+import { map } from 'app/content/mapData';
+import { setupActorSource } from 'app/content/monsters';
+import { showContext } from 'app/context';
+import {
+    bodyDiv, createCanvas, jewelsCanvas, query, tag,
+    titleDiv, updateConfirmSkillConfirmationButtons
+} from 'app/dom';
+import { CRAFTED_NORMAL } from 'app/equipmentCrafting';
+import { drawBoardBackground } from 'app/drawBoard';
 import { bonusSourceHelpText } from 'app/helpText';
-import { jewelInventoryState } from 'app/jewelInventory';
+import { images } from 'app/images';
+import {
+    equipItemProper, equipmentSlots, makeItem,
+    updateEquipableItems, updateOffhandDisplay,
+} from 'app/inventory';
+import { equipJewel, jewelInventoryState } from 'app/jewelInventory';
+import { convertShapeDataToShape, makeFixedJewel, updateJewelBonuses } from 'app/jewels';
+import { smallJewelLoot } from 'app/loot';
 import { centerMapOnLevel } from 'app/map';
+import { findActionByTag, getBasicAttack, updateDamageInfo } from 'app/performAttack';
+import { gain } from 'app/points';
 import { getCanvasPopupTarget } from 'app/popup';
 import { getState } from 'app/state';
+import { getTargetCameraX } from 'app/update';
+import { abbreviate } from 'app/utils/formatters';
+import { ifdefor, removeElementFromArray } from 'app/utils/index';
+import { centerShapesInRectangle } from 'app/utils/polygon';
+import Random from 'app/utils/Random';
 
 interface Character {
     adventurer: any,
 
 }
 
-const personFrames = 5;
+export const personFrames = 5;
 const clothes = [1, 3];
 const hair = [clothes[1] + 1, clothes[1] + 4];
 const names = ['Chris', 'Leon', 'Hillary', 'Michelle', 'Rob', 'Reuben', 'Kingston', 'Silver', 'Blaise'];
@@ -22,7 +54,7 @@ const names = ['Chris', 'Leon', 'Hillary', 'Michelle', 'Rob', 'Reuben', 'Kingsto
 // here but they could probably be added separately. BonusMaxHealth is used to track
 // overhealing which increases maxHealth for the duration of one adventure, and healthRegen
 // is the passive healthRegen that all actors are given.
-const coreStatBonusSource = {'bonuses': {
+export const coreStatBonusSource: BonusSource = {'bonuses': {
     '%evasion': [.002, '*', '{dexterity}'],
     '%attackSpeed': [.002, '*', '{dexterity}'],
     '+ranged:weaponPhysicalDamage': ['{dexterity}', '/', 10],
@@ -51,12 +83,6 @@ const coreStatBonusSource = {'bonuses': {
     '$lifeBarColor': 'red'
 }};
 
-function removeAdventureEffects(actor) {
-    setStat(actor, 'bonusMaxHealth', 0);
-    while (actor.allEffects.length) removeBonusSourceFromObject(actor, actor.allEffects.pop(), false);
-    initializeActorForAdventure(actor);
-    recomputeDirtyStats(actor);
-}
 export function initializeActorForAdventure(actor) {
     actor.isActor = true;
     setActorHealth(actor, actor.maxHealth);
@@ -80,63 +106,68 @@ export function initializeActorForAdventure(actor) {
     actor.temporalShield = actor.maxTemporalShield = (stopTimeAction ? stopTimeAction.duration : 0);
     updateActorDimensions(actor);
 }
-function refreshStatsPanel(character, $statsPanel) {
-    character = ifdefor(character, state.selectedCharacter);
-    $statsPanel = ifdefor($statsPanel, $('.js-characterColumn .js-stats'));
-    var adventurer = character.adventurer;
-    $statsPanel.find('.js-playerName').text(adventurer.job.name + ' ' + adventurer.name);
-    $statsPanel.find('.js-playerLevel').text(adventurer.level);
-    $statsPanel.find('.js-fame').text(character.fame.format(1));
-    $statsPanel.find('.js-dexterity').text(adventurer.dexterity.format(0));
-    $statsPanel.find('.js-strength').text(adventurer.strength.format(0));
-    $statsPanel.find('.js-intelligence').text(adventurer.intelligence.format(0));
-    $('.js-global-divinity').text(character.divinity.abbreviate());
-    $statsPanel.find('.js-maxHealth').text(adventurer.maxHealth.format(0).abbreviate());
+export function refreshStatsPanel(
+    character = getState().selectedCharacter,
+    statsPanelElement: HTMLElement = query('.js-characterColumn .js-stats')
+) {
+    const adventurer = character.adventurer;
+    statsPanelElement.querySelector('.js-playerName').textContent = adventurer.job.name + ' ' + adventurer.name;
+    statsPanelElement.querySelector('.js-playerLevel').textContent = adventurer.level;
+    statsPanelElement.querySelector('.js-fame').textContent = character.fame.toFixed(1);
+    statsPanelElement.querySelector('.js-dexterity').textContent = adventurer.dexterity.toFixed(0);
+    statsPanelElement.querySelector('.js-strength').textContent = adventurer.strength.toFixed(0);
+    statsPanelElement.querySelector('.js-intelligence').textContent = adventurer.intelligence.toFixed(0);
+    query('.js-global-divinity').textContent = abbreviate(character.divinity);
+    statsPanelElement.querySelector('.js-maxHealth').textContent = abbreviate(adventurer.maxHealth, 0);
     if (adventurer.actions.length) {
-        $statsPanel.find('.js-range').text(getBasicAttack(adventurer).range.format(2));
+        statsPanelElement.querySelector('.js-range').textContent = getBasicAttack(adventurer).range.toFixed(2);
     }
-    $statsPanel.find('.js-speed').text(adventurer.speed.format(1));
-    $statsPanel.find('.js-healthRegen').text(adventurer.healthRegen.format(1));
-    updateDamageInfo(character, $statsPanel);
+    statsPanelElement.querySelector('.js-speed').textContent = adventurer.speed.toFixed(1);
+    statsPanelElement.querySelector('.js-healthRegen').textContent = adventurer.healthRegen.toFixed(1);
+    updateDamageInfo(character, statsPanelElement);
 }
 function newCharacter(job) {
-    var character = {};
-    var hero = makeAdventurerFromJob(job, 1, ifdefor(job.startingEquipment, {}));
-    character.adventurer = hero;
-    character.hero = hero;
-    hero.character = character;
-    hero.heading = [1, 0, 0]; // Character moves left to right by default.
-    hero.bonusMaxHealth = 0;
+    const hero = makeAdventurerFromJob(job, 1, job.startingEquipment || {});
     setActorHealth(hero, hero.maxHealth);
-    var characterCanvas = createCanvas(40, 20);
-    character.$characterCanvas = $(characterCanvas);
-    character.$characterCanvas.addClass('js-character character')
-        .attr('helptext', '').data('helpMethod', () => actorHelpText(hero))
-        .data('character', character);
-    character.characterContext = characterCanvas.getContext("2d");
-    character.boardCanvas = createCanvas(jewelsCanvas.width, jewelsCanvas.height);
-    character.boardContext = character.boardCanvas.getContext("2d");
-    character.gameSpeed = 1;
-    character.replay = false;
-    character.divinityScores = {};
-    character.levelTimes = {};
-    character.divinity = 0;
-    character.currentLevelKey = 'guild';
-    character.fame = 1;
-    character.autoActions = {};
-    character.manualActions = {};
-    var abilityKey = ifdefor(abilities[job.key]) ? job.key : 'heal';
+    const characterCanvas = createCanvas(40, 20);
+    const characterContext = characterCanvas.getContext('2d');
+    characterCanvas.classList.add('js-character', 'character');
+    const boardCanvas = createCanvas(jewelsCanvas.width, jewelsCanvas.height);
+    const boardContext = boardCanvas.getContext('2d');
+    const abilityKey = abilities[job.key] ? job.key : 'heal';
     hero.abilities.push(abilities[abilityKey]);
-    if (window.location.search.substr(1) === 'test') {
-        for (var i = 0; i < ifdefor(window.testAbilities, []).length; i++) {
-            hero.abilities.push(testAbilities[i]);
+    //TODO
+    // .attr('helptext', '').data('helpMethod', () => actorHelpText(hero))
+    //    .data('character', character);
+    const character = {
+        adventurer: hero,
+        hero,
+        characterCanvas,
+        characterContext,
+        boardCanvas,
+        boardContext,
+        gameSpeed: 1,
+        replay: false,
+        divinityScores: {},
+        levelTimes: {},
+        divinity: 0,
+        currentLevelKey: 'guild',
+        fame: 1,
+        autoActions: {},
+        manualActions: {},
+        board: null,
+    };
+    hero.character = character;
+    character.board = readBoardFromData(job.startingBoard, character, abilities[abilityKey], true)
+    /*if (window.location.search.substr(1) === 'test') {
+        for (let i = 0; i < (window.testAbilities || []).length; i++) {
+            hero.abilities.push(window.testAbilities[i]);
             console.log(abilityHelpText(testAbilities[i], hero));
         }
-    }
-    character.board = readBoardFromData(job.startingBoard, character, abilities[abilityKey], true);
+    }*/
     centerShapesInRectangle(character.board.fixed.map(j => j.shape).concat(character.board.spaces), rectangle(0, 0, character.boardCanvas.width, character.boardCanvas.height));
     drawBoardBackground(character.boardContext, character.board);
-    ifdefor(job.jewelLoot, [smallJewelLoot, smallJewelLoot, smallJewelLoot]).forEach(function (loot) {
+    for (const loot of (job.jewelLoot || [smallJewelLoot, smallJewelLoot, smallJewelLoot])) {
         // Technically this gives the player the jewel, which we don't want to do for characters
         // generated that they don't control, but it immediately assigns it to the character,
         // so as long as this doesn't fail, that should not matter.
@@ -145,13 +176,10 @@ function newCharacter(job) {
         if (!equipJewel(character, false, false)) {
             console.log("Failed to place jewel on starting board.");
         }
-    });
+    }
     jewelInventoryState.draggedJewel = null;
     jewelInventoryState.overJewel = null;
     return character;
-}
-function convertShapeDataToShape(shapeData) {
-    return makeShape(shapeData.p[0] * displayJewelShapeScale / originalJewelScale, shapeData.p[1] * displayJewelShapeScale / originalJewelScale, (shapeData.t % 360 + 360) % 360, shapeDefinitions[shapeData.k][0], displayJewelShapeScale);
 }
 function makeAdventurerFromData(adventurerData) {
     var personCanvas = createCanvas(personFrames * 96, 64);
@@ -189,7 +217,10 @@ function makeAdventurerFromData(adventurerData) {
         'attackCooldown': 0,
         'percentHealth': 1,
         'percentTargetHealth': 1,
-        'helpMethod': actorHelpText
+        'helpMethod': actorHelpText,
+        character: null,
+        heading: [1, 0, 0], // Character moves left to right by default.
+        bonusMaxHealth: 0,
     };
     initializeVariableObject(adventurer, {'variableObjectType': 'actor'}, adventurer);
     equipmentSlots.forEach(function (type) {
@@ -198,18 +229,20 @@ function makeAdventurerFromData(adventurerData) {
     return adventurer;
 }
 function makeAdventurerFromJob(job, level, equipment) {
-    var adventurer = makeAdventurerFromData({
+    const adventurer = makeAdventurerFromData({
         'jobKey': job.key,
         level,
         'name': Random.element(names),
         'hairOffset': Random.range(0, 6),
         'skinColorOffset': Random.range(0, 2),
-        equipment
+        equipment,
     });
-    $.each(equipment, function (key, item) {
-        state.craftedItems[item.key] = ifdefor(state.craftedItems[item.key], 0) | CRAFTED_NORMAL;
+    const state = getState();
+    for (const key of equipment) {
+        const item = equipment[key];
+        state.savedState.craftedItems[item.key] = (state.savedState.craftedItems[item.key] || 0) | CRAFTED_NORMAL;
         equipItemProper(adventurer, makeItem(item, 1), false);
-    });
+    }
     updateAdventurer(adventurer);
     return adventurer;
 }
@@ -226,39 +259,39 @@ export function readBoardFromData(boardData, character, ability, confirmed = fal
     };
 }
 
-function addActions(actor, source) {
+export function addActions(actor, source) {
     var effect, action;
-    if (ifdefor(source.onHitEffect)) {
+    if (source.onHitEffect) {
         effect = initializeVariableObject({}, source.onHitEffect, actor);
         effect.ability = source;
         actor.onHitEffects.push(effect);
         addVariableChildToObject(actor, effect);
     }
-    if (ifdefor(source.onCritEffect)) {
+    if (source.onCritEffect) {
         effect = initializeVariableObject({}, source.onCritEffect, actor);
         effect.ability = source;
         actor.onCritEffects.push(effect);
         addVariableChildToObject(actor, effect);
     }
-    if (ifdefor(source.onMissEffect)) {
+    if (source.onMissEffect) {
         effect = initializeVariableObject({}, source.onMissEffect, actor);
         effect.ability = source;
         actor.onMissEffects.push(effect);
         addVariableChildToObject(actor, effect);
     }
-    if (ifdefor(source.action)) {
+    if (source.action) {
         action = initializeVariableObject({}, source.action, actor);
         action.ability = source;
         actor.actions.push(action);
         addVariableChildToObject(actor, action);
     }
-    if (ifdefor(source.reaction)) {
+    if (source.reaction) {
         action = initializeVariableObject({}, source.reaction, actor);
         action.ability = source;
         actor.reactions.push(action);
         addVariableChildToObject(actor, action);
     }
-    if (ifdefor(source.minionBonuses)) {
+    if (source.minionBonuses) {
         actor.minionBonusSources.push({'bonuses': source.minionBonuses});
     }
 }
@@ -417,7 +450,7 @@ function updateAdventurerGraphics(adventurer) {
     }
 }
 export function recomputeActorTags(actor) {
-    var tags = {'actor': true};
+    const tags = {'actor': true};
     if (actor.equipment) {
         if (!actor.equipment.weapon) {
             // Fighting unarmed is considered using a fist weapon.
@@ -430,7 +463,7 @@ export function recomputeActorTags(actor) {
             }
         } else {
             tags[actor.equipment.weapon.base.type] = true;
-            for (var tag of Object.keys(ifdefor(actor.equipment.weapon.base.tags, {}))) {
+            for (const tag of Object.keys(ifdefor(actor.equipment.weapon.base.tags, {}))) {
                 tags[tag] = true;
             }
             // You gain the noOffhand tag if offhand is empty and you are using a one handed weapon.
@@ -440,13 +473,13 @@ export function recomputeActorTags(actor) {
         }
         if (actor.equipment.offhand) {
             tags[actor.equipment.offhand.base.type] = true;
-            for (var tag of Object.keys(ifdefor(actor.equipment.offhand.base.tags, {}))) {
+            for (const tag of Object.keys(ifdefor(actor.equipment.offhand.base.tags, {}))) {
                 tags[tag] = true;
             }
         }
     }
     if (actor.base && actor.base.tags) {
-        for (var tag of ifdefor(actor.base.tags, [])) tags[tag] = true;
+        for (const tag of ifdefor(actor.base.tags, [])) tags[tag] = true;
         if (tags['ranged']) delete tags['melee'];
         else tags['melee'] = true;
     }
@@ -461,14 +494,7 @@ export function recomputeActorTags(actor) {
     }
     return tags;
 }
-function updateActorHelpText(actor) {
-    if (!$popup) return;
-    if (getCanvasPopupTarget() === actor) return $popup.html(actorHelpText(actor));
-    if (!$popupTarget) return;
-    const character = $popupTarget.data('character');
-    if (character && character.hero === actor) return $popup.html(actorHelpText(actor));
-}
-function actorHelpText(actor) {
+export function actorHelpText(actor) {
     var name = actor.name;
     if (actor.job) {
         name = actor.job.name + ' ' + name;
@@ -480,12 +506,13 @@ function actorHelpText(actor) {
     if (prefixNames.length) name = prefixNames.join(', ') + ' ' + name;
     if (suffixNames.length) name = name + ' of ' + suffixNames.join(' and ');
     var title = 'Lvl ' + actor.level + ' ' + name;
-    var sections = ['Health: ' + Math.ceil(actor.health).abbreviate() + '/' + Math.ceil(actor.maxHealth).abbreviate()];
+    var sections = ['Health: ' + abbreviate(Math.ceil(actor.health)) +
+        '/' + abbreviate(Math.ceil(actor.maxHealth))];
     if (actor.temporalShield > 0) {
         sections.push('Temporal Shield: ' + actor.temporalShield.format(1) + 's');
     }
     if (actor.reflectBarrier > 0) {
-        sections.push('Reflect: ' + actor.reflectBarrier.format(0).abbreviate());
+        sections.push('Reflect: ' + abbreviate(actor.reflectBarrier.format(0)));
     }
     ifdefor(actor.prefixes, []).forEach(function (affix) {
         sections.push(bonusSourceHelpText(affix, actor));
@@ -519,13 +546,13 @@ function gainLevel(adventurer) {
     refreshStatsPanel();
     updateEquipableItems();
     // Enable the skipShrines option only once an adventurer levels the first time.
-    state.skipShrinesEnabled = true;
-    $('.js-shrineButton').show();
+    getState().savedState.skipShrinesEnabled = true;
+    query('.js-shrineButton').style.display = '';
 }
-function damageActor(actor, damage) {
+export function damageActor(actor, damage) {
     actor.targetHealth -= damage;
 }
-function healActor(actor, healAmount) {
+export function healActor(actor, healAmount) {
     actor.targetHealth += healAmount;
 }
 function setActorHealth(actor, health) {
@@ -536,7 +563,7 @@ function setActorHealth(actor, health) {
 function divinityToLevelUp(currentLevel) {
     return Math.ceil(baseDivinity(currentLevel)*(1 + (currentLevel - 1) / 10));
 }
-function baseDivinity(level) {
+export function baseDivinity(level) {
     return 10 * Math.pow(1.25, level - 1);
 }
 
@@ -547,33 +574,37 @@ export function totalCostForNextLevel(character: Character, level): number {
     }
     return Math.ceil((1 - (character.adventurer.reducedDivinityCost || 0)) * totalDivinityCost);
 }
-var Hero = null;
-function setSelectedCharacter(character) {
+export function setSelectedCharacter(character) {
+    const state = getState();
     state.selectedCharacter = character;
-    Hero = state.selectedCharacter.hero;
+    // For debug purposes, put selected hero on window.Hero.
+    window['Hero'] = state.selectedCharacter.hero;
     var adventurer = character.adventurer;
     // update the equipment displayed.
     equipmentSlots.forEach(function (type) {
         //detach any existing item
-        $('.js-equipment .js-' + type + ' .js-item').detach();
-        var equipment = adventurer.equipment[type];
+        query('.js-equipment .js-' + type + ' .js-item').remove();
+        const equipment = adventurer.equipment[type];
         if (equipment) {
-            $('.js-equipment .js-' + type).append(equipment.$item);
+            query('.js-equipment .js-' + type).append(equipment.domElement);
         }
-        $('.js-equipment .js-' + type + ' .js-placeholder').toggle(!equipment);
+        query('.js-equipment .js-' + type + ' .js-placeholder').style.display = equipment ? 'none' : '';
     });
     // update stats panel.
-    refreshStatsPanel(character, $('.js-characterColumn .js-stats'));
+    refreshStatsPanel(character, query('.js-characterColumn .js-stats'));
     updateOffhandDisplay();
     // update controls:
-    $('.js-jewelBoard .js-skillCanvas').data('character', character);
-    character.jewelsCanvas = $('.js-jewelBoard .js-skillCanvas')[0];
-    $('.js-jewelBonuses .js-content').empty().append(bonusSourceHelpText(character.jewelBonuses, character.adventurer));
+    //TODO
+    //$('.js-jewelBoard .js-skillCanvas').data('character', character);
+    character.jewelsCanvas = query('.js-jewelBoard .js-skillCanvas');
+    const jewelBonusContainer = query('.js-jewelBonuses .js-content');
+    jewelBonusContainer.innerText = bonusSourceHelpText(character.jewelBonuses, character.adventurer);
     centerMapOnLevel(map[character.currentLevelKey]);
     updateAdventureButtons();
     updateConfirmSkillConfirmationButtons();
     updateEquipableItems();
-    character.$characterCanvas.after($('.js-divinityPoints'));
+    //character.$characterCanvas.after($('.js-divinityPoints'));
+    query('.js-charactersBox').appendChild(character.characterCanvas);
     showContext(character.context);
     // Immediately show the desired camera position so the camera doesn't have to
     // catch up on showing the area (the camera isn't updated when the character isn't selected).

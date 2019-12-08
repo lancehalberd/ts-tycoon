@@ -1,13 +1,16 @@
+import { addBonusSourceToObject, removeBonusSourceFromObject} from 'app/bonuses';
+import { addActions, recomputeActorTags } from 'app/character';
 import { editingMapState } from 'app/development/editLevel';
 import { query } from 'app/dom';
 import { jewelInventoryState } from 'app/jewelInventory';
+import { gain } from 'app/points';
 import { saveGame } from 'app/saveGame';
 import { getState } from 'app/state';
 import { ifdefor } from 'app/utils/index';
 import { getMousePosition } from 'app/utils/mouse';
 import { EquipmentSlot, ItemData, RawItemData, } from 'app/utils/types';
 
-function equipItemProper(actor, item, update) {
+export function equipItemProper(actor, item, update) {
     //console.log("equip " + item.base.slot);
     if (actor.equipment[item.base.slot]) {
         console.log("Tried to equip an item without first unequiping!");
@@ -91,7 +94,7 @@ function unequipRestrictedGear() {
         }
     }
 }
-function updateOffhandDisplay() {
+export function updateOffhandDisplay() {
     var adventurer = state.selectedCharacter.adventurer;
     // Don't show the offhand slot if equipped with a two handed weapon unless they have a special ability to allow off hand with two handed weapons.
     query('.js-offhand').toggle(!isTwoHandedWeapon(adventurer.equipment.weapon) || !!ifdefor(adventurer.twoToOneHanded));
@@ -105,7 +108,7 @@ function sellValue(item) {
 function baseItemLevelCost(itemLevel) {
     return itemLevel * itemLevel * Math.pow(1.15, itemLevel);
 }
-function makeItem(base, level) {
+export function makeItem(base, level) {
     var item = {
         base,
         'prefixes': [],
@@ -124,7 +127,7 @@ function makeItem(base, level) {
     }
     return item;
 }
-function updateEquipableItems() {
+export function updateEquipableItems() {
     $('.js-item').each(function () {
         var item = $(this).data('item');
         $(this).toggleClass('equipable', canEquipItem(state.selectedCharacter.adventurer, item));
@@ -384,7 +387,7 @@ function stopInventoryDrag() {
 }
 const armorSlots = ['body', 'feet', 'head', 'offhand', 'arms', 'legs'];
 const smallArmorSlots = ['feet', 'head', 'offhand', 'arms', 'legs'];
-const equipmentSlots = ['weapon', 'body', 'feet', 'head', 'offhand', 'arms', 'legs', 'back', 'ring'];
+export const equipmentSlots = ['weapon', 'body', 'feet', 'head', 'offhand', 'arms', 'legs', 'back', 'ring'];
 const accessorySlots = ['back', 'ring'];
 const nonWeapons = ['body', 'feet', 'head', 'offhand', 'arms', 'legs', 'back', 'ring'];
 const items = [[]];

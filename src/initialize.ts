@@ -1,14 +1,19 @@
 // Load any graphic assets needed by the game here.
 import { enterArea } from 'app/adventure';
+import { initializeVariableObject } from 'app/bonuses';
 import { allApplications } from 'app/content/furniture';
 import { guildYardEntrance } from 'app/content/guild';
 import { initializeMonsters } from 'app/content/monsters';
+import { showContext } from 'app/context';
 import { initializeLevelEditing } from 'app/development/editLevel';
+import { query } from 'app/dom';
 import { initializeCraftingGrid } from 'app/equipmentCrafting';
 import { initializeImages } from 'app/images';
 import { centerMapOnLevel } from 'app/map';
-
+import { gain } from 'app/points';
 import { eraseSave, loadSavedData } from 'app/saveGame';
+import Random from 'app/utils/Random';
+import { playTrack } from 'app/utils/sounds';
 
 let gameHasBeenInitialized = false;
 export function isGameInitialized() {
@@ -20,8 +25,8 @@ export function initializeGame() {
     initializeCraftingGrid();
     initializeImages();
     initializeLevelEditing();
-    document.querySelector('.js-loading').hide();
-    document.querySelector('.js-gameContent').show();
+    query('.js-loading').style.display = 'none';
+    query('.js-gameContent').style.display = '';
 
     // var testShape = makeShape(0, 0, 0, shapeDefinitions.triangle[0]).scale(originalJewelScale);
     if (window.location.search.substr(1) === 'new') {

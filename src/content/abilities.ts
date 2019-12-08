@@ -2,8 +2,8 @@ import { Bonuses } from 'app/bonuses';
 import { Action, buffEffect, debuffEffect, skills } from 'app/content/skills';
 import { createCanvas } from 'app/dom';
 import { drawTintedImage, drawImage, requireImage } from 'app/images';
-import { jobIcons } from 'app/jobs';
-import { Frame, TintedFrame } from 'app/types';
+import { jobIcons } from 'app/content/jobs';
+import { Frame, TintedFrame } from 'app/utils/types';
 
 /**
  * Notes on targeting skills:
@@ -88,7 +88,7 @@ interface Ability {
     onMissEffect?: TriggerEffect,
     bonuses?: Bonuses,
     minionBonuses?: Bonuses,
-    icon?: Frame,
+    icon?: Frame | string,
     helpText?: string,
 }
 export const abilities: {[key: string]: Ability} = {
@@ -388,7 +388,7 @@ export const abilities: {[key: string]: Ability} = {
     'howlSingAttack': {name: 'Howl Sing Attack', 'bonuses': {'$howl:instantCooldown': 'attackSong', '$attackSong:instantCooldown': 'sicem'}},
     secondWind: {name: 'Second Wind', reaction: skills.secondWind},
 };
-const leapAndAct = action => ({name: 'Leap', action: skills.leap, 'bonuses': {'$leap:action': action}});
+export const leapAndAct = action => ({name: 'Leap', action: skills.leap, 'bonuses': {'$leap:action': action}});
 let testJob;// = 'blackbelt';
 let testAbilities = [];
 //var testAbilities = [abilities.darkknight, abilities.vitality, abilities.minorStrength];

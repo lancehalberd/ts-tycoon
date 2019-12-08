@@ -103,23 +103,6 @@ function drawArea(area) {
     }
     if (area.areas) drawMinimap(area);
 }
-function updateActorAnimationFrame(actor) {
-    if (actor.pull || actor.stunned || actor.isDead ) {
-        actor.walkFrame = 0;
-    } else if (actor.skillInUse && actor.recoveryTime < Math.min(actor.totalRecoveryTime, .3)) { // attacking loop
-        if (actor.recoveryTime === 0) {
-            actor.attackFrame = actor.preparationTime / actor.skillInUse.totalPreparationTime * (actor.source.attackPreparationFrames.length - 1);
-        } else {
-            actor.attackFrame = actor.recoveryTime / actor.totalRecoveryTime * (actor.source.attackRecoveryFrames.length - 1);
-        }
-        actor.walkFrame = 0;
-    } else if (actor.isMoving) {
-        var walkFps = (actor.base.fpsMultiplier || 1) * 3 * actor.speed / 100;
-        actor.walkFrame = (actor.walkFrame || 0) + walkFps * FRAME_LENGTH * Math.max(MIN_SLOW, 1 - actor.slow) * (actor.skillInUse ? .25 : 1) / 1000;
-    } else {
-        actor.walkFrame = 0;
-    }
-}
 function drawRune(context, actor, animation, frame) {
     var size = [Math.max(actor.width, 128), Math.max(actor.width / 2, 64)];
     context.save();

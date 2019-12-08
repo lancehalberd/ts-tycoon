@@ -245,7 +245,7 @@ function getTrophyPopupTarget(x, y) {
     return null;
 }
 
-function updateTrophy(trophyKey, value) {
+export function updateTrophy(trophyKey, value) {
     var trophy = altarTrophies[trophyKey];
     trophy.value = Math.max(trophy.value, value);
     for (var i = 0; i < trophy.bonusesArray.length; i++) {

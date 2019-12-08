@@ -3,7 +3,7 @@ import { Effect } from 'app/content/skills';
 import { evaluateValue } from 'app/evaluate';
 import { getState } from 'app/state';
 import { removeElementFromArray } from 'app/utils/index';
-import { allActorVariables, allGuildVariables, allRoundedVariables, commonActionVariables } from 'app/variables';
+import { allActorVariables, allGuildVariables, allRoundedVariables, commonActionVariables } from 'app/content/variables';
 
 type BonusOperator = '+' | '-' | '%' | '*' | '/' | '&' | '$';
 type BonusTag = string;
@@ -381,7 +381,7 @@ function recomputeStat(object, statKey) {
     setStat(object, statKey, newValue);
     //console.log(object[statKey]);
 }
-function setStat(object, statKey, newValue) {
+export function setStat(object, statKey, newValue) {
     delete object.dirtyStats[statKey];
     // Set a hard cap of 1e12 for all computed values.
     if (typeof newValue === 'number' && newValue > 1e12) {
@@ -444,14 +444,14 @@ function setStat(object, statKey, newValue) {
     }
 }
 
-function findVariableChildForBaseObject(parentObject, baseObject) {
+export function findVariableChildForBaseObject(parentObject, baseObject) {
     for (const variableChild of parentObject.variableChildren) {
         if (variableChild.base === baseObject) return variableChild;
     }
     throw Error("Variable child was not found for given base object");
 }
 
-function addVariableChildToObject(parentObject, child, triggerComputation = false) {
+export function addVariableChildToObject(parentObject, child, triggerComputation = false) {
     parentObject.variableChildren.push(child);
     child.tags = recomputeChildTags(parentObject, child);
     for (const bonusSource of parentObject.bonusSources) {

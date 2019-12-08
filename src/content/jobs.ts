@@ -1,4 +1,4 @@
-import { classBoards, squareBoard } from 'app/boards';
+import { classBoards, squareBoard } from 'app/content/boards';
 import { drawImage, requireImage } from 'app/images';
 import { itemsByKey } from 'app/inventory';
 import { smallJewelLoot, jewelLoot } from 'app/loot';

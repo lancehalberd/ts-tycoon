@@ -93,3 +93,7 @@ export function handleChildEvent(
         }
     });
 }
+
+export function getElementIndex(element: HTMLElement) {
+    return [...element.parentElement.children].indexOf(element);
+}

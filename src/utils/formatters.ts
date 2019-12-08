@@ -6,7 +6,10 @@ export function fixedDigits(number: number, digits: number): number {
 
 // Wrapper for toFixed that strips trailing '0's and '.'s.
 // Foundt at http://stackoverflow.com/questions/7312468/javascript-round-to-a-number-of-decimal-places-but-strip-extra-zeros
-export function abbreviate(number) {
+export function abbreviate(number, digits: number = null) {
+    if (digits) {
+        number = fixedDigits(number, digits);
+    }
     if (number >= 1000000000000) {
         return (number / 1000000000000 + '').slice(0, 5) + 'T';
     }

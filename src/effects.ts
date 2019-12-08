@@ -1,4 +1,5 @@
-import { recomputeDirtyStats } from 'app/bonuses';
+import { addBonusSourceToObject, recomputeDirtyStats, removeBonusSourceFromObject } from 'app/bonuses';
+import { applyAttackToTarget } from 'app/performAttack';
 
 function songEffect(attackStats) {
     var color = ifdefor(attackStats.attack.base.color, 'red');
@@ -590,7 +591,7 @@ function getProjectileVelocity(attackStats, x, y, z, target) {
     return [v[0] * speed / distance, v[1] * speed / distance, v[2] * speed / distance];
 }
 
-function expireTimedEffects(actor) {
+export function expireTimedEffects(actor) {
     if (actor.isDead ) return;
     var changed = false;
     for (var i = 0; i < actor.allEffects.length; i++) {
@@ -603,9 +604,9 @@ function expireTimedEffects(actor) {
     }
     if (changed) recomputeDirtyStats(actor);
 }
-function addTimedEffect(actor, effect, area) {
+export function addTimedEffect(actor, effect, area) {
     if (actor.isDead) return;
-    area = ifdefor(area, ifdefor(effect.area));
+    area = area || effect.area;
     // Copy the effect because each timed effect has a distinct expirationTime.
     // Also setting the area here to 0 allows us to call this method again for
     // allies within the area of effect without recursing infinitely.

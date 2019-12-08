@@ -1,6 +1,9 @@
+import { initializeVariableObject } from 'app/bonuses';
 import { editingMapState } from 'app/development/editLevel';
+import { createCanvas, mainContext } from 'app/dom';
 import { bonusSourceHelpText } from 'app/helpText';
-import { drawAbilityIcon } from 'app/images';
+import { drawAbilityIcon, drawImage } from 'app/images';
+import { prepareToUseSkillOnTarget } from 'app/useSkill';
 import { isPointInRectObject, rectangle } from 'app/utils/index';
 
 function createScaledFrame(r, frame, scale = 1) {

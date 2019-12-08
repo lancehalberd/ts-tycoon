@@ -1,5 +1,6 @@
 import { jewelInventoryContainer } from 'app/dom';
 import { drawOutlinedImage } from 'app/images';
+import { mapState } from 'app/map';
 import { jewelInventoryState } from 'app/jewelInventory';
 import { isPointInRectObject, rectangle } from 'app/utils/index';
 import { getMousePosition } from 'app/utils/mouse';
@@ -199,9 +200,9 @@ function checkremovePopup() {
             isMouseOverCanvasElement(canvasCoords[0], canvasCoords[1], canvasPopupTarget)) {
             return;
         }
-        if (currentMapTarget && !state.selectedCharacter.hero.area) {
-            if (ifdefor(currentMapTarget.top) !== null) {
-                if (isPointInRect(canvasCoords[0], canvasCoords[1], currentMapTarget.left, currentMapTarget.top, currentMapTarget.width, currentMapTarget.height)) {
+        if (mapState.currentMapTarget && !state.selectedCharacter.hero.area) {
+            if (ifdefor(mapState.currentMapTarget.top) !== null) {
+                if (isPointInRect(canvasCoords[0], canvasCoords[1], mapState.currentMapTarget.left, mapState.currentMapTarget.top, mapState.currentMapTarget.width, mapState.currentMapTarget.height)) {
                     return;
                 }
             }
@@ -217,7 +218,7 @@ function isMouseOverCanvasElement(x, y, element) {
     if (element.isVisible && !element.isVisible()) return false;
     if (element.isOver) return element.isOver(x, y);
     if (element.target) return isPointInRectObject(x, y, element.target);
-    if (currentMapTarget && ifdefor(currentMapTarget.top) !== null) return isPointInRectObject(x, y, element);
+    if (mapState.currentMapTarget && ifdefor(mapState.currentMapTarget.top) !== null) return isPointInRectObject(x, y, element);
     return false;
 }
 function getHelpText($popupTarget) {

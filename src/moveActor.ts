@@ -1,6 +1,10 @@
-var rotationA = Math.cos(Math.PI / 20);
-var rotationB = Math.sin(Math.PI / 20);
-function moveActor(actor) {
+import { applyAttackToTarget, getBasicAttack } from 'app/performAttack';
+import { isMouseDown } from 'app/utils/mouse';
+
+const rotationA = Math.cos(Math.PI / 20);
+const rotationB = Math.sin(Math.PI / 20);
+
+export function moveActor(actor) {
     const area = actor.area;
     if (!area) {
         return;
@@ -18,7 +22,7 @@ function moveActor(actor) {
         switch (actor.activity.type) {
             case 'move':
                 if (getDistanceBetweenPointsSquared(actor, actor.activity) < 10
-                    || (actor.character && actor.character.paused && !mouseDown)
+                    || (actor.character && actor.character.paused && !isMouseDown())
                 ) {
                     actor.activity = null;
                     break;

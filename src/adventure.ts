@@ -1,14 +1,43 @@
-import { showAreaMenu } from 'app/areaMenu';
-import { initializeActorForAdventure } from 'app/character';
-import { Exit } from 'app/content/furniture';
+import { pause, updateAdventureButtons } from 'app/adventureButtons';
+import { getEndlessLevel, showAreaMenu } from 'app/areaMenu';
+import {
+    addVariableChildToObject, BonusSource, initializeVariableObject,
+    recomputeDirtyStats, removeBonusSourceFromObject, setStat,
+} from 'app/bonuses';
+import {
+    actorHelpText, baseDivinity, damageActor, healActor,
+    initializeActorForAdventure, refreshStatsPanel
+} from 'app/character';
+import { addAreaFurnitureBonuses, Exit } from 'app/content/furniture';
 import { guildYardEntrance } from 'app/content/guild';
+import { instantiateLevel } from 'app/content/levels';
 import { map } from 'app/content/mapData';
 import { makeMonster } from 'app/content/monsters';
+import { setContext, showContext } from 'app/context';
+import { editingMapState, stopTestingLevel } from 'app/development/editLevel';
+import { query } from 'app/dom';
 import { drawBoardBackground } from 'app/drawBoard';
-import { FRAME_LENGTH, MIN_Z, MAX_Z } from 'app/gameConstants';
-import { appendTextPopup } from 'app/performAttack';
+import { expireTimedEffects } from 'app/effects';
+import { unlockItemLevel } from 'app/equipmentCrafting';
+import { FRAME_LENGTH, MIN_SLOW, MIN_Z, MAX_Z } from 'app/gameConstants';
+import { increaseAgeOfApplications } from 'app/heroApplication';
+import { animaLootDrop, coinsLootDrop } from 'app/loot';
+import { setActorInteractionTarget } from 'app/main';
+import { unlockMapLevel } from 'app/map';
+import { moveActor } from 'app/moveActor';
+import { appendTextPopup, applyAttackToTarget, findActionByTag, getBasicAttack, performAttackProper } from 'app/performAttack';
+import { gain } from 'app/points';
 import { saveGame } from 'app/saveGame';
 import { getState } from 'app/state';
+import {
+    canUseReaction, canUseSkillOnTarget, gainReflectionBarrier,
+    isTargetInRangeOfSkill,
+    prepareToUseSkillOnTarget, shouldUseSkillOnTarget, useReaction, useSkill
+} from 'app/useSkill';
+import { abbreviate } from 'app/utils/formatters';
+import { ifdefor } from 'app/utils/index';
+import { isMouseDown } from 'app/utils/mouse';
+
 
 
 export function limitZ(zValue: number, radius: number = 0): number {
@@ -41,7 +70,7 @@ export function startLevel(character, index) {
     }
     for (var action of hero.actions.concat(hero.reactions)) action.readyAt = 0;
     enterArea(hero, hero.levelInstance.entrance);
-    if (state.selectedCharacter === character) {
+    if (getState().selectedCharacter === character) {
         updateAdventureButtons();
     }
     saveGame();
@@ -55,10 +84,11 @@ export function enterArea(actor, {x, z, areaKey}: Exit) {
     }
     leaveCurrentArea(actor);
     var area;
-    if (guildAreas[areaKey]) {
-        area = guildAreas[areaKey];
+    const state = getState();
+    if (state.guildAreas[areaKey]) {
+        area = state.guildAreas[areaKey];
         initializeActorForAdventure(actor);
-        if (!area.allies.length && !state.unlockedGuildAreas[area.key]) {
+        if (!area.allies.length && !state.savedState.unlockedGuildAreas[area.key]) {
             addMonstersToArea(area, area.monsters, [], 0);
         }
         actor.actions.concat(actor.reactions).forEach(function (action) {
@@ -160,8 +190,8 @@ function timeStopLoop(area) {
     return true;
 }
 function actorCanOverHeal(actor) {
-    return (ifdefor(actor.overHeal, 0) > 0)
-        || (ifdefor(actor.overHealReflection, 0) > 0 && actor.reflectBarrier < actor.maxReflectBarrier);
+    return (actor.overHeal > 0)
+        || (actor.overHealReflection > 0 && actor.reflectBarrier < actor.maxReflectBarrier);
 }
 function capHealth(actor) {
 
@@ -174,7 +204,7 @@ function capHealth(actor) {
     // Apply overhealing if the actor is over their health cap and possesses overhealing.
     var excessHealth = actor.health - actor.maxHealth;
     if (actor.overHeal && excessHealth > 0) {
-        setStat(actor, 'bonusMaxHealth', ifdefor(actor.bonusMaxHealth, 0) + actor.overHeal * excessHealth);
+        setStat(actor, 'bonusMaxHealth', (actor.bonusMaxHealth || 0) + actor.overHeal * excessHealth);
     }
     if (actor.overHealReflection && excessHealth > 0) {
         gainReflectionBarrier(actor, actor.overHealReflection * excessHealth);
@@ -219,26 +249,28 @@ function removeActor(actor) {
             character.levelTimes[character.currentLevelKey][area.levelDifficulty] = currentEndlessLevel - 1;
         }
         returnToMap(actor.character);
-        if (actor.character === state.selectedCharacter && !actor.character.replay && !testingLevel) {
+        if (actor.character === getState().selectedCharacter &&
+            !actor.character.replay && !editingMapState.testingLevel
+        ) {
             showAreaMenu();
         }
     }
 }
 
 function unlockGuildArea(guildArea) {
-    state.unlockedGuildAreas[guildArea.key] = true;
+    getState().savedState.unlockedGuildAreas[guildArea.key] = true;
     // Now that the guild area is unlocked the furniture bonuses should apply.
     addAreaFurnitureBonuses(guildArea, true);
     saveGame();
 }
 
 function updateArea(area) {
-    if (area.isGuildArea && !state.unlockedGuildAreas[area.key] && !area.enemies.length && area.allies.some(actor => !actor.isDead)) {
+    if (area.isGuildArea && !getState().savedState.unlockedGuildAreas[area.key] && !area.enemies.length && area.allies.some(actor => !actor.isDead)) {
         unlockGuildArea(area);
     }
     if (timeStopLoop(area)) return;
-    var delta = FRAME_LENGTH / 1000;
-    var everybody = area.allies.concat(area.enemies);
+    const delta = FRAME_LENGTH / 1000;
+    let everybody = area.allies.concat(area.enemies);
     // Advance subjective time of area and each actor.
     area.time += delta;
     // Speed up time for actors when no enemies are around to heal+reduce cool downs
@@ -286,7 +318,7 @@ function updateArea(area) {
     for (var i = 0; i < area.textPopups.length; i++) {
         var textPopup = area.textPopups[i];
         textPopup.y += ifdefor(textPopup.vy, -1);
-        textPopup.x += ifdefor(textPopup.vx, 0);
+        textPopup.x += (textPopup.vx || 0);
         textPopup.duration = ifdefor(textPopup.duration, 35);
         textPopup.vy += ifdefor(textPopup.gravity, -.5);
         if (textPopup.duration-- < 0) area.textPopups.splice(i--, 1);
@@ -302,9 +334,9 @@ function updateArea(area) {
     everybody.forEach(updateActorAnimationFrame);
     everybody.forEach(updateActorHelpText);
 }
-function updateActorDimensions(actor) {
+export function updateActorDimensions(actor) {
     var source = actor.source;
-    var scale = ifdefor(actor.scale, 1);
+    const scale = (actor.scale || 1);
     actor.width = source.actualWidth * scale;
     actor.height = source.actualHeight * scale;
     if (isNaN(actor.width) || isNaN(actor.height)) {
@@ -316,6 +348,31 @@ function updateActorDimensions(actor) {
         return false;
     }
     return true;
+}
+function updateActorAnimationFrame(actor) {
+    if (actor.pull || actor.stunned || actor.isDead ) {
+        actor.walkFrame = 0;
+    } else if (actor.skillInUse && actor.recoveryTime < Math.min(actor.totalRecoveryTime, .3)) { // attacking loop
+        if (actor.recoveryTime === 0) {
+            actor.attackFrame = actor.preparationTime / actor.skillInUse.totalPreparationTime * (actor.source.attackPreparationFrames.length - 1);
+        } else {
+            actor.attackFrame = actor.recoveryTime / actor.totalRecoveryTime * (actor.source.attackRecoveryFrames.length - 1);
+        }
+        actor.walkFrame = 0;
+    } else if (actor.isMoving) {
+        var walkFps = (actor.base.fpsMultiplier || 1) * 3 * actor.speed / 100;
+        actor.walkFrame = (actor.walkFrame || 0) + walkFps * FRAME_LENGTH * Math.max(MIN_SLOW, 1 - actor.slow) * (actor.skillInUse ? .25 : 1) / 1000;
+    } else {
+        actor.walkFrame = 0;
+    }
+}
+function updateActorHelpText(actor) {
+    //TODO
+    /*if (!$popup) return;
+    if (getCanvasPopupTarget() === actor) return $popup.html(actorHelpText(actor));
+    if (!$popupTarget) return;
+    const character = $popupTarget.data('character');
+    if (character && character.hero === actor) return $popup.html(actorHelpText(actor));*/
 }
 function processStatusEffects(target) {
     if (target.isDead ) return;
@@ -420,7 +477,7 @@ function runActorLoop(actor) {
             return;
         } else {
             actor.skillInUse = null;
-            if (actor.character && actor.character.paused && !mouseDown) {
+            if (actor.character && actor.character.paused && !isMouseDown()) {
                 actor.activity = null;
             }
         }
@@ -554,16 +611,16 @@ function checkToUseSkillOnTarget(actor, target) {
 function actorShouldAutoplay(actor) {
     if (!actor.character) return true; // Only character heroes can be manually controlled.
     return !actor.character.isStuckAtShrine
-        && (actor.character.autoplay || (actor.character !== state.selectedCharacter && actor.enemies.length));
+        && (actor.character.autoplay || (actor.character !== getState().selectedCharacter && actor.enemies.length));
 }
 
 // The distance functions assume objects are circular in the x/z plane and are calculating
 // only distance within that plane, ignoring the height of objects and their y positions.
-function getDistance(spriteA, spriteB) {
+export function getDistance(spriteA, spriteB) {
     var distance = getDistanceOverlap(spriteA, spriteB);
     return Math.max(0, distance);
 }
-function getDistanceOverlap(spriteA, spriteB) {
+export function getDistanceOverlap(spriteA, spriteB) {
     var dx = spriteA.x - spriteB.x;
     var dz = spriteA.z - spriteB.z;
     var distance = Math.sqrt(dx*dx + dz*dz) - ((spriteA.width || 0) + (spriteB.width || 0)) / 2;
@@ -574,7 +631,7 @@ function getDistanceOverlap(spriteA, spriteB) {
     }
     return distance;
 }
-function getDistanceBetweenPointsSquared(pointA, pointB) {
+export function getDistanceBetweenPointsSquared(pointA, pointB) {
     var dx = pointA.x - pointB.x;
     var dy = pointA.y - pointB.y;
     var dz = pointA.z - pointB.z;
@@ -625,7 +682,7 @@ function completeLevel(hero) {
         newDivinityScore = Math.max(10, Math.round(baseDivinity(currentEndlessLevel)));
     } else {
         const difficultyBonus = difficultyBonusMap[levelInstance.levelDifficulty];
-        const timeBonus = .8;
+        let timeBonus = .8;
         if (completionTime <= getGoldTimeLimit(level, levelInstance.levelDifficulty)) timeBonus = 1.2;
         else if (completionTime <= getSilverTimeLimit(level, levelInstance.levelDifficulty)) timeBonus = 1;
         newDivinityScore = Math.max(10, Math.round(difficultyBonus * timeBonus * baseDivinity(level.level)));
@@ -633,7 +690,7 @@ function completeLevel(hero) {
     var gainedDivinity = newDivinityScore - oldDivinityScore;
     if (gainedDivinity > 0) {
         character.divinity += gainedDivinity;
-        var textPopup = {value:'+' + gainedDivinity.abbreviate() + ' Divinity', x: hero.x, y: hero.height, z: hero.z, color: 'gold', fontSize: 15, 'vx': 0, 'vy': 1, 'gravity': .1};
+        var textPopup = {value:'+' + abbreviate(gainedDivinity) + ' Divinity', x: hero.x, y: hero.height, z: hero.z, color: 'gold', fontSize: 15, 'vx': 0, 'vy': 1, 'gravity': .1};
         appendTextPopup(hero.area, textPopup, true);
     }
     character.divinityScores[character.currentLevelKey] = Math.max(oldDivinityScore, newDivinityScore);
@@ -667,11 +724,11 @@ export function returnToMap(character) {
     updateAdventureButtons();
     if (character.autoplay && character.replay) {
         startLevel(character, character.currentLevelKey);
-    } else if (testingLevel) {
+    } else if (editingMapState.testingLevel) {
         stopTestingLevel();
-    } else if (state.selectedCharacter === character) {
+    } else if (getState().selectedCharacter === character) {
         setContext('map');
-        refreshStatsPanel(character, $('.js-characterColumn .js-stats'));
+        refreshStatsPanel(character, query('.js-characterColumn .js-stats'));
     } else {
         character.context = 'map';
     }
@@ -703,3 +760,10 @@ export function getSilverTimeLimit(level, difficulty) {
 
 export const difficultyBonusMap = {easy: 0.8, normal: 1, hard: 1.5, challenge: 2};
 
+
+function removeAdventureEffects(actor) {
+    setStat(actor, 'bonusMaxHealth', 0);
+    while (actor.allEffects.length) removeBonusSourceFromObject(actor, actor.allEffects.pop(), false);
+    initializeActorForAdventure(actor);
+    recomputeDirtyStats(actor);
+}

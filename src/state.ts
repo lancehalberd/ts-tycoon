@@ -1,11 +1,12 @@
 import { enterArea } from 'app/adventure';
-import { initializeVariableObject } from 'app/bonuses';
+import { BonusSource, initializeVariableObject } from 'app/bonuses';
+import { setSelectedCharacter } from 'app/character';
 import { checkIfAltarTrophyIsAvailable } from 'app/content/achievements';
 import { allApplications, allBeds } from 'app/content/furniture';
 import { getDefaultGuildAreas, guildYardEntrance } from 'app/content/guild';
 import { Jewel } from 'app/jewels';
 import { changedPoints } from 'app/points';
-import { exportCharacter, exportItem, exportJewel } from 'app/saveGame';
+import { exportCharacter, exportItem, exportJewel, importCharacter } from 'app/saveGame';
 import { Polygon, ShapeType } from 'app/utils/polygon';
 
 type Character = any;
@@ -56,6 +57,7 @@ export interface GameState {
     guildStats: any,
     savedState: SavedState,
     selectedCharacter: any,
+    lastSelectedCharacter?: any,
     visibleLevels: {[key: string]: true},
     characters: Character[],
     applicants: Character[],
@@ -123,7 +125,7 @@ const implicitGuildBonusSource = {bonuses: {
     '+maxCoins': 100,
 }};
 
-function exportState(state: GameState): SavedState {
+export function exportState(state: GameState): SavedState {
     return {
         ...state.savedState,
         applicants: state.applicants.map(exportCharacter),

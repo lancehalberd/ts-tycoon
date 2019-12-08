@@ -28,7 +28,7 @@ interface MonsterSpawn {
     bonusSources?: BonusSource[],
     rarity?: number,
 }
-export function instantiateLevel(levelData, levelDifficulty, difficultyCompleted, level) {
+export function instantiateLevel(levelData, levelDifficulty = 'normal', difficultyCompleted = false, level = 0) {
     level = level || levelData.level;
     var levelDegrees = (360 + 180 * Math.atan2(levelData.coords[1], levelData.coords[0]) / Math.PI) % 360;
     var possibleMonsters = levelData.monsters.slice();

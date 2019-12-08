@@ -7,6 +7,9 @@ let rightMouseDown:boolean = false;
 export function isMouseDown(): boolean {
     return mouseIsDown;
 }
+export function isRightMouseDown(): boolean {
+    return rightMouseDown;
+}
 
 export function getMousePosition(container:HTMLElement = null): Coords {
     if (container) {

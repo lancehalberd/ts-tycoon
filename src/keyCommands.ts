@@ -4,11 +4,8 @@ import { guildYardEntrance } from 'app/content/guild';
 import { handleSkillKeyInput } from 'app/drawSkills';
 import { handleEditMapKeyDown } from 'app/development/editLevel';
 import { hideHeroApplication } from 'app/heroApplication';
+import { mapState } from 'app/map';
 import { getState } from 'app/state';
-
-export function isEditingAllowed() {
-    return window.location.search.substr(1) === 'edit';
-}
 
 export const KEY_ESCAPE = 27;
 export const KEY_C = 67;
@@ -49,8 +46,8 @@ document.onkeydown = function(event) {
             pasteCharacterToClipBoard(state.selectedCharacter);
         }
         if (keycode === KEY_L) {
-            if (currentMapTarget && currentMapTarget.levelKey) {
-                state.selectedCharacter.currentLevelKey = currentMapTarget.levelKey;
+            if (mapState.currentMapTarget && mapState.currentMapTarget.levelKey) {
+                state.selectedCharacter.currentLevelKey = mapState.currentMapTarget.levelKey;
                 if (!state.selectedCharacter.completionTime) {
                     state.selectedCharacter.completionTime = 100;
                 } else {

@@ -1,4 +1,5 @@
 import { limitZ } from 'app/adventure';
+import { setSelectedCharacter } from 'app/character';
 import { query } from 'app/dom';
 import { GROUND_Y } from 'app/gameConstants';
 import { saveGame } from 'app/saveGame';
@@ -117,7 +118,7 @@ function setActionTarget(actor, action, target) {
         target
     };
 }
-function setActorInteractionTarget(actor, target) {
+export function setActorInteractionTarget(actor, target) {
     actor.activity = {
         'type': 'interact',
         target

@@ -1,7 +1,9 @@
 import { enterArea } from 'app/adventure';
+import { setSelectedCharacter } from 'app/character';
 import { guildYardEntrance } from 'app/content/guild';
 import { query, queryAll } from 'app/dom';
 import { drawBoardJewels } from 'app/drawBoard';
+import { gain } from 'app/points';
 import { saveGame } from 'app/saveGame';
 import { getState } from 'app/state';
 import Random from 'app/utils/Random';
@@ -64,10 +66,10 @@ function setHeroApplication($applicationPanel, application) {
     drawBoardJewels(character, $jewelCanvas[0]);
 }
 
-function increaseAgeOfApplications() {
-    $('.js-heroApplication').each(function () {
-        var $applicationPanel = $(this);
-        var application = $applicationPanel.data('application');
+export function increaseAgeOfApplications() {
+    queryAll('.js-heroApplication').forEach(function (applicationPanel) {
+        //TODO
+        const application: any = {};//applicationPanel.data('application');
         if (!application || !application.character) return;
         application.character.applicationAge++;
         updateHireButtonsForApplication($(this));

@@ -1,4 +1,5 @@
-import { ifdefor } from 'app/utils';
+import { ifdefor } from 'app/utils/index';
+import { getState } from 'app/state';
 
 type ExtendedAudio = HTMLAudioElement & {
     [key: string]: any
@@ -34,7 +35,7 @@ export function areAllSoundsLoaded() {
 }
 
 function playSound(source, area) {
-    if (soundsMuted || state.selectedCharacter.hero.area !== area ) return;
+    if (soundsMuted || getState().selectedCharacter.hero.area !== area ) return;
     var source, offset,volume, customDuration;
     [source, offset, volume] = source.split('+');
     if (offset) [offset, customDuration] = offset.split(':');
@@ -67,7 +68,7 @@ function playSound(source, area) {
 }
 
 var previousTrack = null;
-function playTrack(source) {
+export function playTrack(source) {
     if (soundsMuted) return;
     var source, offset, volume;
     [source, offset, volume] = source.split('+');

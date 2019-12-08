@@ -179,7 +179,7 @@ export function fixFloat(f) {
     return Math.round(1000000 * f) / 1000000;
 }
 
-export function removeElementFromArray(array, element, throwErrorIfMissing) {
+export function removeElementFromArray(array, element, throwErrorIfMissing = false) {
     const index = array.indexOf(element);
     if (index < 0) {
         if (throwErrorIfMissing) throw new Error("Element was not found to remove from array.");

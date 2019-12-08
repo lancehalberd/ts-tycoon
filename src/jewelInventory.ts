@@ -1,3 +1,5 @@
+import { addBonusSourceToObject, removeBonusSourceFromObject} from 'app/bonuses';
+import { addActions } from 'app/character';
 import {
     getClosestElement, findEmptyElement, jewelInventoryContainer,
     jewelsCanvas, query, queryAll
@@ -6,8 +8,8 @@ import { getState } from 'app/state';
 import {
     Jewel, JewelComponents, JewelTier, jewelTierLevels,
     makeJewel, updateAdjacentJewels, updateJewelBonuses,
-} from 'jewels';
-import { hidePointsPreview, previewPointsChange } from 'app/points';
+} from 'app/jewels';
+import { gain, hidePointsPreview, previewPointsChange } from 'app/points';
 import { ifdefor, isPointInRectObject, rectangle } from 'app/utils/index';
 import { getMousePosition } from 'app/utils/mouse';
 import {
@@ -303,7 +305,7 @@ document.body.addEventListener('mousemove', function (event) {
 });
 // Replace this with generic mousemove handling.
 document.body.addEventListener('mousemove', function () {
-    checkIfStilljewelInventoryState.overJewel();
+    checkIfStillOverJewel();
     if (jewelInventoryState.draggingBoardJewel) dragBoard();
     if (!jewelInventoryState.draggedJewel) {
         return;
@@ -389,7 +391,7 @@ function dragBoard() {
         }
     }
 }
-function checkIfStilljewelInventoryState.overJewel() {
+function checkIfStillOverJewel() {
     if (!jewelInventoryState.overJewel) return;
     var relativePosition
     if (jewelInventoryState.overJewel.character) {
@@ -500,7 +502,7 @@ export function stopJewelDrag() {
             $existingItem.remove();
             addJewelToInventory($existingItem);
         }
-        appendjewelInventoryState.draggedJewelToElement($craftingSlot);
+        appendDraggedJewelToElement($craftingSlot);
     }
     if (!jewelInventoryState.draggedJewel) return;
     var $target = null;
@@ -519,13 +521,13 @@ export function stopJewelDrag() {
         // to the end. To support adding it before a target element, just append
         // to the end first so we get all the normal logic for cleaning up the
         // drag operation, then remove the item and place it before the target.
-        appendjewelInventoryState.draggedJewelToElement(jewelInventoryContainer);
+        appendDraggedJewelToElement(jewelInventoryContainer);
         filterJewel(jewelInventoryState.draggedJewel.domElement);
         $target.before(jewelInventoryState.draggedJewel.domElement.remove());
     }
     if (!jewelInventoryState.draggedJewel) return;
     filterJewel(jewelInventoryState.draggedJewel.domElement);
-    appendjewelInventoryState.draggedJewelToElement(jewelInventoryContainer);
+    appendDraggedJewelToElement(jewelInventoryContainer);
 }
 
 function stopBoardDrag() {
@@ -535,7 +537,7 @@ function stopBoardDrag() {
     }
     jewelInventoryState.draggingBoardJewel = null;
 }
-function appendjewelInventoryState.draggedJewelToElement(container) {
+function appendDraggedJewelToElement(container) {
     if (!jewelInventoryState.draggedJewel) return;
     appendJewelToElement(jewelInventoryState.draggedJewel, container);
     jewelInventoryState.overJewel = jewelInventoryState.draggedJewel;
@@ -549,7 +551,7 @@ function appendJewelToElement(jewel, $element) {
     $element.append(jewel.domElement);
     jewel.canvas.style.position = '';
 }
-function equipJewel(character, replace, updateAdventurer) {
+export function equipJewel(character, replace, updateAdventurer) {
     if (jewelTierLevels[jewelInventoryState.draggedJewel.tier] <= character.adventurer.level
         && snapToBoard(jewelInventoryState.draggedJewel, character.board, replace)) {
         jewelInventoryState.draggedJewel.character = character;

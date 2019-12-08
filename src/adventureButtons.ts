@@ -13,7 +13,7 @@ function togglePause() {
     state.selectedCharacter.paused = !state.selectedCharacter.paused;
     updateAdventureButtons();
 }
-function pause() {
+export function pause() {
     const state = getState();
     state.selectedCharacter.paused = true;
     updateAdventureButtons();
