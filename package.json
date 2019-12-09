@@ -12,16 +12,8 @@
   },
   "devDependencies": {
     "@types/lodash": "^4.14.149",
-    "babel-cli": "^6.26.0",
-    "babel-preset-env": "^1.6.1",
-    "babelify": "^8.0.0",
-    "body-parser": "1.18.2",
-    "browserify": "^16.1.1",
-    "eslintify": "^3.1.0",
     "ts-loader": "^6.2.1",
-    "tsify": "^4.0.1",
     "typescript": "^3.7.2",
-    "watchify": "^3.11.0",
     "webpack": "^4.41.2",
     "webpack-cli": "^3.3.10"
   },
