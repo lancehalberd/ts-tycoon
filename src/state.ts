@@ -39,8 +39,8 @@ export type SavedState = {
     craftedItems: {[key: string]: number},
     // These three fields are needed to save state in the middle of item crafting.
     craftingItems: SavedItem[],
-    craftingLevel: null,
-    craftingTypeFilter: null,
+    craftingLevel: number,
+    craftingTypeFilter: string,
     craftingXOffset: number,
     enchantmentItem: SavedItem,
     jewelCraftingLevel: number,

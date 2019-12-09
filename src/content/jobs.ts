@@ -17,7 +17,7 @@ interface CharacterClass {
 export const characterClasses:Partial<{[key in JobKey]: CharacterClass}> = {};
 
 const jobIconImage = requireImage('gfx/jobIcons.png');
-class JobIcon {
+export class JobIcon {
     left: number;
     top: number;
     width: number;

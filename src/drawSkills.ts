@@ -1,10 +1,12 @@
-import { initializeVariableObject } from 'app/bonuses';
+import { getAbilityIconSource } from 'app/content/abilities';
+import { applyParentToVariableChild, initializeVariableObject } from 'app/bonuses';
 import { editingMapState } from 'app/development/editLevel';
-import { createCanvas, mainContext } from 'app/dom';
+import { bodyDiv, createCanvas, mainCanvas, mainContext, titleDiv } from 'app/dom';
 import { bonusSourceHelpText } from 'app/helpText';
-import { drawAbilityIcon, drawImage } from 'app/images';
-import { prepareToUseSkillOnTarget } from 'app/useSkill';
-import { isPointInRectObject, rectangle } from 'app/utils/index';
+import { drawAbilityIcon, drawImage, requireImage } from 'app/images';
+import { getState } from 'app/state';
+import { canUseSkillOnTarget, prepareToUseSkillOnTarget } from 'app/useSkill';
+import { fillRectangle, isPointInRectObject, rectangle, shrinkRectangle } from 'app/utils/index';
 
 function createScaledFrame(r, frame, scale = 1) {
     // We want to scale the frame Nx its normal thickness, but we get bad smoothing if we do
@@ -141,16 +143,16 @@ function onClickSkill(character, action) {
 }
 
 function onClickAutoToggle(character, toggleButton) {
-    var action = this.action;
+    const action = this.action;
     if (character.autoplay) {
-        character.manualActions[action.base.key] = !ifdefor(character.manualActions[action.base.key], false);
+        character.manualActions[action.base.key] = !character.manualActions[action.base.key];
     } else {
-        character.autoActions[action.base.key] = !ifdefor(character.autoActions[action.base.key], false);
+        character.autoActions[action.base.key] = !character.autoActions[action.base.key];
     }
 }
 function autoToggleHelpMethod() {
-    var action = this.action;
-    var character = action.actor.character;
+    const action = this.action;
+    const character = action.actor.character;
     if (character.autoplay) {
         if (character.manualActions[action.base.key]) {
             return 'Manual';
@@ -168,7 +170,7 @@ function autoToggleHelpMethod() {
 
 function getAbilityPopupTarget(x, y) {
     hoverAction = null;
-    for (var action of state.selectedCharacter.adventurer.actions) {
+    for (var action of getState().selectedCharacter.adventurer.actions) {
         if (action.tags.basic) continue;
         // toggleButton doesn't get set until the ability is drawn the first time.
         if (isPointInRectObject(x, y, action.toggleButton && action.toggleButton.target)) {
@@ -193,7 +195,7 @@ function actionHelptText(action) {
 
 // Skill is active if it is selected, or if the hero is performing/attempting to perform the skill.
 function isSkillActive(action) {
-    var hero = state.selectedCharacter.hero;
+    var hero = getState().selectedCharacter.hero;
     return action == selectedAction
         || action == hero.skillInUse
         || (hero.activity && hero.activity.action == action);

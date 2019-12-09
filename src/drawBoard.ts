@@ -1,14 +1,16 @@
+import { getAbilityIconSource } from 'app/content/abilities';
 import { drawJewel } from 'app/drawJewel';
 import { drawAbilityIcon } from 'app/images';
 import { jewelInventoryState } from 'app/jewelInventory';
 import { jewelTierLevels } from 'app/jewels';
+import { getMousePosition, isMouseOverElement } from 'app/utils/mouse';
 
 function drawShapesPath(context, shapes, fill, stroke) {
-    for (var shape of shapes) {
-        var points = shape.points;
+    for (const shape of shapes) {
+        const points = shape.points;
         context.beginPath();
         context.moveTo(points[0][0], points[0][1]);
-        for (var j = 1; j < points.length; j++) {
+        for (let j = 1; j < points.length; j++) {
             context.lineTo(points[j][0], points[j][1]);
         }
         context.closePath();
@@ -30,7 +32,7 @@ export function drawBoardJewels(character, canvas) {
         drawShapesPath(context, board.spaces, true, false);
         context.globalAlpha = 1;
     }
-    drawBoardJewelsProper(context, relativeMousePosition(canvas), board, isMouseOver($(canvas)));
+    drawBoardJewelsProper(context, getMousePosition(canvas), board, isMouseOverElement(canvas));
 }
 export function drawBoardJewelsProper(context, lightSource, board, mouseIsOverBoard = false) {
     //var focusedJewelIsOnBoard = false;
@@ -42,7 +44,7 @@ export function drawBoardJewelsProper(context, lightSource, board, mouseIsOverBo
     }
     for (var i = 0; i < fixedJewels.length; i++) {
         var jewel = fixedJewels[i];
-        if (ifdefor(jewel.disabled)) {
+        if (jewel.disabled) {
             context.save();
             context.globalAlpha = .3;
             jewel.shape.color = '#fff';
@@ -101,7 +103,7 @@ export function drawBoardPreview(context, lightSource, boardPreview, showIcon) {
     }
     // Fixed jewel on board previews should glow to draw attention to it.
     context.save();
-    context.globalAlpha = .5 + .2 * Math.sin(now() / 150);
+    context.globalAlpha = .5 + .2 * Math.sin(Date.now() / 150);
     context.fillStyle = '#ff0';
     drawShapesPath(context, [fixedJewel.shape], true, false);
     context.restore();

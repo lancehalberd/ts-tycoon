@@ -34,7 +34,7 @@ import { getCanvasPopupTarget } from 'app/popup';
 import { getState } from 'app/state';
 import { getTargetCameraX } from 'app/update';
 import { abbreviate } from 'app/utils/formatters';
-import { ifdefor, removeElementFromArray } from 'app/utils/index';
+import { ifdefor, rectangle, removeElementFromArray } from 'app/utils/index';
 import { centerShapesInRectangle } from 'app/utils/polygon';
 import Random from 'app/utils/Random';
 
@@ -221,6 +221,8 @@ function makeAdventurerFromData(adventurerData) {
         character: null,
         heading: [1, 0, 0], // Character moves left to right by default.
         bonusMaxHealth: 0,
+        // Will be set when bonuses are calculated.
+        maxHealth: 0,
     };
     initializeVariableObject(adventurer, {'variableObjectType': 'actor'}, adventurer);
     equipmentSlots.forEach(function (type) {
@@ -555,7 +557,7 @@ export function damageActor(actor, damage) {
 export function healActor(actor, healAmount) {
     actor.targetHealth += healAmount;
 }
-function setActorHealth(actor, health) {
+export function setActorHealth(actor, health) {
     actor.targetHealth = actor.health = health;
     actor.percentHealth = actor.percentTargetHealth = health / actor.maxHealth;
 }

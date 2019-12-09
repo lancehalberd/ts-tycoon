@@ -2,7 +2,7 @@ import { applyParentToVariableChild, initializeVariableObject } from 'app/bonuse
 import { tag, titleDiv } from 'app/dom';
 import { evaluateForDisplay } from 'app/evaluate';
 import { getState } from 'app/state';
-import { isTwoHandedWeapon, tagToDisplayName } from 'app/inventory';
+import { isTwoHandedWeapon, sellValue, tagToDisplayName } from 'app/inventory';
 import { points } from 'app/points';
 import { properCase } from 'app/utils/index';
 
@@ -17,11 +17,11 @@ export function getNameWithAffixes(name, prefixes, suffixes) {
 export function getItemHelpText($item) {
     var item = $item.data('item');
     var sections = [];
-    const gameState = getState();
-    var actor = gameState.selectedCharacter.adventurer;
+    const state = getState();
+    var actor = state.selectedCharacter.adventurer;
     // Unique items have a distinct display name that is used instead of the affix generated name.
     var title;
-    if (ifdefor(item.displayName)) title = item.displayName;
+    if (item.displayName) title = item.displayName;
     else title = getNameWithAffixes(item.base.name, item.prefixes, item.suffixes);
     if (item.base.tags) {
         var tagParts = [];
@@ -35,7 +35,7 @@ export function getItemHelpText($item) {
         sections.push(tagParts.join(', '));
     }
 
-    if (item.level > gameState.selectedCharacter.adventurer.level) {
+    if (item.level > state.selectedCharacter.adventurer.level) {
         sections.push('<span style="color: #c00;">Requires level ' + item.level + '</span>');
     } else {
         sections.push('Requires level ' + item.level);
@@ -125,6 +125,7 @@ export function bonusSourceHelpText(bonusSource, actor, localObject = null) {
     var weaponsStyle = '';
     for (var restriction of (bonusSource.restrictions || [])) {
         var style = '';
+        const state = getState();
         if (!state.selectedCharacter.adventurer.tags[restriction]) {
             style = ' style="color: #c00;"';
         }
@@ -216,7 +217,7 @@ export function renderBonusText(bonusMap, bonusKey, bonusSource, actor, localObj
     }
     return text.split(wildcard).join(renderedValue);
 }
-function abilityHelpText(ability, actor) {
+export function abilityHelpText(ability, actor) {
     const sections = [];
     if (ability.bonuses) sections.push(bonusSourceHelpText(ability, actor));
     const action = ability.action || ability.reaction;

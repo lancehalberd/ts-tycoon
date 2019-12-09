@@ -1,7 +1,8 @@
 import { addBonusSourceToObject, removeBonusSourceFromObject} from 'app/bonuses';
 import { addActions, recomputeActorTags } from 'app/character';
 import { editingMapState } from 'app/development/editLevel';
-import { query } from 'app/dom';
+import { query, tag, tagElement } from 'app/dom';
+import { getItemHelpText } from 'app/helpText';
 import { jewelInventoryState } from 'app/jewelInventory';
 import { gain } from 'app/points';
 import { saveGame } from 'app/saveGame';
@@ -9,6 +10,18 @@ import { getState } from 'app/state';
 import { ifdefor } from 'app/utils/index';
 import { getMousePosition } from 'app/utils/mouse';
 import { EquipmentSlot, ItemData, RawItemData, } from 'app/utils/types';
+
+export const armorSlots = ['body', 'feet', 'head', 'offhand', 'arms', 'legs'];
+export const smallArmorSlots = ['feet', 'head', 'offhand', 'arms', 'legs'];
+export const equipmentSlots = ['weapon', 'body', 'feet', 'head', 'offhand', 'arms', 'legs', 'back', 'ring'];
+export const accessorySlots = ['back', 'ring'];
+// const nonWeapons = ['body', 'feet', 'head', 'offhand', 'arms', 'legs', 'back', 'ring'];
+export const items = [[]];
+export const itemsByKey: {[key: string]: any} = {};
+export const itemsBySlotAndLevel = {};
+equipmentSlots.forEach(function (slot) {
+    itemsBySlotAndLevel[slot] = [];
+});
 
 export function equipItemProper(actor, item, update) {
     //console.log("equip " + item.base.slot);
@@ -20,11 +33,11 @@ export function equipItemProper(actor, item, update) {
         console.log("Tried to equip an offhand while wielding a two handed weapon!");
         return;
     }
-    item.$item.detach();
+    item.domElement.detach();
     const gameState = getState();
     if (actor.character === gameState.selectedCharacter) {
-        $('.js-equipment .js-' + item.base.slot).append(item.$item);
-        $('.js-equipment .js-' + item.base.slot + ' .js-placeholder').hide();
+        query('.js-equipment .js-' + item.base.slot).appendChild(item.domElement);
+        query('.js-equipment .js-' + item.base.slot + ' .js-placeholder').style.display = 'none';
     }
     item.actor = actor;
     actor.equipment[item.base.slot] = item;
@@ -53,7 +66,7 @@ function unequipSlot(actor, slotKey, update) {
     //console.log(new Error("unequip " + slotKey));
     if (actor.equipment[slotKey]) {
         var item = actor.equipment[slotKey];
-        item.$item.detach();
+        item.domElement.detach();
         item.actor = null;
         actor.equipment[slotKey] = null;
         removeActions(actor, item.base);
@@ -102,13 +115,14 @@ export function updateOffhandDisplay() {
 export function isTwoHandedWeapon(item) {
     return item && item.base.tags['twoHanded'];
 }
-function sellValue(item) {
+export function sellValue(item) {
     return Math.floor(4 * baseItemLevelCost(item.itemLevel));
 }
-function baseItemLevelCost(itemLevel) {
+export function baseItemLevelCost(itemLevel) {
     return itemLevel * itemLevel * Math.pow(1.15, itemLevel);
 }
 export function makeItem(base, level) {
+    const state = getState();
     var item = {
         base,
         'prefixes': [],
@@ -116,14 +130,15 @@ export function makeItem(base, level) {
         // level is used to represent the required level, itemLevel is used
         // to calculate available enchantments and sell value.
         'itemLevel': level,
-        'unique': false
+        'unique': false,
+        domElement: tagElement('div', 'js-item item', tag('div', 'icon ' + base.icon) + tag('div', 'itemLevel', base.level))
     };
-    item.$item = $tag('div', 'js-item item', tag('div', 'icon ' + base.icon) + tag('div', 'itemLevel', base.level));
     updateItem(item);
-    item.$item.data('item', item);
-    item.$item.attr('helptext', '-').data('helpMethod', getItemHelpText);
+    item.domElement.data('item', item);
+    item.domElement.setAttribute('helptext', '-');
+    item.domElement.data('helpMethod', getItemHelpText);
     if (state.selectedCharacter) {
-        item.$item.toggleClass('equipable', canEquipItem(state.selectedCharacter.adventurer, item));
+        item.domElement.toggleClass('equipable', canEquipItem(state.selectedCharacter.adventurer, item));
     }
     return item;
 }
@@ -133,25 +148,25 @@ export function updateEquipableItems() {
         $(this).toggleClass('equipable', canEquipItem(state.selectedCharacter.adventurer, item));
     })
 }
-function updateItem(item) {
+export function updateItem(item) {
     var levelRequirement = item.base.level;
     item.prefixes.concat(item.suffixes).forEach(function (affix) {
         levelRequirement = Math.max(levelRequirement, affix.base.level);
     });
     item.level = levelRequirement;
-    item.$item.removeClass('imbued').removeClass('enchanted').removeClass('unique');
+    item.domElement.removeClass('imbued').removeClass('enchanted').removeClass('unique');
     var enchantments = item.prefixes.length + item.suffixes.length;
     if (item.unique) {
-        item.$item.addClass('unique');
+        item.domElement.addClass('unique');
     } else if (enchantments > 2) {
-        item.$item.addClass('imbued');
+        item.domElement.addClass('imbued');
     } else if (enchantments) {
-        item.$item.addClass('enchanted');
+        item.domElement.addClass('enchanted');
     }
 }
-function addToInventory(item) {
-    item.$item.detach();
-    $('.js-inventorySlot').before(item.$item);
+export function addToInventory(item) {
+    item.domElement.detach();
+    $('.js-inventorySlot').before(item.domElement);
     $('.js-inventorySlot').hide();
 }
 const tagToDisplayNameMap = {
@@ -167,7 +182,7 @@ export function tagToDisplayName(tag) {
     return ifdefor(tagToDisplayNameMap[tag], properCase(tag));
 }
 function sellItem(item) {
-    if ($dragHelper && (!$dragHelper.data('$source') || $dragHelper.data('$source').data('item') !== item)) {
+    if (inventoryState.dragHelper && (!inventoryState.dragHelper.data('$source') || inventoryState.dragHelper.data('$source').data('item') !== item)) {
         return;
     }
     if (item.actor) {
@@ -184,38 +199,40 @@ function sellItem(item) {
     saveGame();
 }
 function destroyItem(item) {
-    if ($dragHelper) {
-        var $source = $dragHelper.data('$source');
+    if (inventoryState.dragHelper) {
+        var $source = inventoryState.dragHelper.data('$source');
         if ($source && $source.data('item') === item) {
             $source.data('item', null);
-            $dragHelper.data('$source', null);
-            $dragHelper.remove();
-            $dragHelper = null;
+            inventoryState.dragHelper.data('$source', null);
+            inventoryState.dragHelper.remove();
+            inventoryState.dragHelper = null;
             $('.js-itemSlot.active').removeClass('active');
             $('.js-itemSlot.invalid').removeClass('invalid');
         }
     }
-    item.$item.data('item', null);
-    item.$item.remove();
-    item.$item = null;
+    item.domElement.data('item', null);
+    item.domElement.remove();
+    item.domElement = null;
     updateEnchantmentOptions();
 }
+export const inventoryState = {
+    dragHelper: null,
+    dragged: false,
+};
 
-var $dragHelper = null;
-var dragged = false;
 $('body').on('mouseup', function (event) {
-    if (dragged) {
+    if (inventoryState.dragged) {
         stopDrag();
     }
-    if (jewelInventoryState.overVertex || dragged) {
+    if (jewelInventoryState.overVertex || inventoryState.dragged) {
         stopJewelDrag();
     }
-    dragged = false;
+    inventoryState.dragged = false;
 });
 $('body').on('mousedown', '.js-item', function (event) {
     var specialClick = event.ctrlKey || event.metaKey;
     if (event.which != 1) return; // Handle only left click.
-    if ($dragHelper) {
+    if (inventoryState.dragHelper) {
         stopDrag();
         return;
     }
@@ -230,13 +247,13 @@ $('body').on('mousedown', '.js-item', function (event) {
         checkIfCraftedItemWasClaimed();
         return;
     }
-    $dragHelper = $(this).clone();
-    $dragHelper.data('item', item);
-    $dragHelper.data('helpMethod', $(this).data('helpMethod'));
-    $dragHelper.data('$source', $(this));
+    inventoryState.dragHelper = $(this).clone();
+    inventoryState.dragHelper.data('item', item);
+    inventoryState.dragHelper.data('helpMethod', $(this).data('helpMethod'));
+    inventoryState.dragHelper.data('$source', $(this));
     $(this).css('opacity', '.3');
-    $dragHelper.css('position', 'absolute');
-    $('.js-mouseContainer').append($dragHelper);
+    inventoryState.dragHelper.css('position', 'absolute');
+    $('.js-mouseContainer').append(inventoryState.dragHelper);
     if (!$('.js-craftingSelectOptions .js-itemSlot:visible').length) {
         $('.js-enchantmentOptions').show();
         $('.js-craftingOptions').hide();
@@ -244,7 +261,7 @@ $('body').on('mousedown', '.js-item', function (event) {
         updateEnchantmentOptions();
     }
     updateDragHelper();
-    dragged = false;
+    inventoryState.dragged = false;
     var item = $(this).data('item');
     if (item.actor) unequipSlot(item.actor, item.base.slot, true);
     $('.js-equipment .js-' + item.base.slot).addClass(!canEquipItem(state.selectedCharacter.adventurer, item) ? 'invalid' : 'active');
@@ -268,13 +285,13 @@ function canEquipItem(actor, item) {
 }
 
 function updateDragHelper() {
-    if (!$dragHelper) {
+    if (!inventoryState.dragHelper) {
         return;
     }
     const mousePosition = getMousePosition();
-    $dragHelper.css('left', (mousePosition[0] - $dragHelper.width() / 2) + 'px');
-    $dragHelper.css('top', (mousePosition[1] - $dragHelper.height() / 2) + 'px');
-    dragged = true;
+    inventoryState.dragHelper.css('left', (mousePosition[0] - inventoryState.dragHelper.width() / 2) + 'px');
+    inventoryState.dragHelper.css('top', (mousePosition[1] - inventoryState.dragHelper.height() / 2) + 'px');
+    inventoryState.dragged = true;
 }
 
 document.addEventListener('mousemove', function (event) {
@@ -314,21 +331,21 @@ function equipItem(actor, item) {
     return true;
 }
 function applyDragResults() {
-    if (!$dragHelper) {
+    if (!inventoryState.dragHelper) {
         return;
     }
-    var $source = $dragHelper.data('$source');
+    var $source = inventoryState.dragHelper.data('$source');
     // If this doesn't have item data, it must be a jewel.
     if (!$source) {
         stopJewelDrag();
         return;
     }
     var item = $source.data('item');
-    if (collision($dragHelper, $('.js-sellItem:visible'))) {
+    if (collision(inventoryState.dragHelper, $('.js-sellItem:visible'))) {
         sellItem(item);
         return;
     }
-    if (collision($dragHelper, $('.js-enchantmentSlot'))) {
+    if (collision(inventoryState.dragHelper, $('.js-enchantmentSlot'))) {
         var $otherItem = $('.js-enchantmentSlot').find('.js-item');
         // If there is an item already in the enchantment slot, place it
         // back in the inventory.
@@ -340,7 +357,7 @@ function applyDragResults() {
     }
     var hit = false;
     $('.js-equipment .js-' + item.base.slot).each(function (index, element) {
-        if (!collision($dragHelper, $(element))) return true;
+        if (!collision(inventoryState.dragHelper, $(element))) return true;
         hit = true;
         equipItem(state.selectedCharacter.adventurer, item)
         return false;
@@ -350,7 +367,7 @@ function applyDragResults() {
     var largestCollision = 0;
     $('.js-inventory .js-item').each(function (index, element) {
         var $element = $(element);
-        var collisionArea = getCollisionArea($dragHelper, $element);
+        var collisionArea = getCollisionArea(inventoryState.dragHelper, $element);
         if (collisionArea > largestCollision) {
             $target = $element;
             largestCollision = collisionArea;
@@ -376,26 +393,15 @@ function applyDragResults() {
     addToInventory(item);
 }
 function stopInventoryDrag() {
-    if ($dragHelper) {
-        $dragHelper.data('$source').css('opacity', '1');
-        $dragHelper.remove();
-        $dragHelper = null;
+    if (inventoryState.dragHelper) {
+        inventoryState.dragHelper.data('$source').css('opacity', '1');
+        inventoryState.dragHelper.remove();
+        inventoryState.dragHelper = null;
         updateEnchantmentOptions();
     }
     $('.js-itemSlot.active').removeClass('active');
     $('.js-itemSlot.invalid').removeClass('invalid');
 }
-const armorSlots = ['body', 'feet', 'head', 'offhand', 'arms', 'legs'];
-const smallArmorSlots = ['feet', 'head', 'offhand', 'arms', 'legs'];
-export const equipmentSlots = ['weapon', 'body', 'feet', 'head', 'offhand', 'arms', 'legs', 'back', 'ring'];
-const accessorySlots = ['back', 'ring'];
-const nonWeapons = ['body', 'feet', 'head', 'offhand', 'arms', 'legs', 'back', 'ring'];
-const items = [[]];
-export const itemsByKey: {[key: string]: any} = {};
-const itemsBySlotAndLevel = {};
-equipmentSlots.forEach(function (slot) {
-    itemsBySlotAndLevel[slot] = [];
-});
 
 export function addItem(level: number, rawData: RawItemData) {
     const key = rawData.name.replace(/\s*/g, '').toLowerCase();
@@ -428,7 +434,7 @@ export function addItem(level: number, rawData: RawItemData) {
 }
 
 $(document).on('keydown', function(event) {
-    if (event.which == 82 && !$dragHelper && !(event.metaKey || event.ctrlKey)) { // 'r' without ctrl/cmd while not dragging an item.
+    if (event.which == 82 && !inventoryState.dragHelper && !(event.metaKey || event.ctrlKey)) { // 'r' without ctrl/cmd while not dragging an item.
         // If they are looking at the item screen and the reforge option is available.
         if (state.selectedCharacter.context === 'item' && $('.js-craftingSelectOptions:visible').length) {
             reforgeItems();
@@ -482,12 +488,12 @@ $(document).on('keydown', function(event) {
             state.craftedItems[overCraftingItem.key] |= CRAFTED_NORMAL;
             var item = makeItem(overCraftingItem, overCraftingItem.level);
             updateItem(item);
-            $('.js-inventory').prepend(item.$item);
+            $('.js-inventory').prepend(item.domElement);
             if (item.base.unique) {
                 item = makeItem(overCraftingItem, overCraftingItem.level);
                 makeItemUnique(item);
                 updateItem(item);
-                $('.js-inventory').prepend(item.$item);
+                $('.js-inventory').prepend(item.domElement);
                 state.craftedItems[overCraftingItem.key] |= CRAFTED_UNIQUE;
             }
             $('.js-inventorySlot').hide();

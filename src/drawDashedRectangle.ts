@@ -2,11 +2,11 @@
 /**
  * Draws an animated dashed rectangle to the given context.
  */
-function drawDashedRectangle(context, rectangle) {
+export function drawDashedRectangle(context, rectangle) {
     context.save();
     context.lineWidth = 1;
     context.strokeStyle = 'black';
-    var frame = Math.floor(now() / 80) % 10;
+    var frame = Math.floor(Date.now() / 80) % 10;
     if (frame < 5) {
         context.setLineDash([frame, 5, 5 - frame, 0]);
     } else {

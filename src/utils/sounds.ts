@@ -34,7 +34,7 @@ export function areAllSoundsLoaded() {
     return numberOfSoundsLeftToLoad <= 0;
 }
 
-function playSound(source, area) {
+export function playSound(source, area) {
     if (soundsMuted || getState().selectedCharacter.hero.area !== area ) return;
     var source, offset,volume, customDuration;
     [source, offset, volume] = source.split('+');
@@ -101,7 +101,7 @@ export function playTrack(source) {
     'music/mobbrobb/map.mp3+0+.5',
 ].forEach(requireSound);
 
-var attackSounds = {
+export const attackSounds = {
     unarmed: 'sounds/unfa/melee1.flac',
     fist: 'sounds/unfa/melee1.flac',
     staff: 'sounds/unfa/melee1.flac',
@@ -115,12 +115,12 @@ var attackSounds = {
     wand: 'wand',
 };
 
-var attackHitSounds = {
+export const attackHitSounds = {
     bow: 'sounds/cheeseman/arrowHit.wav',
     throwing: 'sounds/cheeseman/arrowHit.wav',
 };
 
-var soundTrack = {
+export const soundTrack = {
     map: 'music/mobbrobb/map.mp3',
 };
 

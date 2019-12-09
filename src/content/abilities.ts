@@ -2,7 +2,7 @@ import { Bonuses } from 'app/bonuses';
 import { Action, buffEffect, debuffEffect, skills } from 'app/content/skills';
 import { createCanvas } from 'app/dom';
 import { drawTintedImage, drawImage, requireImage } from 'app/images';
-import { jobIcons } from 'app/content/jobs';
+import { JobIcon, jobIcons } from 'app/content/jobs';
 import { Frame, TintedFrame } from 'app/utils/types';
 
 /**
@@ -65,8 +65,9 @@ function tintIcon(imageFile, color): TintedFrame {
 }
 
 const effectAccuracy = ['gfx/militaryIcons.png', 65, 194, 12, 12, 8, 8];
+const effectSourcePoison = ['gfx/militaryIcons.png', 51, 74, 16, 16, 0, 0];
 
-function getAbilityIconSource(ability) {
+export function getAbilityIconSource(ability) {
     if (!ability) return null;
     let icon = ability.icon;
     if (ability.action) icon = icon || ability.action.icon;
@@ -78,7 +79,7 @@ function getAbilityIconSource(ability) {
 interface TriggerEffect {
 
 }
-interface Ability {
+export interface Ability {
     key?: string,
     name: string,
     action?: Action,
@@ -88,7 +89,7 @@ interface Ability {
     onMissEffect?: TriggerEffect,
     bonuses?: Bonuses,
     minionBonuses?: Bonuses,
-    icon?: Frame | string,
+    icon?: JobIcon | Frame | string,
     helpText?: string,
 }
 export const abilities: {[key: string]: Ability} = {
@@ -310,7 +311,7 @@ export const abilities: {[key: string]: Ability} = {
         'darkknight': {name: 'Blood Lust', 'bonuses': {'+overHeal': .5, '+lifeSteal': .05}},
         'consume': {name: 'Consume', 'bonuses': {'+intelligence': 5}, 'action': skills.consume},
         'soulStrike': {name: 'Soul Strike', 'bonuses': {'+strength': 10}, 'action': skills.soulStrike},
-        'reaper': {name: 'Reaper', 'bonuses': {'+intelligence': 10, '+strength': 5, '+consume:count': 1, '+consume:duration': 10}, 'icon': darkknightIcon,
+        'reaper': {name: 'Reaper', 'bonuses': {'+intelligence': 10, '+strength': 5, '+consume:count': 1, '+consume:duration': 10}, 'icon': jobIcons.darkknight,
             'helpText': 'Gain the powers of consumed monsters for a short period.'},
     'bardIndex': {name: '---Bard---'},
         'bard': {name: 'Charisma', 'bonuses': {'*minion:cooldown': .6, '+minion:limit': 1, '*song:duration': 1.5, '+buff:area': 8}},

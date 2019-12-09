@@ -7,7 +7,7 @@ import { fixedObject } from 'app/content/furniture';
 import { map } from 'app/content/mapData';
 import { bossMonsterBonuses, easyBonuses, hardBonuses, monsters } from 'app/content/monsters';
 import { setContext } from 'app/context';
-import { bodyDiv, mainContext, titleDiv, updateConfirmSkillConfirmationButtons } from 'app/dom';
+import { bodyDiv, divider, mainContext, titleDiv, updateConfirmSkillConfirmationButtons } from 'app/dom';
 import { drawBoardPreview } from 'app/drawBoard';
 import { GROUND_Y, MAX_LEVEL } from 'app/gameConstants';
 import { drawImage, requireImage } from 'app/images';
@@ -19,8 +19,8 @@ import { getThetaDistance, rectangle } from 'app/utils/index';
 import { centerShapesInRectangle, isPointInPoints } from 'app/utils/polygon';
 import Random from 'app/utils/Random';
 
-var closedChestSource = {image: requireImage('gfx/chest-closed.png'), source: rectangle(0, 0, 32, 32)};
-var openChestSource = {image: requireImage('gfx/chest-open.png'), source: rectangle(0, 0, 32, 32)};
+export const closedChestSource = {image: requireImage('gfx/chest-closed.png'), source: rectangle(0, 0, 32, 32)};
+export const openChestSource = {image: requireImage('gfx/chest-open.png'), source: rectangle(0, 0, 32, 32)};
 interface MonsterSpawn {
     key: string,
     level: number,
@@ -254,7 +254,7 @@ var drawLetter = (context, letter, x, y) => {
     context.fillText(letter, x, y + 7);
 };
 
-function activateShrine(actor) {
+export function activateShrine(actor) {
     var character = actor.character;
     // Don't activate the shrine a second time.
     if (character.isStuckAtShrine) return;

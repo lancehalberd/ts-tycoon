@@ -1,5 +1,6 @@
 import { applyAttackToTarget, getBasicAttack } from 'app/performAttack';
 import { isMouseDown } from 'app/utils/mouse';
+import Vector from 'app/utils/Vector';
 
 const rotationA = Math.cos(Math.PI / 20);
 const rotationB = Math.sin(Math.PI / 20);

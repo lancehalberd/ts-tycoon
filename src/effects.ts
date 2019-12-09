@@ -1,18 +1,29 @@
+import { getDistance, getDistanceOverlap } from 'app/adventure';
+import { pause } from 'app/adventureButtons';
 import { addBonusSourceToObject, recomputeDirtyStats, removeBonusSourceFromObject } from 'app/bonuses';
-import { applyAttackToTarget } from 'app/performAttack';
+import { effectAnimations } from 'app/content/effectAnimations';
+import { mainContext } from 'app/dom';
+import { drawGroundCircle, drawOnGround } from 'app/drawArea';
+import { GROUND_Y, MAX_Z, MIN_Z } from 'app/gameConstants';
+import { drawImage, drawTintedImage } from 'app/images';
+import { applyAttackToTarget, getAttackY } from 'app/performAttack';
+import { isActorDying } from 'app/useSkill';
+import { rectangle } from 'app/utils/index';
+import Random from 'app/utils/Random';
+import { playSound } from 'app/utils/sounds';
 
-function songEffect(attackStats) {
-    var color = ifdefor(attackStats.attack.base.color, 'red');
-    var alpha = ifdefor(attackStats.attack.base.alpha, .3);
-    var frames = ifdefor(attackStats.attack.base.frames, 30);
+export function songEffect(attackStats) {
+    var color = (attackStats.attack.base.color || 'red');
+    var alpha = (attackStats.attack.base.alpha || .3);
+    var frames = (attackStats.attack.base.frames || 30);
     if (!attackStats.attack.area) {
         throw new Error('Song effect called with no area set.');
     }
-    var radius = attackStats.attack.area * ifdefor(attackStats.effectivness, 1) * 32;
+    var radius = attackStats.attack.area * (attackStats.effectivness || 1) * 32;
     var endTime = attackStats.source.time + attackStats.attack.duration;
     var followTarget = attackStats.source;
-    var height = ifdefor(attackStats.attack.base.height, 60);
-    var yOffset = getAttackY(attackStats.source) + ifdefor(attackStats.attack.base.yOffset, 0);
+    var height =  attackStats.attack.base.height || 60;
+    var yOffset = getAttackY(attackStats.source) + (attackStats.attack.base.yOffset || 0);
     // This list is kept up to date each frame and targets stats are updated as they
     // are added/removed from this list.
     var notes = [];
@@ -23,7 +34,7 @@ function songEffect(attackStats) {
         update(area) {
             self.currentFrame++;
             if (notes.length < 6) {
-                var note = animationEffect(effectAnimations.song,
+                const note = animationEffect(effectAnimations.song,
                     {x:0, y: 20, z: 0, width: 25, height: 50}, {loop: true, frameSpeed: .5, tintColor: color, tintValue: .5});
                 area.effects.push(note);
                 followTarget.boundEffects.push(note);
@@ -36,7 +47,7 @@ function songEffect(attackStats) {
             var currentRadius = Math.round(radius * Math.min(1, self.currentFrame / frames));
             var currentLocation = {x: followTarget.x, z: followTarget.z}; // We can't just use followTarget because we need width/height to be 0.
             for (var i = 0; i < notes.length; i++) {
-                var note = notes[i];
+                const note = notes[i];
                 var timeTheta = thetaOffset + followTarget.time;
                 var xRadius = Math.min(currentRadius, 300);
                 var zRadius = Math.min(currentRadius, 90);
@@ -95,7 +106,7 @@ function songEffect(attackStats) {
 
 // Used to play an animation that has no other effects, for example, the sparkles for the heal spell.
 // Set target to a character to have an effect follow them, or to a static target to display in place.
-function animationEffect(animation, target, {scale = [1, 1], loop = false, frameSpeed = 1, tintColor, tintValue}) {
+export function animationEffect(animation, target, {scale = [1, 1], loop = false, frameSpeed = 1, tintColor = null, tintValue = null}) {
     return {
         target, x: target.x, y: target.y, z: target.z,
         width: target.width * scale[0], height: target.height * scale[1],
@@ -113,14 +124,14 @@ function animationEffect(animation, target, {scale = [1, 1], loop = false, frame
             if (this.done) return
             mainContext.save();
             // mainContext.globalAlpha = alpha;
-            mainContext.translate((this.x - area.cameraX), groundY - this.y - this.z / 2 - target.height / 2);
+            mainContext.translate((this.x - area.cameraX), GROUND_Y - this.y - this.z / 2 - target.height / 2);
             mainContext.fillStyle = 'red';
             // fillRectangle(mainContext, rectangle(-this.width / 2, -this.height / 2, this.width, this.height));
             var frame = animation.frames[Math.floor(this.currentFrame) % animation.frames.length];
             var sourceRectangle = rectangle(frame[0], frame[1], frame[2], frame[3]);
             var targetRectangle = rectangle(-this.width / 2, -this.height / 2, this.width, this.height);
             if (tintColor) {
-                drawTintedImage(mainContext, animation.image, tintColor, ifdefor(tintValue, .5),
+                drawTintedImage(mainContext, animation.image, tintColor, tintValue || .5,
                     sourceRectangle, targetRectangle);
             } else {
                 drawImage(mainContext, animation.image, sourceRectangle, targetRectangle);
@@ -130,21 +141,21 @@ function animationEffect(animation, target, {scale = [1, 1], loop = false, frame
     };
 }
 
-function explosionEffect(attackStats, x, y, z) {
-    var attack = attackStats.imprintedSpell || attackStats.attack;
-    var color = ifdefor(attack.base.color, 'red');
-    var alpha = ifdefor(attack.base.alpha, .5);
-    var animation, frames = attack.base.frames || 10, endFrames = attack.base.endFrames || 5;
+export function explosionEffect(attackStats, x, y, z) {
+    const attack = attackStats.imprintedSpell || attackStats.attack;
+    const color = attack.base.color || 'red';
+    let alpha = attack.base.alpha || .5;
+    let animation, frames = attack.base.frames || 10, endFrames = attack.base.endFrames || 5;
     if (attack.base.explosionAnimation) {
         animation = attack.base.explosionAnimation;
         frames = animation.frames.length;
         if (animation.endFrames) endFrames = animation.endFrames.length;
-        alpha = ifdefor(attack.base.alpha, 1);
+        alpha = attack.base.alpha || 1;
     }
     if (!attack.area) {
         throw new Error('Explosion effect called with no area set.');
     }
-    var radius = attack.area * ifdefor(attackStats.effectiveness, 1) * 32;
+    var radius = attack.area * (attackStats.effectiveness || 1) * 32;
     var height = radius * 2;
     if (attack.base.height) {
         height = attack.base.height;
@@ -168,7 +179,7 @@ function explosionEffect(attackStats, x, y, z) {
             // areaCoefficient = 0 means the blast is equally effective everywhere.
             // areaCoefficient = 1 means the blast has no effect at the edge.
             // areaCoefficient < 0 means the blast has increased effect the further it is from the center.
-            self.attackStats.effectiveness = 1 - currentRadius / radius * ifdefor(self.attack.areaCoefficient, 1);
+            self.attackStats.effectiveness = 1 - currentRadius / radius * (self.attack.areaCoefficient || 1);
             for (var i = 0; i < self.attackStats.source.enemies.length; i++) {
                 var target = self.attackStats.source.enemies[i];
                 if (target.isDead || self.hitTargets.indexOf(target) >= 0) continue;
@@ -184,7 +195,7 @@ function explosionEffect(attackStats, x, y, z) {
             var currentRadius = Math.round(radius * Math.min(1, self.currentFrame / frames));
             mainContext.save();
             mainContext.globalAlpha = alpha;
-            mainContext.translate((self.x - area.cameraX), groundY - self.y - self.z / 2);
+            mainContext.translate((self.x - area.cameraX), GROUND_Y - self.y - self.z / 2);
             if (animation) {
                 var frame = (self.currentFrame < frames || !animation.endFrames)
                     ? animation.frames[Math.min(frames - 1, self.currentFrame)]
@@ -195,7 +206,7 @@ function explosionEffect(attackStats, x, y, z) {
             } else {
                 mainContext.beginPath();
                 mainContext.scale(1, height / (2 * radius));
-                mainContext.arc(0, 0, currentRadius, ifdefor(self.attack.base.minTheta, 0), ifdefor(self.attack.base.maxTheta, 2 * Math.PI));
+                mainContext.arc(0, 0, currentRadius, self.attack.base.minTheta || 0, self.attack.base.maxTheta || 2 * Math.PI);
                 mainContext.fillStyle = color;
                 mainContext.fill();
             }
@@ -206,17 +217,17 @@ function explosionEffect(attackStats, x, y, z) {
 }
 
 
-function novaEffect(attackStats, x, y, z) {
+export function novaEffect(attackStats, x, y, z) {
     var attack = attackStats.imprintedSpell || attackStats.attack;
-    var color = ifdefor(attack.base.color, 'red');
-    var alpha = ifdefor(attack.base.alpha, .5);
+    var color = attack.base.color || red;
+    var alpha = attack.base.alpha || 5;
     var frames = attack.base.frames || 10, endFrames = attack.base.endFrames || 5;
     var blasts = [];
     var theta = Math.random() * 2 * Math.PI;
     if (!attack.area) {
         throw new Error('Explosion effect called with no area set.');
     }
-    var radius = attack.area * ifdefor(attackStats.effectiveness, 1) * 32;
+    var radius = attack.area * (attackStats.effectiveness || 1) * 32;
     var self = {
         'hitTargets': [], attack, attackStats, x, y, z, 'width': 0, 'height': 0, 'currentFrame': 0, 'done': false,
         update(area) {
@@ -249,7 +260,7 @@ function novaEffect(attackStats, x, y, z) {
             // areaCoefficient = 0 means the blast is equally effective everywhere.
             // areaCoefficient = 1 means the blast has no effect at the edge.
             // areaCoefficient < 0 means the blast has increased effect the further it is from the center.
-            self.attackStats.effectiveness = 1 - currentRadius / radius * ifdefor(self.attack.areaCoefficient, 1);
+            self.attackStats.effectiveness = 1 - currentRadius / radius * (self.attack.areaCoefficient || 1);
             for (var i = 0; i < self.attackStats.source.enemies.length; i++) {
                 var target = self.attackStats.source.enemies[i];
                 if (target.isDead || self.hitTargets.indexOf(target) >= 0) continue;
@@ -291,19 +302,19 @@ function novaEffect(attackStats, x, y, z) {
     return self;
 }
 
-function fieldEffect(attackStats, followTarget) {
+export function fieldEffect(attackStats, followTarget) {
     var attack = attackStats.imprintedSpell || attackStats.attack;
-    var color = ifdefor(attack.base.color, 'red');
-    var alpha = ifdefor(attack.base.alpha, .5);
-    var frames = ifdefor(attack.base.frames, 10);
+    var color = (attack.base.color || 'red');
+    var alpha = (attack.base.alpha || .5);
+    var frames = (attack.base.frames || 10);
     if (!attack.area) {
         throw new Error('Field effect called with no area set.');
     }
-    var radius = attack.area * ifdefor(attackStats.effectivness, 1) * 32;
-    var height = ifdefor(attack.base.height, radius * 2);
+    var radius = attack.area * (attackStats.effectivness || 1) * 32;
+    var height = (attack.base.height || radius * 2);
     var endTime = attackStats.source.time + attack.duration;
     var nextHit = attackStats.source.time + 1 / attack.hitsPerSecond;
-    var yOffset = getAttackY(attackStats.source) + ifdefor(attack.base.yOffset, 0);
+    var yOffset = getAttackY(attackStats.source) + (attack.base.yOffset || 0);
     var self = {
         attackStats,
         'x': followTarget.x,
@@ -348,7 +359,7 @@ function fieldEffect(attackStats, followTarget) {
             mainContext.fillStyle = color;
             mainContext.beginPath();
             mainContext.save();
-            mainContext.translate((followTarget.x - area.cameraX), groundY - yOffset - followTarget.z / 2);
+            mainContext.translate((followTarget.x - area.cameraX), GROUND_Y - yOffset - followTarget.z / 2);
             mainContext.scale(1, height / (2 * currentRadius));
             mainContext.arc(0, 0, currentRadius, 0, 2 * Math.PI);
             mainContext.fill();
@@ -374,7 +385,7 @@ function fieldEffect(attackStats, followTarget) {
     return self;
 }
 // These are fake projectiles created by a projectile to be displayed as blurred after images.
-function afterImage({attackStats, x, y, z, vx, vy, vz, color, size, t} ) {
+export function afterImage({attackStats, x, y, z, vx, vy, vz, color, size, t} ) {
     var alpha = 1;
     return {
         update(area) {
@@ -385,7 +396,7 @@ function afterImage({attackStats, x, y, z, vx, vy, vz, color, size, t} ) {
             if (this.done || alpha >= 1) return;
             mainContext.save();
             mainContext.globalAlpha = alpha;
-            mainContext.translate(x - area.cameraX, groundY - y - z / 2);
+            mainContext.translate(x - area.cameraX, GROUND_Y - y - z / 2);
             if (vx < 0) {
                 mainContext.scale(-1, 1);
                 mainContext.rotate(-Math.atan2(vy, -vx));
@@ -394,19 +405,18 @@ function afterImage({attackStats, x, y, z, vx, vy, vz, color, size, t} ) {
             }
             var animation = attackStats.animation;
             if (animation) {
-                var frame = animation.frames[Math.floor(ifdefor(animation.fps, 10) * t * 20 / 1000) % animation.frames.length];
+                var frame = animation.frames[Math.floor((animation.fps || 10) * t * 20 / 1000) % animation.frames.length];
                 mainContext.drawImage(animation.image, frame[0], frame[1], frame[2], frame[3],
                                    -size / 2, -size / 2, size, size);
             } else {
-                mainContext.fillStyle = ifdefor(color, '#000');
+                mainContext.fillStyle = color || '#000';
                 mainContext.fillRect(-size / 2, -size / 2, size, size);
             }
             mainContext.restore();
         }
     };
 }
-function projectile(attackStats, x, y, z, vx, vy, vz, target, delay, color, size) {
-    size = ifdefor(size, 10);
+export function projectile(attackStats, x, y, z, vx, vy, vz, target, delay, color, size = 10) {
     if (!size) {
         pause();
         console.log(attackStats);
@@ -440,7 +450,7 @@ function projectile(attackStats, x, y, z, vx, vy, vz, target, delay, color, size
             }
             if (self.done || self.delay-- > 0) return;
             if (attackStats.attack.base.afterImages > 0) {
-                area.projectiles.push(new afterImage(this));
+                area.projectiles.push(afterImage(this));
             }
             self.x += self.vx;
             self.y += self.vy;
@@ -484,7 +494,7 @@ function projectile(attackStats, x, y, z, vx, vy, vz, target, delay, color, size
             self.hit = true;
             // Juggler can bounce attacks back to himself with friendly set to true to allow him to bounce
             // attacks back to himself without injuring himself.
-            if (!ifdefor(attackStats.friendly) && ifdefor(self.target.reflectBarrier, 0) > 0) {
+            if (!attackStats.friendly && self.target.reflectBarrier > 0) {
                 // Allow reflect barrier to become negative so that it can take time to restore after being hit by a much more powerful attack.
                 self.target.reflectBarrier = self.target.reflectBarrier - self.attackStats.magicDamage - self.attackStats.damage;
                 playSound('reflect', area);
@@ -496,7 +506,7 @@ function projectile(attackStats, x, y, z, vx, vy, vz, target, delay, color, size
                 self.vx = v[0];
                 self.vy = v[1];
                 self.vz = v[2];
-            } else if (ifdefor(attackStats.friendly) || applyAttackToTarget(self.attackStats, self.target)) {
+            } else if (attackStats.friendly || applyAttackToTarget(self.attackStats, self.target)) {
                 // Friendly attack shouldn't hook the user, this is like when a juggler bounces a ball off of himself.
                 if (!attackStats.friendly && self.attackStats.attack.pullsTarget) {
                     self.stickToTarget(self.target);
@@ -504,7 +514,7 @@ function projectile(attackStats, x, y, z, vx, vy, vz, target, delay, color, size
                 }
                 attackStats.friendly = false;
                 self.done = true;
-                if (ifdefor(attackStats.attack.chaining)) {
+                if (attackStats.attack.chaining) {
                     self.done = false;
                     self.totalHits++;
                     // every bounce allows piercing projectiles to hit each target again.
@@ -536,7 +546,7 @@ function projectile(attackStats, x, y, z, vx, vy, vz, target, delay, color, size
                         self.vz = v[2];
                         break;
                     }
-                } else if (ifdefor(self.attackStats.piercing)) {
+                } else if (self.attackStats.piercing) {
                     self.done = false;
                     //console.log('pierce');
                 }
@@ -545,7 +555,7 @@ function projectile(attackStats, x, y, z, vx, vy, vz, target, delay, color, size
         draw(area) {
             if (self.done || self.delay > 0) return
             mainContext.save();
-            mainContext.translate(self.x - area.cameraX, groundY - self.y - self.z / 2);
+            mainContext.translate(self.x - area.cameraX, GROUND_Y - self.y - self.z / 2);
             if (self.vx < 0) {
                 mainContext.scale(-1, 1);
                 mainContext.rotate(-Math.atan2(self.vy, -self.vx));
@@ -554,11 +564,11 @@ function projectile(attackStats, x, y, z, vx, vy, vz, target, delay, color, size
             }
             if (self.attackStats.animation) {
                 var animation = self.attackStats.animation;
-                var frame = animation.frames[Math.floor(ifdefor(animation.fps, 10) * self.t * 20 / 1000) % animation.frames.length];
+                var frame = animation.frames[Math.floor((animation.fps || 10) * self.t * 20 / 1000) % animation.frames.length];
                 mainContext.drawImage(animation.image, frame[0], frame[1], frame[2], frame[3],
                                    -size / 2, -size / 2, size, size);
             } else {
-                mainContext.fillStyle = ifdefor(color, '#000');
+                mainContext.fillStyle = color || '#000';
                 mainContext.fillRect(-size / 2, -size / 2, size, size);
             }
             mainContext.restore();
@@ -568,9 +578,9 @@ function projectile(attackStats, x, y, z, vx, vy, vz, target, delay, color, size
     return self;
 }
 
-function getProjectileVelocity(attackStats, x, y, z, target) {
-    var scale = ifdefor(target.scale, 1);
-    var ty = ifdefor(target.y, 0) + ifdefor(target.height, 128) * 3 / 4;
+export function getProjectileVelocity(attackStats, x, y, z, target) {
+    var scale = target.scale || 1;
+    var ty = (target.y || 0) + (target.height || 128) * 3 / 4;
     var v = [target.x - x, ty - y, target.z - z];
     var distance = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
     var speed = Math.min(attackStats.speed, distance / 5);
@@ -624,7 +634,7 @@ export function addTimedEffect(actor, effect, area) {
     }
     if (effect.duration !== 'forever') effect.expirationTime = actor.time + effect.duration;
     var count = 0;
-    ifdefor(actor.allEffects, []).forEach(function (currentEffect) {
+    (actor.allEffects, []).forEach(function (currentEffect) {
         if (currentEffect.base === effect.base) count++;
     });
     if (count < effect.maxStacks) {

@@ -1,8 +1,21 @@
+import { getDistance } from 'app/adventure';
 import { pause } from 'app/adventureButtons';
 import { getEndlessLevel } from 'app/areaMenu';
+import { damageActor, healActor, setActorHealth } from 'app/character';
+import { map } from 'app/content/mapData';
 import { makeMonster } from 'app/content/monsters';
+import { projectileAnimations } from 'app/content/projectileAnimations';
+import {
+    addTimedEffect, explosionEffect, fieldEffect, getProjectileVelocity,
+    novaEffect, projectile, songEffect,
+} from 'app/effects';
+import { MAX_Z } from 'app/gameConstants';
+import { canUseReaction, getXDirection, useReaction } from 'app/useSkill';
+import { toHex } from 'app/utils/colors';
 import { abbreviate, fixedDigits, percent } from 'app/utils/formatters';
+import { ifdefor } from 'app/utils/index';
 import Random from 'app/utils/Random';
+import { attackHitSounds, attackSounds, playSound } from 'app/utils/sounds';
 
 export function getBasicAttack(adventurer) {
     return findActionByTag(adventurer.actions, 'basic');
@@ -15,7 +28,7 @@ export function findActionByTag(actions, tag) {
     }
     return null;
 }
-export function updateDamageInfo(character, statsPanelElement, monsterLevel = 0) {
+export function updateDamageInfo(character, statsPanelElement: HTMLElement, monsterLevel = 0) {
     var adventurer = character.adventurer;
     if (!adventurer || !adventurer.actions) return;
     var attack = getBasicAttack(adventurer);
@@ -49,7 +62,7 @@ export function updateDamageInfo(character, statsPanelElement, monsterLevel = 0)
         if (attack.minPhysicalDamage) {
             const minPhysicalDamage = attack.minPhysicalDamage * (1 + attack.critDamage);
             const maxPhysicalDamage = attack.maxPhysicalDamage * (1 + attack.critDamage);
-            sections.push('Physical damage ' + abbreviate(fixedDigits(minPhysicalamage, 1)) + ' - ' + abbreviate(fixedDigits(maxPhysicalDamage, 1)));
+            sections.push('Physical damage ' + abbreviate(fixedDigits(minPhysicalDamage, 1)) + ' - ' + abbreviate(fixedDigits(maxPhysicalDamage, 1)));
         }
         if (attack.minMagicDamage) {
             const minMagicDamage = attack.minMagicDamage * (1 + attack.critDamage);
@@ -113,13 +126,13 @@ export function updateDamageInfo(character, statsPanelElement, monsterLevel = 0)
     } else {
         sections.push('Total Expected DPS is ' + abbreviate(expectedPhysicalDPS + expectedMagicDPS, 1));
     }
-    var $damage =  statsPanelElement.find('.js-damage');
-    $damage.text((expectedPhysicalDPS + expectedMagicDPS).format(1).abbreviate());
-    $damage.parent().attr('helptext', sections.join('<br/>'));
+    const damageElement =  statsPanelElement.querySelector('.js-damage');
+    damageElement.textContent = abbreviate(expectedPhysicalDPS + expectedMagicDPS, 1);
+    damageElement.parentElement.setAttribute('helptext', sections.join('<br/>'));
 
     attack = getBasicAttack(dummy);
 
-    var $protection =  statsPanelElement.find('.js-protection');
+    const protectionElement =  statsPanelElement.querySelector('.js-protection');
     physical = attack.maxPhysicalDamage;
     let physicalAfterBlock;
     if (adventurer.block <= physical) {
@@ -127,21 +140,21 @@ export function updateDamageInfo(character, statsPanelElement, monsterLevel = 0)
     } else {
         physicalAfterBlock = physical * (physical + 1) / 2 / (adventurer.block + 1);
     }
-    var blockProtection = 1 - physicalAfterBlock / attack.maxPhysicalDamage;
+    const blockProtection = 1 - physicalAfterBlock / attack.maxPhysicalDamage;
     physical = applyArmorToDamage(attack.maxPhysicalDamage, adventurer.armor);
-    var armorProtection = 1 - physical / attack.maxPhysicalDamage;
+    const armorProtection = 1 - physical / attack.maxPhysicalDamage;
     physical = applyArmorToDamage(physicalAfterBlock, adventurer.armor);
-    var physicalProtection = 1 - physical / attack.maxPhysicalDamage;
-    $protection.text(percent(physicalProtection, 1));
+    const physicalProtection = 1 - physical / attack.maxPhysicalDamage;
+    protectionElement.textContent = percent(physicalProtection, 1);
     sections = ['This is an estimate of your physical damage reduction.', '']
     sections.push(adventurer.block + ' Block (' + percent(blockProtection, 1) + ')');
     sections.push(adventurer.armor + ' Armor (' + percent(armorProtection, 1) + ')');
     sections.push('');
     sections.push(percent(physicalProtection, 1) + ' combined reduction');
     sections.push(attack.maxPhysicalDamage.toFixed(1) + ' damage reduced to ' + physical.toFixed(1) );
-    $protection.parent().attr('helptext', sections.join('<br/>'));
+    protectionElement.parentElement.setAttribute('helptext', sections.join('<br/>'));
 
-    var $resistance =  statsPanelElement.find('.js-resistance');
+    const resistanceElement =  statsPanelElement.querySelector('.js-resistance');
     magic = attack.maxMagicDamage;
     if (adventurer.magicBlock <= magic) {
         magic = magic - adventurer.magicBlock / 2;
@@ -151,14 +164,14 @@ export function updateDamageInfo(character, statsPanelElement, monsterLevel = 0)
     var magicBlockResistance = 1 - magic / attack.maxMagicDamage;
     magic = magic * Math.max(0, 1 - adventurer.magicResist);
     var magicResistance = 1 - magic / attack.maxMagicDamage;
-    $resistance.text(percent(magicResistance, 1));
+    resistanceElement.textContent = percent(magicResistance, 1);
     sections = ['This is an estimate of your magic damage reduction.', ''];
     sections.push(percent(adventurer.magicResist, 1) + ' Magic Resistance');
     sections.push(adventurer.magicBlock + ' Magic Block (' + percent(magicBlockResistance, 1) + ')');
     sections.push('');
     sections.push(percent(magicResistance, 1) + ' combined reduction');
     sections.push(attack.maxMagicDamage.toFixed(1) + ' damage reduced to ' + magic.toFixed(1));
-    $resistance.parent().attr('helptext', sections.join('<br/>'));
+    resistanceElement.parentElement.setAttribute('helptext', sections.join('<br/>'));
 
 
     // tie breaker is given to hitting, so for this calculation use 1 less evasion.
@@ -172,9 +185,9 @@ export function updateDamageInfo(character, statsPanelElement, monsterLevel = 0)
         var overRollChance = (accuracy - evasion) / accuracy;
         hitPercent = overRollChance + (1 - overRollChance) / 2;
     }
-    var $evasion =  statsPanelElement.find('.js-evasion');
-    $evasion.text(percent(1 - hitPercent, 1));
-    $evasion.parent().attr('helptext', adventurer.evasion + ' Evasion<br/><br/>' + percent(1 - hitPercent, 1) + ' estimated chance to evade attacks.');
+    var evasionElement =  statsPanelElement.querySelector('.js-evasion');
+    evasionElement.textContent = percent(1 - hitPercent, 1);
+    evasionElement.parentElement.setAttribute('helptext', adventurer.evasion + ' Evasion<br/><br/>' + percent(1 - hitPercent, 1) + ' estimated chance to evade attacks.');
 }
 
 function createAttackStats(attacker, attack, target) {
@@ -196,7 +209,7 @@ function createAttackStats(attacker, attack, target) {
     var attackType = (attacker.equipment.weapon && attacker.equipment.weapon.base.type) || (attacker.character && 'unarmed');
     var sound = attack.base.sound || attackSounds[attackType];
     if (!animation && attacker.equipment.weapon) {
-        animation = ifdefor(attacker.equipment.weapon.base.animation);
+        animation = attacker.equipment.weapon.base.animation;
     }
     if (typeof(animation) === 'string' && !projectileAnimations[animation]) {
         pause();
@@ -206,20 +219,15 @@ function createAttackStats(attacker, attack, target) {
         sound = attackSounds[animation] || sound;
         animation = projectileAnimations[animation];
     }
-    var gravity = ifdefor(attack.base.gravity);
-    if (!gravity && attacker.equipment.weapon) {
-        gravity = ifdefor(attacker.equipment.weapon.base.gravity);
-    }
-    if (!gravity) {
-        gravity = .8;
-    }
+    const gravity = attack.base.gravity ||
+        (attacker.equipment.weapon && attacker.equipment.weapon.gravity) || 0.8;
     return {
         'distance': 0,
         animation,
         sound,
-        'size': ifdefor(attack.base.size, animation ? animation.frames[0][2] : 10),
+        'size': attack.base.size || (animation ? animation.frames[0][2] : 10),
         gravity,
-        'speed': ifdefor(attack.speed, ifdefor(attack.base.speed, ifdefor(attack.range, 10) * 2.5)),
+        'speed': attack.speed || attack.base.speed || (attack.range || 10) * 2.5,
         'healthSacrificed': sacrificedHealth,
         'source': attacker,
         attack,
@@ -227,25 +235,25 @@ function createAttackStats(attacker, attack, target) {
         damage,
         magicDamage,
         accuracy,
-        'explode': ifdefor(attack.explode, 0),
-        'cleave': ifdefor(attack.cleave, 0),
-        'piercing': ifdefor(attack.criticalPiercing) ? isCritical : false,
-        'strikes': ifdefor(attack.doubleStrike) ? 2 : 1
+        'explode': attack.explode || 0,
+        'cleave': attack.cleave || 0,
+        'piercing': attack.criticalPiercing ? isCritical : false,
+        'strikes': attack.doubleStrike ? 2 : 1
     };
 }
 
-function createSpellStats(attacker, spell, target) {
+export function createSpellStats(attacker, spell, target) {
     var isCritical = Math.random() <= spell.critChance;
-    if (ifdefor(spell.firstStrike) && target && target.isActor) {
+    if (spell.firstStrike && target && target.isActor) {
         isCritical = isCritical || target.health >= target.maxHealth;
     }
     var magicDamage = spell.power;
-    var sacrificedHealth = Math.floor(attacker.health * ifdefor(spell.healthSacrifice, 0));
+    var sacrificedHealth = Math.floor(attacker.health * (spell.healthSacrifice || 0));
     magicDamage += sacrificedHealth;
     if (isCritical) {
         magicDamage *= (1 + spell.critDamage);
     }
-    var animation = ifdefor(spell.base.animation);
+    let animation = spell.base.animation;
     var sound = spell.base.sound;
     if (typeof(animation) === 'string' && !projectileAnimations[animation]) {
         pause();
@@ -259,9 +267,9 @@ function createSpellStats(attacker, spell, target) {
         'distance': 0,
         animation,
         sound,
-        'size': ifdefor(spell.base.size, animation ? animation.frames[0][2] : 10),
-        'gravity': ifdefor(spell.base.gravity, .8),
-        'speed': ifdefor(spell.speed, ifdefor(spell.base.speed, ifdefor(spell.range, 10) * 2.5)),
+        'size': spell.base.size || (animation ? animation.frames[0][2] : 10),
+        'gravity': spell.base.gravity || 0.8,
+        'speed': spell.speed || spell.base.speed || (spell.range || 10) * 2.5,
         'healthSacrificed': sacrificedHealth,
         'source': attacker,
         'attack': spell,
@@ -269,29 +277,29 @@ function createSpellStats(attacker, spell, target) {
         'damage': 0,
         magicDamage,
         'accuracy': 0,
-        'explode': ifdefor(spell.explode, 0),
-        'cleave': ifdefor(spell.cleave, 0),
+        'explode': spell.explode || 0,
+        'cleave': spell.cleave || 0,
         'strikes': 1
     };
 }
 
 function createSpellImprintedAttackStats(attacker, attack, spell, target) {
     var isCritical = Math.random() <= spell.critChance;
-    if (ifdefor(spell.firstStrike) && target && target.isActor) {
+    if (spell.firstStrike && target && target.isActor) {
         isCritical = isCritical || target.health >= target.maxHealth;
     }
     var magicDamage = spell.power;
-    var sacrificedHealth = Math.floor(attacker.health * ifdefor(spell.healthSacrifice, 0));
+    var sacrificedHealth = Math.floor(attacker.health * (spell.healthSacrifice || 0));
     magicDamage += sacrificedHealth;
     var accuracy = Math.random() * attack.accuracy;
     if (isCritical) {
         magicDamage *= (1 + spell.critDamage);
         accuracy *= (1 + attack.critAccuracy);
     }
-    var animation = ifdefor(attack.base.animation);
+    var animation = attack.base.animation;
     var sound = attack.base.sound;
     if (!animation && attacker.equipment.weapon) {
-        animation = ifdefor(attacker.equipment.weapon.base.animation);
+        animation = attacker.equipment.weapon.base.animation;
     }
     if (typeof(animation) === 'string' && !projectileAnimations[animation]) {
         pause();
@@ -301,20 +309,15 @@ function createSpellImprintedAttackStats(attacker, attack, spell, target) {
         sound = attackSounds[animation] || sound;
         animation = projectileAnimations[animation];
     }
-    var gravity = ifdefor(attack.base.gravity);
-    if (!gravity && attacker.equipment.weapon) {
-        gravity = ifdefor(attacker.equipment.weapon.base.gravity);
-    }
-    if (!gravity) {
-        gravity = .8;
-    }
+    const gravity = attack.base.gravity ||
+        (attacker.equipment.weapon && attacker.equipment.weapon.gravity) || 0.8;
     return {
         'distance': 0,
         animation,
         sound,
-        'size': ifdefor(attack.base.size, animation ? animation.frames[0][2] : 10),
+        'size': attack.base.size || (animation ? animation.frames[0][2] : 10),
         gravity,
-        'speed': ifdefor(attack.speed, ifdefor(attack.base.speed, ifdefor(attack.range, 10) * 2.5)),
+        'speed': attack.speed || attack.base.speed || (attack.range || 10) * 2.5,
         'healthSacrificed': sacrificedHealth,
         'source': attacker,
         attack,
@@ -323,10 +326,10 @@ function createSpellImprintedAttackStats(attacker, attack, spell, target) {
         'damage': 0,
         magicDamage,
         accuracy,
-        'explode': ifdefor(spell.explode, 0),
-        'cleave': ifdefor(attack.cleave, 0),
-        'piercing': ifdefor(attack.criticalPiercing) ? isCritical : false,
-        'strikes': ifdefor(attack.doubleStrike) ? 2 : 1
+        'explode': spell.explode || 0,
+        'cleave': attack.cleave || 0,
+        'piercing': attack.criticalPiercing ? isCritical : false,
+        'strikes': attack.doubleStrike ? 2 : 1
     };
 }
 function performAttack(attacker, attack, target) {
@@ -354,7 +357,7 @@ export function performAttackProper(attackStats, target) {
         playSound(attackStats.sound, area);
     }
     // If the attack allows the user to teleport, teleport them to an optimal location for attacking.
-    var teleport = ifdefor(attackStats.attack.teleport, 0) * 32;
+    const teleport = (attackStats.attack.teleport || 0) * 32;
     if (teleport) {
         // It is easier for me to understand this code if I break it up into facing right and facing left cases.
         if (attacker.heading[0] > 0) {
@@ -381,17 +384,17 @@ export function performAttackProper(attackStats, target) {
     } else if (attackStats.attack.tags['rain']) {
         // attackStats.explode--;
         var targets = [];
-        var count = Math.floor(ifdefor(attackStats.attack.count, 1));
+        var count = Math.floor(attackStats.attack.count || 1);
         var maxFrameSpread = 250;
         for (var i = 0; i < count; i++) {
-            var projectileAttackStats = shallowCopy(attackStats);
+            var projectileAttackStats = {...attackStats};
             if (!targets.length) {
                 targets = Random.shuffle(attacker.enemies);
             }
             var currentTarget = targets.pop();
-            var x = attacker.x - 250 + Math.random() * 400 + 10 * i;
-            var z = attacker.z - 90 + Math.random() * MAX_Z;
-            var y = 550 + Math.random() * 100;
+            const x = attacker.x - 250 + Math.random() * 400 + 10 * i;
+            const z = attacker.z - 90 + Math.random() * MAX_Z;
+            const y = 550 + Math.random() * 100;
             // Point the meteor at the target and hope it hits!
             var vy = -y;
             var vx = currentTarget.x - x;
@@ -403,17 +406,17 @@ export function performAttackProper(attackStats, target) {
             vz *= 15 / mag;
             area.projectiles.push(projectile(
                 projectileAttackStats, x, y, z, vx, vy, vz,currentTarget, Math.min(i * maxFrameSpread / count, i * 10), // delay is in frames
-                projectileAttackStats.isCritical ? 'yellow' : 'red', ifdefor(projectileAttackStats.size, 20) * (projectileAttackStats.isCritical ? 1.5 : 1)));
+                projectileAttackStats.isCritical ? 'yellow' : 'red', (projectileAttackStats.size || 20) * (projectileAttackStats.isCritical ? 1.5 : 1)));
         }
     } else if (attackStats.attack.tags['ranged']) {
-        var distance = getDistance(attacker, target);
-        var x = attacker.x + getXDirection(attacker) * attacker.width / 4;
-        var y = getAttackY(attacker);
-        var z = attacker.z;
-        var v = getProjectileVelocity(attackStats, x, y, z, target);
+        const distance = getDistance(attacker, target);
+        const x = attacker.x + getXDirection(attacker) * attacker.width / 4;
+        const y = getAttackY(attacker);
+        const z = attacker.z;
+        const v = getProjectileVelocity(attackStats, x, y, z, target);
         area.projectiles.push(projectile(
             attackStats, x, y, z, v[0], v[1], v[2], target, 0,
-            attackStats.isCritical ? 'yellow' : 'red', ifdefor(attackStats.size, 10) * (attackStats.isCritical ? 1.5 : 1)
+            attackStats.isCritical ? 'yellow' : 'red', (attackStats.size || 10) * (attackStats.isCritical ? 1.5 : 1)
         ));
     } else {
         attackStats.distance = getDistance(attacker, target);
@@ -421,26 +424,26 @@ export function performAttackProper(attackStats, target) {
         applyAttackToTarget(attackStats, target);
     }
 }
-function getAttackY(attacker) {
+export function getAttackY(attacker) {
     // This could actually be a location for abilities targeting locations. Just use 0, which is the height of the floor.
     if (!attacker.isActor) return 0;
     // Y value of projectiles can either be set on the source for the actor, or it will use the set yCenter or half the height.
-    var height = ifdefor(attacker.source.height, 64);
+    const height = attacker.source.height || 64;
     return attacker.scale * ifdefor(attacker.source.attackY, height - ifdefor(attacker.source.yCenter, height / 2));
 }
 export function applyAttackToTarget(attackStats, target) {
-    var attack = attackStats.attack;
-    var imprintedSpell = attackStats.imprintedSpell;
-    var attacker = attackStats.source;
-    var area = attacker.area;
-    var effectiveness = ifdefor(attackStats.effectiveness, 1);
-    if (ifdefor(attackStats.strikes, 1) > 1) {
+    const attack = attackStats.attack;
+    const imprintedSpell = attackStats.imprintedSpell;
+    const attacker = attackStats.source;
+    const area = attacker.area;
+    const effectiveness = (attackStats.effectiveness || 1);
+    if (attackStats.strikes > 1) {
         attackStats.strikes--;
         applyAttackToTarget(attackStats, target);
     }
 
-    if (ifdefor(attackStats.cleave) > 0) {
-        var cleaveAttackStats = {
+    if (attackStats.cleave > 0) {
+        const cleaveAttackStats = {
             'distance': 0,
             'source': attackStats.source,
             'attack': attackStats.attack,
@@ -453,8 +456,8 @@ export function applyAttackToTarget(attackStats, target) {
             'explode': attackStats.explode,
             'cleave': 0
         };
-        for (var i = 0; i < attackStats.source.enemies.length; i++) {
-            var cleaveTarget = attackStats.source.enemies[i];
+        for (let i = 0; i < attackStats.source.enemies.length; i++) {
+            const cleaveTarget = attackStats.source.enemies[i];
             if (cleaveTarget === target) {
                 continue;
             }
@@ -462,13 +465,13 @@ export function applyAttackToTarget(attackStats, target) {
             if ((cleaveTarget.x - attacker.x) * attacker.heading[0] < 0) {
                 continue;
             }
-            var distance = getDistance(attacker, cleaveTarget);
-            if (distance > (attackStats.attack.range + ifdefor(attackStats.attack.cleaveRange, 0)) * 32) continue;
+            const distance = getDistance(attacker, cleaveTarget);
+            if (distance > (attackStats.attack.range + (attackStats.attack.cleaveRange || 0)) * 32) continue;
             applyAttackToTarget(cleaveAttackStats, cleaveTarget);
         }
     }
-    var makeExplosions = () => {
-        if (ifdefor(attackStats.explode) > 0) {
+    const makeExplosions = () => {
+        if (attackStats.explode > 0) {
             var explodeAttackStats = {
                 'distance': 0,
                 'source': attackStats.source,
@@ -508,15 +511,18 @@ export function applyAttackToTarget(attackStats, target) {
         makeExplosions();
         return true;
     }
-    var distance = attackStats.distance;
-    var hitText = {x: target.x, y: target.height + 10, z: target.z, color: 'grey', 'vx': -(Math.random() * 3 + 2) * target.heading[0], 'vy': 5};
+    const distance = attackStats.distance;
+    var hitText: any = {
+        x: target.x, y: target.height + 10, z: target.z,
+        color: 'grey', 'vx': -(Math.random() * 3 + 2) * target.heading[0], 'vy': 5
+    };
     if (target.invulnerable) {
         hitText.value = 'invulnerable';
         hitText.fontSize = 15;
         appendTextPopup(area, hitText);
         return false;
     }
-    var multiplier = ifdefor(attack.rangeDamage) ? (1 + attack.rangeDamage * distance / 32) : 1;
+    var multiplier = attack.rangeDamage ? (1 + attack.rangeDamage * distance / 32) : 1;
     if (attackStats.isCritical) {
         hitText.fontSize = 30;
     }
@@ -529,7 +535,7 @@ export function applyAttackToTarget(attackStats, target) {
     }
     if (attack.heals) {
         hitText.color = 'green';
-        hitText.value = (damage + magicDamage).abbreviate();
+        hitText.value = abbreviate(damage + magicDamage);
         healActor(target, damage + magicDamage);
         var speed = 1 + Math.log(damage+magicDamage) / 10;
         hitText.vy *= speed;
@@ -538,14 +544,14 @@ export function applyAttackToTarget(attackStats, target) {
         return true;
     }
     attackStats.evaded = false;
-    if (!ifdefor(attack.alwaysHits)) {
+    if (!attack.alwaysHits) {
         var evasionRoll = (target.maxEvasion ? 1 : Math.random()) * target.evasion;
         // Projectiles have up to 50% reduced accuracy at a distance of 320 pixels.
-        var effectiveAccuracy = attackStats.accuracy * Math.max(.5, 1 - ifdefor(attackStats.distance, 0) / 640);
+        var effectiveAccuracy = attackStats.accuracy * Math.max(.5, 1 - (attackStats.distance || 0) / 640);
         // if(attacker.character) console.log([attackStats.distance, attackStats.accuracy, effectiveAccuracy, evasionRoll]);
         if (effectiveAccuracy - evasionRoll < 0) {
             hitText.value = 'miss';
-            if (ifdefor(attack.damageOnMiss)) {
+            if (attack.damageOnMiss) {
                 var damageOnMiss = Math.round(attack.damageOnMiss * effectiveness);
                 damageActor(target, damageOnMiss);
                 hitText.value = 'miss (' + damageOnMiss + ')';
@@ -567,11 +573,11 @@ export function applyAttackToTarget(attackStats, target) {
     damage = Math.max(0, damage - blockRoll);
     magicDamage = Math.max(0, magicDamage - magicBlockRoll);
     // Apply armor and magic resistance mitigation
-    if (!ifdefor(attack.ignoreArmor)) {
-        var effectiveArmor = target.armor * (1 - ifdefor(attack.armorPenetration, 0));
+    if (!attack.ignoreArmor) {
+        var effectiveArmor = target.armor * (1 - (attack.armorPenetration || 0));
         damage = Math.round(applyArmorToDamage(damage, effectiveArmor));
     }
-    if (!ifdefor(attack.ignoreResistance)) {
+    if (!attack.ignoreResistance) {
         magicDamage = Math.round(magicDamage * Math.max(0, (1 - target.magicResist)));
     }
     if (damage < 0 || magicDamage < 0) {
@@ -582,9 +588,9 @@ export function applyAttackToTarget(attackStats, target) {
     attackStats.deflected = false;
     attackStats.dodged = false;
     attackStats.stopped = false;
-    for (var i = 0; i < ifdefor(target.reactions, []).length; i++) {
-        if (canUseReaction(target, target.reactions[i], attackStats)) {
-            useReaction(target, target.reactions[i], attackStats)
+    for (const reaction of (target.reactions, [])) {
+        if (canUseReaction(target, reaction, attackStats)) {
+            useReaction(target, reaction, attackStats)
             break;
         }
     }
@@ -644,43 +650,45 @@ export function applyAttackToTarget(attackStats, target) {
             hitText.value = 'culled!';
         } else {
             damageActor(target, totalDamage);
-            hitText.value = totalDamage.abbreviate();
+            hitText.value = abbreviate(totalDamage);
             var speed = 1 + Math.log(totalDamage) / 10;
             hitText.vy *= speed;
             hitText.vx *= speed;
         }
         healActor(attacker, (attack.lifeSteal || 0) * totalDamage);
         if (imprintedSpell) healActor(attacker, (imprintedSpell.lifeSteal || 0) * totalDamage);
-        if (ifdefor(attack.poison)) {
+        if (attack.poison) {
             addTimedEffect(target, {'bonuses': {'+damageOverTime': totalDamage * attack.poison}}, 0);
         }
-        if (imprintedSpell && ifdefor(imprintedSpell.poison)) {
+        if (imprintedSpell && imprintedSpell.poison) {
             addTimedEffect(target, {'bonuses': {'+damageOverTime': totalDamage * imprintedSpell.poison}}, 0);
         }
-        var stun = Math.max(ifdefor(attack.stun, 0), imprintedSpell ? ifdefor(imprintedSpell.stun, 0) : 0);
+        var stun = Math.max((attack.stun || 0), imprintedSpell ? (imprintedSpell.stun || 0) : 0);
         if (stun) {
-            target.stunned = Math.max(ifdefor(target.stunned, 0), target.time + stun * effectiveness);
+            target.stunned = Math.max((target.stunned || 0), target.time + stun * effectiveness);
             hitText.value += ' stunned!';
         }
         // Some attacks pull the target towards the attacker
         var direction = (target.x < attacker.x) ? -1 : 1;
-        if (Math.random() < ifdefor(attack.knockbackChance, 0)) {
-            var targetX = target.x + direction * 32 * ifdefor(attack.knockbackDistance, 1);
+        if (Math.random() < (attack.knockbackChance || 0)) {
+            var targetX = target.x + direction * 32 * (attack.knockbackDistance || 1);
             target.pull = {'x': targetX, z: target.z, time: target.time + .3, 'damage': 0};
             target.rotation = direction * ifdefor(attack.knockbackRotation, 45);
         }
         if (attack.pullsTarget) {
-            target.stunned =  Math.max(ifdefor(target.stunned, 0), target.time + .3 + distance / 32 * ifdefor(attack.dragStun * effectiveness, 0));
+            target.stunned =  Math.max((target.stunned || 0), target.time + .3 + distance / 32 * (attack.dragStun || 0) * effectiveness);
             var targetX = (attacker.x > target.x) ? (attacker.x - target.width) : (attacker.x + attacker.width);
             var targetZ = (attacker.z > target.z) ? (attacker.z - target.width) : (attacker.z + attacker.width);
-            target.pull = {sourceAttackStats: attackStats, x: targetX, z: targetZ, 'time': target.time + .3, 'damage': Math.floor(distance / 32 * damage * ifdefor(attack.dragDamage * effectiveness, 0))};
+            target.pull = {sourceAttackStats: attackStats, x: targetX, z: targetZ, 'time': target.time + .3, 'damage': Math.floor(distance / 32 * damage * (attack.dragDamage || 0) * effectiveness)};
             attacker.pull = {'x': attacker.x, z: attacker.z, 'time': attacker.time + .3, 'damage': 0};
             target.rotation = direction * ifdefor(attack.knockbackRotation, -45);
             hitText.value += ' hooked!';
         }
         if (attack.domino) {
             target.dominoAttackStats = attackStats;
-            var targetX = (attacker.x < target.x) ? (target.x + attacker.width + ifdefor(attack.distance * effectiveness, 128)) : (target.x - ifdefor(attack.distance * effectiveness, 128));
+            var targetX = (attacker.x < target.x)
+                ? (target.x + attacker.width + (attack.distance || 128) * effectiveness)
+                : (target.x - (attack.distance || 128) * effectiveness);
             target.pull = {'x': targetX, z: target.z, 'time': target.time + .3, 'damage': 0};
             target.rotation = direction * ifdefor(attack.knockbackRotation, 45);
         }

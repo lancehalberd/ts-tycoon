@@ -1,5 +1,9 @@
+import { query, queryAll } from 'app/dom';
+import { accessorySlots, armorSlots, inventoryState, sellValue, smallArmorSlots, updateItem } from 'app/inventory';
 import { hidePointsPreview, points, previewPointsChange, spend } from 'app/points';
+import { removePopup } from 'app/popup';
 import { saveGame } from 'app/saveGame';
+import { getState } from 'app/state';
 import Random from 'app/utils/Random';
 
 const prefixes = [];
@@ -407,7 +411,7 @@ function addSuffixToItem(item) {
 function matchingAffixes(list, item, alreadyUsedBonusesKeys) {
     var choices = [];
     for (var level = 0; level <= item.itemLevel && level < list.length; level++) {
-        ifdefor(list[level], []).forEach(function (affix) {
+        (list[level] || []).forEach(function (affix) {
             if (!alreadyUsedBonusesKeys[affix.bonusesKey] && affixMatchesItem(item.base, affix)) {
                 choices.push(affix);
             }
@@ -416,81 +420,93 @@ function matchingAffixes(list, item, alreadyUsedBonusesKeys) {
     return choices;
 }
 function affixMatchesItem(baseItem, affix) {
-    var tags = ifdefor(affix.tags, []);
+    var tags = (affix.tags || []);
     tags = Array.isArray(tags) ? tags : [tags];
     for (var tag of tags) if (tag === baseItem.key || baseItem.tags[tag]) return true;
     return false;
 }
-$('.js-resetEnchantments').on('click', resetItem);
-$('.js-resetEnchantments').on('mouseover', function () {
+const resetEnchantmentsButton = query('.js-resetEnchantments');
+const mutateButton = query('.js-mutate');
+const enchantButton = query('.js-enchant');
+const imbueButton = query('.js-imbue');
+resetEnchantmentsButton.onclick = resetItem;
+resetEnchantmentsButton.addEventListener('mouseover', function () {
     var item = getEnchantingItem();
     if (item && item.prefixes.length + item.suffixes.length > 0) previewPointsChange('coins', -resetCost(item));
 });
-$('.js-resetEnchantments').on('mouseout', hidePointsPreview);
-$('.js-enchant').on('click', enchantItem);
-$('.js-enchant').on('mouseover', function () {
+resetEnchantmentsButton.addEventListener('mouseout', hidePointsPreview);
+enchantButton.addEventListener('click', enchantItem);
+enchantButton.addEventListener('mouseover', function () {
     var item = getEnchantingItem();
     if (item && !item.unique && item.prefixes.length + item.suffixes.length === 0) previewPointsChange('anima', -enchantCost(item));
 });
-$('.js-enchant').on('mouseout', hidePointsPreview);
-$('.js-imbue').on('click', imbueItem);
-$('.js-imbue').on('mouseover', function () {
+enchantButton.addEventListener('mouseout', hidePointsPreview);
+imbueButton.addEventListener('click', imbueItem);
+imbueButton.addEventListener('mouseover', function () {
     var item = getEnchantingItem();
     if (item && !item.unique && item.prefixes.length + item.suffixes.length === 0) previewPointsChange('anima', -imbueCost(item));
 });
-$('.js-imbue').on('mouseout', hidePointsPreview);
-$('.js-mutate').on('click', mutateItem);
-$('.js-mutate').on('mouseover', function () {
+imbueButton.addEventListener('mouseout', hidePointsPreview);
+mutateButton.addEventListener('click', mutateItem);
+mutateButton.addEventListener('mouseover', function () {
     var item = getEnchantingItem();
     if (item && !item.unique && item.prefixes.length + item.suffixes.length > 0) previewPointsChange('anima', -mutateCost(item));
 });
-$('.js-mutate').on('mouseout', hidePointsPreview);
+mutateButton.addEventListener('mouseout', hidePointsPreview);
 function getEnchantingItem() {
-    var item =  $('.js-enchantmentSlot').find('.js-item').data('item');
-    if (!item && $dragHelper) {
-        item = $dragHelper.data('$source').data('item');
+    var item =  query('.js-enchantmentSlot').querySelector('.js-item').data('item');
+    if (!item && inventoryState.dragHelper) {
+        item = inventoryState.dragHelper.data('$source').data('item');
     }
     return item;
 }
 function updateEnchantmentOptions() {
-    var item = getEnchantingItem();
-    $('.js-resetEnchantments,.js-enchant,.js-imbue,.js-augment,.js-mutate').addClass('disabled');
+    const item = getEnchantingItem();
+    for (const element of queryAll('.js-resetEnchantments,.js-enchant,.js-imbue,.js-augment,.js-mutate')) {
+        element.classList.add('disabled');
+    }
     removePopup();
     if (!item) {
-        $('.js-resetEnchantments,.js-enchant,.js-imbue,.js-augment,.js-mutate').attr('helptext', 'Drag an item to the alter to enchant it.');
+        for (const element of queryAll('.js-resetEnchantments,.js-enchant,.js-imbue,.js-augment,.js-mutate')) {
+            element.setAttribute('helptext', 'Drag an item to the alter to enchant it.');
+        }
         return;
     }
-    var prefixes = item.prefixes.length;
-    var suffixes = item.suffixes.length;
-    var total = prefixes + suffixes;
+    const prefixes = item.prefixes.length;
+    const suffixes = item.suffixes.length;
+    const total = prefixes + suffixes;
+    const { anima, coins} = getState().savedState;
     if (total > 0) {
-        $('.js-resetEnchantments').toggleClass('disabled', state.coins < resetCost(item))
-            .attr('helptext', 'Offer ' + points('coins', resetCost(item)) + ' to remove all enchantments from an item.<br/>This will allow you to enchant it again differently.');
+        resetEnchantmentsButton.classList.toggle('disabled', coins < resetCost(item))
+        resetEnchantmentsButton.setAttribute('helptext', 'Offer ' + points('coins', resetCost(item)) + ' to remove all enchantments from an item.<br/>This will allow you to enchant it again differently.');
     } else {
-        $('.js-resetEnchantments').attr('helptext', 'This item has no enchantments to remove.');
+        resetEnchantmentsButton.setAttribute('helptext', 'This item has no enchantments to remove.');
     }
     if (item.unique) {
-        $('.js-enchant,.js-imbue,.js-mutate').attr('helptext', 'This item is unique and cannot be further enchanted.');
+        for (const element of queryAll('.js-enchant,.js-imbue,.js-mutate')) {
+            element.setAttribute('helptext', 'This item is unique and cannot be further enchanted.');
+        }
         return;
     }
     if (total === 0) {
-        $('.js-mutate').attr('helptext', 'This item has no enchantments to mutate.');
+        mutateButton.setAttribute('helptext', 'This item has no enchantments to mutate.');
     } else {
         var mutationPrice = mutateCost(item);
-        $('.js-mutate').toggleClass('disabled', state.anima < mutationPrice)
-            .attr('helptext', 'Offer ' + points('anima', mutationPrice) + ' to randomize the magical properties of this item.');
+        mutateButton.classList.toggle('disabled', anima < mutationPrice);
+        mutateButton.setAttribute('helptext', 'Offer ' + points('anima', mutationPrice) + ' to randomize the magical properties of this item.');
     }
     if (total < 2) {
-        $('.js-enchant').toggleClass('disabled', state.anima < enchantCost(item))
-            .attr('helptext', 'Offer ' + points('anima', enchantCost(item)) + ' to add up to two magical properties to this item');
+        enchantButton.classList.toggle('disabled', anima < enchantCost(item));
+        enchantButton.setAttribute('helptext', 'Offer ' + points('anima', enchantCost(item)) + ' to add up to two magical properties to this item');
     } else {
-        $('.js-enchant').attr('helptext', 'This item already has at least two magical properties.');
+        enchantButton.setAttribute('helptext', 'This item already has at least two magical properties.');
     }
     if (total < 4) {
-        $('.js-imbue').toggleClass('disabled', state.anima < imbueCost(item))
-            .attr('helptext', 'Offer ' + points('anima', imbueCost(item)) + ' to add up to four magical properties to this item');
+        imbueButton.classList.toggle('disabled', anima < imbueCost(item));
+        imbueButton.setAttribute('helptext', 'Offer ' + points('anima', imbueCost(item)) + ' to add up to four magical properties to this item');
     } else {
-        $('.js-imbue,.js-enchant').attr('helptext', 'This item cannot hold any more enchantments.');
+        imbueButton.setAttribute('helptext', 'This item cannot hold any more enchantments.');
+        enchantButton.setAttribute('helptext', 'This item cannot hold any more enchantments.');
     }
 }
 function resetCost(item) {
@@ -577,7 +593,7 @@ function imbueItemProper(item) {
     updateItem(item);
     updateEnchantmentOptions();
 }
-function augmentItemProper(item) {
+export function augmentItemProper(item) {
     if (!item.prefixes.length && !item.suffixes.length) {
         if (Math.random() > 0.5) {
             addPrefixToItem(item);

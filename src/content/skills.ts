@@ -122,7 +122,6 @@ const effectSourceUp = ['gfx/militaryIcons.png', 17, 23, 16, 16, 0, 0];
 const effectSourceArmor = ['gfx/militaryIcons.png', 65, 180, 12, 12, 8, 8];
 //const effectSourceSword = ['gfx/militaryIcons.png', 52, 180, 12, 12, 8, 8];
 const effectSourceSword = ['gfx/militaryIcons.png', 85, 74, 16, 16, 6, 4];
-const effectSourcePoison = ['gfx/militaryIcons.png', 51, 74, 16, 16, 0, 0];
 
 export const skills: {[key: string]: Action} = {
     // Movement actions

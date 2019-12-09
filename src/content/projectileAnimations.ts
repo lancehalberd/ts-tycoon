@@ -5,7 +5,7 @@ import { getTintedImage, images, makeFrames, prepareTintedImage, requireImage} f
 const projectileCanvas = createCanvas(96, 96);
 
 export const projectileAnimations = {
-    fireball: {image: requireImage('gfx/effects/projectiles.png'), frames: [[0, 0, 20, 20], [32, 0, 20, 20], [64, 0, 20, 20]]};
+    fireball: {image: requireImage('gfx/effects/projectiles.png'), frames: [[0, 0, 20, 20], [32, 0, 20, 20], [64, 0, 20, 20]]},
     wandHealing: {image: projectileCanvas, frames: makeFrames(4, [20, 20], [0, 0], 12), fps: 20},
     throwingAttack: {image: projectileCanvas, frames: [[0, 64, 20, 20]]},
     wandAttack: {image: projectileCanvas, frames: makeFrames(4, [20, 20], [0, 32], 12), fps: 20},

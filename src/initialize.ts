@@ -13,7 +13,7 @@ import { centerMapOnLevel } from 'app/map';
 import { gain } from 'app/points';
 import { eraseSave, loadSavedData } from 'app/saveGame';
 import Random from 'app/utils/Random';
-import { playTrack } from 'app/utils/sounds';
+import { playTrack, soundTrack } from 'app/utils/sounds';
 
 let gameHasBeenInitialized = false;
 export function isGameInitialized() {

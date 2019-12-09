@@ -170,7 +170,7 @@ function selectTrophy(achievement, character) {
     let oldAltar = null;
     const currentTrophy = choosingTrophyAltar.trophy;
     if (achievement.areaKey) {
-        oldAltar = guildAreas[achievement.areaKey].objectsByKey[achievement.objectKey];
+        oldAltar = getState().guildAreas[achievement.areaKey].objectsByKey[achievement.objectKey];
         oldAltar.trophy = null;
         achievement.areaKey = null;
         achievement.objectKey = null;

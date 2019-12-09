@@ -1,4 +1,4 @@
-import { Color } from 'app/types';
+import { Color } from 'app/utils/types';
 import { arrMod } from 'app/utils/index';
 
 export const tolerance = .000001;

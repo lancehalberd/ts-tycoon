@@ -18,7 +18,7 @@ function addUnique(itemKey, initialChance, incrementChance, displayName, prefixe
         suffixes
     };
 }
-function checkToMakeItemUnique(item) {
+export function checkToMakeItemUnique(item) {
     const uniqueData = item.base.unique;
     if (!uniqueData) {
         return;

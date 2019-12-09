@@ -2,8 +2,9 @@ import { getDistance } from 'app/adventure';
 import { addBonusSourceToObject, recomputeDirtyStats, removeBonusSourceFromObject} from 'app/bonuses';
 import { addActions, initializeActorForAdventure } from 'app/character';
 import { makeMonster } from 'app/content/monsters';
-import { performAttackProper } from 'app/performAttack';
+import { createSpellStats, performAttackProper } from 'app/performAttack';
 import Random from 'app/utils/Random';
+import { playSound } from 'app/utils/sounds';
 
 /**
  * Checks whether an actor may use a skill on a given target.
@@ -52,8 +53,8 @@ export function canUseReaction(actor, reaction, attackStats) {
     if (reaction.readyAt > actor.time) return false;
     var reactionDefinition = skillDefinitions[reaction.base.type];
     if (!reactionDefinition) return false;
-    for (var i = 0; i < ifdefor(reaction.base.restrictions, []).length; i++) {
-        if (!actor.tags[reaction.base.restrictions[i]]) {
+    for (const restriction of (reaction.base.restrictions || [])) {
+        if (!actor.tags[restriction]) {
             return false;
         }
     }
@@ -76,7 +77,7 @@ export function isTargetInRangeOfSkill(actor, skill, pointOrTarget) {
     return getDistance(actor, pointOrTarget) <= (skill.range + (skill.teleport || 0)) * 32;
 }
 
-function isActorDying(actor) {
+export function isActorDying(actor) {
     var percentHealth = actor.health / actor.maxHealth;
     // It will take this many seconds for the target to reach 0 life if they lose life constantly.
     var secondsLeft = actor.tenacity * percentHealth;
@@ -875,8 +876,8 @@ function banishTarget(actor, target, range, rotation) {
     target.rotation = getXDirection(actor) * rotation;
 }
 
-function getXDirection(actor) {
-    return ((actor.heading[0] > 0) ? 1 : -1);
+export function getXDirection(actor) {
+    return (actor.heading[0] > 0) ? 1 : -1;
 }
 
 skillDefinitions.charm = {

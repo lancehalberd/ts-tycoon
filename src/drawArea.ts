@@ -227,7 +227,7 @@ function drawActorEffects(actor) {
         x = Math.min(800 - 5 - 64, Math.max(5, x));
     }
     var y = actor.top - 5;
-    drawBar(context, x, y, 64, 4, 'white', ifdefor(actor.lifeBarColor, 'red'), actor.health / actor.maxHealth);
+    drawBar(context, x, y, 64, 4, 'white', (actor.lifeBarColor || 'red'), actor.health / actor.maxHealth);
     if (actor.bonusMaxHealth >= 1 && actor.health >= actor.maxHealth - actor.bonusMaxHealth) {
         // This logic is kind of a mess but it is to make sure the % of the bar that is due to bonusMaxHealth
         // is drawn as orange instead of red.
@@ -355,16 +355,17 @@ function drawMapButton() {
 }
 function drawHudElement() {
     if (getCanvasPopupTarget() === this) drawOutlinedImage(mainContext, this.source.image, '#fff', 2, this.source, this);
-    else if (this.flashColor) drawTintedImage(mainContext, this.source.image, this.flashColor, .5 + .2 * Math.sin(now() / 150), this.source, this);
+    else if (this.flashColor) drawTintedImage(mainContext, this.source.image, this.flashColor, .5 + .2 * Math.sin(Date.now() / 150), this.source, this);
     else drawImage(mainContext, this.source.image, this.source, this);
 }
 
 const returnToMapButton = {'source': {'image': requireImage('gfx/worldIcon.png'), 'top': 0, 'left': 0, 'width': 72, 'height': 72},
     isVisible() {
-        return state.selectedCharacter.context === 'adventure';
+        return getState().selectedCharacter.context === 'adventure';
     },
     'draw': drawMapButton,
     'top': 500, 'left': 20, 'width': 54, 'height': 54, 'helpText': 'Return to Map', onClick() {
+        const state = getState();
         state.selectedCharacter.replay = false;
         returnToMap(state.selectedCharacter);
 }};
@@ -391,7 +392,7 @@ function drawBar(context, x, y, width, height, background, color, percent) {
 }
 
 
-function drawGroundCircle(context, area, x, z, radius) {
+export function drawGroundCircle(context, area, x, z, radius) {
     var centerY = GROUND_Y - z / 2;
     var centerX = x - area.cameraX;
     context.save();

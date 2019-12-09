@@ -2,6 +2,7 @@ import { enterArea, messageCharacter } from 'app/adventure';
 import { addBonusSourceToObject, removeBonusSourceFromObject } from 'app/bonuses';
 import { recomputeAllCharacterDirtyStats } from 'app/character';
 import { getIsAltarTrophyAvailable, setChoosingTrophyAltar, trophySelectionRectangle } from 'app/content/achievements';
+import { activateShrine } from 'app/content/levels';
 import { map } from 'app/content/mapData';
 import { setContext } from 'app/context';
 import { mainCanvas, mainContext, mouseContainer, titleDiv } from 'app/dom';
@@ -387,7 +388,7 @@ function drawFixedObject(area) {
     this.target.left = this.x - this.target.width / 2 - area.cameraX + imageSource.xOffset * this.scale;
     this.target.top = GROUND_Y - this.y - this.target.height - this.z / 2 - imageSource.yOffset * this.scale;
     if (getCanvasPopupTarget() === this) drawOutlinedImage(mainContext, imageSource.image, '#fff', 2, imageSource, this.target);
-    else if (this.flashColor) drawTintedImage(mainContext, imageSource.image, this.flashColor, .5 + .2 * Math.sin(now() / 150), imageSource, this.target);
+    else if (this.flashColor) drawTintedImage(mainContext, imageSource.image, this.flashColor, .5 + .2 * Math.sin(Date.now() / 150), imageSource, this.target);
     else drawImage(mainContext, imageSource.image, imageSource, this.target);
 }
 function isGuildObjectEnabled() {

@@ -1,13 +1,18 @@
-import { abilities } from 'app/content/abilities';
+import { difficultyBonusMap } from 'app/adventure';
+import { baseDivinity, totalCostForNextLevel } from 'app/character';
+import { abilities, getAbilityIconSource } from 'app/content/abilities';
+import { closedChestSource, openChestSource } from 'app/content/levels';
 import { map } from 'app/content/mapData';
 import { editingMapState } from 'app/development/editLevel';
 import { mainContext } from 'app/dom';
 import { MAP_LEFT, MAP_TOP, MAP_WIDTH, MAP_HEIGHT, WORLD_RADIUS } from 'app/gameConstants';
-import { drawAbilityIcon, requireImage } from 'app/images';
-import { mapLocation } from 'app/map';
+import { drawAbilityIcon, drawImage, requireImage } from 'app/images';
+import { mapLocation, mapState } from 'app/map';
+import { shrineSource } from 'app/render';
 import { drawTextureMap } from 'app/render/drawTextureMap';
+import { getState } from 'app/state';
 import { abbreviate } from 'app/utils/formatters';
-import { rectangle } from 'app/utils/index';
+import { rectangle, shrinkRectangle } from 'app/utils/index';
 import Vector from 'app/utils/Vector';
 import { worldCamera } from 'app/worldCamera';
 
@@ -120,18 +125,18 @@ function drawMap() {
         context.stroke();
         context.globalAlpha = 1;
     }
-    visibleNodes = {};
+    mapState.visibleNodes = {};
     const state = getState();
     for (let levelKey in map) {
         const levelData = map[levelKey];
-        if (!editingMap && !levelData.isGuildArea && !state.visibleLevels[levelKey]) {
+        if (!editingMapState.editingMap && !levelData.isGuildArea && !state.visibleLevels[levelKey]) {
             return;
         }
         if (new Vector(levelData.coords).dotProduct(worldCamera.forward) <= 0) {
             var projectedPoint = worldCamera.projectPoint(levelData.coords);
             levelData.left = projectedPoint[0] - 20 - MAP_LEFT;
             levelData.top = projectedPoint[1] - 20 - MAP_TOP;
-            visibleNodes[levelKey] = levelData;
+            mapState.visibleNodes[levelKey] = levelData;
             var skill = abilities[levelData.skill];
             if (skill) {
                 levelData.shrine = rectangle(levelData.left - 20, levelData.top - 20, 40, 40);
@@ -145,11 +150,11 @@ function drawMap() {
         levelData.width = levelData.height = 40;
         levelData.right = levelData.left + 40;
         levelData.bottom = levelData.top + 40;
-    });
-    movedMap = false;
+    }
+    mapState.movedMap = false;
     // Draw lines connecting connected nodes.
     context.save();
-    if (!editingMap) {
+    if (!editingMapState.editingMap) {
         context.strokeStyle = 'black';
         context.setLineDash([8, 12]);
         context.lineWidth = 1;
@@ -158,8 +163,9 @@ function drawMap() {
         context.lineWidth = 5;
     }
     const { editingMap, selectedMapNodes } = editingMapState;
-    $.each(visibleNodes, function (levelKey, levelData){
-        ifdefor(levelData.unlocks, []).forEach(function (nextLevelKey) {
+    for (let levelKey in mapState.visibleNodes) {
+        const levelData = mapState.visibleNodes[levelKey];
+        for (const nextLevelKey of (levelData.unlocks, [])) {
             if ((editingMap || (state.visibleLevels[levelKey] && state.visibleLevels[nextLevelKey])) && (visibleNodes[levelKey] && visibleNodes[nextLevelKey])) {
                 var nextLevelData = map[nextLevelKey];
                 context.beginPath();
@@ -177,11 +183,12 @@ function drawMap() {
                     context.stroke();
                 }
             }
-        });
-    });
+        }
+    }
     context.restore();
     // Draw ovals for each node.
-    $.each(visibleNodes, function (levelKey, levelData){
+    for (let levelKey in mapState.visibleNodes) {
+        const levelData = mapState.visibleNodes[levelKey];
         context.fillStyle = 'white';
         if (editingMap && selectedMapNodes.indexOf(levelData) >= 0) {
             context.fillStyle = '#f00';
@@ -193,9 +200,10 @@ function drawMap() {
         context.arc(0, 0, 22, 0, 2 * Math.PI);
         context.fill();
         context.restore();
-    });
+    }
     // Draw treasure chests on each node.
-    $.each(visibleNodes, function (levelKey, levelData){
+    for (let levelKey in mapState.visibleNodes) {
+        const levelData = mapState.visibleNodes[levelKey];
         if (editingMap) {
             var source = closedChestSource;
             drawImage(context, source.image, source.source, rectangle(levelData.left + levelData.width / 2 - 16, levelData.top + levelData.height / 2 - 18, 32, 32));
@@ -206,7 +214,7 @@ function drawMap() {
             context.textAlign = 'center'
             context.textBaseline = 'middle';
             //context.fillText(levelData.coords.map(function (number) { return number.toFixed(0);}).join(', '), levelData.left + 20, levelData.top + 45);
-            context.fillText(ifdefor(levelData.level, '') + ' ' + levelData.name, levelData.left + 20, levelData.top + 27);
+            context.fillText((levelData.level || '') + ' ' + levelData.name, levelData.left + 20, levelData.top + 27);
             if (levelData.skill) {
                 context.fillStyle = new Vector(levelData.coords).dotProduct(worldCamera.forward) >= 0 ? 'red' : 'black';
                 context.fillRect(levelData.left - 30, levelData.top + 34, 100, 15);
@@ -214,10 +222,10 @@ function drawMap() {
                 context.fillText(levelData.skill, levelData.left + 20, levelData.top + 41);
             }
             var skill = abilities[levelData.skill];
-            if (skill) drawAbilityIcon(context, getAbilityIconSource(skill, shrineSource), levelData.shrine);
+            // For some reason this was: getAbilityIconSource(skill, shrineSource)
+            if (skill) drawAbilityIcon(context, getAbilityIconSource(skill), levelData.shrine);
             return true;
         }
-        var divinityScore = ifdefor(state.selectedCharacter.divinityScores[levelKey], 0);
 
         var skill = abilities[levelData.skill];
         if (skill) {
@@ -228,7 +236,7 @@ function drawMap() {
             // Draw she shrine partially tansparent if the character needs more divinity to learn this skill.
             if (!skillLearned && !canAffordSkill) context.globalAlpha = .5;
             else context.globalAlpha = 1;
-            drawAbilityIcon(context, getAbilityIconSource(skill, shrineSource), levelData.shrine);
+            drawAbilityIcon(context, getAbilityIconSource(skill), levelData.shrine);
             // If the character has learned the ability for this level, draw a check mark on the shrine.
             context.globalAlpha = 1;
             if (skillLearned) drawImage(context, checkSource.image, checkSource, shrinkRectangle(levelData.shrine, 8));
@@ -241,7 +249,7 @@ function drawMap() {
             context.restore();
         }
 
-        var times = ifdefor(state.selectedCharacter.levelTimes[levelKey], {});
+        const times = state.selectedCharacter.levelTimes[levelKey] || {};
         var source = (times['easy'] && times['normal'] && times['hard']) ? openChestSource : closedChestSource;
         drawImage(context, source.image, source.source, rectangle(levelData.left + levelData.width / 2 - 16, levelData.top + levelData.height / 2 - 18, 32, 32));
 
@@ -255,7 +263,8 @@ function drawMap() {
         context.font = 'bold 16px sans-serif';
         context.textAlign = 'center'
         context.textBaseline = 'middle';
-        context.fillText(ifdefor(levelData.level, ''), levelData.left + 20, levelData.top + 26);
+        context.fillText(levelData.level || '', levelData.left + 20, levelData.top + 26);
+        const divinityScore = (state.selectedCharacter.divinityScores[levelKey] || 0);
         if (divinityScore > 0) {
             context.fillStyle = 'black';
             context.fillRect(levelData.left, levelData.top + 34, 40, 15);
@@ -263,20 +272,19 @@ function drawMap() {
             context.font = '10px sans-serif';
             context.textAlign = 'center'
             context.fillText(abbreviate(divinityScore), levelData.left + 20, levelData.top + 42);
+            let source = bronzeSource;
             if (divinityScore >= Math.round(difficultyBonusMap.hard * 1.2 * baseDivinity(levelData.level))) {
                 source = goldSource;
             } else if (divinityScore >= Math.round(baseDivinity(levelData.level))) {
                 source = silverSource;
-            } else {
-                source = bronzeSource;
             }
             context.drawImage(source.image, source.left, source.top, source.width, source.height,
                               levelData.left - 10, levelData.top + 34, 16, 16);
         }
         return true;
-    });
+    }
     const { arrowTargetLeft, arrowTargetTop, clickedMapNode } = editingMapState;
-    if (draggedMap &&
+    if (mapState.draggedMap &&
         arrowTargetLeft !== null &&
         arrowTargetTop !== null &&
         clickedMapNode

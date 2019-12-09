@@ -65,7 +65,7 @@ export function initializeLevelEditing() {
         monsterSelect.appendChild(optionElement('', monsters[monsterKey].name, monsterKey));
     }
     levelSelect.onchange = function () {
-        editingMapState.editingLevel.level = Number($(this).val());
+        editingMapState.editingLevel.level = Number(levelSelect.value);
         // Make a new instance since all the enemies and # waves need to be updated.
         editingMapState.editingLevelInstance = instantiateLevel(editingMapState.editingLevel);
     };
@@ -210,8 +210,8 @@ function updateEventMonsters() {
         const eventElement = tagElement('li', 'js-levelEvent');
         eventElement.appendChild(tagElement('span', 'js-eventMonsters'));
         for (const monsterKey of event) {
-            var $monster = tagElement('span', 'js-monster monster', monsters[monsterKey].name);
-            eventElement.appendChild($monster);
+            const monsterElement = tagElement('span', 'js-monster monster', monsters[monsterKey].name);
+            eventElement.appendChild(monsterElement);
         }
         eventElement.appendChild(monsterSelectClone);
         eventElement.appendChild(tagElement('button', 'js-moveLevelEventUp editEventButton', ' ^ '));
@@ -399,7 +399,7 @@ export function handleEditMapMouseMove(x, y, event) {
                 mapNode.top += dy;
                 mapNode.coords = worldCamera.unprojectPoint(mapNode.left + MAP_LEFT, mapNode.top + MAP_TOP, WORLD_RADIUS);
             })
-            movedMap = true;
+            mapState.movedMap = true;
         } else {
             mapLocation.moveRight(mapState.mapDragX - x);
             mapLocation.moveUp(-(mapState.mapDragY - y));
@@ -532,12 +532,12 @@ function exportMapToTextArea() {
 
 }
 function exportMapToClipboard() {
-    var $textarea = $tag('textarea');
-    $('body').append($textarea);
-    $textarea.val(exportMap());
-    $textarea[0].select();
+    const textareaElement = tagElement('textarea') as HTMLTextAreaElement;
+    document.body.appendChild(textareaElement);
+    textareaElement.value = exportMap();
+    textareaElement.select();
     console.log('Attempting to export map to clipboard: ' + document.execCommand('copy'));
-    $textarea.remove();
+    textareaElement.remove();
 }
 
 function exportMap() {

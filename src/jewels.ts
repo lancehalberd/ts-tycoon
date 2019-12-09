@@ -1,11 +1,13 @@
 import { addBonusSourceToObject, removeBonusSourceFromObject} from 'app/bonuses';
+import { Ability } from 'app/content/abilities';
 import { createCanvas, divider, query, tagElement } from 'app/dom';
 import { fixedDigits, percent } from 'app/utils/formatters';
-import { getState } from 'app/state';
-import { bonusSourceHelpText } from 'app/helpText';
-import { isPointInPoints, makeShape, Polygon, shapeDefinitions, ShapeType } from 'app/utils/polygon';
+import { abilityHelpText, bonusSourceHelpText } from 'app/helpText';
 import { removePopup } from 'app/popup';
 import { points } from 'app/points';
+import { getState } from 'app/state';
+import { arrayToCssRGB } from 'app/utils/colors';
+import { isPointInPoints, makeShape, Polygon, shapeDefinitions, ShapeType } from 'app/utils/polygon';
 
 export type JewelTier = 1 | 2 | 3 | 4 | 5;
 export type JewelComponents = [number, number, number];
@@ -17,13 +19,13 @@ export interface Jewel {
     // This stores componentBonuses * area * quality * qualifierBonus
     bonuses: any,
     // Canvas for displaying the jewel in the inventory.
-    canvas: HTMLCanvasElement,
+    canvas?: HTMLCanvasElement,
     character: any,
     componentBonuses: any,
     components: JewelComponents,
-    context: CanvasRenderingContext2D,
+    context?: CanvasRenderingContext2D,
     // Div for holding the jewel in the inventory.
-    domElement: HTMLElement,
+    domElement?: HTMLElement,
     fixed: boolean,
     helpMethod: (jewel: Jewel) => string,
     jewelType: number,
@@ -34,6 +36,9 @@ export interface Jewel {
     shape: Polygon,
     shapeType: ShapeType,
     tier: JewelTier,
+    disabled?: boolean,
+    confirmed?: boolean,
+    ability?: Ability,
 }
 
 const originalJewelScale = 30;
@@ -292,20 +297,23 @@ export function updateJewelBonuses(character) {
             = bonusSourceHelpText(character.jewelBonuses, character.adventurer);
     }
 }
-export function makeFixedJewel(shape, character, ability) {
+export function makeFixedJewel(shape: Polygon, character, ability: Ability): Jewel {
     shape.color = '#333333';
     return {
         shape,
-        'shapeType': shape.key,
-        'quality': 1,
-        'jewelType': 0,
+        area: 1,
+        tier: 1,
+        shapeType: shape.key,
+        components: [0, 0, 0],
+        quality: 1,
+        jewelType: 0,
         'fixed': true,
         'disabled': false,
         character,
         ability,
         helpMethod() {
-            var coreHelpText = abilityHelpText(ability, character.adventurer);
-            var bonusText = bonusSourceHelpText({'bonuses': this.adjacencyBonuses}, state.selectedCharacter.adventurer);
+            let coreHelpText = abilityHelpText(ability, character.adventurer);
+            const bonusText = bonusSourceHelpText({'bonuses': this.adjacencyBonuses}, getState().selectedCharacter.adventurer);
             if (bonusText) coreHelpText += '<br/><br/>' + bonusText;
             if (!this.confirmed) return coreHelpText;
             if (this.disabled) {
@@ -313,16 +321,14 @@ export function makeFixedJewel(shape, character, ability) {
             }
             return coreHelpText + '<br><br>Double click to disable this ability.';
         },
-        'adjacentJewels': [],
-        'adjacencyBonuses': {}
+        adjacentJewels: [],
+        adjacencyBonuses: {},
+        componentBonuses: {},
+        bonuses: {},
+        qualifierName: '',
+        qualifierBonus: 1,
+        price: 0,
     };
-}
-
-function arrayToCssRGB(array) {
-    return '#' + toHex(array[0]) + toHex(array[1]) + toHex(array[2]);
-}
-function toHex(d) {
-    return  ("0"+(Number(d).toString(16))).slice(-2).toUpperCase();
 }
 
 // Map JewelType(0-7) to jewel information (name only currently).
@@ -348,7 +354,8 @@ export function getJewelTiewerForLevel(level): JewelTier {
 
 let maxAnimaJewelBonus;
 function setMaxAnimaJewelBonus(value) {
-    state.maxAnimaJewelMultiplier = value;
+    const state = getState();
+    state.savedState.maxAnimaJewelMultiplier = value;
     if (maxAnimaJewelBonus) removeBonusSourceFromObject(state.guildStats, maxAnimaJewelBonus);
     maxAnimaJewelBonus = {'bonuses': {'*maxAnima': value}};
     addBonusSourceToObject(state.guildStats, maxAnimaJewelBonus, true);
@@ -397,6 +404,7 @@ function jewelHelpText(jewel: Jewel): string {
 
     //sections.push('Balance ' + [(300 * normalizedComponenets[0]).format(0), (300 * normalizedComponenets[1]).format(0), (300 * normalizedComponenets[2]).format(0)].join('/'));
     // sections.push('Color ' + jewel.shape.color);
+    const state = getState();
     sections.push('');
     sections.push(bonusSourceHelpText(jewel, state.selectedCharacter.adventurer));
     sections.push('');
