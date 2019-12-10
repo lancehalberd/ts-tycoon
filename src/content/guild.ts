@@ -360,7 +360,7 @@ function projectLeftWallCoords(xOffset, y, z) {
     var v = 300 - wallOriginCoords[1] - slope * (60 - u - wallOriginCoords[0]);
     return {'x': u + xOffset, 'y': v, 'u': 60 - z / 3, 'v': 130 - y / 2};
 }
-function unprojectLeftWallCoords(area, left, top) {
+export function unprojectLeftWallCoords(area, left, top) {
     var vanishingPoint = [60 - wallOriginCoords[0], 300 - wallOriginCoords[1]];
     var mousePoint = [left + area.cameraX, top];
     var slope = (mousePoint[1] - vanishingPoint[1]) / (mousePoint[0] - vanishingPoint[0]);
@@ -375,7 +375,7 @@ function projectRightWallCoords(xOffset, y, z) {
     var v = 300 - wallOriginCoords[1] - slope * (60 + u - wallOriginCoords[0]);
     return {'x': u + xOffset, 'y': v, 'u': 60 - z / 3, 'v': 130 - y / 2};
 }
-function unprojectRightWallCoords(area, left, top) {
+export function unprojectRightWallCoords(area, left, top) {
     var vanishingPoint = [area.width - 60 + wallOriginCoords[0], 300 - wallOriginCoords[1]];
     var mousePoint = [left + area.cameraX, top];
     var slope = (mousePoint[1] - vanishingPoint[1]) / (mousePoint[0] - vanishingPoint[0]);

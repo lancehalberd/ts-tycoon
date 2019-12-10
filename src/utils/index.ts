@@ -24,10 +24,6 @@ export function shallowCopy(object) {
     _.clone(object);
 }
 
-export function properCase(string) {
-    return string.split(' ').map(function (word) {return word.charAt(0).toUpperCase() + word.substring(1)}).join(' ');
-}
-
 /**
  * Returns the angle from (x1, y1) to (x2,y2) which when given an image facing
  * right at angle 0, will point the image from x1,y1 towards x2,y2 when

@@ -1,7 +1,12 @@
 import { showAreaMenu } from 'app/areaMenu';
 import { addBonusSourceToObject, removeBonusSourceFromObject} from 'app/bonuses';
+import { gainLevel, totalCostForNextLevel } from 'app/character';
+import { abilities } from 'app/content/abilities';
+import { finishShrine } from 'app/content/levels';
 import { map } from 'app/content/mapData';
+import { monsters } from 'app/content/monsters';
 import { setContext } from 'app/context';
+import { drawBoardBackground } from 'app/drawBoard';
 import {
     editingMapState,
     handleEditMapMouseDown,
@@ -18,13 +23,15 @@ import {
     titleDiv,
     updateConfirmSkillConfirmationButtons,
 } from 'app/dom';
-import { WORLD_RADIUS } from 'app/gameConstants';
+import { MAX_LEVEL, WORLD_RADIUS } from 'app/gameConstants';
+import { abilityHelpText } from 'app/helpText'
+import { updateAdjacentJewels, updateJewelBonuses } from 'app/jewels';
 import { updateDamageInfo } from 'app/performAttack';
 import { hidePointsPreview, previewPointsChange } from 'app/points';
 import { saveGame } from 'app/saveGame';
 import { getState } from 'app/state';
 import { isPointInRect } from 'app/utils/index';
-import { isMouseDown, isRightMouseDown } from 'app/utils/mouse';
+import { getMousePosition, isMouseDown, isRightMouseDown } from 'app/utils/mouse';
 import SphereVector from 'app/utils/SphereVector';
 import Vector from 'app/utils/Vector';
 import { worldCamera } from 'app/WorldCamera';
@@ -82,7 +89,7 @@ export const mapState = {
     movedMap: true,
 };
 
-function getMapPopupTarget(x, y) {
+export function getMapPopupTarget(x, y) {
     var newMapTarget = null;
     if (!mapState.draggedMap) {
         newMapTarget = getMapPopupTargetProper(x, y);
@@ -90,7 +97,7 @@ function getMapPopupTarget(x, y) {
     if (newMapTarget !== mapState.currentMapTarget) {
         const state = getState();
         var level = newMapTarget ? (newMapTarget.isShrine ? newMapTarget.level.level : newMapTarget.level) : undefined;
-        updateDamageInfo(state.selectedCharacter, $('.js-characterColumn .js-stats'), level);
+        updateDamageInfo(state.selectedCharacter, query('.js-characterColumn .js-stats'), level);
     }
     if ((mapState.currentMapTarget && mapState.currentMapTarget.isShrine) && !(newMapTarget && newMapTarget.isShrine)) {
         hidePointsPreview();
@@ -100,7 +107,7 @@ function getMapPopupTarget(x, y) {
     return mapState.currentMapTarget;
 }
 function getMapPopupTargetProper(x, y) {
-    if (editingLevel) {
+    if (editingMapState.editingLevel) {
         return null;
     }
     var newMapTarget = getMapTarget(x, y);
@@ -109,9 +116,10 @@ function getMapPopupTargetProper(x, y) {
     }
     if (newMapTarget.isShrine) {
         newMapTarget.helpMethod = getMapShrineHelpText;
-        var skill = abilities[newMapTarget.level.skill];
-        if (!state.selectedCharacter.adventurer.unlockedAbilities[skill.key]) {
-            var totalCost = totalCostForNextLevel(state.selectedCharacter, newMapTarget.level);
+        const skill = abilities[newMapTarget.level.skill];
+        const { selectedCharacter } = getState();
+        if (!selectedCharacter.adventurer.unlockedAbilities[skill.key]) {
+            var totalCost = totalCostForNextLevel(selectedCharacter, newMapTarget.level);
             previewPointsChange('divinity', -totalCost);
         }
     } else {
@@ -121,40 +129,42 @@ function getMapPopupTargetProper(x, y) {
 }
 
 function getMapLevelHelpText(level) {
-    var helpText;
     if (level.levelKey === 'guild') {
         return titleDiv('Guild');
     }
-    if (!editingMap) {
-        helpText = titleDiv('Level ' + level.level + ' ' + level.name);
+    if (!editingMapState.editingMap) {
+        return titleDiv('Level ' + level.level + ' ' + level.name);
+    }
+    let helpText = '<p style="font-weight: bold">Level ' + level.level + ' ' + level.name +'(' + level.background +  ')</p><br/>';
+    helpText += '<p><span style="font-weight: bold">Enemies:</span> ' +
+        level.monsters.map(k => monsters[k].name).join(', ') + '</p>';
+    if (level.events) {
+        helpText += '<p><span style="font-weight: bold"># Events: </span> ' + level.events.length + '</p>';
+        if (level.events.length) {
+            helpText += '<p><span style="font-weight: bold">Boss Event: </span> ' +
+                level.events[level.events.length - 1].map(k => monsters[k].name).join(', ') + '</p>';
+        }
     } else {
-        helpText = '<p style="font-weight: bold">Level ' + level.level + ' ' + level.name +'(' + level.background +  ')</p><br/>';
-        helpText += '<p><span style="font-weight: bold">Enemies:</span> ' + level.monsters.map(function (monsterKey) { return monsters[monsterKey].name;}).join(', ') + '</p>';
-        if (level.events) {
-            helpText += '<p><span style="font-weight: bold"># Events: </span> ' + level.events.length + '</p>';
-            if (level.events.length) {
-                helpText += '<p><span style="font-weight: bold">Boss Event: </span> ' + level.events[level.events.length - 1].map(function (monsterKey) { return monsters[monsterKey].name;}).join(', ') + '</p>';
-            }
-        } else {
-            helpText += '<p style="font-weight: bold; color: red;">No Events!</p>';
-        }
-        helpText += '<p><span style="font-weight: bold">Enemy Skills:</span> ' + ifdefor(level.enemySkills, []).map(function (skillKey) { return abilities[skillKey].name;}).join(', ') + '</p>';
-        helpText += '<br/><p style="font-weight: bold">Teaches:</p>';
-        var skill = abilities[level.skill];
-        if (skill) {
-            helpText += abilityHelpText(skill, state.selectedCharacter.adventurer);
-        } else {
-            helpText += '<p>No Skill</p>';
-        }
+        helpText += '<p style="font-weight: bold; color: red;">No Events!</p>';
+    }
+    helpText += '<p><span style="font-weight: bold">Enemy Skills:</span> ' +
+        (level.enemySkills || []).map(k => abilities[k].name).join(', ') + '</p>';
+    helpText += '<br/><p style="font-weight: bold">Teaches:</p>';
+    const skill = abilities[level.skill];
+    if (skill) {
+        helpText += abilityHelpText(skill, getState().selectedCharacter.adventurer);
+    } else {
+        helpText += '<p>No Skill</p>';
     }
     return helpText;
 }
 function getMapShrineHelpText(shrine) {
+    const state = getState();
     var skill = abilities[shrine.level.skill];
     var totalCost = totalCostForNextLevel(state.selectedCharacter, shrine.level);
     var helpText = ''
     var skillAlreadyLearned = state.selectedCharacter.adventurer.unlockedAbilities[skill.key];
-    if (!skillAlreadyLearned && state.selectedCharacter.adventurer.level >= maxLevel) {
+    if (!skillAlreadyLearned && state.selectedCharacter.adventurer.level >= MAX_LEVEL) {
         helpText += '<p style="font-size: 12">' + state.selectedCharacter.adventurer.name + ' has reached the maximum level and can no longer learn new abilities.</p><br/>';
     } else if (!skillAlreadyLearned && state.selectedCharacter.divinity < totalCost) {
         helpText += '<p style="font-size: 12">' + state.selectedCharacter.adventurer.name + ' does not have enough divinity to learn the skill from this shrine.</p><br/>';
@@ -168,34 +178,35 @@ function getMapShrineHelpText(shrine) {
 }
 
 export function getMapTarget(x, y) {
-    var target = null;
+    let target = null;
     for (let levelKey in mapState.visibleNodes) {
         const levelData = mapState.visibleNodes[levelKey];
         if (isPointInRect(x, y, levelData.left, levelData.top, levelData.width, levelData.height)) {
             target = levelData;
             return false;
         }
-        if (!editingMap && levelData.shrine && isPointInRect(x, y, levelData.shrine.left, levelData.shrine.top, levelData.shrine.width, levelData.shrine.height)) {
+        if (!editingMapState.editingMap && levelData.shrine && isPointInRect(x, y, levelData.shrine.left, levelData.shrine.top, levelData.shrine.width, levelData.shrine.height)) {
             target = levelData.shrine;
             return false;
         }
         return true;
-    });
+    }
     return target;
 }
 
 // Disable context menu while editing the map because the right click is used for making nodes and edges.
 mainCanvas.oncontextmenu = function (event) {
-    return !editingMap;
+    return !editingMapState.editingMap;
 };
-function handleMapMouseDown(x, y, event) {
+export function handleMapMouseDown(x, y, event) {
     //console.log(camera.unprojectPoint(x + MAP_LEFT, y + MAP_TOP, WORLD_RADIUS));
     const newMapTarget = getMapTarget(x, y);
-    if (editingMap) {
+    if (editingMapState.editingMap) {
         handleEditMapMouseDown(x, y, event, newMapTarget);
     }
     if (event.which != 1) return; // Handle only left click.
-    if (!editingMap && newMapTarget) {
+    if (!editingMapState.editingMap && newMapTarget) {
+        const state = getState();
         if (mapState.currentMapTarget.levelKey === 'guild') {
             mapState.currentMapTarget = null;
             setContext('guild');
@@ -205,13 +216,13 @@ function handleMapMouseDown(x, y, event) {
             state.selectedCharacter.selectedLevelKey = mapState.currentMapTarget.level.levelKey;
             showAreaMenu();
             mapState.currentMapTarget = null;
-            $('.js-mainCanvas').toggleClass('clickable', false);
+            mainCanvas.classList.toggle('clickable', false);
             return;
         } else if (mapState.currentMapTarget.levelKey) {
             state.selectedCharacter.selectedLevelKey = mapState.currentMapTarget.levelKey;
             showAreaMenu();
             mapState.currentMapTarget = null;
-            $('.js-mainCanvas').toggleClass('clickable', false);
+            mainCanvas.classList.toggle('clickable', false);
             return;
         }
     }
@@ -223,8 +234,7 @@ function handleMapMouseDown(x, y, event) {
     console.log('click');
 });*/
 document.addEventListener('mouseup', function (event) {
-    var x = event.pageX - $('.js-mainCanvas').offset().left;
-    var y = event.pageY - $('.js-mainCanvas').offset().top;
+    const [x, y] = getMousePosition(mainCanvas);
     mapState.mapDragX = mapState.mapDragY = null;
     if (editingMapState.editingMap) {
         handleEditMapMouseUp(x, y, event);
@@ -234,12 +244,11 @@ document.addEventListener('mouseup', function (event) {
         return;
     }
 });
-$('.js-mouseContainer').on('mousemove', function (event) {
+document.addEventListener('mousemove', function (event) {
     if (!isMouseDown() && !isRightMouseDown()) return;
     if (getState().selectedCharacter.context !== 'map') return;
     mapState.draggedMap = true;
-    var x = event.pageX - $(this).offset().left;
-    var y = event.pageY - $(this).offset().top;
+    const [x, y] = getMousePosition(mouseContainer);
     if (editingMapState.editingMap) {
         handleEditMapMouseMove(x, y, event);
     } else if (mapState.mapDragX !== null && mapState.mapDragY !== null) {
@@ -251,10 +260,10 @@ $('.js-mouseContainer').on('mousemove', function (event) {
     }
 });
 
-$('body').on('click', '.js-confirmSkill', function (event) {
-    var character = getState().selectedCharacter;
-    var level = map[character.currentLevelKey];
-    var skill = character.board.boardPreview.fixed[0].ability;
+handleChildEvent('click', document.body, '.js-confirmSkill', function (confirmButton) {
+    const character = getState().selectedCharacter;
+    const level = map[character.currentLevelKey];
+    const skill = character.board.boardPreview.fixed[0].ability;
     character.divinity -= totalCostForNextLevel(character, level);
     character.adventurer.abilities.push(skill);
     character.adventurer.unlockedAbilities[skill.key] = true;

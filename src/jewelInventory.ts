@@ -1,32 +1,60 @@
 import { addBonusSourceToObject, removeBonusSourceFromObject} from 'app/bonuses';
-import { addActions } from 'app/character';
+import { addActions, refreshStatsPanel, removeActions, totalCostForNextLevel } from 'app/character';
+import { map } from 'app/content/mapData';
 import {
-    getClosestElement, findEmptyElement, jewelInventoryContainer,
-    jewelsCanvas, query, queryAll
+    getClosestElement, findEmptyElement, handleChildEvent, jewelInventoryContainer,
+    jewelsCanvas, mouseContainer, query, queryAll
 } from 'app/dom';
-import { getState } from 'app/state';
+import { drawBoardBackground } from 'app/drawBoard';
+import { drawJewel } from 'app/drawJewel';
+import { inventoryState, updateDragHelper } from 'app/inventory';
 import {
-    Jewel, JewelComponents, JewelTier, jewelTierLevels,
-    makeJewel, updateAdjacentJewels, updateJewelBonuses,
+    clearAdjacentJewels, Jewel, jewelAnimaBonus, JewelComponents, JewelTier, jewelTierLevels,
+    makeJewel, setMaxAnimaJewelBonus,
+    updateAdjacencyBonuses, updateAdjacentJewels, updateJewelBonuses,
 } from 'app/jewels';
 import { gain, hidePointsPreview, previewPointsChange } from 'app/points';
-import { ifdefor, isPointInRectObject, rectangle } from 'app/utils/index';
+import { checkToShowJewelToolTip, removePopup } from 'app/popup';
+import { saveGame } from 'app/saveGame'
+import { getState } from 'app/state';
+import {
+    collision, getCollisionArea, getElementRectangle, ifdefor,
+    isPointInRectObject, rectangle,
+} from 'app/utils/index';
 import { getMousePosition } from 'app/utils/mouse';
 import {
     allPoints,
     checkForCollision,
     computeArea,
     distanceSquared,
+    getBounds,
     getIntersectionArea,
     isPointInPoints,
+    magnitude,
+    rotatePoint,
+    rotateShapes,
     ShapeDefinition,
     shapeDefinitions,
     tolerance,
     translateShapes,
     vector,
 } from 'app/utils/polygon';
-import { drawJewel } from 'app/drawJewel';
-import { saveGame } from 'app/saveGame'
+
+
+export const jewelInventoryState = {
+    // The vertex the mouse is over.
+    overVertex: null,
+    // The jewel the mouse is over.
+    overJewel: null,
+    // The jewel being dragged.
+    draggedJewel: null,
+    // The fixed jewel being used to drag the board.
+    draggingBoardJewel: null,
+}
+const craftingSlotA = query('.js-jewelCraftingSlotA');
+const craftingSlotB = query('.js-jewelCraftingSlotB');
+const jewelCraftingButton:HTMLElement = query('.js-jewelCraftingButton');
+const jewelDeformationButton:HTMLElement = query('.js-jewelDeformationButton');
 
 function redrawInventoryJewel(jewel) {
     //centerShapesInRectangle([jewel.shape], rectangle(0, 0, jewel.canvas.width, jewel.canvas.height));
@@ -59,49 +87,39 @@ function redrawInventoryJewel(jewel) {
 export function redrawInventoryJewels() {
     let jewelsDrawn = 0;
     let jewelsTotal = 0;
-    jewelInventoryContainer.getElementsByClassName('.js-jewel').forEach(function (index, element) {
+    for (const element of jewelInventoryContainer.getElementsByClassName('.js-jewel') as HTMLCollectionOf<HTMLElement>) {
         jewelsTotal++;
-        if ($(element).is(':visible') && collision($container, $(element))) {
+        if (element.style.display != 'none' && collision(jewelInventoryContainer, element)) {
             jewelsDrawn++;
-            redrawInventoryJewel($(element).data('jewel'));
+            redrawInventoryJewel(getElementJewel(element));
         }
-    });
+    }
     // Crafting slots are always visible.
-    $('.js-jewelCraftingSlot .js-jewel').each(function () {
-        redrawInventoryJewel($(this).data('jewel'));
-    });
+    for (const element of queryAll('.js-jewelCraftingSlot .js-jewel')) {
+        redrawInventoryJewel(getElementJewel(element));
+    }
 }
 jewelInventoryContainer.onscroll = redrawInventoryJewels;
 
-function sellJewel(jewel) {
+export function sellJewel(jewel) {
     if (jewel.fixed) return;
-    if (jewel.character && state.characters.indexOf(jewel.character) < 0) {
+    if (jewel.character && getState().characters.indexOf(jewel.character) < 0) {
         return;
     }
-    if (dragHelper && jewel !== jewelInventoryState.draggedJewel) {
+    if (inventoryState.dragHelper && jewel !== jewelInventoryState.draggedJewel) {
         return;
     }
     // unequip and deletes the jewel.
     destroyJewel(jewel);
-    setMaxAnimaJewelBonus(state.maxAnimaJewelMultiplier * jewelAnimaBonus(jewel));
+    setMaxAnimaJewelBonus(getState().savedState.maxAnimaJewelMultiplier * jewelAnimaBonus(jewel));
     gain('coins', jewel.price);
     gain('anima', jewel.price);
     updateJewelCraftingOptions();
     saveGame();
 }
 
-export const jewelInventoryState = {
-    // The vertex the mouse is over.
-    overVertex: null,
-    // The jewel the mouse is over.
-    overJewel: null,
-    // The jewel being dragged.
-    draggedJewel: null,
-    // The fixed jewel being used to drag the board.
-    draggingBoardJewel: null,
-}
-
 document.body.ondblclick = function (event) {
+    const state = getState();
     if (!jewelInventoryState.overJewel || !jewelInventoryState.overJewel.fixed || !jewelInventoryState.overJewel.confirmed) return; // dblclick action only applies to fixed jewels
     // Cannot interact with jewel boards of characters that are not in your guild yet.
     if (jewelInventoryState.overJewel.character && state.characters.indexOf(jewelInventoryState.overJewel.character) < 0) return;
@@ -134,7 +152,7 @@ document.body.onmousedown = function (event) {
         return;
     }
     // Cannot interact with jewel boards of characters that are not in your guild yet.
-    if (jewelInventoryState.overJewel.character && state.characters.indexOf(jewelInventoryState.overJewel.character) < 0) {
+    if (jewelInventoryState.overJewel.character && getState().characters.indexOf(jewelInventoryState.overJewel.character) < 0) {
         return;
     }
     if (jewelInventoryState.overJewel.fixed) {
@@ -144,7 +162,7 @@ document.body.onmousedown = function (event) {
             return;
         }
         jewelInventoryState.draggingBoardJewel = jewelInventoryState.overJewel;
-        dragged = false;
+        inventoryState.dragged = false;
         return;
     }
     if (specialClick) {
@@ -158,42 +176,46 @@ document.body.onmousedown = function (event) {
                 emptySlot.appendChild(jewelInventoryState.overJewel.domElement);
             }
         }
-        updateJewelUnderMouse($('.js-skillCanvas'));
+        updateJewelUnderMouse(jewelsCanvas);
         updateJewelCraftingOptions();
         return;
     }
     jewelInventoryState.draggedJewel = jewelInventoryState.overJewel;
-    $('.js-jewelCraftingSlot').addClass('active');
+    for (const craftingSlot of queryAll('.js-jewelCraftingSlot .js-jewel')) {
+        craftingSlot.classList.add('active');
+    }
     jewelInventoryState.draggedJewel.startCharacter = jewelInventoryState.draggedJewel.character;
     jewelInventoryState.draggedJewel.startCenter = [jewelInventoryState.draggedJewel.shape.center[0], jewelInventoryState.draggedJewel.shape.center[1]];
     clearAdjacentJewels(jewelInventoryState.draggedJewel);
     updateAdjacencyBonuses(jewelInventoryState.draggedJewel);
-    if ($popup) {
+    /*if ($popup) {
         $popup.remove();
         checkToShowJewelToolTip();
-    }
+    }*/
+    removePopup();
+    checkToShowJewelToolTip();
     if (jewelInventoryState.overVertex) {
         return;
     }
     jewelInventoryState.overJewel = null;
     // Remove this jewel from the board it is in while dragging.
     removeFromBoard(jewelInventoryState.draggedJewel);
-    dragHelper = jewelInventoryState.draggedJewel.canvas;
+    inventoryState.dragHelper = jewelInventoryState.draggedJewel.canvas;
     jewelInventoryState.draggedJewel.domElement.remove();
     jewelInventoryState.draggedJewel.shape.setCenterPosition(jewelInventoryState.draggedJewel.canvas.width / 2, jewelInventoryState.draggedJewel.canvas.height / 2);
-    dragHelper.css('position', 'absolute');
-    $('.js-mouseContainer').append(dragHelper);
+    inventoryState.dragHelper.style.position = 'absolute';
+    mouseContainer.appendChild(inventoryState.dragHelper);
     redrawInventoryJewel(jewelInventoryState.draggedJewel);
     updateDragHelper();
-    dragged = false;
-});
+    inventoryState.dragged = false;
+}
 // Replace this with generic mousemove handling.
 document.body.addEventListener('mousemove', function (event) {
     const jewelContainer = (event.target as HTMLElement).closest('.js-jewel');
     if (!jewelContainer) {
         return;
     }
-    if (jewelInventoryState.draggedJewel || dragHelper || jewelInventoryState.draggingBoardJewel) {
+    if (jewelInventoryState.draggedJewel || inventoryState.dragHelper || jewelInventoryState.draggingBoardJewel) {
         return;
     }
     // updateMousePosition(event);
@@ -216,19 +238,20 @@ document.body.addEventListener('mousemove', function (event) {
         }
     }
 });
-function updateJewelUnderMouse($jewelCanvas) {
+function updateJewelUnderMouse(activeJewelsCanvas: HTMLCanvasElement) {
+    const [x, y] = getMousePosition(mouseContainer);
     jewelInventoryState.overJewel = null;
     jewelInventoryState.overVertex = null;
-    if (!isPointInRectObject(mousePosition[0], mousePosition[1], getElementRectangle($jewelCanvas, $('.js-mouseContainer')))) {
-        $('.js-jewel').each(function (index, element) {
-            var jewel = $(this).data('jewel');
-            var points = jewel.shape.points;
-            var relativePosition = relativeMousePosition(jewel.canvas);
+    if (!isPointInRectObject(x, y, getElementRectangle(activeJewelsCanvas, mouseContainer))) {
+        for (const jewelElement of queryAll('.js-jewel')) {
+            const jewel = getElementJewel(jewelElement);
+            const points = jewel.shape.points;
+            const relativePosition = getMousePosition(jewel.canvas);
             if (isPointInPoints(relativePosition, points)) {
                 jewelInventoryState.overJewel = jewel;
                 return false;
             }
-            for (var j = 0; j < points.length; j++) {
+            for (let j = 0; j < points.length; j++) {
                 if (distanceSquared(points[j], relativePosition) < 25) {
                     jewelInventoryState.overJewel = jewel;
                     jewelInventoryState.overVertex = points[j].concat();
@@ -236,15 +259,15 @@ function updateJewelUnderMouse($jewelCanvas) {
                     return false;
                 }
             }
-        });
+        }
         return;
     }
-    var character = $jewelCanvas.data('character');
-    var relativePosition = relativeMousePosition($jewelCanvas);
-    var jewels = character.board.jewels;
-    for (var i = 0; i < jewels.length; i++) {
-        var jewel = jewels[i];
-        var points = jewel.shape.points;
+    const character = getState().selectedCharacter;
+    const relativePosition = getMousePosition(activeJewelsCanvas);
+    let jewels = character.board.jewels;
+    for (let i = 0; i < jewels.length; i++) {
+        const jewel = jewels[i];
+        const points = jewel.shape.points;
         if (isPointInPoints(relativePosition, points)) {
             jewelInventoryState.overJewel = jewel;
             checkToShowJewelToolTip();
@@ -259,19 +282,19 @@ function updateJewelUnderMouse($jewelCanvas) {
             }
         }*/
     }
-    var jewels = character.board.fixed.concat();
+    jewels = character.board.fixed.concat();
     if (character.board.boardPreview) {
         jewels = jewels.concat(character.board.boardPreview.fixed);
     }
-    for (var i = 0; i < jewels.length; i++) {
-        var jewel = jewels[i];
-        var points = jewel.shape.points;
+    for (let i = 0; i < jewels.length; i++) {
+        const jewel = jewels[i];
+        const points = jewel.shape.points;
         if (isPointInPoints(relativePosition, points)) {
             jewelInventoryState.overJewel = jewel;
             checkToShowJewelToolTip();
             return;
         }
-        for (var j = 0; j < points.length; j++) {
+        for (let j = 0; j < points.length; j++) {
             if (distanceSquared(points[j], relativePosition) < 25) {
                 jewelInventoryState.overJewel = jewel;
                 jewelInventoryState.overVertex = points[j].concat();
@@ -281,27 +304,17 @@ function updateJewelUnderMouse($jewelCanvas) {
         }
     }
 }
-// Replace this with generic mousemove handling.
-document.body.addEventListener('mousemove', function (event) {
-    if (jewelInventoryState.draggedJewel || dragHelper || jewelInventoryState.draggingBoardJewel) {
+handleChildEvent('mousemove', document.body, '.js-skillCanvas', function (targetJewelsCanvas) {
+    if (jewelInventoryState.draggedJewel || inventoryState.dragHelper || jewelInventoryState.draggingBoardJewel) {
         return;
     }
-    const skillCanvas = event.target.closest('.js-skillCanvas');
-    if (skillCanvas) {
-        updateJewelUnderMouse(skillCanvas);
-        //updateMousePosition(event);
-    }
+    updateJewelUnderMouse(targetJewelsCanvas);
 });
-// Replace this with generic mousemove handling.
-document.body.addEventListener('mousemove', function (event) {
-    if (jewelInventoryState.draggedJewel || dragHelper || jewelInventoryState.draggingBoardJewel) {
+handleChildEvent('mousemove', document.body, '.js-applicationSkillCanvas', function (targetJewelsCanvas) {
+    if (jewelInventoryState.draggedJewel || inventoryState.dragHelper || jewelInventoryState.draggingBoardJewel) {
         return;
     }
-    const skillCanvas = event.target.closest('.js-applicationSkillCanvas');
-    if (skillCanvas) {
-        //updateMousePosition(event);
-        updateJewelUnderMouse(skillCanvas);
-    }
+    updateJewelUnderMouse(targetJewelsCanvas);
 });
 // Replace this with generic mousemove handling.
 document.body.addEventListener('mousemove', function () {
@@ -315,9 +328,9 @@ document.body.addEventListener('mousemove', function () {
         var center = jewelInventoryState.draggedJewel.shape.center;
         var centerToMouse = null;
         if (jewelInventoryState.draggedJewel.character) {
-            centerToMouse = vector(center, relativeMousePosition(jewelsCanvas));
+            centerToMouse = vector(center, getMousePosition(jewelsCanvas));
         } else {
-            centerToMouse = vector(center, relativeMousePosition(jewelInventoryState.draggedJewel.canvas));
+            centerToMouse = vector(center, getMousePosition(jewelInventoryState.draggedJewel.canvas));
         }
         var centerToVertex = vector(center, jewelInventoryState.overVertex);
         var dotProduct = centerToVertex[0] * centerToMouse[0] + centerToVertex[1] * centerToMouse[1];
@@ -339,27 +352,27 @@ document.body.addEventListener('mousemove', function () {
     }
 });
 function dragBoard() {
-    var character = jewelInventoryState.draggingBoardJewel.character;
-    var boardShapes = [];
+    const character = jewelInventoryState.draggingBoardJewel.character;
+    let boardShapes = [];
     if (character.board.boardPreview) {
         boardShapes = character.board.boardPreview.fixed.map(j => j.shape).concat(character.board.boardPreview.spaces);
     }
     if (jewelInventoryState.draggingBoardJewel.confirmed) {
         boardShapes = boardShapes.concat(character.board.jewels.map(j => j.shape)).concat(character.board.fixed.map(j => j.shape)).concat(character.board.spaces);
     }
-    var mousePosition = relativeMousePosition(jewelsCanvas);
+    const mousePosition = getMousePosition(jewelsCanvas);
     // Translate the board so the fixed jewel is centered under the mouse.
     if (jewelInventoryState.overVertex === null) {
-        var v = vector(jewelInventoryState.draggingBoardJewel.shape.center, mousePosition);
+        const v = vector(jewelInventoryState.draggingBoardJewel.shape.center, mousePosition);
         if (jewelInventoryState.draggingBoardJewel.confirmed) {
-            var bounds = getBounds(allPoints(boardShapes));
+            const bounds = getBounds(allPoints(boardShapes));
             v[0] = Math.min(character.boardCanvas.width / 2 - bounds.left, v[0]);
             v[0] = Math.max(character.boardCanvas.width / 2 - bounds.left - bounds.width, v[0]);
             v[1] = Math.min(character.boardCanvas.height / 2 - bounds.top, v[1]);
             v[1] = Math.max(character.boardCanvas.height / 2 - bounds.top - bounds.height, v[1]);
         }
         translateShapes(boardShapes, v);
-        dragged = true;
+        inventoryState.dragged = true;
         if (jewelInventoryState.draggingBoardJewel.confirmed) {
             character.boardContext.clearRect(0, 0, character.boardCanvas.width, character.boardCanvas.height);
             drawBoardBackground(character.boardContext, character.board);
@@ -367,16 +380,16 @@ function dragBoard() {
         return;
     }
     // Rotate the board
-    var points = jewelInventoryState.draggingBoardJewel.shape.points;
-    var center = jewelInventoryState.draggingBoardJewel.shape.center;
-    var centerToMouse = vector(center, mousePosition);
-    var centerToVertex = vector(center, jewelInventoryState.overVertex);
-    var dotProduct = centerToVertex[0] * centerToMouse[0] + centerToVertex[1] * centerToMouse[1];
-    var mag1 = magnitude(centerToVertex);
-    var mag2 = magnitude(centerToMouse);
-    var cosine = dotProduct / mag1 / mag2;
+    const points = jewelInventoryState.draggingBoardJewel.shape.points;
+    const center = jewelInventoryState.draggingBoardJewel.shape.center;
+    const centerToMouse = vector(center, mousePosition);
+    const centerToVertex = vector(center, jewelInventoryState.overVertex);
+    const dotProduct = centerToVertex[0] * centerToMouse[0] + centerToVertex[1] * centerToMouse[1];
+    const mag1 = magnitude(centerToVertex);
+    const mag2 = magnitude(centerToMouse);
+    const cosine = dotProduct / mag1 / mag2;
     if (mag1 * mag2 > tolerance && cosine <= 1) {
-        var theta = Math.acos(cosine);
+        let theta = Math.acos(cosine);
         if (centerToVertex[0] * centerToMouse[1] - centerToVertex[1] * centerToMouse[0] < 0) {
             theta = -theta;
         }
@@ -393,14 +406,14 @@ function dragBoard() {
 }
 function checkIfStillOverJewel() {
     if (!jewelInventoryState.overJewel) return;
-    var relativePosition
+    let relativePosition;
     if (jewelInventoryState.overJewel.character) {
-        relativePosition = relativeMousePosition(jewelInventoryState.overJewel.character.jewelsCanvas);
+        relativePosition = getMousePosition(jewelInventoryState.overJewel.character.jewelsCanvas);
     } else {
-        relativePosition = relativeMousePosition(jewelInventoryState.overJewel.canvas);
+        relativePosition = getMousePosition(jewelInventoryState.overJewel.canvas);
     }
-    var points = jewelInventoryState.overJewel.shape.points;
-    for (var j = 0; j < points.length; j++) {
+    const points = jewelInventoryState.overJewel.shape.points;
+    for (let j = 0; j < points.length; j++) {
         if (distanceSquared(points[j], relativePosition) < 25) {
             return;
         }
@@ -410,11 +423,8 @@ function checkIfStillOverJewel() {
     }
     jewelInventoryState.overJewel = null;
 }
-document.body.addEventListener('mouseout', function (event) {
-    const jewel = event.target.closest('.js-jewel');
-    if (jewel) {
-        redrawInventoryJewel(jewel.jewel);
-    }
+handleChildEvent('mouseout', document.body, '.js-jewel', function (jewelElement) {
+    redrawInventoryJewel(getElementJewel(jewelElement));
 });
 
 function removeFromBoard(jewel) {
@@ -450,7 +460,8 @@ export function addJewelToInventory(jewelElement:HTMLElement) {
 function filterJewel(jewelElement) {
     // Hide/show this jewel depending on whether the tier is filtered out.
     const tier = jewelElement.jewel.tier;
-    const showTier = query('.js-jewelTier' + tier + ' input').checked;
+    const checkbox = query('.js-jewelTier' + tier + ' input') as HTMLInputElement;
+    const showTier = checkbox.checked;
     jewelElement.toggleClass('hiddenJewel', !showTier);
 }
 
@@ -461,9 +472,9 @@ export function stopJewelDrag() {
     if (jewelInventoryState.overVertex) {
         jewelInventoryState.overVertex = null;
         if (jewelInventoryState.draggedJewel.character) {
-            var jewelInventoryState.draggedJewelCharacter = jewelInventoryState.draggedJewel.character;
+            const draggedJewelCharacter = jewelInventoryState.draggedJewel.character;
             removeFromBoard(jewelInventoryState.draggedJewel);
-            if (equipJewel(jewelInventoryState.draggedJewelCharacter, false, true)) {
+            if (equipJewel(draggedJewelCharacter, false, true)) {
                 checkToShowJewelToolTip();
                 return;
             }
@@ -471,13 +482,13 @@ export function stopJewelDrag() {
         }
         jewelInventoryState.overJewel = jewelInventoryState.draggedJewel;
         jewelInventoryState.draggedJewel = null;
-        dragHelper = null;
+        inventoryState.dragHelper = null;
         return;
     }
     if (collision(jewelInventoryState.draggedJewel.canvas, query('.js-sellItem'))) {
         sellJewel(jewelInventoryState.draggedJewel);
         jewelInventoryState.draggedJewel = null;
-        dragHelper = null;
+        inventoryState.dragHelper = null;
         return;
     }
     // Drop the jewel on a skill board if it is over one.
@@ -485,9 +496,9 @@ export function stopJewelDrag() {
         if (!collision(jewelInventoryState.draggedJewel.canvas, element)) {
             return true;
         }
-        var relativePosition = relativeMousePosition(jewelsCanvas);
+        var relativePosition = getMousePosition(jewelsCanvas);
         jewelInventoryState.draggedJewel.shape.setCenterPosition(relativePosition[0], relativePosition[1]);
-        if (equipJewel(state.selectedCharacter, true, true)) {
+        if (equipJewel(getState().selectedCharacter, true, true)) {
             checkToShowJewelToolTip();
             updateJewelCraftingOptions();
             return false;
@@ -495,27 +506,26 @@ export function stopJewelDrag() {
     });
     if (!jewelInventoryState.draggedJewel) return;
     jewelInventoryState.draggedJewel.character = null;
-    $craftingSlot = getClosestElement(jewelInventoryState.draggedJewel.canvas, $('.js-jewelCraftingSlot'), 60);
-    if ($craftingSlot) {
-        var $existingItem = $craftingSlot.find('.js-jewel');
-        if ($existingItem.length) {
-            $existingItem.remove();
-            addJewelToInventory($existingItem);
+    const craftingSlot = getClosestElement(jewelInventoryState.draggedJewel.canvas, [...queryAll('.js-jewelCraftingSlot')], 60);
+    if (craftingSlot) {
+        const existingItem = craftingSlot.querySelector('.js-jewel') as HTMLElement;
+        if (existingItem) {
+            existingItem.remove();
+            addJewelToInventory(existingItem);
         }
-        appendDraggedJewelToElement($craftingSlot);
+        appendDraggedJewelToElement(craftingSlot);
     }
     if (!jewelInventoryState.draggedJewel) return;
-    var $target = null;
-    var largestCollision = 0;
-    $('.js-jewelInventory .js-jewel').each(function (index, element) {
-        var $element = $(element);
-        var collisionArea = getCollisionArea(jewelInventoryState.draggedJewel.canvas, $element);
+    let targetElement: HTMLElement = null;
+    let largestCollision = 0;
+    for (const jewelElement of queryAll('.js-jewelInventory .js-jewel')) {
+        var collisionArea = getCollisionArea(jewelInventoryState.draggedJewel.canvas, jewelElement);
         if (collisionArea > largestCollision) {
-            $target = $element;
+            targetElement = jewelElement;
             largestCollision = collisionArea;
         }
-    });
-    if ($target) {
+    }
+    if (targetElement) {
         if (!jewelInventoryState.draggedJewel) return;
         // Code for adding a jewel to the inventory is designed to always append
         // to the end. To support adding it before a target element, just append
@@ -523,7 +533,8 @@ export function stopJewelDrag() {
         // drag operation, then remove the item and place it before the target.
         appendDraggedJewelToElement(jewelInventoryContainer);
         filterJewel(jewelInventoryState.draggedJewel.domElement);
-        $target.before(jewelInventoryState.draggedJewel.domElement.remove());
+        jewelInventoryState.draggedJewel.domElement.remove();
+        targetElement.before(jewelInventoryState.draggedJewel.domElement);
     }
     if (!jewelInventoryState.draggedJewel) return;
     filterJewel(jewelInventoryState.draggedJewel.domElement);
@@ -542,7 +553,7 @@ function appendDraggedJewelToElement(container) {
     appendJewelToElement(jewelInventoryState.draggedJewel, container);
     jewelInventoryState.overJewel = jewelInventoryState.draggedJewel;
     jewelInventoryState.draggedJewel = null;
-    dragHelper = null;
+    inventoryState.dragHelper = null;
     updateJewelCraftingOptions();
 }
 function appendJewelToElement(jewel, $element) {
@@ -561,7 +572,7 @@ export function equipJewel(character, replace, updateAdventurer) {
         jewelInventoryState.overJewel = jewelInventoryState.draggedJewel;
         updateAdjacentJewels(jewelInventoryState.draggedJewel);
         jewelInventoryState.draggedJewel = null;
-        dragHelper = null;
+        inventoryState.dragHelper = null;
         if (updateAdventurer) {
             var adventurer = character.adventurer;
             removeBonusSourceFromObject(adventurer, adventurer.character.jewelBonuses, false);
@@ -581,25 +592,17 @@ export function equipJewel(character, replace, updateAdventurer) {
     }
     return false;
 }
-function getCraftingSlotA() {
-    return query('.js-jewelCraftingSlotA');
-}
-function getCraftingSlotB() {
-    return query('.js-jewelCraftingSlotB');
-}
-function getElementJewel(element: Element): Jewel {
+export function getElementJewel(element: Element): Jewel {
     for (const jewel of getState().savedState.jewels) {
         if (jewel.domElement === element) return jewel;
     }
     return null;
 }
-const jewelCraftingButton:HTMLElement = query('.js-jewelCraftingButton');
-const jewelDeformationButton:HTMLElement = query('.js-jewelDeformationButton');
 function updateJewelCraftingOptions() {
     jewelCraftingButton.style.display = 'none';
     jewelDeformationButton.style.display = 'none';
-    const jewelA: Jewel = getElementJewel(getCraftingSlotA().querySelector('.js-jewel'));
-    const jewelB: Jewel = getElementJewel(getCraftingSlotB().querySelector('.js-jewel'));
+    const jewelA: Jewel = getElementJewel(craftingSlotA.querySelector('.js-jewel'));
+    const jewelB: Jewel = getElementJewel(craftingSlotB.querySelector('.js-jewel'));
     if (!jewelA && !jewelB) return;
     if (jewelA && jewelB) {
         jewelCraftingButton.innerHTML = 'Fuse Jewels';
@@ -647,15 +650,15 @@ function getFusedShape(jewelA: Jewel, jewelB: Jewel): ShapeDefinition {
 }
 
 jewelCraftingButton.onclick = function () {
-    const jewelA = getElementJewel(getCraftingSlotA().querySelector('.js-jewel'));
-    const jewelB = getElementJewel(getCraftingSlotB().querySelector('.js-jewel'));
+    const jewelA = getElementJewel(craftingSlotA.querySelector('.js-jewel'));
+    const jewelB = getElementJewel(craftingSlotB.querySelector('.js-jewel'));
     if (!jewelA && !jewelB) return;
     if (jewelA && jewelB) fuseJewels(jewelA, jewelB);
     else splitJewel(jewelA || jewelB);
 };
 jewelDeformationButton.onclick = function () {
-    const jewelA = getElementJewel(getCraftingSlotA().querySelector('.js-jewel'));
-    const jewelB = getElementJewel(getCraftingSlotB().querySelector('.js-jewel'));
+    const jewelA = getElementJewel(craftingSlotA.querySelector('.js-jewel'));
+    const jewelB = getElementJewel(craftingSlotB.querySelector('.js-jewel'));
     const jewel = jewelA || jewelB;
     if (jewel.shapeType === 'triangle' || jewel.shapeType === 'diamond') expandJewel(jewel);
     else compressJewel(jewel);
@@ -672,7 +675,7 @@ function fuseJewels(jewelA: Jewel, jewelB: Jewel) {
     const newJewel = makeJewel(tier, fusedShape.key, components, quality);
     destroyJewel(jewelA);
     destroyJewel(jewelB);
-    appendJewelToElement(newJewel, getCraftingSlotA());
+    appendJewelToElement(newJewel, craftingSlotA);
     updateJewelCraftingOptions();
     saveGame();
 }
@@ -684,7 +687,7 @@ function compressJewel(jewel) {
     var newArea = shapeDefinitions[newShape][0].area;
     var newJewel = makeJewel(jewel.tier, newShape, jewel.components, jewel.quality * .99 * jewel.area / newArea);
     destroyJewel(jewel);
-    appendJewelToElement(newJewel, getCraftingSlotA());
+    appendJewelToElement(newJewel, craftingSlotA);
     updateJewelCraftingOptions();
     saveGame();
 }
@@ -696,14 +699,14 @@ function expandJewel(jewel) {
     var newArea = shapeDefinitions[newShape][0].area;
     var newJewel = makeJewel(jewel.tier, newShape, jewel.components, jewel.quality * .99 * jewel.area / newArea);
     destroyJewel(jewel);
-    appendJewelToElement(newJewel, getCraftingSlotA());
+    appendJewelToElement(newJewel, craftingSlotA);
     updateJewelCraftingOptions();
     saveGame();
 }
 function destroyJewel(jewel) {
     removeFromBoard(jewel);
-    jewel.domElement.data('jewel', null).remove();
-    jewel.canvas.data('jewel', null).remove();
+    jewel.canvas.remove();
+    jewel.domElement.remove();
 }
 function splitJewel(jewel) {
     if (jewel.shapeType === 'triangle' || jewel.shapeType === 'rhombus') return; // Jewels are too small to split
@@ -726,37 +729,36 @@ function splitJewel(jewel) {
         qualityB = jewel.quality * .99 * (1.1 + Math.random() * .1);
         qualityA = (jewel.quality * .99 * jewel.area - qualityB * shapeDefinitionB.area ) / shapeDefinitionA.area;
     }
-    var componentsA: JewelComponents = [0, 0, 0];
-    var componentsB: JewelComponents = [0, 0, 0];
+    let componentsA: JewelComponents;
+    let componentsB: JewelComponents;
     for (var i = 0; i < 3; i++) {
         // A component cannot be higher than 1. ComponentA must also be high enough to insure compontentB is no greater than 1.
         componentsA[i] = Math.max(Math.min(1, jewel.components[i] * (.6 + Math.random() * .8)), jewel.components[i] * jewel.area - shapeDefinitionB.area);
         componentsB[i] = (jewel.components[i] * jewel.area - componentsA[i] * shapeDefinitionA.area) / shapeDefinitionB.area;
     }
-    var newJewelA = makeJewel(jewel.tier, shapeDefinitionA.key, componentsA, qualityA);
-    var newJewelB = makeJewel(jewel.tier, shapeDefinitionB.key, componentsB, qualityB);
+    const newJewelA = makeJewel(jewel.tier, shapeDefinitionA.key, componentsA, qualityA);
+    const newJewelB = makeJewel(jewel.tier, shapeDefinitionB.key, componentsB, qualityB);
     destroyJewel(jewel);
-    appendJewelToElement(newJewelA, getCraftingSlotA());
-    appendJewelToElement(newJewelB, getCraftingSlotB());
+    appendJewelToElement(newJewelA, craftingSlotA);
+    appendJewelToElement(newJewelB, craftingSlotB);
     updateJewelCraftingOptions();
     saveGame();
 }
-function snapToBoard(jewel, board, replace, extraJewel) {
-    var shape = jewel.shape;
-    replace = ifdefor(replace, false);
-    var fixedJewelShapes = board.fixed.map(j => j.shape);
-    var jewelShapes = board.jewels.map(j => j.shape);
+function snapToBoard(jewel, board, replace = false, extraJewel = null) {
+    const shape = jewel.shape;
+    const fixedJewelShapes = board.fixed.map(j => j.shape);
+    const jewelShapes = board.jewels.map(j => j.shape);
     if (extraJewel) {
         jewelShapes.push(extraJewel.shape);
     }
-    var currentIndex = jewelShapes.indexOf(jewel.shape);
+    const currentIndex = jewelShapes.indexOf(jewel.shape);
     if (currentIndex >= 0) {
         jewelShapes.splice(currentIndex, 1);
     }
-    var allShapes = fixedJewelShapes.concat(jewelShapes);
-    var vectors = [];
-    var checkedPoints = shape.points;
-    var otherPoints = allPoints(allShapes);
+    const allShapes = fixedJewelShapes.concat(jewelShapes);
+    const vectors = [];
+    const checkedPoints = shape.points;
+    const otherPoints = allPoints(allShapes);
     for (var rotation = 0; rotation < 360; rotation += 30) {
         shape.rotate(rotation);
         for (var i = 0; i < checkedPoints.length; i++) {
@@ -936,9 +938,9 @@ query('.js-jewelTierLabel input').onchange = function (event) {
 query('.js-jewelBoard').addEventListener('mouseover', function () {
     const gameState = getState();
     if (gameState.selectedCharacter.board.boardPreview) {
-        var level = map[gameState.selectedCharacter.currentLevelKey];
-        var skill = gameState.selectedCharacter.board.boardPreview.fixed[0].ability;
-        previewPointsChange('divinity', -totalCostForNextLevel(state.selectedCharacter, level));
+        const level = map[gameState.selectedCharacter.currentLevelKey];
+        const skill = gameState.selectedCharacter.board.boardPreview.fixed[0].ability;
+        previewPointsChange('divinity', -totalCostForNextLevel(getState().selectedCharacter, level));
     }
 });
 query('.js-jewelBoard').addEventListener('mouseout', hidePointsPreview);

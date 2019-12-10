@@ -1,3 +1,5 @@
+import { Bonuses } from 'app/bonuses';
+
 export type Color = number | string;
 
 export interface Frame {
@@ -42,6 +44,10 @@ export type EquipmentIconType =
 
 export type AttackAnimationType = 'bowAttack' | 'throwingAttack' | 'wandAttack';
 
+export interface Actor {
+
+}
+
 export interface RawItemData {
     name: string,
     tags?: string[],
@@ -67,4 +73,38 @@ export interface ItemData {
     bonuses: any,
     source?: any,
     icon: EquipmentIconType,
+}
+
+export interface Item {
+    base: ItemData,
+    domElement: HTMLElement,
+    itemLevel: number,
+    prefixes: Affix[],
+    suffixes: Affix[],
+    unique: boolean,
+    actor?: Actor,
+    // This can override the default display name.
+    displayName?: string,
+}
+
+export interface SavedItem {
+    itemKey: string,
+    itemLevel: number,
+    prefixes: SavedAffix[],
+    suffixes: SavedAffix[],
+    unique: boolean,
+}
+
+export interface AffixData {
+
+}
+
+export interface Affix {
+    base: AffixData,
+    bonuses: Bonuses,
+}
+
+export interface SavedAffix {
+    affixKey: string,
+    bonuses: Bonuses,
 }

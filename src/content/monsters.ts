@@ -9,11 +9,11 @@ import { ifdefor } from 'app/utils/index';
 import Random from 'app/utils/Random';
 import { requireImage, setupSource } from 'app/images';
 
-const enchantedMonsterBonuses: BonusSource = { 'bonuses': {
+export const enchantedMonsterBonuses: BonusSource = { 'bonuses': {
     '*maxHealth': 1.5, '*tenacity': 2, '*weaponDamage': 1.5, '*coins': 2, '*anima': 3,
     '$tint': '#af0', '$tintMinAlpha': 0.2, '$tintMaxAlpha': 0.5, '$lifeBarColor': '#af0',
 }};
-const imbuedMonsterBonuses: BonusSource = {'bonuses': {
+export const imbuedMonsterBonuses: BonusSource = {'bonuses': {
     '*maxHealth': 2, '*tenacity': 4, '*weaponDamage': 2, '*coins': 6, '*anima': 10,
     '$tint': '#c6f', '$tintMinAlpha': 0.2, '$tintMaxAlpha': 0.5, '$lifeBarColor': '#c6f',
 }};
@@ -156,7 +156,7 @@ function matchingMonsterAffixes(list, monster, alreadyUsed) {
     }
     return choices;
 }
-function updateMonster(monster) {
+export function updateMonster(monster) {
     // Clear the character's bonuses and graphics.
     initializeVariableObject(monster, monster.base, monster);
     monster.actions = [];

@@ -21,6 +21,7 @@ import { arrMod, rectangle } from 'app/utils/index';
 export const bufferCanvas:HTMLCanvasElement = createCanvas(mainCanvas.width, mainCanvas.height);
 export const bufferContext = bufferCanvas.getContext('2d');
 bufferContext.imageSmoothingEnabled = false;
+const tileWidth = 120;
 
 function drawAnimation(context, animation, target) {
     var frame = Math.floor(Date.now() * 20 / 1000) % animation.frames.length;
@@ -35,8 +36,7 @@ export function drawOnGround(draw) {
     drawImage(mainContext, bufferCanvas, rectangle(0, 300, bufferCanvas.width, 180), rectangle(0, 300, bufferCanvas.width, 180));
 }
 
-const tileWidth = 120;
-function drawArea(area) {
+export function drawArea(area) {
     var context = mainContext;
     var cameraX = area.cameraX;
     context.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
@@ -374,7 +374,7 @@ export const globalHud = [
     // TODO: remember why this is global.
     // upgradeButton
 ];
-function drawHud() {
+export function drawHud() {
     for (const element of globalHud) {
         if (element.isVisible && !element.isVisible()) continue;
         element.draw();

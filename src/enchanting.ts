@@ -1,5 +1,8 @@
 import { query, queryAll } from 'app/dom';
-import { accessorySlots, armorSlots, inventoryState, sellValue, smallArmorSlots, updateItem } from 'app/inventory';
+import {
+    accessorySlots, armorSlots, getItemForElement, inventoryState,
+    sellValue, smallArmorSlots, updateItem,
+} from 'app/inventory';
 import { hidePointsPreview, points, previewPointsChange, spend } from 'app/points';
 import { removePopup } from 'app/popup';
 import { saveGame } from 'app/saveGame';
@@ -375,13 +378,14 @@ export function makeAffix(baseAffix) {
         'base': baseAffix,
         'bonuses': {}
     };
-    $.each(baseAffix.bonuses, function (key, value) {
+    for (const key in baseAffix.bonuses) {
+        const value = baseAffix.bonuses[key];
         if (Array.isArray(value)) {
             affix.bonuses[key] = Random.range(value[0], value[1]) / (value[2] || 1);
         } else {
             affix.bonuses[key] = value;
         }
-    });
+    }
     return affix;
 }
 function addPrefixToItem(item) {
@@ -454,13 +458,13 @@ mutateButton.addEventListener('mouseover', function () {
 });
 mutateButton.addEventListener('mouseout', hidePointsPreview);
 function getEnchantingItem() {
-    var item =  query('.js-enchantmentSlot').querySelector('.js-item').data('item');
-    if (!item && inventoryState.dragHelper) {
-        item = inventoryState.dragHelper.data('$source').data('item');
+    var item = getItemForElement(query('.js-enchantmentSlot .js-item'));
+    if (!item && inventoryState.dragItem) {
+        item = inventoryState.dragItem;
     }
     return item;
 }
-function updateEnchantmentOptions() {
+export function updateEnchantmentOptions() {
     const item = getEnchantingItem();
     for (const element of queryAll('.js-resetEnchantments,.js-enchant,.js-imbue,.js-augment,.js-mutate')) {
         element.classList.add('disabled');
@@ -541,7 +545,7 @@ function resetItem() {
 function enchantItem() {
     var item = getEnchantingItem();
     if (!item || !spend('anima', enchantCost(item))) return;
-    if (item.prefixes + item.suffixes.length === 0) {
+    if (item.prefixes.length + item.suffixes.length === 0) {
         enchantItemProper(item);
     } else if (item.prefixes.length + item.suffixes.length < 2) {
         augmentItemProper(item);

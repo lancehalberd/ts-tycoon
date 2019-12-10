@@ -1,16 +1,25 @@
 import { enterArea } from 'app/adventure';
-import { BonusSource, initializeVariableObject } from 'app/bonuses';
+import { addBonusSourceToObject, BonusSource, initializeVariableObject } from 'app/bonuses';
 import { setSelectedCharacter } from 'app/character';
-import { checkIfAltarTrophyIsAvailable } from 'app/content/achievements';
-import { allApplications, allBeds } from 'app/content/furniture';
+import { addTrophyToAltar, checkIfAltarTrophyIsAvailable, updateTrophy } from 'app/content/achievements';
+import { addAllUnlockedFurnitureBonuses, allApplications, allBeds,  } from 'app/content/furniture';
 import { getDefaultGuildAreas, guildYardEntrance } from 'app/content/guild';
-import { Jewel } from 'app/jewels';
+import { map } from 'app/content/mapData';
+import { query, queryAll } from 'app/dom';
+import { updateEnchantmentOptions } from 'app/enchanting';
+import { addToInventory } from 'app/inventory';
+import { addJewelToInventory } from 'app/jewelInventory';
+import { Jewel, setMaxAnimaJewelBonus } from 'app/jewels';
+import { updateRetireButtons } from 'app/main';
 import { changedPoints } from 'app/points';
-import { exportCharacter, exportItem, exportJewel, importCharacter } from 'app/saveGame';
+import {
+    exportCharacter, exportItem, exportJewel,
+    importCharacter, importItem, importJewel,
+} from 'app/saveGame';
 import { Polygon, ShapeType } from 'app/utils/polygon';
+import { Item } from 'app/utils/types';
 
 type Character = any;
-type Item = any;
 // Types used for saving data in local storage.
 type SavedCharacter = any;
 type SavedJewel = any;
@@ -68,6 +77,7 @@ export interface GameState {
     guildAreas?: any,
     guildBonusSources: BonusSource[];
     altarTrophies?: any,
+    availableBeds?: any[],
 }
 
 function getDefaultSavedState(): SavedState {
@@ -184,7 +194,6 @@ export function importState(savedState: SavedState) {
         ...getDefaultState(),
         savedState,
     };
-    const availableBeds = [];
     initializeVariableObject(state.guildStats, {'variableObjectType': 'guild'}, state.guildStats);
     addBonusSourceToObject(state.guildStats, implicitGuildBonusSource);
     const guildAreas = savedState.guildAreas || {};
@@ -200,36 +209,35 @@ export function importState(savedState: SavedState) {
             }
         }
     }
-    var applications = ifdefor(applications, []).map(importCharacter);
-    for (var i = 0; i < applications.length; i++) allApplications[i].character = applications[i];
-    setMaxAnimaJewelBonus(ifdefor(maxAnimaJewelMultiplier, 1));
+    savedState.applicants = (savedState.applicants || []).map(importCharacter);
+    for (let i = 0; i < savedState.applicants.length; i++) {
+        allApplications[i].character = savedState.applicants[i];
+    }
+    setMaxAnimaJewelBonus(savedState.maxAnimaJewelMultiplier || 1);
     // Read trophy data before characters so that their bonuses will be applied when
     // we first initialize the characters.
-    trophies = trophies || {};
-    for (var trophyKey in altarTrophies) {
-        if (!trophies[trophyKey]) continue;
-        var trophy = altarTrophies[trophyKey];
-        var trophyData = trophies[trophyKey];
+    savedState.trophies = savedState.trophies || {};
+    for (let trophyKey in state.altarTrophies) {
+        if (!savedState.trophies[trophyKey]) continue;
+        const trophy = state.altarTrophies[trophyKey];
+        const trophyData = savedState.trophies[trophyKey];
         trophy.level = trophyData.level;
         trophy.value = trophyData.value;
-        var area = defaultGuildAreas[trophyData.areaKey];
+        const area = defaultGuildAreas[trophyData.areaKey];
         if (!area) continue;
-        var altar = area.objectsByKey[trophyData.objectKey];
+        const altar = area.objectsByKey[trophyData.objectKey];
         if (!altar) continue;
         addTrophyToAltar(altar, trophy);
     }
     addAllUnlockedFurnitureBonuses();
-    for (var bed of allBeds) {
-        if (state.unlockedGuildAreas[bed.area.key]) {
+    for (const bed of allBeds) {
+        if (savedState.unlockedGuildAreas[bed.area.key]) {
             state.availableBeds.push(bed);
         }
     }
     // This might happen if we changed how much each holder contains during an update.
-    characters.map(importCharacter).forEach(character => {
-        if (isNaN(character.divinity) || typeof(character.divinity) !== "number") {
-            character.divinity = 0;
-        }
-        state.characters.push(character);
+    state.characters = savedState.characters.map(importCharacter);
+    state.characters.forEach(character => {
         updateTrophy('level-' + character.adventurer.job.key, character.adventurer.level);
         for (var levelKey of Object.keys(character.divinityScores)) {
             var level = map[levelKey];
@@ -240,43 +248,45 @@ export function importState(savedState: SavedState) {
             if (isNaN(character.divinityScores[levelKey])) {
                 delete character.divinityScores[levelKey];
             }
-            state.completedLevels[levelKey] = true;
+            state.savedState.completedLevels[levelKey] = true;
         }
-        var bed = state.availableBeds[state.characters.length - 1];
+        const bed = state.availableBeds[state.characters.length - 1];
         if (bed) enterArea(character.hero, {'areaKey': bed.area.key, 'x': (bed.x > 400) ? bed.x - 80 : bed.x + 80, 'z': bed.z});
         else enterArea(character.hero, guildYardEntrance);
-        $('.js-charactersBox').append(character.$characterCanvas);
+        query('.js-charactersBox').appendChild(character.characterCanvas);
     });
-    for (var completedLevelKey in state.completedLevels) {
-        var level = map[completedLevelKey];
+    for (let completedLevelKey in state.savedState.completedLevels) {
+        const level = map[completedLevelKey];
         if (!level) {
-            delete state.completedLevels[completedLevelKey];
+            delete state.savedState.completedLevels[completedLevelKey];
             continue;
         }
         state.visibleLevels[completedLevelKey] = true;
         for (var nextLevelKey of level.unlocks) state.visibleLevels[nextLevelKey] = true;
     }
-    jewels.map(importJewel).forEach(jewel => {
+    savedState.jewels.map(importJewel).forEach(jewel => {
         jewel.shape.setCenterPosition(jewel.canvas.width / 2, jewel.canvas.height / 2);
-        addJewelToInventory(jewel.$item);
+        addJewelToInventory(jewel.domElement);
     });
-    items.map(importItem).filter(item => item).forEach(addToInventory);
-    if (craftingItems && craftingItems.length) {
-        $('.js-craftingSelectOptions .js-itemSlot').each(function (index) {
-            // Don't throw errors just because there are only 1-2 items when
-            // we expect 3. Just show however many we have.
-            if (!craftingItems[index]) return;
-            var item = importItem(craftingItems[index]);
-            if (item) $(this).append(item.$item);
-        });
-        $('.js-craftingSelectOptions').show();
-        $('.js-craftingOptions').hide();
-    } else if (enchantmentItem) {
-        var item = importItem(enchantmentItem);
+    state.items = savedState.items.map(importItem).filter(item => item);
+    state.items.forEach(addToInventory);
+    const craftingItems = [...savedState.craftingItems];
+    if (craftingItems.length) {
+        for (const itemSlot of queryAll('.js-craftingSelectOptions .js-itemSlot')) {
+            if (!craftingItems.length) break;
+            const item = importItem(craftingItems.shift());
+            if (item) {
+                itemSlot.appendChild(item.domElement);
+            }
+        }
+        query('.js-craftingSelectOptions').style.display = ''
+        query('.js-craftingOptions').style.display = 'none';
+    } else if (savedState.enchantmentItem) {
+        const item = importItem(savedState.enchantmentItem);
         if (item) {
-            $('.js-enchantmentSlot').append(item.$item);
-            $('.js-enchantmentOptions').show();
-            $('.js-craftingOptions').hide();
+            query('.js-enchantmentSlot').appendChild(item.domElement);
+            query('.js-enchantmentOptions').style.display = '';
+            query('.js-craftingOptions').style.display = 'none';
             updateEnchantmentOptions();
         }
     }
@@ -284,7 +294,7 @@ export function importState(savedState: SavedState) {
     changedPoints('anima');
     changedPoints('fame');
     updateRetireButtons();
-    var selectedCharacterIndex = Math.max(0, Math.min(ifdefor(selectedCharacterIndex, 0), state.characters.length - 1));
+    const selectedCharacterIndex = Math.max(0, Math.min(savedState.selectedCharacterIndex || 0, state.characters.length - 1));
     setSelectedCharacter(state.characters[selectedCharacterIndex]);
     checkIfAltarTrophyIsAvailable();
     return state;

@@ -289,7 +289,7 @@ export function activateShrine(actor) {
     area.objects.push(blessingText);
     character.isStuckAtShrine = true;
 }
-function finishShrine(character) {
+export function finishShrine(character) {
     var objects = character.hero.area.objects;
     for (var i = 0; i < objects.length; i++) {
         var object = objects[i];

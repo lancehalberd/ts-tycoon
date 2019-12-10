@@ -475,7 +475,7 @@ export function applyParentToVariableChild(parentObject, child) {
 // set of tags for the actor from scratch and similarly for each action/buff/etc.
 // Once the new set is determined, this method can be called to adjust all bonuses
 // appropriately.
-function updateTags(object, newTags, triggerComputation = false) {
+export function updateTags(object, newTags, triggerComputation = false) {
     var lostTags = [];
     for (const oldTag of Object.keys(object.tags)) {
         if (!newTags[oldTag]) lostTags.push(oldTag);

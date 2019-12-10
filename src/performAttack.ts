@@ -190,7 +190,7 @@ export function updateDamageInfo(character, statsPanelElement: HTMLElement, mons
     evasionElement.parentElement.setAttribute('helptext', adventurer.evasion + ' Evasion<br/><br/>' + percent(1 - hitPercent, 1) + ' estimated chance to evade attacks.');
 }
 
-function createAttackStats(attacker, attack, target) {
+export function createAttackStats(attacker, attack, target) {
     var isCritical = Math.random() <= attack.critChance;
     if (attack.firstStrike && target && target.isActor) {
         isCritical = isCritical || target.health >= target.maxHealth;
@@ -332,7 +332,7 @@ function createSpellImprintedAttackStats(attacker, attack, spell, target) {
         'strikes': attack.doubleStrike ? 2 : 1
     };
 }
-function performAttack(attacker, attack, target) {
+export function performAttack(attacker, attack, target) {
     var attackStats;
     if (attack.tags['basic'] && attacker.imprintSpell && attacker.imprintedSpell) {
         attackStats = createSpellImprintedAttackStats(attacker, attack, attacker.imprintedSpell, target);
@@ -343,7 +343,7 @@ function performAttack(attacker, attack, target) {
     performAttackProper(attackStats, target);
     return attackStats;
 }
-function castAttackSpell(attacker, spell, target) {
+export function castAttackSpell(attacker, spell, target) {
     var attackStats = createSpellStats(attacker, spell, target);
     damageActor(attacker, attackStats.healthSacrificed);
     performAttackProper(attackStats, target);

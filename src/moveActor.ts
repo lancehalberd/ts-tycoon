@@ -1,4 +1,10 @@
-import { applyAttackToTarget, getBasicAttack } from 'app/performAttack';
+import {
+    actorShouldAutoplay, getAllInRange, getDistance, getDistanceBetweenPointsSquared,
+    getDistanceOverlap, limitZ,
+} from 'app/adventure';
+import { FRAME_LENGTH, MAX_Z, MIN_SLOW } from 'app/gameConstants';
+import { setActorAttackTarget, setActorInteractionTarget } from 'app/main';
+import { applyAttackToTarget, createAttackStats, getBasicAttack } from 'app/performAttack';
 import { isMouseDown } from 'app/utils/mouse';
 import Vector from 'app/utils/Vector';
 
@@ -10,8 +16,8 @@ export function moveActor(actor) {
     if (!area) {
         return;
     }
-    var delta = frameMilliseconds / 1000;
-    if (actor.isDead || actor.stunned || actor.pull || ifdefor(actor.stationary) || (actor.skillInUse && actor.preparationTime < actor.skillInUse.totalPreparationTime)) {
+    var delta = FRAME_LENGTH / 1000;
+    if (actor.isDead || actor.stunned || actor.pull || actor.stationary || (actor.skillInUse && actor.preparationTime < actor.skillInUse.totalPreparationTime)) {
         return;
     }
     var goalTarget = (actor.skillInUse && actor.skillTarget !== actor) ? actor.skillTarget : null;
@@ -149,8 +155,8 @@ export function moveActor(actor) {
         }
         // Actor is not allowed to leave the path.
         actor.z = limitZ(actor.z, actor.width / 2);
-        if (area.leftWall) actor.x = Math.max(ifdefor(area.left, 0) + 25 + actor.width / 2 + actor.z / 6, actor.x);
-        else actor.x = Math.max(ifdefor(area.left, 0) + actor.width / 2, actor.x);
+        if (area.leftWall) actor.x = Math.max((area.left || 0) + 25 + actor.width / 2 + actor.z / 6, actor.x);
+        else actor.x = Math.max((area.left || 0) + actor.width / 2, actor.x);
         if (area.rightWall) actor.x = Math.min(area.width - 25 - actor.width / 2 - actor.z / 6, actor.x);
         else actor.x = Math.min(area.width - actor.width / 2, actor.x);
         var collision = false;

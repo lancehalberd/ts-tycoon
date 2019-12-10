@@ -38,9 +38,26 @@ import { ifdefor, rectangle, removeElementFromArray } from 'app/utils/index';
 import { centerShapesInRectangle } from 'app/utils/polygon';
 import Random from 'app/utils/Random';
 
-interface Character {
+export interface Character {
     adventurer: any,
-
+    applicationAge?: number,
+    fame: number,
+    hero: any,
+    autoActions: any,
+    board: any,
+    currentLevelKey: string,
+    manualActions: {[key in string]: any},
+    characterCanvas: HTMLCanvasElement,
+    characterContext: CanvasRenderingContext2D,
+    boardCanvas: HTMLCanvasElement,
+    boardContext: CanvasRenderingContext2D,
+    time: number,
+    autoplay: boolean,
+    gameSpeed: number
+    replay: boolean,
+    divinityScores: {[key in string]: number},
+    levelTimes: {[key in string]: number},
+    divinity: number,
 }
 
 export const personFrames = 5;
@@ -126,7 +143,7 @@ export function refreshStatsPanel(
     statsPanelElement.querySelector('.js-healthRegen').textContent = adventurer.healthRegen.toFixed(1);
     updateDamageInfo(character, statsPanelElement);
 }
-function newCharacter(job) {
+export function newCharacter(job): Character {
     const hero = makeAdventurerFromJob(job, 1, job.startingEquipment || {});
     setActorHealth(hero, hero.maxHealth);
     const characterCanvas = createCanvas(40, 20);
@@ -141,6 +158,7 @@ function newCharacter(job) {
     //    .data('character', character);
     const character = {
         adventurer: hero,
+        autoplay: false,
         hero,
         characterCanvas,
         characterContext,
@@ -156,6 +174,7 @@ function newCharacter(job) {
         autoActions: {},
         manualActions: {},
         board: null,
+        time: Date.now(),
     };
     hero.character = character;
     character.board = readBoardFromData(job.startingBoard, character, abilities[abilityKey], true)
@@ -181,7 +200,7 @@ function newCharacter(job) {
     jewelInventoryState.overJewel = null;
     return character;
 }
-function makeAdventurerFromData(adventurerData) {
+export function makeAdventurerFromData(adventurerData) {
     var personCanvas = createCanvas(personFrames * 96, 64);
     var personContext = personCanvas.getContext("2d");
     personContext.imageSmoothingEnabled = false;
@@ -230,7 +249,7 @@ function makeAdventurerFromData(adventurerData) {
     });
     return adventurer;
 }
-function makeAdventurerFromJob(job, level, equipment) {
+export function makeAdventurerFromJob(job, level, equipment) {
     const adventurer = makeAdventurerFromData({
         'jobKey': job.key,
         level,
@@ -297,7 +316,7 @@ export function addActions(actor, source) {
         actor.minionBonusSources.push({'bonuses': source.minionBonuses});
     }
 }
-function removeActions(actor, source) {
+export function removeActions(actor, source) {
     var variableChild;
     if (ifdefor(source.onHitEffect)) {
         variableChild = findVariableChildForBaseObject(actor, source.onHitEffect);
@@ -327,7 +346,7 @@ function removeActions(actor, source) {
         }
     }
 }
-function updateAdventurer(adventurer) {
+export function updateAdventurer(adventurer) {
     // Clear the character's bonuses and graphics.
     initializeVariableObject(adventurer, {'variableObjectType': 'actor'}, adventurer);
     for (var stat of Object.keys(adventurer)) {
@@ -403,7 +422,7 @@ function updateAdventurer(adventurer) {
     recomputeDirtyStats(adventurer);
     //console.log(adventurer);
 }
-function updateAdventurerGraphics(adventurer) {
+export function updateAdventurerGraphics(adventurer) {
     var sectionWidth = personFrames * 96;
     var hat = adventurer.equipment.head;
     var hideHair = hat ? ifdefor(hat.base.hideHair, false) : false;
@@ -533,7 +552,7 @@ export function actorHelpText(actor) {
     }
     return titleDiv(title) + sections.map(bodyDiv).join('');
 }
-function gainLevel(adventurer) {
+export function gainLevel(adventurer) {
     adventurer.level++;
     updateTrophy('level-' + adventurer.job.key, adventurer.level);
     adventurer.fame += adventurer.level;

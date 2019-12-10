@@ -4,7 +4,7 @@ import { evaluateForDisplay } from 'app/evaluate';
 import { getState } from 'app/state';
 import { isTwoHandedWeapon, sellValue, tagToDisplayName } from 'app/inventory';
 import { points } from 'app/points';
-import { properCase } from 'app/utils/index';
+import { properCase } from 'app/utils/formatters';
 
 export function getNameWithAffixes(name, prefixes, suffixes) {
     var prefixNames = prefixes.map(function (affix) { return affix.base.name;});

@@ -1,9 +1,18 @@
-import { jewelInventoryContainer } from 'app/dom';
+import { getChoosingTrophyAltar, getTrophyPopupTarget } from 'app/content/achievements';
+import { getUpgradingObject, upgradeButton } from 'app/content/furniture';
+import { unprojectLeftWallCoords, unprojectRightWallCoords} from 'app/content/guild';
+import { jewelInventoryContainer, mainCanvas, mouseContainer, tagElement } from 'app/dom';
+import { globalHud } from 'app/drawArea';
+import { getAbilityPopupTarget } from 'app/drawSkills';
+import { equipmentCraftingState } from 'app/equipmentCrafting';
+import { GROUND_Y } from 'app/gameConstants';
 import { drawOutlinedImage } from 'app/images';
-import { mapState } from 'app/map';
-import { jewelInventoryState } from 'app/jewelInventory';
-import { isPointInRectObject, rectangle } from 'app/utils/index';
-import { getMousePosition } from 'app/utils/mouse';
+import { inventoryState } from 'app/inventory';
+import { getMapPopupTarget, mapState } from 'app/map';
+import { getElementJewel, jewelInventoryState } from 'app/jewelInventory';
+import { getState } from 'app/state';
+import { ifdefor, isPointInRect, isPointInRectObject, rectangle } from 'app/utils/index';
+import { getMousePosition, isMouseOverElement } from 'app/utils/mouse';
 
 interface Popup {
     target: any,
@@ -69,62 +78,63 @@ export function updateToolTip() {
 }
 
 
-function checkToShowMainCanvasToolTip(x, y) {
-    if (ifdefor(x) === null) return;
-    if ($popup || !$('.js-mainCanvas').is(':visible') || canvasPopupTarget) return;
+export function checkToShowMainCanvasToolTip(x, y) {
+    if (!(x >= 0)) return;
+    if (popup.element || mainCanvas.style.display === 'none' || canvasPopupTarget) return;
     canvasPopupTarget = getMainCanvasMouseTarget(x, y);
-    $('.js-mainCanvas').toggleClass('clickable', !!canvasPopupTarget);
+    mainCanvas.classList.toggle('clickable', !!canvasPopupTarget);
     if (!canvasPopupTarget) {
         return;
     }
-    var popupText = canvasPopupTarget.helpMethod ? canvasPopupTarget.helpMethod(canvasPopupTarget) : canvasPopupTarget.helpText;
+    const popupText = canvasPopupTarget.helpMethod ? canvasPopupTarget.helpMethod(canvasPopupTarget) : canvasPopupTarget.helpText;
     if (!popupText) return;
-    $popup = $tag('div', 'toolTip js-toolTip', popupText);
-    $popup.data('canvasTarget', canvasPopupTarget);
-    $('.js-mouseContainer').append($popup);
-    updateToolTip(mousePosition[0], mousePosition[1], $popup);
+    popup.element = tagElement('div', 'toolTip js-toolTip', popupText);
+    popup.target = canvasPopupTarget;
+    mouseContainer.append(popup.element);
+    updateToolTip();
 }
 // Return the canvas object under the mouse with highest priority, if any.
 function getMainCanvasMouseTarget(x, y) {
+    const state = getState();
     if (state.selectedCharacter.context === 'map') return getMapPopupTarget(x, y);
-    var area = state.selectedCharacter.hero.area;
+    const area = state.selectedCharacter.hero.area;
     if (!area) return null;
-    if (choosingTrophyAltar) return getTrophyPopupTarget(x, y);
-    if (upgradingObject) {
+    if (getChoosingTrophyAltar()) return getTrophyPopupTarget(x, y);
+    if (getUpgradingObject()) {
         if (isPointInRectObject(x, y, upgradeButton)) {
             return upgradeButton;
         }
         return null;
     }
-    var abilityTarget = getAbilityPopupTarget(x, y);
+    const abilityTarget = getAbilityPopupTarget(x, y);
     if (abilityTarget) return abilityTarget;
     // Actors (heroes and enemies) have highest priority in the main game context during fights.
-    for (var actor of area.allies.concat(area.enemies)) {
-        if (!actor.isDead && isPointInRect(x, y, actor.left, actor.top, actor.width, actor.height)) {
+    for (const actor of area.allies.concat(area.enemies)) {
+        if (!actor.isDead && isPointInRectObject(x, y, actor)) {
             return actor;
         }
     }
-    var sortedObjects = area.objects.slice().sort(function (spriteA, spriteB) {
+    const sortedObjects = area.objects.slice().sort(function (spriteA, spriteB) {
         return spriteA.z - spriteB.z;
     });
-    for (var object of sortedObjects.concat(ifdefor(area.wallDecorations, [])).concat(globalHud)) {
+    for (const object of [...sortedObjects, ...area.wallDecorations, ...globalHud]) {
         if (!isCanvasTargetActive(object)) continue;
         // (x,y) of objects is the bottom middle of their graphic.
-        var targetRectangle = ifdefor(object.target, object);
-        var left = ifdefor(targetRectangle.left, object.x - area.cameraX - object.width / 2);
-        var top = ifdefor(targetRectangle.top, groundY - object.y - object.height);
+        const targetRectangle = object.target || object;
+        const left = ifdefor(targetRectangle.left, object.x - area.cameraX - object.width / 2);
+        const top = ifdefor(targetRectangle.top, GROUND_Y - object.y - object.height);
         if (object.isOver) {
             if (object.isOver(x, y)) return object;
         } else if (isPointInRect(x, y, left, top, targetRectangle.width, targetRectangle.height)) return object;
     }
     if (area.cameraX + x < 60) {
-        var coords = unprojectLeftWallCoords(area, x, y);
+        const coords = unprojectLeftWallCoords(area, x, y);
         // wallMouseCoords = coords;
-        for (var leftWallDecoration of ifdefor(area.leftWallDecorations, [])) {
+        for (const leftWallDecoration of (area.leftWallDecorations || [])) {
             if (!isCanvasTargetActive(leftWallDecoration)) continue;
             // decoration.target stores the rectangle that the decoration was drawn to on the wallCanvas before
             // it is projected to the wall trapezoid and uses the same coordinates the unprojectRightWallCoords returns in.
-            var target = leftWallDecoration.target;
+            const target = leftWallDecoration.target;
             // console.log([coords[0], coords[1], target.left, target.top, target.width, target.height]);
             if (isPointInRect(coords[0], coords[1], target.left, target.top, target.width, target.height)) {
                 return leftWallDecoration;
@@ -132,13 +142,13 @@ function getMainCanvasMouseTarget(x, y) {
         }
     }
     if (area.cameraX + x > area.width - 60) {
-        var coords = unprojectRightWallCoords(area, x, y);
+        const coords = unprojectRightWallCoords(area, x, y);
         // wallMouseCoords = coords;
-        for (var rightWallDecoration of ifdefor(area.rightWallDecorations, [])) {
+        for (const rightWallDecoration of (area.rightWallDecorations || [])) {
             if (!isCanvasTargetActive(rightWallDecoration)) continue;
             // decoration.target stores the rectangle that the decoration was drawn to on the wallCanvas before
             // it is projected to the wall trapezoid and uses the same coordinates the unprojectRightWallCoords returns in.
-            var target = rightWallDecoration.target;
+            const target = rightWallDecoration.target;
             // console.log([coords[0], coords[1], target.left, target.top, target.width, target.height]);
             if (isPointInRect(coords[0], coords[1], target.left, target.top, target.width, target.height)) {
                 return rightWallDecoration;
@@ -153,66 +163,71 @@ function isCanvasTargetActive(canvasTarget) {
     if (canvasTarget.isEnabled && !canvasTarget.isEnabled()) return false;
     return true;
 }
-function checkToShowJewelToolTip() {
+export function checkToShowJewelToolTip() {
     var jewel = jewelInventoryState.draggedJewel || jewelInventoryState.overJewel;
     if (!jewel) {
         return;
     }
-    if ($popup) {
-        if ($popup.data('jewel') === jewel) {
+    if (popup.element) {
+        const popupJewel = getElementJewel(popup.element);
+        if (popupJewel === jewel) {
             return;
         } else {
-            $popup.remove();
+            popup.element.remove();
         }
     }
     //console.log([event.pageX,event.pageY]);
     var helpText = jewel.helpMethod ? jewel.helpMethod(jewel) : jewel.helpText;
     if (jewel.fixed && !jewel.confirmed) {
-        $popup = $tag('div', 'toolTip js-toolTip', 'Drag and rotate to adjust this augmentation.<br/><br/> Click the "Apply" button above when you are done.<br/><br/>' + helpText);
+        popup.element = tagElement('div', 'toolTip js-toolTip', 'Drag and rotate to adjust this augmentation.<br/><br/> Click the "Apply" button above when you are done.<br/><br/>' + helpText);
     } else {
-        $popup = $tag('div', 'toolTip js-toolTip', helpText);
+        popup.element = tagElement('div', 'toolTip js-toolTip', helpText);
     }
-    $popup.data('jewel', jewel);
-    $popupTarget = null;
-    $('.js-mouseContainer').append($popup);
-    updateToolTip(mousePosition[0], mousePosition[1], $popup);
+    popup.target = null;
+    mouseContainer.appendChild(popup.element);
+    updateToolTip();
 }
-$('.js-mouseContainer').on('mousemove', function (event) {
-    if (!$popup) {
+mouseContainer.addEventListener('mousemove', function (event) {
+    if (!popup.element) {
         return;
     }
-    updateToolTip(mousePosition[0], mousePosition[1], $popup);
+    updateToolTip();
 });
 
 function checkremovePopup() {
-    if (!$popup && !canvasPopupTarget && !$popupTarget) {
+    if (!popup.element && !canvasPopupTarget && !popup.target) {
         return;
     }
-    if (jewelInventoryState.overJewel || jewelInventoryState.draggedJewel || jewelInventoryState.draggingBoardJewel || overCraftingItem || $dragHelper) {
+    if (jewelInventoryState.overJewel || jewelInventoryState.draggedJewel ||
+        jewelInventoryState.draggingBoardJewel || equipmentCraftingState.overCraftingItem ||
+        inventoryState.dragHelper
+    ) {
         return;
     }
-    if (draggedMap) {
+    if (mapState.draggedMap) {
         removePopup();
         return;
     }
-    if ($('.js-mainCanvas').is(':visible')) {
-        if (canvasPopupTarget && !ifdefor(canvasPopupTarget.isDead) && canvasPopupTarget.area === state.selectedCharacter.hero.area &&
-            isMouseOverCanvasElement(canvasCoords[0], canvasCoords[1], canvasPopupTarget)) {
+    const [x, y] = getMousePosition(mainCanvas);
+    if (mainCanvas.style.display !== 'none') {
+        const { selectedCharacter } = getState();
+        if (canvasPopupTarget && !canvasPopupTarget.isDead && canvasPopupTarget.area === selectedCharacter.hero.area &&
+            isMouseOverCanvasElement(x, y, canvasPopupTarget)) {
             return;
         }
-        if (mapState.currentMapTarget && !state.selectedCharacter.hero.area) {
+        if (mapState.currentMapTarget && !selectedCharacter.hero.area) {
             if (ifdefor(mapState.currentMapTarget.top) !== null) {
-                if (isPointInRect(canvasCoords[0], canvasCoords[1], mapState.currentMapTarget.left, mapState.currentMapTarget.top, mapState.currentMapTarget.width, mapState.currentMapTarget.height)) {
+                if (isPointInRect(x, y, mapState.currentMapTarget.left, mapState.currentMapTarget.top, mapState.currentMapTarget.width, mapState.currentMapTarget.height)) {
                     return;
                 }
             }
         }
     }
-    if ($popupTarget && $popupTarget.closest('body').length && isMouseOverElement($popupTarget)) {
+    if (popup.target && popup.target.closest && popup.target.closest('body').length && isMouseOverElement(popup.target)) {
         return;
     }
     removePopup();
-    checkToShowMainCanvasToolTip(canvasCoords[0], canvasCoords[1]);
+    checkToShowMainCanvasToolTip(x, y);
 }
 function isMouseOverCanvasElement(x, y, element) {
     if (element.isVisible && !element.isVisible()) return false;
@@ -221,9 +236,27 @@ function isMouseOverCanvasElement(x, y, element) {
     if (mapState.currentMapTarget && ifdefor(mapState.currentMapTarget.top) !== null) return isPointInRectObject(x, y, element);
     return false;
 }
-function getHelpText($popupTarget) {
-    if ($popupTarget.data('helpMethod')) {
-        return $popupTarget.data('helpMethod')($popupTarget);
+function getHelpText(popupTarget) {
+    if (popupTarget.data('helpMethod')) {
+        return popupTarget.data('helpMethod')(popupTarget);
     }
-    return $popupTarget.attr('helpText');
+    return popupTarget.attr('helpText');
 }
+
+mouseContainer.addEventListener('mousemove', function (event) {
+    const helpContainer = (event.target as HTMLElement).closest('[helpText]');
+    if (!helpContainer) {
+        removePopup();
+    }
+    if (popup.element) {
+        return;
+    }
+    removePopup();
+    popup.target = helpContainer;
+    popup.element = tagElement('div', 'toolTip js-toolTip', getHelpText(popup.target));
+    mouseContainer.appendChild(popup.element);
+    updateToolTip();
+});
+mouseContainer.addEventListener('mouseout', removePopup);
+mainCanvas.addEventListener('mouseout', removePopup);
+

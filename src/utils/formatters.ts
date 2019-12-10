@@ -55,3 +55,7 @@ export function anima(amount: any) {
     }
     return tag('span', 'icon anima') + ' ' + tag('span', 'value anima', amount);
 }
+
+export function properCase(string) {
+    return string.split(' ').map(function (word) {return word.charAt(0).toUpperCase() + word.substring(1)}).join(' ');
+}

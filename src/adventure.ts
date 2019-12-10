@@ -189,7 +189,7 @@ function timeStopLoop(area) {
     area.allies.concat(area.enemies).forEach(updateActorDimensions);
     return true;
 }
-function actorCanOverHeal(actor) {
+export function actorCanOverHeal(actor) {
     return (actor.overHeal > 0)
         || (actor.overHealReflection > 0 && actor.reflectBarrier < actor.maxReflectBarrier);
 }
@@ -225,7 +225,7 @@ export function removeBoundEffects(actor, area, finishEffect = false) {
         if (finishEffect && effect.finish) effect.finish();
     });
 }
-function removeActor(actor) {
+export function removeActor(actor) {
     if (actor.owner) {
         var minionIndex = actor.owner.minions.indexOf(actor);
         if (minionIndex >= 0) actor.owner.minions.splice(minionIndex, 1);
@@ -448,7 +448,7 @@ function processStatusEffects(target) {
         target.stunned = null;
     }
 }
-function getAllInRange(x, range, targets) {
+export function getAllInRange(x, range, targets) {
     var targetsInRange = [];
     for (var i = 0; i < targets.length; i++) {
         if (Math.abs(targets[i].x - x) <= range * 32) {
@@ -608,7 +608,7 @@ function checkToUseSkillOnTarget(actor, target) {
     return false;
 }
 
-function actorShouldAutoplay(actor) {
+export function actorShouldAutoplay(actor) {
     if (!actor.character) return true; // Only character heroes can be manually controlled.
     return !actor.character.isStuckAtShrine
         && (actor.character.autoplay || (actor.character !== getState().selectedCharacter && actor.enemies.length));
@@ -656,10 +656,10 @@ function defeatedEnemy(hero, enemy) {
     }
 }
 
-function completeLevel(hero) {
+export function completeLevel(hero, completionTime = 0) {
     const state = getState();
     var character = hero.character;
-    var completionTime = hero.time;
+    completionTime = completionTime || hero.time;
     const levelInstance = hero.levelInstance;
     levelInstance.completed = true;
     // If the character beat the last adventure open to them, unlock the next one
@@ -734,7 +734,7 @@ export function returnToMap(character) {
     }
 }
 
-function leaveCurrentArea(actor, leavingZone = false) {
+export function leaveCurrentArea(actor, leavingZone = false) {
     if (!actor.area) return;
     // If the are is a safe guild area, it becomes the actors 'escape exit',
     // where they will respawn next if they die.

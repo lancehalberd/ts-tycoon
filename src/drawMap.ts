@@ -14,7 +14,7 @@ import { getState } from 'app/state';
 import { abbreviate } from 'app/utils/formatters';
 import { rectangle, shrinkRectangle } from 'app/utils/index';
 import Vector from 'app/utils/Vector';
-import { worldCamera } from 'app/worldCamera';
+import { worldCamera } from 'app/WorldCamera';
 
 const lineColors = ['#0ff', '#08f', '#00f', '#80f', '#f0f', '#f08', '#f00','#f80','#ff0','#8f0','#0f0', '#0f8'];
 const mapTexture = requireImage('gfx/squareMap.bmp');
@@ -24,7 +24,7 @@ const bronzeSource = {...checkSource, left: 102, top: 40};
 const silverSource = {...checkSource, left: 85, top: 40};
 const goldSource = {...checkSource, left: 68, top: 40};
 
-function drawMap() {
+export function drawMap() {
     var context = mainContext;
     context.fillStyle = '#fea';
     context.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
@@ -44,13 +44,12 @@ function drawMap() {
     for (var theta = 0; theta < Math.PI * 2 + .1; theta += Math.PI / 6) {
         var renderedLine = [];
         for (const rho of latitudes) {
-            var newPoint = {};
             var z = Math.cos(rho) * WORLD_RADIUS;
             var r = Math.sin(rho) * WORLD_RADIUS;
             var x = Math.cos(theta - 4 * Math.PI / 6) * r;
             var y = Math.sin(theta - 4 * Math.PI / 6) * r;
             var visible = (new Vector([x, y, z]).dotProduct(worldCamera.forward) <= 0);
-            newPoint = {visible: visible};
+            const newPoint = {visible, x: 0, y: 0, u: 0, v: 0};
             renderedLine.push(newPoint);
             //console.log([theta / Math.PI, rho / Math.PI, x,y,z]);
             if (!visible) continue;
@@ -163,8 +162,9 @@ function drawMap() {
         context.lineWidth = 5;
     }
     const { editingMap, selectedMapNodes } = editingMapState;
-    for (let levelKey in mapState.visibleNodes) {
-        const levelData = mapState.visibleNodes[levelKey];
+    const { visibleNodes } = mapState;
+    for (let levelKey in visibleNodes) {
+        const levelData = visibleNodes[levelKey];
         for (const nextLevelKey of (levelData.unlocks, [])) {
             if ((editingMap || (state.visibleLevels[levelKey] && state.visibleLevels[nextLevelKey])) && (visibleNodes[levelKey] && visibleNodes[nextLevelKey])) {
                 var nextLevelData = map[nextLevelKey];
@@ -187,8 +187,8 @@ function drawMap() {
     }
     context.restore();
     // Draw ovals for each node.
-    for (let levelKey in mapState.visibleNodes) {
-        const levelData = mapState.visibleNodes[levelKey];
+    for (let levelKey in visibleNodes) {
+        const levelData = visibleNodes[levelKey];
         context.fillStyle = 'white';
         if (editingMap && selectedMapNodes.indexOf(levelData) >= 0) {
             context.fillStyle = '#f00';
@@ -202,8 +202,8 @@ function drawMap() {
         context.restore();
     }
     // Draw treasure chests on each node.
-    for (let levelKey in mapState.visibleNodes) {
-        const levelData = mapState.visibleNodes[levelKey];
+    for (let levelKey in visibleNodes) {
+        const levelData = visibleNodes[levelKey];
         if (editingMap) {
             var source = closedChestSource;
             drawImage(context, source.image, source.source, rectangle(levelData.left + levelData.width / 2 - 16, levelData.top + levelData.height / 2 - 18, 32, 32));

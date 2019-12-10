@@ -1,3 +1,5 @@
+import _ from 'lodash';
+
 import { getDistance, getDistanceOverlap } from 'app/adventure';
 import { pause } from 'app/adventureButtons';
 import { addBonusSourceToObject, recomputeDirtyStats, removeBonusSourceFromObject } from 'app/bonuses';
@@ -219,7 +221,7 @@ export function explosionEffect(attackStats, x, y, z) {
 
 export function novaEffect(attackStats, x, y, z) {
     var attack = attackStats.imprintedSpell || attackStats.attack;
-    var color = attack.base.color || red;
+    var color = attack.base.color || 'red';
     var alpha = attack.base.alpha || 5;
     var frames = attack.base.frames || 10, endFrames = attack.base.endFrames || 5;
     var blasts = [];
@@ -614,7 +616,7 @@ export function expireTimedEffects(actor) {
     }
     if (changed) recomputeDirtyStats(actor);
 }
-export function addTimedEffect(actor, effect, area) {
+export function addTimedEffect(actor, effect, area = 0) {
     if (actor.isDead) return;
     area = area || effect.area;
     // Copy the effect because each timed effect has a distinct expirationTime.

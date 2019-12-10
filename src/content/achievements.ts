@@ -200,7 +200,7 @@ function selectTrophy(achievement, character) {
     checkIfAltarTrophyIsAvailable();
     saveGame();
 }
-function addTrophyToAltar(altar, trophy) {
+export function addTrophyToAltar(altar, trophy) {
     trophy.areaKey = altar.area.key;
     trophy.objectKey = altar.key;
     altar.trophy = trophy;
@@ -208,7 +208,7 @@ function addTrophyToAltar(altar, trophy) {
 }
 
 export const trophySelectionRectangle = rectangle(195, 100, 410, 300);
-function drawTrophySelection() {
+export function drawTrophySelection() {
     drawRectangleBackground(mainContext, trophySelectionRectangle);
     var trophySpacing = 5;
     var checkSource = {'left': 68, 'top': 90, 'width': 16, 'height': 16};
@@ -237,7 +237,7 @@ function drawTrophySelection() {
         }
     }
 }
-function getTrophyPopupTarget(x, y) {
+export function getTrophyPopupTarget(x, y) {
     for (var trophyKey in altarTrophies) {
         var trophy = altarTrophies[trophyKey];
         if (isPointInRectObject(x, y, trophy)) return trophy;
@@ -362,7 +362,7 @@ function updateTrophyPopups() {
     }
 }
 
-function drawTrophyPopups() {
+export function drawTrophyPopups() {
     for (const trophyPopup of trophyPopups) {
         mainContext.save();
         mainContext.globalAlpha = .4;

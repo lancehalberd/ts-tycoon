@@ -18,8 +18,11 @@ import { getMousePosition } from 'app/utils/mouse';
 export const CRAFTED_NORMAL = 1;
 export const CRAFTED_UNIQUE = 2;
 
-let overCraftingItem = null;
-let lastCraftedItem = null;
+export const equipmentCraftingState = {
+    overCraftingItem: null,
+    lastCraftedItem: null,
+};
+
 // Same size as icons for equipment.
 const craftingSlotSize = 32;
 const craftingSlotSpacing = 2;
@@ -53,7 +56,7 @@ export function initializeCraftingGrid() {
                     var y = craftingHeaderSize + (row + subRow) * craftingSlotTotal;
                     item.craftingX = x;
                     item.craftingY = y;
-                    craftingGrid[row + subRow] = ifdefor(craftingGrid[row + subRow], []);
+                    craftingGrid[row + subRow] = (craftingGrid[row + subRow] || []);
                     craftingGrid[row + subRow][column + subColumn] = item;
                     subRow++;
                     if (subRow >= craftingSection.height) {
@@ -104,15 +107,15 @@ export function initializeCraftingGrid() {
     };
     // TODO: replace with generic mouse handling?
     craftingCanvas.onmousedown = function (event) {
-        if (event.shiftKey && overCraftingItem) { //check if 'shift' key is held down
-            addToInventory(makeItem(overCraftingItem, 1));
+        if (event.shiftKey && equipmentCraftingState.overCraftingItem) { //check if 'shift' key is held down
+            addToInventory(makeItem(equipmentCraftingState.overCraftingItem, 1));
             return;
         }
         craftNewItems();
     };
     // TODO: replace with generic mouse handling?
     craftingCanvas.onmouseout = function () {
-        overCraftingItem = null;
+        equipmentCraftingState.overCraftingItem = null;
         if (craftingOptionsContainer.style.display !== 'none') {
             const state = getState();
             state.savedState.craftingLevel = null;
@@ -140,19 +143,19 @@ function updateOverCraftingItem() {
     }
     updateItemsThatWillBeCrafted();
     previewPointsChange('coins', -getCurrentCraftingCost());
-    var craftingRow = ifdefor(craftingGrid[row], []);
+    var craftingRow = (craftingGrid[row] || []);
     var item = craftingRow[column];
     if (!item || item.level > state.savedState.maxCraftingLevel) {
-        overCraftingItem = null;
+        equipmentCraftingState.overCraftingItem = null;
         return;
     }
     x -= item.craftingX;
     y -= item.craftingY;
     if (x < 0 || x > craftingSlotSize || y < 0|| y > craftingSlotSize) {
-        overCraftingItem = null;
+        equipmentCraftingState.overCraftingItem = null;
         return;
     }
-    overCraftingItem = item;
+    equipmentCraftingState.overCraftingItem = item;
 }
 const craftingOptionsContainer:HTMLElement = document.querySelector('.js-craftingSelectOptions');
 function craftNewItems() {
@@ -244,7 +247,7 @@ export function drawCraftingCanvas() {
         if (level > savedState.maxCraftingLevel) continue;
 
         for (var row = 0; row < 6; row++) {
-            var gridRow = ifdefor(craftingGrid[row], []);
+            var gridRow = craftingGrid[row] || [];
             var item = gridRow[column];
             if (!item) continue;
             if (!savedState.craftedItems[item.key]) {
@@ -312,8 +315,8 @@ export function updateReforgeButton() {
 function updateItemsThatWillBeCrafted() {
     const { savedState } = getState();
     itemsFilteredByType = [];
-    for (var itemLevel = 1; itemLevel <= savedState.craftingLevel && itemLevel < items.length; itemLevel++) {
-        for (var item of ifdefor(items[itemLevel], [])) {
+    for (let itemLevel = 1; itemLevel <= savedState.craftingLevel && itemLevel < items.length; itemLevel++) {
+        for (const item of (items[itemLevel] || [])) {
             if (itemMatchesFilter(item, savedState.craftingTypeFilter)) {
                 itemsFilteredByType.push(item);
             }
@@ -328,7 +331,7 @@ const reforgeButton:HTMLElement = document.querySelector('.js-reforge');
 reforgeButton.onclick = reforgeItems;
 reforgeButton.onmouseover = () => previewPointsChange('coins', -getReforgeCost());
 reforgeButton.onmouseout = hidePointsPreview;
-function reforgeItems() {
+export function reforgeItems() {
     if (!spend('coins', Math.floor(getCurrentCraftingCost() / 5))) {
         return;
     }
@@ -385,7 +388,7 @@ function craftItem() {
     state.savedState.craftedItems[craftedItem.key] |= (state.savedState.craftedItems[craftedItem.key] || 0) | CRAFTED_NORMAL;
 
     updateItem(item);
-    lastCraftedItem = craftedItem;
+    equipmentCraftingState.lastCraftedItem = craftedItem;
     updateReforgeButton();
     return item;
 }
@@ -404,6 +407,7 @@ function itemMatchesFilter(item, typeFilter) {
 }
 
 function checkToShowCraftingToopTip() {
+    const { overCraftingItem } = equipmentCraftingState;
     if (!overCraftingItem) {
         return;
     }

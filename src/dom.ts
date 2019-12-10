@@ -1,5 +1,5 @@
 import { getState } from 'app/state';
-import { rectangleCenter } from 'app/utils';
+import { rectangleCenter } from 'app/utils/index';
 
 export function query(className): HTMLElement {
     return document.querySelector(className);

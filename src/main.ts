@@ -1,47 +1,38 @@
-import { limitZ } from 'app/adventure';
+import { getDistanceBetweenPointsSquared, leaveCurrentArea, limitZ } from 'app/adventure';
 import { setSelectedCharacter } from 'app/character';
-import { query } from 'app/dom';
+import { getChoosingTrophyAltar } from 'app/content/achievements';
+import { getUpgradingObject } from 'app/content/furniture';
+import { setContext } from 'app/context';
+import {
+    getElementIndex, handleChildEvent, mainCanvas,
+    query, queryAll, toggleElements,
+} from 'app/dom';
+import { getSelectedAction, setSelectedAction } from 'app/drawSkills';
 import { GROUND_Y } from 'app/gameConstants';
+import { handleMapMouseDown } from 'app/map';
+import { checkToShowMainCanvasToolTip, getCanvasPopupTarget } from 'app/popup'
 import { saveGame } from 'app/saveGame';
+import { getState } from 'app/state';
+import { canUseSkillOnTarget } from 'app/useSkill';
 import { toolTipColor } from 'app/utils/colors';
+import { getMousePosition } from 'app/utils/mouse';
 
 let canvasCoords = null;
 export function getCanvasCoords() {
     return canvasCoords;
 }
-$('.js-mouseContainer').on('mouseover mousemove', '[helpText]', function (event) {
-    if ($popup) {
-        return;
-    }
-    removePopup();
-    $popupTarget = $(this);
-    var x = event.pageX - $('.js-mouseContainer').offset().left;
-    var y = event.pageY - $('.js-mouseContainer').offset().top;
-    //console.log([event.pageX,event.pageY]);
-    $popup = $tag('div', 'toolTip js-toolTip', getHelpText($popupTarget));
-    $('.js-mouseContainer').append($popup);
-    updateToolTip(x, y, $popup);
-});
-$('.js-mouseContainer').on('mouseout', '[helpText]', function (event) {
-    removePopup();
-});
-$('.js-mouseContainer').on('mouseout', '.js-mainCanvas', function (event) {
-    removePopup();
-});
-$('.js-mouseContainer').on('mouseover mousemove', '.js-mainCanvas', function (event) {
-    var x = event.pageX - $(this).offset().left;
-    var y = event.pageY - $(this).offset().top;
+mainCanvas.addEventListener('mousemove', function () {
+    const [x, y] = getMousePosition(mainCanvas);
     canvasCoords = [x, y];
     checkToShowMainCanvasToolTip(x, y);
 });
 var clickedToMove = false;
 
 mainCanvas.onmousedown = function (event) {
-    //var x = event.pageX - $(this).offset().left;
-    //var y = event.pageY - $(this).offset().top;
-    //canvasCoords = [x, y];
+    const [x, y] = getMousePosition(mainCanvas);
+    canvasCoords = [x, y];
     canvasCoords = getMousePosition(mainCanvas);
-    switch (state.selectedCharacter.context) {
+    switch (getState().selectedCharacter.context) {
         case 'adventure':
         case 'guild':
             handleAdventureClick(x, y, event);
@@ -51,15 +42,19 @@ mainCanvas.onmousedown = function (event) {
             break;
     }
 }
+mainCanvas.addEventListener('mouseout', function (event) {
+    canvasCoords = null;
+});
 function handleAdventureClick(x, y, event) {
     const state = getState();
     const hero = state.selectedCharacter.adventurer;
     const canvasPopupTarget = getCanvasPopupTarget();
+    const selectedAction = getSelectedAction();
     if (canvasPopupTarget) {
         if (selectedAction) {
             if (canvasPopupTarget.isActor && canUseSkillOnTarget(hero, selectedAction, canvasPopupTarget)) {
                 setActionTarget(hero, selectedAction, canvasPopupTarget);
-                selectedAction = null;
+                setSelectedAction(null);
                 return;
             }
         }
@@ -70,12 +65,12 @@ function handleAdventureClick(x, y, event) {
         } else if (canvasPopupTarget.area) {
             setActorInteractionTarget(hero, canvasPopupTarget);
         }
-    } else if (!upgradingObject && !choosingTrophyAltar) {
+    } else if (!getUpgradingObject() && !getChoosingTrophyAltar()) {
         var targetLocation = getTargetLocation(hero.area, x, y);
         if (!targetLocation) return;
         if (selectedAction && canUseSkillOnTarget(hero, selectedAction, targetLocation)) {
             setActionTarget(hero, selectedAction, targetLocation);
-            selectedAction = null;
+                setSelectedAction(null);
         } else {
             setActorDestination(hero, targetLocation);
             clickedToMove = true;
@@ -105,56 +100,53 @@ function setActorDestination(actor, target) {
         actor.activity = activity;
     }
 }
-function setActorAttackTarget(actor, target) {
+export function setActorAttackTarget(actor, target) {
     actor.activity = {
-        'type': 'attack',
+        type: 'attack',
         target
     };
 }
 function setActionTarget(actor, action, target) {
     actor.activity = {
-        'type': 'action',
+        type: 'action',
         action,
         target
     };
 }
 export function setActorInteractionTarget(actor, target) {
     actor.activity = {
-        'type': 'interact',
+        type: 'interact',
         target
     };
 }
-query('.js-mainCanvas').addEventListener('mouseout', function (event) {
-    canvasCoords = null;
-});
 
-function updateRetireButtons() {
-    $('.js-retire').toggle(state.characters.length > 1);
+export function updateRetireButtons() {
+    toggleElements(queryAll('.js-retire'), getState().characters.length > 1);
 }
 
-$('body').on('click', '.js-retire', function (event) {
+handleChildEvent('click', document.body, '.js-retire', function (retireButton) {
+    const state = getState();
     if (state.characters.length < 2) {
         return;
     }
     if (!confirm('Are you sure you want to retire ' + state.selectedCharacter.adventurer.name + '?')) {
         return;
     }
-    var $panel = $(this).closest('.js-playerPanel');
-    $panel.remove();
+    const panel = retireButton.closest('.js-playerPanel');
+    panel.remove();
     leaveCurrentArea(state.selectedCharacter.hero, true);
     var removedCharacter = state.selectedCharacter;
     var index = state.characters.indexOf(removedCharacter);
     state.characters.splice(index, 1);
     state.selectedCharacter = state.characters[Math.min(index, state.characters.length)];
     setSelectedCharacter(state.characters[Math.min(index, state.characters.length - 1)]);
-    removedCharacter.$characterCanvas.remove();
+    removedCharacter.characterCanvas.remove();
     saveGame();
     updateRetireButtons();
 });
-$('body').on('click', '.js-showJewelsPanel', function (event) {
-    setContext('jewel');
+
+handleChildEvent('click', query('.js-charactersBox'), '.js-character', function (characterElement) {
+    const characterIndex = getElementIndex(characterElement);
+    setSelectedCharacter(getState().characters[characterIndex]);
 });
-$('.js-charactersBox').on('click', '.js-character', function () {
-    setSelectedCharacter($(this).data('character'));
-})
 

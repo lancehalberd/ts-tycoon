@@ -41,8 +41,8 @@ export interface Jewel {
     ability?: Ability,
 }
 
-const originalJewelScale = 30;
-const displayJewelShapeScale = 30;
+export const originalJewelScale = 30;
+export const displayJewelShapeScale = 30;
 const qualifierNames: JewelQualifierName[] = ['Perfect', 'Brilliant', 'Shining', '', 'Dull'];
 
 export function convertShapeDataToShape(shapeData) {
@@ -161,7 +161,7 @@ export function makeJewelProper(tier: JewelTier, shape: Polygon, components: Jew
     jewel.helpMethod = jewelHelpText;
     return jewel as Jewel;
 }
-function clearAdjacentJewels(jewel: Jewel) {
+export function clearAdjacentJewels(jewel: Jewel) {
     while (jewel.adjacentJewels.length) {
         var adjacentJewel = jewel.adjacentJewels.pop();
         var jewelIndex = adjacentJewel.adjacentJewels.indexOf(jewel);
@@ -203,7 +203,7 @@ export function updateAdjacentJewels(jewel: Jewel) {
     updateAdjacencyBonuses(jewel);
     removePopup();
 }
-function updateAdjacencyBonuses(jewel) {
+export function updateAdjacencyBonuses(jewel) {
     jewel.adjacencyBonuses = {};
     var matches = 0;
     var typesSeen = {};
@@ -353,7 +353,7 @@ export function getJewelTiewerForLevel(level): JewelTier {
 }
 
 let maxAnimaJewelBonus;
-function setMaxAnimaJewelBonus(value) {
+export function setMaxAnimaJewelBonus(value) {
     const state = getState();
     state.savedState.maxAnimaJewelMultiplier = value;
     if (maxAnimaJewelBonus) removeBonusSourceFromObject(state.guildStats, maxAnimaJewelBonus);

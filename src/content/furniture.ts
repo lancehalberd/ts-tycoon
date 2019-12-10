@@ -90,7 +90,7 @@ function objectSource(image, coords, size, additionalProperties = {}) {
         width: size[0], height: size[1], depth: size[2] || size[0],
     };
 }
-function openWorldMap(actor) {
+export function openWorldMap(actor) {
     const state = getState();
     // Unlock the first areas on the map if they aren't unlocked yet.
     for (const levelKey of map.guild.unlocks) {
@@ -134,7 +134,7 @@ const animaOrbTiers = [
     {'name': 'Perfected Anima Orb', 'bonuses': {'+maxAnima': 500e6}, 'requires': 'magicWorkshop', 'source': objectSource(guildImage, [270, 150], [30, 30], {'yOffset': -6}), 'scale': 2},
 ];
 
-var upgradeButton = {
+export const upgradeButton = {
     isVisible() {
         return !!upgradingObject;
     },
@@ -184,8 +184,11 @@ let upgradingObject = null;
 export function setUpgradingObject(object) {
     upgradingObject = object;
 }
+export function getUpgradingObject() {
+    return upgradingObject;
+}
 const upgradeRectangle = rectangle(250, 150, 300, 180);
-function drawUpgradeBox() {
+export function drawUpgradeBox() {
     drawRectangleBackground(mainContext, upgradeRectangle);
     var currentTier = upgradingObject.getCurrentTier();
     var nextTier = upgradingObject.getNextTier();
@@ -482,7 +485,7 @@ function removeFurnitureBonuses(furniture, recompute) {
     if (recompute) recomputeAllCharacterDirtyStats();
 }
 
-function addAllUnlockedFurnitureBonuses() {
+export function addAllUnlockedFurnitureBonuses() {
     const state = getState();
     for (let areaKey in state.savedState.unlockedGuildAreas) {
         addAreaFurnitureBonuses(state.guildAreas[areaKey]);

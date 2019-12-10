@@ -8,16 +8,21 @@ import { getState } from 'app/state';
 import { canUseSkillOnTarget, prepareToUseSkillOnTarget } from 'app/useSkill';
 import { fillRectangle, isPointInRectObject, rectangle, shrinkRectangle } from 'app/utils/index';
 
+let goldFrame, silverFrame;
+let tinyGoldFrame, tinySilverFrame;
+let actionShortcuts = {};
+const actionKeyCodes = '1234567890'.split('').map(c => c.charCodeAt(0));
+
 function createScaledFrame(r, frame, scale = 1) {
     // We want to scale the frame Nx its normal thickness, but we get bad smoothing if we do
     // this as we stretch pieces, so we stretch the edges at 1x scale, then draw the whole thing scaled
     // up at the very end.
-    var smallCanvas = createCanvas(r.width / scale, r.height / scale);
-    var smallContext = smallCanvas.getContext('2d');
+    const smallCanvas = createCanvas(r.width / scale, r.height / scale);
+    const smallContext = smallCanvas.getContext('2d');
     smallContext.imageSmoothingEnabled = false;
     // return bigFrameCanvas;
-    var canvas = createCanvas(r.width, r.height);
-    var context = canvas.getContext('2d');
+    const canvas = createCanvas(r.width, r.height);
+    const context = canvas.getContext('2d');
     context.imageSmoothingEnabled = false;
     drawImage(smallContext, frame, rectangle(0, 0, 12, 12), rectangle(0, 0, 12, 12));
     drawImage(smallContext, frame, rectangle(28, 0, 12, 12), rectangle(r.width / scale - 12, 0, 12, 12));
@@ -38,11 +43,7 @@ function createScaledFrame(r, frame, scale = 1) {
     drawImage(context, smallCanvas, rectangle(0, 0, r.width / scale, r.height / scale), r);
     return canvas;
 }
-var goldFrame, silverFrame;
-var tinyGoldFrame, tinySilverFrame;
-var actionShortcuts = {};
-var actionKeyCodes = '1234567890'.split('').map(character => {return character.charCodeAt(0)});
-function drawSkills(actor) {
+export function drawSkills(actor) {
     var context = mainContext;
     context.font = "10px Arial";
     context.textBaseline = 'middle';
@@ -138,6 +139,9 @@ export function getHoverAction() {
 export function getSelectedAction() {
     return selectedAction;
 }
+export function setSelectedAction(action) {
+    selectedAction = action;
+}
 function onClickSkill(character, action) {
     activateAction(action);
 }
@@ -168,7 +172,7 @@ function autoToggleHelpMethod() {
     }
 }
 
-function getAbilityPopupTarget(x, y) {
+export function getAbilityPopupTarget(x, y) {
     hoverAction = null;
     for (var action of getState().selectedCharacter.adventurer.actions) {
         if (action.tags.basic) continue;

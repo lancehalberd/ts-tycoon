@@ -1,3 +1,5 @@
+import { updateTrophy } from 'app/content/achievements';
+import { FRAME_LENGTH } from 'app/gameConstants';
 import { initializeGame } from 'app/initialize';
 import { areAllImagesLoaded } from 'app/images';
 import { getMousePosition, isMouseDown } from 'app/utils/mouse';
@@ -29,10 +31,10 @@ export function update() {
             if (character.loopCount % loopSkip) break;
             var gameSpeed = (character.autoplay) ? character.gameSpeed : 1;
             for (var i = 0; i < gameSpeed  && character.adventurer.area; i++) {
-                character.time += frameMilliseconds / 1000;
+                character.time += FRAME_LENGTH / 1000;
                 if (character.context === 'adventure') {
                     updateAreaCamera(hero.area, hero);
-                    updateArea(hero.area, frameMilliseconds / 1000);
+                    updateArea(hero.area, FRAME_LENGTH / 1000);
                 } else if (character.context === 'guild') activeGuildAreaHash[character.guildAreaKey] = true;
             }
         }
