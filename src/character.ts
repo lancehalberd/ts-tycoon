@@ -1,7 +1,7 @@
 import { updateActorDimensions } from 'app/adventure';
 import { updateAdventureButtons } from 'app/adventureButtons';
 import {
-    addBonusSourceToObject, addVariableChildToObject, BonusSource,
+    addBonusSourceToObject, addVariableChildToObject,
     findVariableChildForBaseObject,
     initializeVariableObject,
     recomputeDirtyStats, removeBonusSourceFromObject
@@ -9,19 +9,21 @@ import {
 import { abilities } from 'app/content/abilities';
 import { updateTrophy } from 'app/content/achievements';
 import { characterClasses } from 'app/content/jobs';
+import { updateSkillConfirmationButtons } from 'app/content/levels';
 import { map } from 'app/content/mapData';
 import { setupActorSource } from 'app/content/monsters';
 import { showContext } from 'app/context';
 import {
     bodyDiv, createCanvas, jewelsCanvas, query, tag,
-    titleDiv, updateConfirmSkillConfirmationButtons
+    titleDiv
 } from 'app/dom';
 import { CRAFTED_NORMAL } from 'app/equipmentCrafting';
 import { drawBoardBackground } from 'app/drawBoard';
 import { bonusSourceHelpText } from 'app/helpText';
+import { equipmentSlots } from 'app/gameConstants';
 import { images } from 'app/images';
 import {
-    equipItemProper, equipmentSlots, makeItem,
+    equipItemProper, makeItem,
     updateEquipableItems, updateOffhandDisplay,
 } from 'app/inventory';
 import { equipJewel, jewelInventoryState } from 'app/jewelInventory';
@@ -35,30 +37,12 @@ import { getState } from 'app/state';
 import { getTargetCameraX } from 'app/update';
 import { abbreviate } from 'app/utils/formatters';
 import { ifdefor, rectangle, removeElementFromArray } from 'app/utils/index';
-import { centerShapesInRectangle } from 'app/utils/polygon';
+import { centerShapesInRectangle, Polygon } from 'app/utils/polygon';
 import Random from 'app/utils/Random';
 
-export interface Character {
-    adventurer: any,
-    applicationAge?: number,
-    fame: number,
-    hero: any,
-    autoActions: any,
-    board: any,
-    currentLevelKey: string,
-    manualActions: {[key in string]: any},
-    characterCanvas: HTMLCanvasElement,
-    characterContext: CanvasRenderingContext2D,
-    boardCanvas: HTMLCanvasElement,
-    boardContext: CanvasRenderingContext2D,
-    time: number,
-    autoplay: boolean,
-    gameSpeed: number
-    replay: boolean,
-    divinityScores: {[key in string]: number},
-    levelTimes: {[key in string]: number},
-    divinity: number,
-}
+import { Actor, Board, BoardData, Character, Equipment, EquipmentData, Job, Tags } from 'app/types';
+import { Bonuses, BonusSource } from 'app/types/bonuses';
+import { Item } from 'app/types/items';
 
 export const personFrames = 5;
 const clothes = [1, 3];
@@ -100,7 +84,7 @@ export const coreStatBonusSource: BonusSource = {'bonuses': {
     '$lifeBarColor': 'red'
 }};
 
-export function initializeActorForAdventure(actor) {
+export function initializeActorForAdventure(actor: Actor) {
     actor.isActor = true;
     setActorHealth(actor, actor.maxHealth);
     actor.maxReflectBarrier = actor.reflectBarrier = 0;
@@ -129,7 +113,7 @@ export function refreshStatsPanel(
 ) {
     const adventurer = character.adventurer;
     statsPanelElement.querySelector('.js-playerName').textContent = adventurer.job.name + ' ' + adventurer.name;
-    statsPanelElement.querySelector('.js-playerLevel').textContent = adventurer.level;
+    statsPanelElement.querySelector('.js-playerLevel').textContent = '' + adventurer.level;
     statsPanelElement.querySelector('.js-fame').textContent = character.fame.toFixed(1);
     statsPanelElement.querySelector('.js-dexterity').textContent = adventurer.dexterity.toFixed(0);
     statsPanelElement.querySelector('.js-strength').textContent = adventurer.strength.toFixed(0);
@@ -143,7 +127,7 @@ export function refreshStatsPanel(
     statsPanelElement.querySelector('.js-healthRegen').textContent = adventurer.healthRegen.toFixed(1);
     updateDamageInfo(character, statsPanelElement);
 }
-export function newCharacter(job): Character {
+export function newCharacter(job: Job): Character {
     const hero = makeAdventurerFromJob(job, 1, job.startingEquipment || {});
     setActorHealth(hero, hero.maxHealth);
     const characterCanvas = createCanvas(40, 20);
@@ -156,7 +140,7 @@ export function newCharacter(job): Character {
     //TODO
     // .attr('helptext', '').data('helpMethod', () => actorHelpText(hero))
     //    .data('character', character);
-    const character = {
+    const character: Character = {
         adventurer: hero,
         autoplay: false,
         hero,
@@ -200,11 +184,11 @@ export function newCharacter(job): Character {
     jewelInventoryState.overJewel = null;
     return character;
 }
-export function makeAdventurerFromData(adventurerData) {
-    var personCanvas = createCanvas(personFrames * 96, 64);
-    var personContext = personCanvas.getContext("2d");
+export function makeAdventurerFromData(adventurerData): Actor {
+    const personCanvas = createCanvas(personFrames * 96, 64);
+    const personContext = personCanvas.getContext("2d");
     personContext.imageSmoothingEnabled = false;
-    var adventurer = {
+    const adventurer: Actor = {
         'x': 0,
         'y': 0,
         'z': 0,
@@ -223,7 +207,6 @@ export function makeAdventurerFromData(adventurerData) {
             'attackPreparationFrames': [0, 3, 4],
             'attackRecoveryFrames': [4, 3]
         }),
-        'bonuses': [],
         'unlockedAbilities': {},
         'abilities': [],
         'name': adventurerData.name,
@@ -249,7 +232,7 @@ export function makeAdventurerFromData(adventurerData) {
     });
     return adventurer;
 }
-export function makeAdventurerFromJob(job, level, equipment) {
+export function makeAdventurerFromJob(job: Job, level: number, equipment: EquipmentData): Actor {
     const adventurer = makeAdventurerFromData({
         'jobKey': job.key,
         level,
@@ -259,24 +242,23 @@ export function makeAdventurerFromJob(job, level, equipment) {
         equipment,
     });
     const state = getState();
-    for (const key of equipment) {
-        const item = equipment[key];
+    for (const item of Object.values(equipment)) {
         state.savedState.craftedItems[item.key] = (state.savedState.craftedItems[item.key] || 0) | CRAFTED_NORMAL;
         equipItemProper(adventurer, makeItem(item, 1), false);
     }
     updateAdventurer(adventurer);
     return adventurer;
 }
-export function readBoardFromData(boardData, character, ability, confirmed = false) {
+export function readBoardFromData(boardData: BoardData, character, ability, confirmed = false): Board {
     return {
-        'fixed': boardData.fixed.map(convertShapeDataToShape)
-            .map(function(fixedJewelData) {
-                var fixedJewel = makeFixedJewel(fixedJewelData, character, ability);
+        fixed: boardData.fixed.map(convertShapeDataToShape)
+            .map(function(fixedJewelData: Polygon) {
+                const fixedJewel = makeFixedJewel(fixedJewelData, character, ability);
                 fixedJewel.confirmed = confirmed;
                 return fixedJewel;
             }),
-        'spaces': boardData.fixed.concat(boardData.spaces).map(convertShapeDataToShape),
-        'jewels': []
+        spaces: boardData.fixed.concat(boardData.spaces).map(convertShapeDataToShape),
+        jewels: []
     };
 }
 
@@ -361,8 +343,8 @@ export function updateAdventurer(adventurer) {
     adventurer.onMissEffects = [];
     adventurer.allEffects = [];
     adventurer.minionBonusSources = [];
-    var levelCoefficient = Math.pow(1.05, adventurer.level);
-    var adventurerBonuses = {
+    const levelCoefficient = Math.pow(1.05, adventurer.level);
+    const adventurerBonuses: Bonuses = {
         '+maxHealth': 50 + 20 * (adventurer.level + adventurer.job.dexterityBonus + adventurer.job.strengthBonus + adventurer.job.intelligenceBonus),
         '+tenacity': 4 + 2 * adventurer.level / 100,
         '+levelCoefficient': levelCoefficient,
@@ -470,7 +452,7 @@ export function updateAdventurerGraphics(adventurer) {
         });
     }
 }
-export function recomputeActorTags(actor) {
+export function recomputeActorTags(actor: Actor): Tags {
     const tags = {'actor': true};
     if (actor.equipment) {
         if (!actor.equipment.weapon) {
@@ -605,7 +587,7 @@ export function setSelectedCharacter(character) {
     equipmentSlots.forEach(function (type) {
         //detach any existing item
         query('.js-equipment .js-' + type + ' .js-item').remove();
-        const equipment = adventurer.equipment[type];
+        const equipment: Item = adventurer.equipment[type];
         if (equipment) {
             query('.js-equipment .js-' + type).append(equipment.domElement);
         }
@@ -622,7 +604,7 @@ export function setSelectedCharacter(character) {
     jewelBonusContainer.innerText = bonusSourceHelpText(character.jewelBonuses, character.adventurer);
     centerMapOnLevel(map[character.currentLevelKey]);
     updateAdventureButtons();
-    updateConfirmSkillConfirmationButtons();
+    updateSkillConfirmationButtons();
     updateEquipableItems();
     //character.$characterCanvas.after($('.js-divinityPoints'));
     query('.js-charactersBox').appendChild(character.characterCanvas);

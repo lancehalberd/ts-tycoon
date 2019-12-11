@@ -1,6 +1,7 @@
 import { equipmentSources } from 'app/content/equipment/equipmentSources';
-import { addItem } from 'app/inventory';
+import { addItem } from 'app/content/equipment/index';
 
+export function addShields() {
 //Heavy Shields
 addItem(2, {'slot': 'offhand', 'type': 'heavyShield', 'tags': ['shield'], 'name': 'Wooden Board', 'bonuses': {'+maxHealth': 20, '+block': 3}, 'icon': 'heavyShield'});
 addItem(4, {'slot': 'offhand', 'type': 'heavyShield', 'tags': ['shield'], 'name': 'Scuta', 'bonuses': {'+maxHealth': 60, '+block': 10}, 'icon': 'heavyShield'});
@@ -30,3 +31,4 @@ addItem(43, {'slot': 'offhand', 'type': 'lightShield', 'tags': ['shield'], 'name
 addItem(48, {'slot': 'offhand', 'type': 'lightShield', 'tags': ['shield'], 'name': 'Meteoric Buckler', 'bonuses': {'+evasion': 83, '+block': 72}, 'icon': 'lightShield'});
 addItem(58, {'slot': 'offhand', 'type': 'lightShield', 'tags': ['shield'], 'name': 'Runed Buckler', 'bonuses': {'+evasion': 90, '+block': 80, '+armor': 5, '+maxHealth': 35, '+magicBlock': 10}, 'icon': 'magicShield'});
 addItem(68, {'slot': 'offhand', 'type': 'lightShield', 'tags': ['shield'], 'name': 'Dragon Buckler', 'bonuses': {'+evasion': 100, '+block': 90, '+armor': 10, '+maxHealth': 60, '+magicBlock': 20}, 'icon': 'magicShield'});
+}

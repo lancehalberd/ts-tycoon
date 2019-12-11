@@ -1,7 +1,8 @@
 import { equipmentSources } from 'app/content/equipment/equipmentSources';
-import { addItem } from 'app/inventory';
+import { addItem } from 'app/content/equipment/index';
 
 //Back/Neck/Waist
+export function addAccessories() {
 addItem(1, {slot: 'back', type: 'cloak', name: 'Plain Cloak', bonuses: {'+evasion': 1, '+armor': 1, '+maxHealth': 6}, icon: 'cloak'});
 addItem(2, {slot: 'back', type: 'quiver', restrictions: ['ranged', 'physical'], name: 'Simple Quiver', bonuses: {'+minWeaponPhysicalDamage': 2, '+maxWeaponPhysicalDamage': 4}, icon: 'quiver'});
 addItem(3, {slot: 'back', type: 'baldric', restrictions: ['melee', 'physical'], name: 'Worne Baldric', bonuses: {'+minWeaponPhysicalDamage': 2, '+maxWeaponPhysicalDamage': 3}, icon: 'scabbard'});
@@ -35,3 +36,4 @@ addItem(22, {slot: 'ring', type: 'band', name: 'Meteoric Band', bonuses: {'%weap
 addItem(23, {slot: 'ring', type: 'band', name: 'Orichalcum Band', bonuses: {'%weaponMagicDamage': 0.2}, source: equipmentSources.bracelet, icon: 'band'});
 addItem(24, {slot: 'ring', type: 'band', name: 'Adamantium Band', bonuses: {'%melee:weaponDamage': 0.2}, source: equipmentSources.bracelet, icon: 'band'});
 addItem(25, {slot: 'ring', type: 'band', name: 'Dragonbone Band', bonuses: {'%ranged:weaponDamage': 0.2}, source: equipmentSources.bracelet, icon: 'band'});
+}

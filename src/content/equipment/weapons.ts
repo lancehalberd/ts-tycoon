@@ -1,4 +1,4 @@
-import { addItem } from 'app/inventory';
+import { addItem } from 'app/content/equipment/index';
 
 function weaponSource(row) {
     return {'yOffset': row * 64}
@@ -17,6 +17,7 @@ const weaponSources = {
     'bigAxe': weaponSource(9),
 };
 
+export function addWeapons() {
 // Axes high damage, slow attack speed, melee range, high crit chance
 //addItem(2, {'slot': 'weapon', 'type': 'axe',  'name': 'Worn Hatchet', 'bonuses': {'+minWeaponPhysicalDamage': 13, '+maxWeaponPhysicalDamage': 19,  '+attackSpeed': 0.6,'+weaponRange': 1.4, '+critChance': 0.04 }, 'icon': 'axe'});
 addItem(6, {'slot': 'weapon', 'type': 'axe',  'name': 'Hatchet', 'bonuses': {'+minWeaponPhysicalDamage': 42, '+maxWeaponPhysicalDamage': 62,  '+attackSpeed': 0.9,'+weaponRange': 1.5, '+critChance': 0.05 }, 'source': weaponSources.axe, 'icon': 'axe'});
@@ -164,3 +165,4 @@ addItem(46, {'slot': 'weapon', 'type': 'greatsword', 'tags': ['twoHanded'], 'nam
 addItem(51, {'slot': 'weapon', 'type': 'greatsword', 'tags': ['twoHanded'], 'name': 'Meteoric Bidenhander', 'bonuses': {'+minWeaponPhysicalDamage': 373, '+maxWeaponPhysicalDamage': 465, '+attackSpeed': 1.4, '+weaponRange': 3.5, '+critChance': 0.06 }, 'source': weaponSources.greatSword, 'icon': 'greatSword'});
 addItem(61, {'slot': 'weapon', 'type': 'greatsword', 'tags': ['twoHanded'], 'name': 'Adamantine Bidenhander', 'bonuses': {'+minWeaponPhysicalDamage': 710, '+maxWeaponPhysicalDamage': 866, '+attackSpeed': 0.9, '+weaponRange': 3.5, '+critChance': 0.07, '+minWeaponMagicDamage': 25, '+maxWeaponMagicDamage': 33 }, 'source': weaponSources.greatSword, 'icon': 'greatSword'});
 addItem(71, {'slot': 'weapon', 'type': 'greatsword', 'tags': ['twoHanded'], 'name': 'Masterwork Katana', 'bonuses': {'+minWeaponPhysicalDamage': 421, '+maxWeaponPhysicalDamage': 513, '+attackSpeed': 1.5, '+weaponRange': 4, '+critChance': 0.07, '+minWeaponMagicDamage': 26, '+maxWeaponMagicDamage': 36 }, 'source': weaponSources.greatSword, 'icon': 'greatSword'});
+}

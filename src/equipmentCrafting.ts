@@ -1,11 +1,12 @@
+import { items, itemsBySlotAndLevel } from 'app/content/equipment/index';
 import { checkToMakeItemUnique } from 'app/content/uniques';
 import { craftingCanvas, craftingContext, query, tag, tagElement, titleDiv, bodyDiv } from 'app/dom';
 import { augmentItemProper } from 'app/enchanting';
+import { armorSlots } from 'app/gameConstants';
 import { bonusSourceHelpText } from 'app/helpText';
 import { drawTintedImage, images } from 'app/images';
 import {
-    addToInventory, armorSlots, baseItemLevelCost, items,
-    itemsBySlotAndLevel, makeItem, tagToDisplayName, updateItem
+    addToInventory, baseItemLevelCost, makeItem, tagToDisplayName, updateItem
 } from 'app/inventory';
 import { hidePointsPreview, points, previewPointsChange, spend } from 'app/points';
 import { addPopup, getPopup, removePopup } from 'app/popup';
@@ -14,6 +15,8 @@ import { getState } from 'app/state';
 import { ifdefor } from 'app/utils/index';
 import { fixedDigits } from 'app/utils/formatters';
 import { getMousePosition } from 'app/utils/mouse';
+
+import { Item } from 'app/types/items';
 
 export const CRAFTED_NORMAL = 1;
 export const CRAFTED_UNIQUE = 2;
@@ -312,7 +315,7 @@ export function updateReforgeButton() {
         'You can type \'r\' as a shortcut for clicking this button.'].join('<br/>');
     query('.js-reforge').setAttribute('helptext', text);
 }
-function updateItemsThatWillBeCrafted() {
+export function updateItemsThatWillBeCrafted() {
     const { savedState } = getState();
     itemsFilteredByType = [];
     for (let itemLevel = 1; itemLevel <= savedState.craftingLevel && itemLevel < items.length; itemLevel++) {
@@ -343,7 +346,7 @@ export function reforgeItems() {
     saveGame();
 }
 
-function craftItem() {
+function craftItem(): Item {
     var craftingRoll = Math.floor(Math.random() * selectedCraftingWeight);
     var index = 0;
     while (craftingRoll > itemsFilteredByType[index].craftingWeight) {

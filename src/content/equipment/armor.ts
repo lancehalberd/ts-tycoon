@@ -1,7 +1,8 @@
 import { equipmentSources } from 'app/content/equipment/equipmentSources';
-import { addItem } from 'app/inventory';
+import { addItem } from 'app/content/equipment/index';
 
 //Heavy Armor gives armor + health
+export function addArmor() {
 addItem(3, {'slot': 'body', 'type': 'heavyArmor', 'name': 'Lamellar', 'bonuses': {'+armor': 8, '+maxHealth': 40}, 'source': equipmentSources.heavyShirt, icon: 'heavyArmor'});
 addItem(8, {'slot': 'body', 'type': 'heavyArmor', 'name': 'Bamboo Armor', 'bonuses': {'+armor': 13, '+maxHealth': 65}, 'source': equipmentSources.heavyShirt, icon: 'heavyArmor'});
 addItem(13, {'slot': 'body', 'type': 'heavyArmor', 'name': 'Panoply', 'bonuses': {'+armor': 23, '+maxHealth': 115}, 'source': equipmentSources.heavyShirt, icon: 'heavyArmor'});
@@ -45,3 +46,4 @@ addItem(46, {'slot': 'body', 'type': 'clothArmor', 'name': 'Embroidered Robe', '
 addItem(51, {'slot': 'body', 'type': 'clothArmor', 'name': 'Sorcerous Vestment', 'bonuses': {'+armor': 31, '+block': 73, '+magicBlock': 51}, 'source': equipmentSources.wizardRobe, icon: 'clothArmor'});
 addItem(61, {'slot': 'body', 'type': 'clothArmor', 'name': 'Blessed Vestment', 'bonuses': {'+armor': 40, '+block': 80, '+magicBlock': 56, '+evasion': 10, '+maxHealth': 60}, 'source': equipmentSources.wizardRobe, icon: 'clothArmor'});
 addItem(71, {'slot': 'body', 'type': 'clothArmor', 'name': 'Divine Vestment', 'bonuses': {'+armor': 50, '+block': 100, '+magicBlock': 75, '+evasion': 20, '+maxHealth': 100}, 'source': equipmentSources.wizardRobe, icon: 'clothArmor'});
+}

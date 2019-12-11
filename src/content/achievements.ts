@@ -1,7 +1,7 @@
-import { addBonusSourceToObject, Bonuses, recomputeDirtyStats, removeBonusSourceFromObject } from 'app/bonuses';
+import { addBonusSourceToObject, recomputeDirtyStats, removeBonusSourceFromObject } from 'app/bonuses';
 import { recomputeAllCharacterDirtyStats } from 'app/character';
 import { FixedObject } from 'app/content/furniture';
-import { characterClasses, JobKey } from 'app/content/jobs';
+import { characterClasses } from 'app/content/jobs';
 import { bodyDiv, divider, mainContext, titleDiv } from 'app/dom';
 import { bonusSourceHelpText } from 'app/helpText';
 import { drawImage, drawOutlinedImage, drawRectangleBackground, drawSolidTintedImage, requireImage } from 'app/images';
@@ -9,18 +9,35 @@ import { getCanvasCoords, getTargetLocation } from 'app/main';
 import { saveGame } from 'app/saveGame';
 import { getState } from 'app/state';
 import { isPointInRectObject, rectangle } from 'app/utils/index';
-import { Color } from 'app/utils/types';
 
+import { Bonuses } from 'app/types/bonuses';
+import { Color } from 'app/types';
+import { JobKey } from 'app/types/jobs';
+
+
+let isAltarTrophyAvailable = false;
+let choosingTrophyAltar: TrophyAltar = null;
+
+const trophyPopups = [];
+const trophyPopupWidth = 160;
+const trophyPopupHeight = 80;
 
 interface AchievementBonus {
     target: number,
     bonuses: Bonuses,
 }
+interface TrophyAltar extends FixedObject {
+    trophy: JobAchievement,
+}
+
 class JobAchievement {
     jobKey: JobKey;
     title: string;
     level: number;
     value: number;
+    // These coordinates get set during drawTrophySelection.
+    left: number;
+    top: number;
     width: number;
     height: number;
     bonusesArray: AchievementBonus[];
@@ -95,6 +112,63 @@ class JobAchievement {
     }
 }
 
+const trophySize = 50;
+let altarTrophies: {[key: string]: JobAchievement};
+
+export function addAltarTrophies() {
+    altarTrophies = {
+        'level-juggler': new JobAchievement('juggler',
+            [{'+accuracy': 1}, {'%attackSpeed': 0.1}, {'+attackSpeed': 0.1}, {'*attackSpeed': 1.1}]),
+        'level-ranger': new JobAchievement('ranger',
+            [{'+accuracy': 2}, {'+ranged:range': 0.5}, {'+ranged:range': 0.5, '+ranged:physicalDamage': 5}, {'*ranged:damage': 1.1}]),
+        'level-sniper': new JobAchievement('sniper',
+            [{'+accuracy': 3}, {'%critChance': 0.1}, {'+critChance': 0.02}, {'*critChance': 1.1}]),
+
+        'level-priest': new JobAchievement('priest',
+            [{'+healthRegen': 2}, {'+healthRegen': ['{maxHealth}', '/', 100]}, {'%healthRegen': 0.1}, {'*healthRegen': 1.1}]),
+        'level-wizard': new JobAchievement('wizard',
+            [{'+magicPower': 2}, {'+spell:area': 0.5}, {'%spell:area': 0.1}, {'*spell:area': 1.1}]),
+        'level-sorcerer': new JobAchievement('sorcerer',
+            [{'+magicDamage': 1}, {'%magicDamage': 0.1}, {'+magicDamage': ['{level}', '/', 8]}, {'*magicDamage': 1.1}]),
+
+        'level-blackbelt': new JobAchievement('blackbelt',
+            [{'+maxHealth': 15}, {'%maxHealth': 0.1}, {'+maxHealth': ['{level}', '*', 3]}, {'*maxHealth': 1.1}]),
+        'level-warrior': new JobAchievement('warrior',
+            [{'+armor': 2}, {'%armor': 0.1}, {'+armor': ['{level}', '/', 2]}, {'*armor': 1.1}]),
+        'level-samurai': new JobAchievement('samurai',
+            [{'+physicalDamage': 2}, {'%physicalDamage': 0.1}, {'+physicalDamage': ['{level}', '/', 4]}, {'*physicalDamage': 1.1}]),
+
+        'level-corsair': new JobAchievement('corsair',
+            [{'+critAccuracy': .1}, {'%critAccuracy': 0.1}, {'+critAccuracy': 0.2}, {'*critAccuracy': 1.1}]),
+        'level-assassin': new JobAchievement('assassin',
+            [{'+critDamage': .05}, {'%critDamage': 0.1}, {'+critDamage': 0.1}, {'*critDamage': 1.1}]),
+        'level-ninja': new JobAchievement('ninja',
+            [{'+speed': 5}, {'%speed': 0.1}, {'+speed': 10}, {'*speed': 1.1}]),
+
+        'level-paladin': new JobAchievement('paladin',
+            [{'+block': 2, '+magicBlock': 1}, {'%block': 0.1, '%magicBlock': 0.1}, {'+block': ['{level}', '/', 2], '+magicBlock': ['{level}', '/', 4]}, {'*block': 1.1, '*magicBlock': 1.1}]),
+        'level-darkknight': new JobAchievement('darkknight',
+            [{'+magicResist': .01}, {'%magicResist': 0.1}, {'+magicResist': 0.02}, {'*magicResist': 1.1}]),
+        'level-enhancer': new JobAchievement('enhancer',
+            [{'+dexterity': 1, '+strength': 1, '+intelligence': 1}, {'%dexterity': 1.05, '%strength': 1.05, '%intelligence': 1.05},
+             {'+dexterity': 2, '+strength': 2, '+intelligence': 2}, {'*dexterity': 1.05, '*strength': 1.05, '*intelligence': 1.05}]),
+
+        'level-dancer': new JobAchievement('dancer',
+            [{'+evasion': 2}, {'%evasion': 0.1}, {'+evasion': ['{level}', '/', 2]}, {'*evasion': 1.1}]),
+        'level-bard': new JobAchievement('bard',
+            [{'+duration': 0.5}, {'%duration': 0.1}, {'+duration': 1}, {'*duration': 1.1}]),
+        'level-sage': new JobAchievement('sage',
+            [{'+magicPower': 5}, {'%magicPower': .1}, {'+magicPower': 10}, {'*magicPower': 1.1}]),
+
+        'level-fool': new JobAchievement('fool',
+            [{'+critDamage': 0.2, '-critChance': 0.01}, {'%critDamage': 0.4, '%critChance': -0.4},
+            {'+critDamage': 1, '-critChance': 0.05}, {'*critDamage': 1.2, '*critChance': 0.8}]),
+        'level-master': new JobAchievement('master',
+            [{'+weaponRange': 0.5}, {'%weaponRange': 0.1}, {'+weaponRange': 1}, {'*weaponRange': 1.1}]),
+    };
+}
+
+
 /**
  * The achievement system allows player to unlock decorations for their guild by meeting
  * certain criteria, like leveling a job a certain amount or killing a certain number of enemies.
@@ -102,67 +176,12 @@ class JobAchievement {
  * The decorations are either wall decorations that can be hung in specified locations on walls,
  * or trophies that can be placed on specific pedestals.
  */
-interface TrophyAltar extends FixedObject {
-    trophy: JobAchievement,
-}
-let choosingTrophyAltar: TrophyAltar = null;
 export function getChoosingTrophyAltar() {
     return choosingTrophyAltar;
 }
 export function setChoosingTrophyAltar(trophyAltar: TrophyAltar) {
     choosingTrophyAltar = trophyAltar
 }
-var trophySize = 50;
-var altarTrophies = {
-    'level-juggler': new JobAchievement('juggler',
-        [{'+accuracy': 1}, {'%attackSpeed': 0.1}, {'+attackSpeed': 0.1}, {'*attackSpeed': 1.1}]),
-    'level-ranger': new JobAchievement('ranger',
-        [{'+accuracy': 2}, {'+ranged:range': 0.5}, {'+ranged:range': 0.5, '+ranged:physicalDamage': 5}, {'*ranged:damage': 1.1}]),
-    'level-sniper': new JobAchievement('sniper',
-        [{'+accuracy': 3}, {'%critChance': 0.1}, {'+critChance': 0.02}, {'*critChance': 1.1}]),
-
-    'level-priest': new JobAchievement('priest',
-        [{'+healthRegen': 2}, {'+healthRegen': ['{maxHealth}', '/', 100]}, {'%healthRegen': 0.1}, {'*healthRegen': 1.1}]),
-    'level-wizard': new JobAchievement('wizard',
-        [{'+magicPower': 2}, {'+spell:area': 0.5}, {'%spell:area': 0.1}, {'*spell:area': 1.1}]),
-    'level-sorcerer': new JobAchievement('sorcerer',
-        [{'+magicDamage': 1}, {'%magicDamage': 0.1}, {'+magicDamage': ['{level}', '/', 8]}, {'*magicDamage': 1.1}]),
-
-    'level-blackbelt': new JobAchievement('blackbelt',
-        [{'+maxHealth': 15}, {'%maxHealth': 0.1}, {'+maxHealth': ['{level}', '*', 3]}, {'*maxHealth': 1.1}]),
-    'level-warrior': new JobAchievement('warrior',
-        [{'+armor': 2}, {'%armor': 0.1}, {'+armor': ['{level}', '/', 2]}, {'*armor': 1.1}]),
-    'level-samurai': new JobAchievement('samurai',
-        [{'+physicalDamage': 2}, {'%physicalDamage': 0.1}, {'+physicalDamage': ['{level}', '/', 4]}, {'*physicalDamage': 1.1}]),
-
-    'level-corsair': new JobAchievement('corsair',
-        [{'+critAccuracy': .1}, {'%critAccuracy': 0.1}, {'+critAccuracy': 0.2}, {'*critAccuracy': 1.1}]),
-    'level-assassin': new JobAchievement('assassin',
-        [{'+critDamage': .05}, {'%critDamage': 0.1}, {'+critDamage': 0.1}, {'*critDamage': 1.1}]),
-    'level-ninja': new JobAchievement('ninja',
-        [{'+speed': 5}, {'%speed': 0.1}, {'+speed': 10}, {'*speed': 1.1}]),
-
-    'level-paladin': new JobAchievement('paladin',
-        [{'+block': 2, '+magicBlock': 1}, {'%block': 0.1, '%magicBlock': 0.1}, {'+block': ['{level}', '/', 2], '+magicBlock': ['{level}', '/', 4]}, {'*block': 1.1, '*magicBlock': 1.1}]),
-    'level-darkknight': new JobAchievement('darkknight',
-        [{'+magicResist': .01}, {'%magicResist': 0.1}, {'+magicResist': 0.02}, {'*magicResist': 1.1}]),
-    'level-enhancer': new JobAchievement('enhancer',
-        [{'+dexterity': 1, '+strength': 1, '+intelligence': 1}, {'%dexterity': 1.05, '%strength': 1.05, '%intelligence': 1.05},
-         {'+dexterity': 2, '+strength': 2, '+intelligence': 2}, {'*dexterity': 1.05, '*strength': 1.05, '*intelligence': 1.05}]),
-
-    'level-dancer': new JobAchievement('dancer',
-        [{'+evasion': 2}, {'%evasion': 0.1}, {'+evasion': ['{level}', '/', 2]}, {'*evasion': 1.1}]),
-    'level-bard': new JobAchievement('bard',
-        [{'+duration': 0.5}, {'%duration': 0.1}, {'+duration': 1}, {'*duration': 1.1}]),
-    'level-sage': new JobAchievement('sage',
-        [{'+magicPower': 5}, {'%magicPower': .1}, {'+magicPower': 10}, {'*magicPower': 1.1}]),
-
-    'level-fool': new JobAchievement('fool',
-        [{'+critDamage': 0.2, '-critChance': 0.01}, {'%critDamage': 0.4, '%critChance': -0.4},
-        {'+critDamage': 1, '-critChance': 0.05}, {'*critDamage': 1.2, '*critChance': 0.8}]),
-    'level-master': new JobAchievement('master',
-        [{'+weaponRange': 0.5}, {'%weaponRange': 0.1}, {'+weaponRange': 1}, {'*weaponRange': 1.1}]),
-};
 function selectTrophy(achievement, character) {
     // A trophy must be at least level 1 to be used.
     if (!(achievement.level > 0)) return;
@@ -210,17 +229,17 @@ export function addTrophyToAltar(altar, trophy) {
 export const trophySelectionRectangle = rectangle(195, 100, 410, 300);
 export function drawTrophySelection() {
     drawRectangleBackground(mainContext, trophySelectionRectangle);
-    var trophySpacing = 5;
-    var checkSource = {'left': 68, 'top': 90, 'width': 16, 'height': 16};
-    var left = 10;
-    var top = 10;
-    for (var trophyKey in altarTrophies) {
-        var trophy = altarTrophies[trophyKey];
+    const trophySpacing = 5;
+    const checkSource = {'left': 68, 'top': 90, 'width': 16, 'height': 16};
+    let left = 10;
+    let top = 10;
+    for (let trophyKey in altarTrophies) {
+        const trophy = altarTrophies[trophyKey];
         trophy.left = trophySelectionRectangle.left + left;
         trophy.top = trophySelectionRectangle.top + top;
         trophy.draw(mainContext, trophy);
         if (trophy.areaKey) {
-            var target = {'left': trophy.left + trophy.width - 20, 'top': trophy.top + trophy.height - 20, 'width': 16, 'height': 16};
+            const target = {'left': trophy.left + trophy.width - 20, 'top': trophy.top + trophy.height - 20, 'width': 16, 'height': 16};
             mainContext.fillStyle = 'white';
             mainContext.strokeStyle = 'black';
             mainContext.lineWidth = 2;
@@ -238,17 +257,18 @@ export function drawTrophySelection() {
     }
 }
 export function getTrophyPopupTarget(x, y) {
-    for (var trophyKey in altarTrophies) {
-        var trophy = altarTrophies[trophyKey];
+    for (let trophyKey in altarTrophies) {
+        const trophy = altarTrophies[trophyKey];
         if (isPointInRectObject(x, y, trophy)) return trophy;
     }
     return null;
 }
 
 export function updateTrophy(trophyKey, value) {
-    var trophy = altarTrophies[trophyKey];
+    const trophy = altarTrophies[trophyKey];
     trophy.value = Math.max(trophy.value, value);
-    for (var i = 0; i < trophy.bonusesArray.length; i++) {
+    let i = 0;
+    for (; i < trophy.bonusesArray.length; i++) {
         if (trophy.bonusesArray[i].target > trophy.value) {
             break;
         }
@@ -286,15 +306,15 @@ function addTrophyBonuses(trophy, recompute = false) {
 }
 function removeTrophyBonuses(trophy, recompute = false) {
     const state = getState();
-    for (var i = 0; i < trophy.bonusesArray.length && i < trophy.level; i++) {
-        var bonusSource = trophy.bonusesArray[i];
+    for (let i = 0; i < trophy.bonusesArray.length && i < trophy.level; i++) {
+        const bonusSource = trophy.bonusesArray[i];
         if (state.guildBonusSources.indexOf(bonusSource) < 0) {
             console.log(bonusSource);
             console.log(state.guildBonusSources);
             throw new Error('bonus source was not found in guildBonusSources!');
         }
         state.guildBonusSources.splice(state.guildBonusSources.indexOf(bonusSource), 1);
-        for (var character of state.characters) {
+        for (const character of state.characters) {
             removeBonusSourceFromObject(character.adventurer, bonusSource);
             //console.log(bonusSource.bonuses);
         }
@@ -302,24 +322,19 @@ function removeTrophyBonuses(trophy, recompute = false) {
     if (recompute) recomputeAllCharacterDirtyStats();
 }
 
-let isAltarTrophyAvailable = false;
 export function getIsAltarTrophyAvailable() {
     return isAltarTrophyAvailable;
 }
 export function checkIfAltarTrophyIsAvailable() {
     isAltarTrophyAvailable = false;
-    for (var trophyKey in altarTrophies) {
-        var trophy = altarTrophies[trophyKey];
+    for (let trophyKey in altarTrophies) {
+        const trophy = altarTrophies[trophyKey];
         if (trophy.level >0 && !trophy.areaKey) {
             isAltarTrophyAvailable = true;
             break;
         }
     }
 }
-
-const trophyPopups = [];
-const trophyPopupWidth = 160;
-const trophyPopupHeight = 80;
 
 function showTrophyPopup(trophy) {
     let lastPopup;
@@ -338,8 +353,8 @@ function showTrophyPopup(trophy) {
     });
 }
 function updateTrophyPopups() {
-    var previousPopup;
-    for (var trophyPopup of trophyPopups) {
+    let previousPopup;
+    for (const trophyPopup of trophyPopups) {
         if (!trophyPopup.dismissed && previousPopup && trophyPopup.left < previousPopup.left - 5 - trophyPopupWidth) {
             trophyPopup.left = Math.min(trophyPopup.left + 10, 800 - 5 - trophyPopupWidth);
         }
@@ -382,7 +397,7 @@ export function drawTrophyPopups() {
         const textLeft = trophyPopup.left + 5 + trophySize + 5;
         let textBaseLine = trophyPopup.top + 40;
         while (titleParts.length) {
-            var metrics = mainContext.measureText(line + ' ' + titleParts[0]);
+            const metrics = mainContext.measureText(line + ' ' + titleParts[0]);
             if (textLeft + metrics.width + 5 > trophyPopup.left + trophyPopup.width) {
                 mainContext.fillText(line, textLeft, textBaseLine);
                 textBaseLine += 20;

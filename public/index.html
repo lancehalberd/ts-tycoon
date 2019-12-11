@@ -48,8 +48,8 @@
     <script>
         // Only show the loading text if it takes more than .2 seconds to load
         setTimeout(function () {
-            if (!document.querySelector('.js-gameContent:visible')) {
-                document.querySelector('.js-loading').style.display = 'block';
+            if (document.querySelector('.js-gameContent').style.display === 'none') {
+                document.querySelector('.js-loading').style.display = '';
             }
         }, 200);
     </script>

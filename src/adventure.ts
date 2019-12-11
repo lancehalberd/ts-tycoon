@@ -1,7 +1,7 @@
 import { pause, updateAdventureButtons } from 'app/adventureButtons';
 import { getEndlessLevel, showAreaMenu } from 'app/areaMenu';
 import {
-    addVariableChildToObject, BonusSource, initializeVariableObject,
+    addVariableChildToObject, initializeVariableObject,
     recomputeDirtyStats, removeBonusSourceFromObject, setStat,
 } from 'app/bonuses';
 import {
@@ -38,6 +38,7 @@ import { abbreviate } from 'app/utils/formatters';
 import { ifdefor } from 'app/utils/index';
 import { isMouseDown } from 'app/utils/mouse';
 
+import { BonusSource } from 'app/types/bonuses';
 
 
 export function limitZ(zValue: number, radius: number = 0): number {

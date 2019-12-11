@@ -1,6 +1,7 @@
 import { equipmentSources } from 'app/content/equipment/equipmentSources';
-import { addItem } from 'app/inventory';
+import { addItem } from 'app/content/equipment/index';
 
+export function addBoots() {
 //Sabatons gives armor and health
 //addItem(1, {'slot': 'feet', 'type': 'heavyArmor', 'name': 'Corroded Sabatons', 'bonuses': {'+armor': 2, '+maxHealth': 5, '-speed': 50}, 'offset': 8, icon: 'sabatons'});
 addItem(7, {'slot': 'feet', 'type': 'heavyArmor', 'name': 'Bamboo Sabatons', 'bonuses': {'+armor': 9, '+maxHealth': 55, '-speed': 50}, 'source': equipmentSources.heavyBoots, icon: 'sabatons'});
@@ -46,3 +47,4 @@ addItem(45, {'slot': 'feet', 'type': 'clothArmor', 'name': 'Embroidered Slippers
 addItem(50, {'slot': 'feet', 'type': 'clothArmor', 'name': 'Sourcerous Slippers', 'bonuses': {'+block': 41, '+magicBlock': 41, '+speed': 110}, 'source': equipmentSources.wizardSandals, icon: 'shoes'});
 addItem(60, {'slot': 'feet', 'type': 'clothArmor', 'name': 'Blessed Sandals', 'bonuses': {'+block': 50, '+magicBlock': 50, '+armor': 5, '+evasion': 5, '+maxHealth': 35, '+speed': 120}, 'source': equipmentSources.wizardSandals, icon: 'shoes'});
 addItem(70, {'slot': 'feet', 'type': 'clothArmor', 'name': 'Divine Sandals', 'bonuses': {'+block': 70, '+magicBlock': 60, '+armor': 10, '+evasion': 10, '+maxHealth': 60, '*speed': 1.2, '+speed': 50}, 'source': equipmentSources.wizardSandals, icon: 'shoes'});
+}

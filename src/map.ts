@@ -2,7 +2,7 @@ import { showAreaMenu } from 'app/areaMenu';
 import { addBonusSourceToObject, removeBonusSourceFromObject} from 'app/bonuses';
 import { gainLevel, totalCostForNextLevel } from 'app/character';
 import { abilities } from 'app/content/abilities';
-import { finishShrine } from 'app/content/levels';
+import { finishShrine, updateSkillConfirmationButtons } from 'app/content/levels';
 import { map } from 'app/content/mapData';
 import { monsters } from 'app/content/monsters';
 import { setContext } from 'app/context';
@@ -21,7 +21,6 @@ import {
     query,
     tagElement,
     titleDiv,
-    updateConfirmSkillConfirmationButtons,
 } from 'app/dom';
 import { MAX_LEVEL, WORLD_RADIUS } from 'app/gameConstants';
 import { abilityHelpText } from 'app/helpText'
@@ -279,7 +278,7 @@ handleChildEvent('click', document.body, '.js-confirmSkill', function (confirmBu
     character.board.boardPreview = null;
     drawBoardBackground(character.boardContext, character.board);
     gainLevel(character.adventurer);
-    updateConfirmSkillConfirmationButtons();
+    updateSkillConfirmationButtons();
     saveGame();
     setTimeout(function () {
         setContext('adventure');

@@ -1,6 +1,7 @@
 import { equipmentSources } from 'app/content/equipment/equipmentSources';
-import { addItem } from 'app/inventory';
+import { addItem } from 'app/content/equipment/index';
 
+export function addGloves() {
 //Vambracers gives armor and health
 //addItem(1, {'slot': 'arms', 'type': 'heavyArmor', 'name': 'Corroded Vambracers', 'bonuses': {'+armor': 2, '+maxHealth': 10}, icon: 'vambracers'});
 addItem(5, {'slot': 'arms', 'type': 'heavyArmor', 'name': 'Bamboo Vambracers', 'bonuses': {'+armor': 10, '+maxHealth': 60}, 'source': equipmentSources.heavySleeves, icon: 'vambracers'});
@@ -45,3 +46,4 @@ addItem(43, {'slot': 'arms', 'type': 'clothArmor', 'name': 'Embroidered Gloves',
 addItem(48, {'slot': 'arms', 'type': 'clothArmor', 'name': 'Sorcerous Gloves', 'bonuses': {'+block':82, '+magicBlock': 41}, 'source': equipmentSources.wizardSleeves, icon: 'gloves'});
 addItem(58, {'slot': 'arms', 'type': 'clothArmor', 'name': 'Blessed Gloves', 'bonuses': {'+block': 85, '+magicBlock': 50, '+armor': 5, '+evasion': 5, '+maxHealth': 35}, 'source': equipmentSources.wizardSleeves, icon: 'gloves'});
 addItem(68, {'slot': 'arms', 'type': 'clothArmor', 'name': 'Divine Gloves', 'bonuses': {'+block': 100, '+magicBlock': 60, '+armor': 10, '+evasion': 10, '+maxHealth': 60}, 'source': equipmentSources.wizardSleeves, icon: 'gloves'});
+}

@@ -1,17 +1,29 @@
 // Load any graphic assets needed by the game here.
-import { enterArea } from 'app/adventure';
-import { initializeVariableObject } from 'app/bonuses';
-import { allApplications } from 'app/content/furniture';
+import { enterArea, startLevel } from 'app/adventure';
+import { addBonusSourceToObject, initializeVariableObject } from 'app/bonuses';
+import { newCharacter,updateAdventurer } from 'app/character';
+import { addAltarTrophies } from 'app/content/achievements';
+import { addAllItems } from 'app/content/equipment/index';
+import { addAllUnlockedFurnitureBonuses, allApplications } from 'app/content/furniture';
 import { guildYardEntrance } from 'app/content/guild';
+import { characterClasses } from 'app/content/jobs';
+import { map } from 'app/content/mapData';
 import { initializeMonsters } from 'app/content/monsters';
-import { showContext } from 'app/context';
+import { initializeProjectileAnimations } from 'app/content/projectileAnimations';
+import { setContext, showContext } from 'app/context';
 import { initializeLevelEditing } from 'app/development/editLevel';
 import { query } from 'app/dom';
-import { initializeCraftingGrid } from 'app/equipmentCrafting';
-import { initializeImages } from 'app/images';
+import { drawMap } from 'app/drawMap';
+import { updateEnchantmentOptions } from 'app/enchanting';
+import { initializeCraftingGrid, updateItemsThatWillBeCrafted } from 'app/equipmentCrafting';
+import { createNewHeroApplicant, hireCharacter, jobRanks } from 'app/heroApplication';
+import { makeJewel } from 'app/jewels';
+import { gainJewel } from 'app/loot';
 import { centerMapOnLevel } from 'app/map';
 import { gain } from 'app/points';
 import { eraseSave, loadSavedData } from 'app/saveGame';
+import { getState, implicitGuildBonusSource } from 'app/state';
+import { removeElementFromArray } from 'app/utils/index';
 import Random from 'app/utils/Random';
 import { playTrack, soundTrack } from 'app/utils/sounds';
 
@@ -21,9 +33,11 @@ export function isGameInitialized() {
 }
 export function initializeGame() {
     gameHasBeenInitialized = true;
+    addAllItems();
+    addAltarTrophies();
     initializeMonsters();
     initializeCraftingGrid();
-    initializeImages();
+    initializeProjectileAnimations();
     initializeLevelEditing();
     query('.js-loading').style.display = 'none';
     query('.js-gameContent').style.display = '';
@@ -34,7 +48,8 @@ export function initializeGame() {
             eraseSave();
         }
     }
-    /*if (loadSavedData()) {
+    const state = getState();
+    if (loadSavedData()) {
         showContext(state.selectedCharacter.context);
     } else {
         initializeVariableObject(state.guildStats, {'variableObjectType': 'guild'}, state.guildStats);
@@ -46,8 +61,8 @@ export function initializeGame() {
         gain('fame', 1);
         gain('coins', 50);
         gain('anima', 0);
-        var jobKey = Random.element(jobRanks[0]);
-        jobKey = ifdefor(testJob, jobKey);
+        let jobKey = Random.element(jobRanks[0]);
+        // jobKey = testJob || jobKey;
         var startingCharacter = newCharacter(characterClasses[jobKey]);
         updateAdventurer(startingCharacter.adventurer);
         hireCharacter(startingCharacter);
@@ -65,8 +80,8 @@ export function initializeGame() {
         startLevel(state.selectedCharacter, 'testLevelData');
     }
     state.visibleLevels['guild'] = true;
-    if (state.skipShrinesEnabled) {
-        $('.js-shrineButton').show();
+    if (state.savedState.skipShrinesEnabled) {
+        query('.js-shrineButton').style.display = '';
     }
     updateItemsThatWillBeCrafted();
     updateEnchantmentOptions();
@@ -76,6 +91,6 @@ export function initializeGame() {
     // from being set, so instead, just throw an error before running setInterval.
     if (!state.selectedCharacter) {
         throw new Error('No selected character found');
-    }*/
+    }
     playTrack(soundTrack.map);
 }

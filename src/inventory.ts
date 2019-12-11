@@ -5,6 +5,7 @@ import {
 import { editingMapState } from 'app/development/editLevel';
 import { getElementIndex, handleChildEvent, mouseContainer, query, queryAll, tag, tagElement } from 'app/dom';
 import { updateEnchantmentOptions } from 'app/enchanting';
+import { equipmentSlots } from 'app/gameConstants';
 import { getItemHelpText } from 'app/helpText';
 import { jewelInventoryState, stopJewelDrag } from 'app/jewelInventory';
 import { gain } from 'app/points';
@@ -13,19 +14,8 @@ import { getState } from 'app/state';
 import { properCase } from 'app/utils/formatters';
 import { collision, getCollisionArea, ifdefor } from 'app/utils/index';
 import { getMousePosition } from 'app/utils/mouse';
-import { EquipmentSlot, Item, ItemData, RawItemData, } from 'app/utils/types';
-
-export const armorSlots = ['body', 'feet', 'head', 'offhand', 'arms', 'legs'];
-export const smallArmorSlots = ['feet', 'head', 'offhand', 'arms', 'legs'];
-export const equipmentSlots = ['weapon', 'body', 'feet', 'head', 'offhand', 'arms', 'legs', 'back', 'ring'];
-export const accessorySlots = ['back', 'ring'];
-// const nonWeapons = ['body', 'feet', 'head', 'offhand', 'arms', 'legs', 'back', 'ring'];
-export const items = [[]];
-export const itemsByKey: {[key: string]: any} = {};
-export const itemsBySlotAndLevel = {};
-equipmentSlots.forEach(function (slot) {
-    itemsBySlotAndLevel[slot] = [];
-});
+import { Actor } from 'app/types/actor';
+import { EquipmentSlot, Item, ItemData } from 'app/types/items';
 
 // Div containing items
 const inventoryElement = query('.js-inventory');
@@ -45,7 +35,7 @@ export const inventoryState: InventoryState = {
     dragged: false,
 };
 
-export function equipItemProper(actor, item, update) {
+export function equipItemProper(actor, item: Item, update) {
     //console.log("equip " + item.base.slot);
     if (actor.equipment[item.base.slot]) {
         console.log("Tried to equip an item without first unequiping!");
@@ -55,7 +45,7 @@ export function equipItemProper(actor, item, update) {
         console.log("Tried to equip an offhand while wielding a two handed weapon!");
         return;
     }
-    item.domElement.detach();
+    item.domElement.remove();
     const gameState = getState();
     if (actor.character === gameState.selectedCharacter) {
         query('.js-equipment .js-' + item.base.slot).appendChild(item.domElement);
@@ -84,11 +74,11 @@ export function equipItemProper(actor, item, update) {
         updateEquipableItems();
     }
 }
-function unequipSlot(actor, slotKey, update) {
+function unequipSlot(actor: Actor, slotKey: EquipmentSlot, update: boolean = false) {
     //console.log(new Error("unequip " + slotKey));
     if (actor.equipment[slotKey]) {
-        var item = actor.equipment[slotKey];
-        item.domElement.detach();
+        const item = actor.equipment[slotKey];
+        item.domElement.remove();
         item.actor = null;
         actor.equipment[slotKey] = null;
         removeActions(actor, item.base);
@@ -116,11 +106,10 @@ function unequipSlot(actor, slotKey, update) {
 }
 function unequipRestrictedGear() {
     const actor = getState().selectedCharacter.adventurer;
-    for (let slotKey in actor.equipment) {
-        const item = actor.equipment[slotKey];
+    for (const item of Object.values(actor.equipment)) {
         if (!item) continue;
         if (!canEquipItem(actor, item)) {
-            unequipSlot(actor, slotKey, true);
+            unequipSlot(actor, item.base.slot, true);
             addToInventory(item);
             // This method will get called again as a consequence of unequiping
             // the invalid item, so we don't need to do any further processing
@@ -144,7 +133,7 @@ export function sellValue(item) {
 export function baseItemLevelCost(itemLevel) {
     return itemLevel * itemLevel * Math.pow(1.15, itemLevel);
 }
-export function makeItem(base, level) {
+export function makeItem(base: ItemData, level: number): Item {
     const state = getState();
     var item = {
         base,
@@ -163,7 +152,7 @@ export function makeItem(base, level) {
     }
     return item;
 }
-export function getItemForElement(itemElement) {
+export function getItemForElement(itemElement): Item {
     for (const item of getState().items) {
         if (item.domElement === itemElement) {
             return item;
@@ -176,13 +165,13 @@ export function updateEquipableItems() {
         item.domElement.classList.toggle('equipable', canEquipItem(state.selectedCharacter.adventurer, item));
     }
 }
-export function updateItem(item) {
+export function updateItem(item: Item) {
     var levelRequirement = item.base.level;
     item.prefixes.concat(item.suffixes).forEach(function (affix) {
         levelRequirement = Math.max(levelRequirement, affix.base.level);
     });
-    item.level = levelRequirement;
-    item.domElement.removeClass('imbued').removeClass('enchanted').removeClass('unique');
+    item.requiredLevel = levelRequirement;
+    item.domElement.classList.remove('imbued', 'enchanted', 'unique');
     var enchantments = item.prefixes.length + item.suffixes.length;
     if (item.unique) {
         item.domElement.classList.add('unique');
@@ -302,14 +291,14 @@ export function areAnyCraftedItemsVisible() {
     return craftingSlots.some(e => e.style.display !== 'none');
 }
 
-function canEquipItem(actor, item) {
-    if (item.level > actor.level) {
+function canEquipItem(actor: Actor, item: Item): boolean {
+    if (item.requiredLevel > actor.level) {
         return false;
     }
     if (item.base.slot === 'offhand' && isTwoHandedWeapon(actor.equipment.weapon) && !actor.twoToOneHanded) {
         return false;
     }
-    for (const requiredTag of ifdefor(item.base.restrictions, [])) {
+    for (const requiredTag of (item.base.restrictions || [])) {
         if (!actor.tags[requiredTag]) {
             return false;
         }
@@ -442,34 +431,4 @@ function stopInventoryDrag() {
         updateEnchantmentOptions();
     }
     removeItemSlotDragHintClasses();
-}
-
-export function addItem(level: number, rawData: RawItemData) {
-    const key = rawData.name.replace(/\s*/g, '').toLowerCase();
-    const tags = rawData.tags || [];
-    const data: Partial<ItemData> = {
-        ...rawData,
-        key,
-        tags: {},
-    };
-    for (const tag of tags) {
-        data.tags[tag] = true;
-    }
-    // Assume weapons are one handed melee if not specified
-    if (data.slot === 'weapon') {
-        if (!data.tags['ranged']) data.tags['melee'] = true;
-        if (!data.tags['twoHanded']) data.tags['oneHanded'] = true;
-        if (!data.tags['magic']) data.tags['physical'] = true;
-    }
-    data.tags[data.slot] = true;
-    data.tags[data.type] = true;
-    items[level] = ifdefor(items[level], []);
-    itemsBySlotAndLevel[data.slot][level] = ifdefor(itemsBySlotAndLevel[data.slot][level], []);
-    data.level = level;
-    data.craftingWeight = 5 * level * level;
-    data.crafted = false;
-    data.hasImplicitBonuses = true;
-    items[level].push(data);
-    itemsBySlotAndLevel[data.slot][level].push(data);
-    itemsByKey[key] = data;
 }

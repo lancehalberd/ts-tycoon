@@ -1,8 +1,7 @@
-import { initializeProjectileAnimations } from 'app/content/projectileAnimations';
 import { createCanvas } from 'app/dom';
 import {
     drawRectangle, fillRectangle, ifdefor, shrinkRectangle
-} from 'app/utils';
+} from 'app/utils/index';
 
 export const images = {};
 function loadImage(source, callback) {
@@ -104,10 +103,6 @@ for (const initialImageToLoad of initialImagesToLoad) {
     requireImage(initialImageToLoad);
 }
 
-
-export function initializeImages() {
-    initializeProjectileAnimations();
-}
 export function staticAnimation(image, frame) {
     return {image, frames: [frame]};
 }

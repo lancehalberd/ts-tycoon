@@ -1,34 +1,9 @@
 import { recomputeActorTags } from 'app/character';
-import { Effect } from 'app/content/skills';
+import { allActorVariables, allGuildVariables, allRoundedVariables, commonActionVariables } from 'app/content/variables';
 import { evaluateValue } from 'app/evaluate';
 import { getState } from 'app/state';
 import { removeElementFromArray } from 'app/utils/index';
-import { allActorVariables, allGuildVariables, allRoundedVariables, commonActionVariables } from 'app/content/variables';
-
-type BonusOperator = '+' | '-' | '%' | '*' | '/' | '&' | '$';
-type BonusTag = string;
-type StatVariable = string;
-type BonusValue = true | number | string |
-    Effect |
-    [BonusValue] | [BonusOperator, BonusValue] | [BonusValue, BonusOperator, BonusValue];
-type BonusDependencies = {[key in string]: true};
-
-export interface Bonuses {
-    [key: string]: BonusValue,
-}
-
-export interface BonusSource {
-    bonuses: Bonuses,
-}
-
-interface Bonus {
-    operator: BonusOperator,
-    shortHand: string,
-    statDependencies: BonusDependencies,
-    stats: StatVariable,
-    tags: BonusTag[],
-    value: BonusValue,
-}
+import { Bonus, BonusOperator, BonusValue } from 'app/types/bonuses';
 
 // Parses a hash key+value like {"+melee:damage": 25} into a fully defined bonus object.
 function parseBonus(bonusKeyString: string, value: BonusValue): Bonus {
@@ -40,7 +15,7 @@ function parseBonus(bonusKeyString: string, value: BonusValue): Bonus {
     const operator = bonusKeyString[0] as BonusOperator;
     const tags = bonusKeyString.substr(1).split(':');
     const stat = tags.pop();
-    let stats;
+    let stats: string[];
     // There are a few statKeys that effect multiple values on the object.
     if (stat === 'damage') {
         stats = ['minPhysicalDamage', 'maxPhysicalDamage', 'minMagicDamage', 'maxMagicDamage'];

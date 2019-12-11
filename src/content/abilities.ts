@@ -1,9 +1,10 @@
-import { Bonuses } from 'app/bonuses';
-import { Action, buffEffect, debuffEffect, skills } from 'app/content/skills';
+import { buffEffect, debuffEffect, skills } from 'app/content/skills';
 import { createCanvas } from 'app/dom';
 import { drawTintedImage, drawImage, requireImage } from 'app/images';
 import { JobIcon, jobIcons } from 'app/content/jobs';
-import { Frame, TintedFrame } from 'app/utils/types';
+import { Ability, Action } from 'app/types/abilities';
+import { Bonuses } from 'app/types/bonuses';
+import { TintedFrame } from 'app/types';
 
 /**
  * Notes on targeting skills:
@@ -75,22 +76,6 @@ export function getAbilityIconSource(ability) {
     if (!icon) icon = 'gfx/496RpgIcons/openScroll.png';
     if (icon.draw) return icon;
     return {'image': requireImage(icon), 'left': 0, 'top': 0, 'width': 34, 'height': 34};
-}
-interface TriggerEffect {
-
-}
-export interface Ability {
-    key?: string,
-    name: string,
-    action?: Action,
-    reaction?: Action,
-    onCritEffect?: TriggerEffect,
-    onHitEffect?: TriggerEffect,
-    onMissEffect?: TriggerEffect,
-    bonuses?: Bonuses,
-    minionBonuses?: Bonuses,
-    icon?: JobIcon | Frame | string,
-    helpText?: string,
 }
 export const abilities: {[key: string]: Ability} = {
     'basicAttack': {name: 'Basic Attack', 'action': skills.basicAttack},

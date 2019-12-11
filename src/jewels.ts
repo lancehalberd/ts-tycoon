@@ -1,5 +1,4 @@
 import { addBonusSourceToObject, removeBonusSourceFromObject} from 'app/bonuses';
-import { Ability } from 'app/content/abilities';
 import { createCanvas, divider, query, tagElement } from 'app/dom';
 import { fixedDigits, percent } from 'app/utils/formatters';
 import { abilityHelpText, bonusSourceHelpText } from 'app/helpText';
@@ -7,39 +6,11 @@ import { removePopup } from 'app/popup';
 import { points } from 'app/points';
 import { getState } from 'app/state';
 import { arrayToCssRGB } from 'app/utils/colors';
-import { isPointInPoints, makeShape, Polygon, shapeDefinitions, ShapeType } from 'app/utils/polygon';
+import { isPointInPoints, makeShape, Polygon, shapeDefinitions } from 'app/utils/polygon';
 
-export type JewelTier = 1 | 2 | 3 | 4 | 5;
-export type JewelComponents = [number, number, number];
-export type JewelQualifierName = 'Perfect' | 'Brilliant' | 'Shining' | '' | 'Dull';
-export interface Jewel {
-    adjacentJewels: Jewel[],
-    adjacencyBonuses: any,
-    area: number,
-    // This stores componentBonuses * area * quality * qualifierBonus
-    bonuses: any,
-    // Canvas for displaying the jewel in the inventory.
-    canvas?: HTMLCanvasElement,
-    character: any,
-    componentBonuses: any,
-    components: JewelComponents,
-    context?: CanvasRenderingContext2D,
-    // Div for holding the jewel in the inventory.
-    domElement?: HTMLElement,
-    fixed: boolean,
-    helpMethod: (jewel: Jewel) => string,
-    jewelType: number,
-    price: number,
-    qualifierBonus: any,
-    qualifierName: JewelQualifierName,
-    quality: number,
-    shape: Polygon,
-    shapeType: ShapeType,
-    tier: JewelTier,
-    disabled?: boolean,
-    confirmed?: boolean,
-    ability?: Ability,
-}
+import {
+    Ability, Character, Jewel, JewelComponents, JewelQualifierName, JewelTier, ShapeType
+} from 'app/types';
 
 export const originalJewelScale = 30;
 export const displayJewelShapeScale = 30;
@@ -297,7 +268,7 @@ export function updateJewelBonuses(character) {
             = bonusSourceHelpText(character.jewelBonuses, character.adventurer);
     }
 }
-export function makeFixedJewel(shape: Polygon, character, ability: Ability): Jewel {
+export function makeFixedJewel(shape: Polygon, character: Character, ability: Ability): Jewel {
     shape.color = '#333333';
     return {
         shape,

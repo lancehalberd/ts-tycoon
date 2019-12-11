@@ -1,4 +1,3 @@
-import { Bonuses } from 'app/bonuses';
 import { effectAnimations } from 'app/content/effectAnimations';
 import { jobIcons } from 'app/content/jobs';
 import { projectileAnimations } from 'app/content/projectileAnimations';
@@ -6,28 +5,10 @@ import { drawOnGround } from 'app/drawArea';
 import { GROUND_Y } from 'app/gameConstants';
 import { drawTintedImage, requireImage, staticAnimation } from 'app/images';
 import { rectangle } from 'app/utils/index';
-import { Frame } from 'app/utils/types';
 
-
-export interface Action {
-    type: string,
-    name?: string,
-    key?: string,
-    variableObjectType: 'action',
-    bonuses: Bonuses,
-    helpText: string,
-    icon: Frame,
-    tags: string[],
-}
-
-export interface Effect {
-    type: string,
-    variableObjectType: 'effect',
-    bonuses: Bonuses,
-    helpText: string,
-    icon: Frame,
-    tags: string[],
-}
+import { Action, Effect } from 'app/types/abilities';
+import { Bonuses } from 'app/types/bonuses';
+import { Frame } from 'app/types';
 
 const scrollIconSource = 'gfx/496RpgIcons/openScroll.png';
 
@@ -39,7 +20,7 @@ function genericAction(type, rawAction, bonuses: Bonuses, helpText = ''): Action
         variableObjectType: 'action',
         bonuses,
         helpText,
-        tags: [type, ...(rawAction.tags)],
+        tags: [type, ...(rawAction.tags || [])],
     };
     // Generic actions have 0 range unless a specific modifier is set.
     if (typeof(action.bonuses['+range']) === 'undefined') {
@@ -56,7 +37,7 @@ function movementAction(type, rawAction, bonuses: Bonuses, helpText = ''): Actio
         variableObjectType: 'action',
         bonuses,
         helpText,
-        tags: [type, 'movement', ...(rawAction.tags)],
+        tags: [type, 'movement', ...(rawAction.tags || [])],
     };
     return action;
 }
@@ -73,7 +54,7 @@ function attackAction(type, rawAction, bonuses: Bonuses, helpText = ''): Action 
             ...bonuses,
         },
         helpText,
-        tags: [type, 'attack', ...(rawAction.tags)],
+        tags: [type, 'attack', ...(rawAction.tags || [])],
     };
     return action;
 }
@@ -91,7 +72,7 @@ function spellAction(type, rawAction, bonuses: Bonuses, helpText = ''): Action {
             ...bonuses,
         },
         helpText,
-        tags: [type, 'spell', ...(rawAction.tags)],
+        tags: [type, 'spell', ...(rawAction.tags || [])],
     };
     // Spells have 0 range unless a specific modifier is set.
     if (typeof(action.bonuses['+range']) === 'undefined') {

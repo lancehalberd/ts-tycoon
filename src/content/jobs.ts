@@ -1,20 +1,10 @@
 import { classBoards, squareBoard } from 'app/content/boards';
+import { itemsByKey } from 'app/content/equipment/index';
 import { drawImage, requireImage } from 'app/images';
-import { itemsByKey } from 'app/inventory';
 import { smallJewelLoot, jewelLoot } from 'app/loot';
-interface CharacterClass {
-    key: JobKey,
-    name: string,
-    dexterityBonus: number,
-    strengthBonus: number,
-    intelligenceBonus: number,
-    startingEquipment: any[],
-    startingBoard: any,
-    jewelLoot: any[],
-    iconSource: JobIcon,
-    achievementImage?: HTMLImageElement,
-}
-export const characterClasses:Partial<{[key in JobKey]: CharacterClass}> = {};
+import { Job, JobKey } from 'app/types';
+
+export const characterClasses:Partial<{[key in JobKey]: Job}> = {};
 
 const jobIconImage = requireImage('gfx/jobIcons.png');
 export class JobIcon {
@@ -34,14 +24,6 @@ export class JobIcon {
         drawImage(context, jobIconImage, this, target);
     }
 }
-export type JobKey = 'fool' |
-    'blackbelt' | 'warrior' | 'samurai' |
-    'juggler' | 'ranger' | 'sniper' |
-    'priest' | 'wizard' | 'sorcerer' |
-    'corsair' | 'assassin' | 'ninja' |
-    'dancer' | 'bard' | 'sage' |
-    'paladin' | 'darkknight' | 'enhancer' |
-    'master';
 
 export const jobIcons: {[key in JobKey]: JobIcon} = {
     // None
@@ -106,7 +88,7 @@ function addCharacterClass(name, dexterityBonus, strengthBonus, intelligenceBonu
     startingEquipment,
     jewelLoot,
     iconSource) {
-    const key = name.replace(/\s*/g, '').toLowerCase();
+    const key = name.replace(/\s*/g, '').toLowerCase() as JobKey;
     startingEquipment.body = startingEquipment.body || itemsByKey.woolshirt;
     characterClasses[key] = {
         key,

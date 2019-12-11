@@ -1,6 +1,7 @@
 import { completeLevel, enterArea } from 'app/adventure';
 import { hideAreaMenu } from 'app/areaMenu';
 import { setChoosingTrophyAltar } from 'app/content/achievements';
+import { itemsByKey } from 'app/content/equipment/index';
 import { openWorldMap, setUpgradingObject } from 'app/content/furniture';
 import { guildYardEntrance } from 'app/content/guild';
 import { map } from 'app/content/mapData';

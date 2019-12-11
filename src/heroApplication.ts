@@ -13,7 +13,7 @@ import { saveGame } from 'app/saveGame';
 import { getState } from 'app/state';
 import Random from 'app/utils/Random';
 
-const jobRanks = [
+export const jobRanks = [
     ['juggler', 'blackbelt', 'priest'],
     ['corsair', 'paladin', 'dancer'],
     ['ranger', 'warrior', 'wizard'],
@@ -148,7 +148,7 @@ function hireHeroHelpMethod($button) {
 //TODO
 //$('.js-hireApplicant').data('helpMethod', hireHeroHelpMethod);
 
-function hireCharacter(character) {
+export function hireCharacter(character) {
     const state = getState();
     if (state.characters.length > 0 && state.characters.length >= state.guildStats.maxHeroes) return;
     unlockMapLevel(character.currentLevelKey);

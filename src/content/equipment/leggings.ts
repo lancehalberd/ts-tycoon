@@ -1,6 +1,7 @@
 import { equipmentSources } from 'app/content/equipment/equipmentSources';
-import { addItem } from 'app/inventory';
+import { addItem } from 'app/content/equipment/index';
 
+export function addLeggings() {
 //Greaves gives armor and health
 //addItem(1, {'slot': 'legs', 'type': 'heavyArmor', 'name': 'Corroded Skirt', 'bonuses': {'+armor': 3, '+maxHealth': 10}, icon: 'greaves'});
 addItem(6, {'slot': 'legs', 'type': 'heavyArmor', 'name': 'Bamboo Skirt', 'bonuses': {'+armor': 12, '+maxHealth': 65}, 'source': equipmentSources.heavyPants, icon: 'greaves'});
@@ -45,3 +46,4 @@ addItem(44, {'slot': 'legs', 'type': 'clothArmor', 'name': 'Embroidered Tights',
 addItem(49, {'slot': 'legs', 'type': 'clothArmor', 'name': 'Sorcerous Tights', 'bonuses': {'+block': 83, '+magicBlock': 51}, source: equipmentSources.wizardPants, icon: 'tights'});
 addItem(59, {'slot': 'legs', 'type': 'clothArmor', 'name': 'Blessed Tights', 'bonuses': {'+block': 90, '+magicBlock': 60, '+armor': 10, '+evasion': 10, '+maxHealth': 60}, source: equipmentSources.wizardPants, icon: 'tights'});
 addItem(69, {'slot': 'legs', 'type': 'clothArmor', 'name': 'Divine Tights', 'bonuses': {'+block': 100, '+magicBlock': 70, '+armor': 20, '+evasion': 20, '+maxHealth': 60}, source: equipmentSources.wizardPants, icon: 'tights'});
+}

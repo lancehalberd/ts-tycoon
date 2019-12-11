@@ -1,8 +1,7 @@
-import { Color } from 'app/utils/types';
+import { Color, Point, ShapeType } from 'app/types';
 import { arrMod } from 'app/utils/index';
 
 export const tolerance = .000001;
-export type Point = [number, number];
 
 export class Polygon {
     points: Array<Point>;
@@ -176,8 +175,6 @@ const trapezoidShape60A:ShapeArrayDefinition = [[2, 1, 1], [60, 120, 120],'#ff00
 const trapezoidShape60B:ShapeArrayDefinition = [[1, 1, 1], [120, 120, 60],'#ff0000', 60, 3 * Math.sqrt(3) / 4];
 const trapezoidShape120A:ShapeArrayDefinition = [[1, 1, 2], [120, 60, 60],'#ff0000', 120, 3 * Math.sqrt(3) / 4];
 const trapezoidShape120B:ShapeArrayDefinition = [[1, 2, 1], [60, 60, 120],'#ff0000', 120, 3 * Math.sqrt(3) / 4];
-
-export type ShapeType = 'triangle' | 'square' | 'hexagon' | 'diamond' | 'rhombus' | 'trapezoid';
 
 function toShapeDefinition(key: ShapeType, array: ShapeArrayDefinition): ShapeDefinition {
     const [lengths, angles, color, angle, area] = array;

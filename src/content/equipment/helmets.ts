@@ -1,6 +1,7 @@
 import { equipmentSources } from 'app/content/equipment/equipmentSources';
-import { addItem } from 'app/inventory';
+import { addItem } from 'app/content/equipment/index';
 
+export function addHelmets() {
 //Heavy Helmets gives armor and health
 //addItem(1, {'slot': 'head', 'type': 'heavyArmor', 'name': 'Dented Bucket', 'bonuses': {'+armor': 2, '+maxHealth': 10}, 'offset': 10, icon: 'helmet'});
 addItem(2, {'slot': 'head', 'type': 'heavyArmor', 'name': 'Oversized Helmet', 'bonuses': {'+armor': 5, '+maxHealth': 35}, 'source': equipmentSources.oversizedHelmet, icon: 'helmet'});
@@ -45,3 +46,4 @@ addItem(42, {'slot': 'head', 'type': 'clothArmor', 'name': 'Embroidered Hat', 'b
 addItem(47, {'slot': 'head', 'type': 'clothArmor', 'name': 'Wizards Hat', 'bonuses': {'+block': 82, '+magicBlock': 41}, 'source': equipmentSources.wizardHat, icon: 'mageHat'});
 addItem(57, {'slot': 'head', 'type': 'clothArmor', 'name': 'Blessed Cowl', 'bonuses': {'+block': 85, '+magicBlock': 50, '+armor': 5, '+evasion': 5, '+maxHealth': 35}, 'source': equipmentSources.wizardHat, icon: 'mageHat'});
 addItem(67, {'slot': 'head', 'type': 'clothArmor', 'name': 'Divine Cowl', 'bonuses': {'+block': 100, '+magicBlock': 60, '+armor': 10, '+evasion': 10, '+maxHealth': 50}, 'source': equipmentSources.wizardHat, icon: 'mageHat'});
+}

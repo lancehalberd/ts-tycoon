@@ -1,4 +1,3 @@
-import { getState } from 'app/state';
 import { rectangleCenter } from 'app/utils/index';
 
 export function query(className): HTMLElement {
@@ -34,13 +33,13 @@ export function createCanvas(width, height, classes = ''):HTMLCanvasElement {
 export const jewelInventoryContainer:HTMLElement = query('.js-jewelInventory');
 export const mouseContainer:HTMLElement = query('.js-mouseContainer');
 
-export function tag(type, classes = '', content = '') {
+export function tag(type: string, classes: string = '', content: string | number = '') {
     return '<' + type + ' class="' + classes + '">' + content + '</' + type + '>';
 }
-export function tagElement(type, classes = '', content = ''):HTMLElement {
+export function tagElement(type: string, classes: string = '', content: string | number = ''):HTMLElement {
     const element:HTMLElement = document.createElement(type);
     element.className = classes || '';
-    element.innerHTML = content || '';
+    element.innerHTML = '' + (content || '');
     return element;
 }
 
@@ -73,10 +72,6 @@ export function getClosestElement(element: HTMLElement, elements: Array<HTMLElem
 
 export function toggleElements(elements: NodeListOf<HTMLElement>, show: boolean) {
     elements.forEach(element => element.style.display = show ? '' : 'none');
-}
-
-export function updateConfirmSkillConfirmationButtons() {
-    toggleElements(queryAll('.js-augmentConfirmationButtons'), !!getState().selectedCharacter.board.boardPreview);
 }
 
 export function handleChildEvent(

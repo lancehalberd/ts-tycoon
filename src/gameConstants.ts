@@ -17,3 +17,8 @@ export const MAP_LEFT = -MAP_WIDTH / 2;
 export const MAP_TOP = -MAP_HEIGHT / 2;
 
 export const WORLD_RADIUS = 600;
+
+export const armorSlots = ['body', 'feet', 'head', 'offhand', 'arms', 'legs'];
+export const smallArmorSlots = ['feet', 'head', 'offhand', 'arms', 'legs'];
+export const accessorySlots = ['back', 'ring'];
+export const equipmentSlots = ['weapon', 'body', 'feet', 'head', 'offhand', 'arms', 'legs', 'back', 'ring'];

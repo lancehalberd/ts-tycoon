@@ -1,13 +1,17 @@
-import { BonusSource, initializeVariableObject, addBonusSourceToObject, recomputeDirtyStats } from 'app/bonuses';
+import { initializeVariableObject, addBonusSourceToObject, recomputeDirtyStats } from 'app/bonuses';
 import { actorHelpText, addActions, coreStatBonusSource, personFrames, recomputeActorTags } from 'app/character';
 import { abilities, leapAndAct } from 'app/content/abilities';
+import { itemsByKey } from 'app/content/equipment/index';
 import { map } from 'app/content/mapData';
 import { createCanvas } from 'app/dom';
 import { makeAffix } from 'app/enchanting';
-import { equipmentSlots, itemsByKey, makeItem } from 'app/inventory';
+import { equipmentSlots } from 'app/gameConstants';
+import { requireImage, setupSource } from 'app/images';
+import { makeItem } from 'app/inventory';
 import { ifdefor } from 'app/utils/index';
 import Random from 'app/utils/Random';
-import { requireImage, setupSource } from 'app/images';
+
+import { BonusSource } from 'app/types/bonuses';
 
 export const enchantedMonsterBonuses: BonusSource = { 'bonuses': {
     '*maxHealth': 1.5, '*tenacity': 2, '*weaponDamage': 1.5, '*coins': 2, '*anima': 3,

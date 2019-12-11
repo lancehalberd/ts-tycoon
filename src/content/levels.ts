@@ -1,23 +1,24 @@
 import { addMonstersToArea, messageCharacter } from 'app/adventure';
-import { BonusSource } from 'app/bonuses';
 import { readBoardFromData, totalCostForNextLevel } from 'app/character';
 import { abilities } from 'app/content/abilities';
-import { getBoardDataForLevel } from 'app/content/boards';
+import { basicTemplateBoards, complexTemplateBoards } from 'app/content/boards';
 import { fixedObject } from 'app/content/furniture';
 import { map } from 'app/content/mapData';
 import { bossMonsterBonuses, easyBonuses, hardBonuses, monsters } from 'app/content/monsters';
 import { setContext } from 'app/context';
-import { bodyDiv, divider, mainContext, titleDiv, updateConfirmSkillConfirmationButtons } from 'app/dom';
+import { bodyDiv, divider, mainContext, queryAll, titleDiv, toggleElements } from 'app/dom';
 import { drawBoardPreview } from 'app/drawBoard';
 import { GROUND_Y, MAX_LEVEL } from 'app/gameConstants';
 import { drawImage, requireImage } from 'app/images';
 import { getJewelTiewerForLevel } from 'app/jewels';
 import { snapBoardToBoard } from 'app/jewelInventory';
 import { coinsLoot, jewelLoot } from 'app/loot';
+import { getState } from 'app/state';
 import { abbreviate } from 'app/utils/formatters';
-import { getThetaDistance, rectangle } from 'app/utils/index';
+import { getThetaDistance, rectangle, removeElementFromArray } from 'app/utils/index';
 import { centerShapesInRectangle, isPointInPoints } from 'app/utils/polygon';
 import Random from 'app/utils/Random';
+import { BonusSource } from 'app/types/bonuses';
 
 export const closedChestSource = {image: requireImage('gfx/chest-closed.png'), source: rectangle(0, 0, 32, 32)};
 export const openChestSource = {image: requireImage('gfx/chest-open.png'), source: rectangle(0, 0, 32, 32)};
@@ -370,7 +371,7 @@ function adventureBoardPreview(boardPreview, character) {
             snapBoardToBoard(this.boardPreview, character.board);
             character.board.boardPreview = this.boardPreview;
             // This will show the confirm skill button if this character is selected.
-            updateConfirmSkillConfirmationButtons();
+            updateSkillConfirmationButtons();
             setContext('jewel');
         },
         draw(area) {
@@ -378,7 +379,7 @@ function adventureBoardPreview(boardPreview, character) {
             // and displaying it in the adventure screen will mess up the display of it on the character's board. I think this will be okay
             // since they can't look at both screens at once.
             character.board.boardPreview = null;
-            updateConfirmSkillConfirmationButtons();
+            updateSkillConfirmationButtons();
             centerShapesInRectangle(this.boardPreview.fixed.map(j => j.shape).concat(this.boardPreview.spaces), rectangle(this.x - area.cameraX - 5, GROUND_Y - this.y -5, 10, 10));
             drawBoardPreview(mainContext, [0, 0], this.boardPreview, true);
         },
@@ -387,5 +388,52 @@ function adventureBoardPreview(boardPreview, character) {
                 + bodyDiv("Click on this Jewel Board Augmentation to preview adding it to this hero's Jewel Board." + divider + "Confirm the Augmentation to learn the ability and Level Up.");
         }
     };
+}
+
+export function updateSkillConfirmationButtons() {
+    toggleElements(queryAll('.js-augmentConfirmationButtons'), !!getState().selectedCharacter.board.boardPreview);
+}
+
+function getBoardDataForLevel(level) {
+    let safety = 0;
+    const levelDegrees = 180 * Math.atan2(level.coords[1], level.coords[0]) / Math.PI;
+    // 30 degrees = red leyline, 150 degrees = blue leyline, 270 degrees = green leyline.
+    const minLeylineDistance = Math.min(getThetaDistance(30, levelDegrees), getThetaDistance(150, levelDegrees), getThetaDistance(270, levelDegrees));
+    // Use basic templates (triangle based) for levels close to primary leylines and complex templates (square based) for levels close to intermediate leylines.
+    const templates = ((minLeylineDistance <= 30) ? basicTemplateBoards : complexTemplateBoards).slice();
+    // Each shape is worth roughly the number of triangles in it.
+    const shapeValues = {'triangle': 1, 'rhombus': 1, 'diamond': 2, 'square': 2, 'trapezoid': 3, 'hexagon': 6};
+    // Starts at 2 and gets as high as 7 by level 99.
+    const totalValue =  Math.ceil(1 + Math.sqrt(level.level / 3));
+    let chosenTemplate = Random.element(templates);
+    removeElementFromArray(templates, chosenTemplate, true);
+    while (templates.length && chosenTemplate.size <= totalValue && safety++ < 100) {
+        chosenTemplate = Random.element(templates);
+        removeElementFromArray(templates, chosenTemplate, true);
+    }
+    if (safety >= 100) console.log("failed first loop");
+    if (chosenTemplate.size <= totalValue) {
+        throw new Error('No template found for a board of size ' + totalValue);
+    }
+    var currentSize = chosenTemplate.size;
+    var shapesToKeep = chosenTemplate.shapes.slice();
+    var removedShapes = [];
+    // This loop randomly adds and removes shapes until we get to the right value. Since some shapes are worth 2 points, and others worth 1,
+    // it may overshoot, but eventually it will hit the target.
+    while (currentSize !== totalValue && safety++ < 100) {
+        if (currentSize > totalValue) {
+            // Get rid of a shape to keep if the board is too large.
+            removedShapes = removedShapes.concat(shapesToKeep.splice(Math.floor(Math.random() * shapesToKeep.length), 1));
+            currentSize -= shapeValues[removedShapes[removedShapes.length - 1].k]
+        } else {
+            // Add a shape back in if the board is too small.
+            shapesToKeep = shapesToKeep.concat(removedShapes.splice(Math.floor(Math.random() * removedShapes.length), 1));
+            currentSize += shapeValues[shapesToKeep[shapesToKeep.length - 1].k]
+        }
+    }
+    if (safety >= 100) console.log("failed second loop");
+    // Select one of the removed shapes to be the fixed jewel for the board.
+    const fixedShape = Random.element(removedShapes);
+    return {'fixed':[fixedShape], 'spaces': shapesToKeep};
 }
 

@@ -9,7 +9,7 @@ import { drawBoardBackground } from 'app/drawBoard';
 import { drawJewel } from 'app/drawJewel';
 import { inventoryState, updateDragHelper } from 'app/inventory';
 import {
-    clearAdjacentJewels, Jewel, jewelAnimaBonus, JewelComponents, JewelTier, jewelTierLevels,
+    clearAdjacentJewels, jewelAnimaBonus, jewelTierLevels,
     makeJewel, setMaxAnimaJewelBonus,
     updateAdjacencyBonuses, updateAdjacentJewels, updateJewelBonuses,
 } from 'app/jewels';
@@ -39,6 +39,8 @@ import {
     translateShapes,
     vector,
 } from 'app/utils/polygon';
+
+import { Jewel, JewelComponents, JewelTier,  } from 'app/types';
 
 
 export const jewelInventoryState = {

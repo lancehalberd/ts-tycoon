@@ -1,19 +1,21 @@
 import { limitZ } from 'app/adventure';
-import { setContext } from 'app/context';
 import {
     bodyDiv, divider, mainCanvas, mainContext,
-    titleDiv, updateConfirmSkillConfirmationButtons,
+    titleDiv,
 } from 'app/dom';
 import { drawJewel } from 'app/drawJewel';
 import { GROUND_Y, MAX_Z, MIN_Z } from 'app/gameConstants';
 import { requireImage } from 'app/images';
 import { addJewelToInventory } from 'app/jewelInventory';
-import { JewelTier, makeJewel } from 'app/jewels';
+import { makeJewel } from 'app/jewels';
 import { gain } from 'app/points';
+import { getState } from 'app/state';
 import { rectangle } from 'app/utils/index';
 import { getMousePosition } from 'app/utils/mouse';
-import { ShapeType } from 'app/utils/polygon';
+import {  } from 'app/utils/polygon';
 import Random from 'app/utils/Random';
+
+import { Jewel, JewelTier, ShapeType } from 'app/types';
 
 const image = requireImage('gfx/moneyIcon.png');
 export const coins = [
@@ -212,8 +214,9 @@ function jewelLootDrop(jewel) {
         }
     }
 }
-function gainJewel(jewel) {
-    addJewelToInventory(jewel.$item);
+export function gainJewel(jewel: Jewel) {
+    getState().jewels.push(jewel);
+    addJewelToInventory(jewel.domElement);
 }
 
 export function jewelLoot(shapes, tiers, components, permute) {
@@ -228,7 +231,7 @@ function createRandomJewel(shapes, tiers, components, permute) {
     var tier = Random.range(tiers[0], tiers[1]) as JewelTier;
     var tierDefinition = jewelTierDefinitions[tier]
     var quality = tierDefinition[0] - tierDefinition[1] + Math.random() * 2 * tierDefinition[1];
-    components = components.map(function (component) { return Random.range(component[0], component[1]);});
+    components = components.map(component => Random.range(component[0], component[1]));
     return makeJewel(tier, shapeType, permute ? Random.shuffle(components) : components, quality);
 }
 export const smallJewelLoot = jewelLoot(['triangle'], [1, 1], [[90, 90], [16, 20], [7, 10]], true);

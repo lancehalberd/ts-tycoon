@@ -1,7 +1,9 @@
 import { getThetaDistance, removeElementFromArray } from 'app/utils/index';
 import Random from 'app/utils/Random';
+import { BoardData, ShapeData } from 'app/types/board';
+import { JobKey } from 'app/types/jobs';
 
-function board(shapes) {
+function board(shapes: ShapeData[]): BoardData {
     return {'fixed': [shapes.shift()], 'spaces': shapes};
 }
 // 3 triangle boards
@@ -37,14 +39,14 @@ export const squareBoard = {
         {"k":"rhombus","p":[144.98076211353316,121],"t":60},{"k":"rhombus","p":[73.99999999999999,50.01923788646685],"t":60}]
 };
 
-const basicTemplateBoards = [
+export const basicTemplateBoards = [
     {'size': 4, 'shapes': [{"k":"triangle","p":[70,185.01923788646684],"t":-60},{"k":"triangle","p":[55,211],"t":-60},{"k":"triangle","p":[70,185.01923788646684],"t":0},{"k":"triangle","p":[85,211],"t":-60}]},
     {'size': 6, 'shapes': [{"k":"triangle","p":[199.51923788646684,208.99038105676658],"t":-60},{"k":"triangle","p":[214.51923788646684,183.00961894323342],"t":-60},{"k":"triangle","p":[199.51923788646684,157.02885682970026],"t":0},{"k":"triangle","p":[184.51923788646684,183.00961894323342],"t":-60},{"k":"triangle","p":[214.51923788646684,183.00961894323342],"t":0},{"k":"triangle","p":[184.51923788646684,183.00961894323342],"t":0}]},
     {'size': 6, 'shapes': [{"k":"triangle","p":[155,79],"t":120},{"k":"triangle","p":[155,79],"t":180},{"k":"diamond","p":[155,79],"t":0},{"k":"triangle","p":[170,53.01923788646684],"t":120},{"k":"triangle","p":[155,79],"t":300}]},
     {'size': 9, 'shapes': [{"k":"triangle","p":[327.01923788646684,211],"t":-60},{"k":"diamond","p":[357.01923788646684,159.03847577293368],"t":120},{"k":"diamond","p":[327.01923788646684,211],"t":-180},{"k":"triangle","p":[312.01923788646684,185.01923788646684],"t":-60},{"k":"diamond","p":[372.01923788646684,185.01923788646684],"t":60},{"k":"triangle","p":[342.01923788646684,185.01923788646684],"t":-60}]},
     {'size': 10, 'shapes': [{"k":"diamond","p":[150,60.01923788646684],"t":-60},{"k":"triangle","p":[165,86],"t":300},{"k":"triangle","p":[165,86],"t":120},{"k":"diamond","p":[150,111.98076211353316],"t":-60},{"k":"diamond","p":[180,111.98076211353316],"t":-120},{"k":"diamond","p":[135,86],"t":-120}]}
 ];
-const complexTemplateBoards = [
+export const complexTemplateBoards = [
     {'size': 5, 'shapes': [{"k":"triangle","p":[509.9615242270663,226.96152422706632],"t":210},{"k":"square","p":[509.9615242270663,196.9615242270663],"t":0},{"k":"triangle","p":[509.9615242270663,196.96152422706632],"t":300},{"k":"rhombus","p":[498.98076211353316,185.98076211353316],"t":-30}]},
     {'size': 5, 'shapes': [{"k":"rhombus","p":[579.9615242270664,109.99999999999969],"t":-240},{"k":"square","p":[534.9615242270663,105.98076211353316],"t":0},{"k":"triangle","p":[579.9615242270664,79.99999999999973],"t":480},{"k":"triangle","p":[534.9615242270664,105.98076211353299],"t":300}]},
     {'size': 7, 'shapes': [{"k":"diamond","p":[525.9615242270663,201.94228634059948],"t":-210},{"k":"square","p":[525.9615242270663,171.94228634059948],"t":0},{"k":"rhombus","p":[514.9807621135332,160.96152422706632],"t":-30},{"k":"diamond","p":[555.9615242270663,171.94228634059948],"t":-180}]},
@@ -54,51 +56,8 @@ const complexTemplateBoards = [
     {'size': 8, 'shapes': [{"k":"triangle","p":[206.05771365940052,78],"t":-30},{"k":"rhombus","p":[258.01923788646684,48],"t":0},{"k":"triangle","p":[232.03847577293368,33],"t":30},{"k":"square","p":[202.03847577293368,63],"t":-90},{"k":"square","p":[232.03847577293368,63],"t":0},{"k":"rhombus","p":[202.03847577293368,63],"t":0}]},
     {'size': 9, 'shapes': [{"k":"rhombus","p":[359,37.01923788646684],"t":-30},{"k":"rhombus","p":[318.01923788646684,48],"t":30},{"k":"square","p":[318.01923788646684,48],"t":-60},{"k":"rhombus","p":[359,88.98076211353316],"t":90},{"k":"square","p":[344,63],"t":-30},{"k":"square","p":[314,63],"t":0}]}
 ];
-export function getBoardDataForLevel(level) {
-    let safety = 0;
-    const levelDegrees = 180 * Math.atan2(level.coords[1], level.coords[0]) / Math.PI;
-    // 30 degrees = red leyline, 150 degrees = blue leyline, 270 degrees = green leyline.
-    const minLeylineDistance = Math.min(getThetaDistance(30, levelDegrees), getThetaDistance(150, levelDegrees), getThetaDistance(270, levelDegrees));
-    // Use basic templates (triangle based) for levels close to primary leylines and complex templates (square based) for levels close to intermediate leylines.
-    const templates = ((minLeylineDistance <= 30) ? basicTemplateBoards : complexTemplateBoards).slice();
-    // Each shape is worth roughly the number of triangles in it.
-    const shapeValues = {'triangle': 1, 'rhombus': 1, 'diamond': 2, 'square': 2, 'trapezoid': 3, 'hexagon': 6};
-    // Starts at 2 and gets as high as 7 by level 99.
-    const totalValue =  Math.ceil(1 + Math.sqrt(level.level / 3));
-    let chosenTemplate = Random.element(templates);
-    removeElementFromArray(templates, chosenTemplate, true);
-    while (templates.length && chosenTemplate.size <= totalValue && safety++ < 100) {
-        chosenTemplate = Random.element(templates);
-        removeElementFromArray(templates, chosenTemplate, true);
-    }
-    if (safety >= 100) console.log("failed first loop");
-    if (chosenTemplate.size <= totalValue) {
-        throw new Error('No template found for a board of size ' + totalValue);
-    }
-    var currentSize = chosenTemplate.size;
-    var shapesToKeep = chosenTemplate.shapes.slice();
-    var removedShapes = [];
-    // This loop randomly adds and removes shapes until we get to the right value. Since some shapes are worth 2 points, and others worth 1,
-    // it may overshoot, but eventually it will hit the target.
-    while (currentSize !== totalValue && safety++ < 100) {
-        if (currentSize > totalValue) {
-            // Get rid of a shape to keep if the board is too large.
-            removedShapes = removedShapes.concat(shapesToKeep.splice(Math.floor(Math.random() * shapesToKeep.length), 1));
-            currentSize -= shapeValues[removedShapes[removedShapes.length - 1].k]
-        } else {
-            // Add a shape back in if the board is too small.
-            shapesToKeep = shapesToKeep.concat(removedShapes.splice(Math.floor(Math.random() * removedShapes.length), 1));
-            currentSize += shapeValues[shapesToKeep[shapesToKeep.length - 1].k]
-        }
-    }
-    if (safety >= 100) console.log("failed second loop");
-    // Select one of the removed shapes to be the fixed jewel for the board.
-    const fixedShape = Random.element(removedShapes);
-    return {'fixed':[fixedShape], 'spaces': shapesToKeep};
-}
 
-
-export const classBoards = {
+export const classBoards: {[key in JobKey]: Board} = {
     'juggler': board([{"k":"triangle","p":[274,113],"t":60},{"k":"diamond","p":[274,113],"t":-60},{"k":"diamond","p":[244,113],"t":0},{"k":"diamond","p":[289,138.98076211353316],"t":60}]),
     'ranger': board([{"k":"triangle","p":[274,113],"t":60},{"k":"diamond","p":[244,164.96152422706632],"t":-60},{"k":"diamond","p":[304,113],"t":0},{"k":"diamond","p":[274,113],"t":-60},
                      {"k":"diamond","p":[289,138.98076211353316],"t":60},{"k":"diamond","p":[259,87.01923788646684],"t":60},{"k":"diamond","p":[244,113],"t":0}]),
@@ -157,7 +116,14 @@ export const classBoards = {
                   {"k":"diamond","p":[375,225.98076211353316],"t":240},{"k":"diamond","p":[330,200],"t":240},{"k":"diamond","p":[345,225.98076211353316],"t":180}],
         'spaces': [{"k":"hexagon","p":[315,225.98076211353316],"t":0},{"k":"hexagon","p":[375,225.98076211353316],"t":0},{"k":"hexagon","p":[405,174.01923788646684],"t":0},
                    {"k":"hexagon","p":[375,122.05771365940052],"t":0},{"k":"hexagon","p":[315,122.05771365940052],"t":0},{"k":"hexagon","p":[285,174.01923788646684],"t":0}]
-    }
+    },
+    // TODO: this is just a copy of the master board right now.
+    'fool': {
+        'fixed': [{"k":"diamond","p":[375,174.01923788646684],"t":120},{"k":"diamond","p":[375,225.98076211353316],"t":120},{"k":"diamond","p":[390,200],"t":180},
+                  {"k":"diamond","p":[375,225.98076211353316],"t":240},{"k":"diamond","p":[330,200],"t":240},{"k":"diamond","p":[345,225.98076211353316],"t":180}],
+        'spaces': [{"k":"hexagon","p":[315,225.98076211353316],"t":0},{"k":"hexagon","p":[375,225.98076211353316],"t":0},{"k":"hexagon","p":[405,174.01923788646684],"t":0},
+                   {"k":"hexagon","p":[375,122.05771365940052],"t":0},{"k":"hexagon","p":[315,122.05771365940052],"t":0},{"k":"hexagon","p":[285,174.01923788646684],"t":0}]
+    },
 };
 
 export const boards = {

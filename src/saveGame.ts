@@ -1,20 +1,24 @@
 import { initializeVariableObject } from 'app/bonuses';
 import {
-    actorHelpText, Character, makeAdventurerFromData, setActorHealth, updateAdventurer
+    actorHelpText, makeAdventurerFromData, setActorHealth, updateAdventurer
 } from 'app/character';
 import { abilities } from 'app/content/abilities';
+import { affixesByKey } from 'app/content/enchantments';
+import { itemsByKey } from 'app/content/equipment/index';
 import { map } from 'app/content/mapData';
 import { createCanvas, jewelsCanvas, tag, tagElement } from 'app/dom';
 import { drawBoardBackground } from 'app/drawBoard';
-import { affixesByKey } from 'app/enchanting';
-import { equipItemProper, itemsByKey, updateItem } from 'app/inventory';
+import { equipItemProper, updateItem } from 'app/inventory';
 import {
     displayJewelShapeScale, makeJewelProper, makeFixedJewel,
     originalJewelScale, updateAdjacentJewels,
 } from 'app/jewels';
 import { exportState, getState, importState, SavedState } from 'app/state';
 import { makeShape, shapeDefinitions } from 'app/utils/polygon';
-import { Item, SavedAffix, SavedItem, } from 'app/utils/types';
+
+import { Character } from 'app/types/character';
+import { SavedAffix, } from 'app/types/enchantments';
+import { Item, SavedItem, } from 'app/types/items';
 
 export function loadSavedData() {
     if (window.location.search.substr(1) === 'reset' && confirm("Clear your saved data?")) {
@@ -144,7 +148,7 @@ export function importItem(itemData: SavedItem): Item {
     // This can happen if a base item was removed since they last saved the game.
     if (!baseItem) return null;
     const domElement = tagElement('div', 'js-item item',
-        tag('div', 'icon ' + baseItem.icon) + tag('div', 'itemLevel', baseItem.level)
+        tag('div', 'icon ' + baseItem.icon) + tag('div', 'itemLevel', '' + baseItem.level)
     );
     var item = {
         base: baseItem,

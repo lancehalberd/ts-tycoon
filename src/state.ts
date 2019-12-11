@@ -1,5 +1,5 @@
 import { enterArea } from 'app/adventure';
-import { addBonusSourceToObject, BonusSource, initializeVariableObject } from 'app/bonuses';
+import { addBonusSourceToObject, initializeVariableObject } from 'app/bonuses';
 import { setSelectedCharacter } from 'app/character';
 import { addTrophyToAltar, checkIfAltarTrophyIsAvailable, updateTrophy } from 'app/content/achievements';
 import { addAllUnlockedFurnitureBonuses, allApplications, allBeds,  } from 'app/content/furniture';
@@ -9,21 +9,23 @@ import { query, queryAll } from 'app/dom';
 import { updateEnchantmentOptions } from 'app/enchanting';
 import { addToInventory } from 'app/inventory';
 import { addJewelToInventory } from 'app/jewelInventory';
-import { Jewel, setMaxAnimaJewelBonus } from 'app/jewels';
+import { setMaxAnimaJewelBonus } from 'app/jewels';
 import { updateRetireButtons } from 'app/main';
 import { changedPoints } from 'app/points';
 import {
     exportCharacter, exportItem, exportJewel,
     importCharacter, importItem, importJewel,
 } from 'app/saveGame';
-import { Polygon, ShapeType } from 'app/utils/polygon';
-import { Item } from 'app/utils/types';
+import { Polygon } from 'app/utils/polygon';
 
-type Character = any;
+import { Character, Jewel, SavedItem } from 'app/types';
+import { ShapeType } from 'app/types/board';
+import { BonusSource } from 'app/types/bonuses';
+import { Item } from 'app/types/items';
+
 // Types used for saving data in local storage.
 type SavedCharacter = any;
 type SavedJewel = any;
-type SavedItem = any;
 interface SavedGuildAreas {
     [key: string]: {
         objects: {
@@ -65,7 +67,7 @@ export type SavedState = {
 export interface GameState {
     guildStats: any,
     savedState: SavedState,
-    selectedCharacter: any,
+    selectedCharacter: Character,
     lastSelectedCharacter?: any,
     visibleLevels: {[key: string]: true},
     characters: Character[],
@@ -131,7 +133,7 @@ export function getState(): GameState {
     return state;
 }
 
-const implicitGuildBonusSource = {bonuses: {
+export const implicitGuildBonusSource = {bonuses: {
     '+maxCoins': 100,
 }};
 
