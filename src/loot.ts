@@ -12,10 +12,9 @@ import { gain } from 'app/points';
 import { getState } from 'app/state';
 import { rectangle } from 'app/utils/index';
 import { getMousePosition } from 'app/utils/mouse';
-import {  } from 'app/utils/polygon';
 import Random from 'app/utils/Random';
 
-import { Jewel, JewelTier, ShapeType } from 'app/types';
+import { Jewel, JewelComponents, JewelTier, Range, ShapeType } from 'app/types';
 
 const image = requireImage('gfx/moneyIcon.png');
 export const coins = [
@@ -219,20 +218,34 @@ export function gainJewel(jewel: Jewel) {
     addJewelToInventory(jewel.domElement);
 }
 
-export function jewelLoot(shapes, tiers, components, permute) {
+export function jewelLoot(
+    shapes: ShapeType[],
+    tiers: Range,
+    components: [Range, Range, Range],
+    permute: boolean
+) {
     return {
         type: 'jewelLoot',
         generateLootDrop() {
-        return jewelLootDrop(createRandomJewel(shapes, tiers, components, permute));
-    }};
+            return jewelLootDrop(createRandomJewel(shapes, tiers, components, permute));
+        }
+    };
 }
-function createRandomJewel(shapes, tiers, components, permute) {
-    var shapeType = Random.element(shapes);
-    var tier = Random.range(tiers[0], tiers[1]) as JewelTier;
-    var tierDefinition = jewelTierDefinitions[tier]
-    var quality = tierDefinition[0] - tierDefinition[1] + Math.random() * 2 * tierDefinition[1];
-    components = components.map(component => Random.range(component[0], component[1]));
-    return makeJewel(tier, shapeType, permute ? Random.shuffle(components) : components, quality);
+function createRandomJewel(
+    shapes: ShapeType[],
+    tiers: Range,
+    componentRanges: [Range, Range, Range],
+    permute: boolean
+) {
+    const shapeType = Random.element(shapes);
+    const tier = Random.range(tiers[0], tiers[1]) as JewelTier;
+    const tierDefinition = jewelTierDefinitions[tier]
+    const quality = tierDefinition[0] - tierDefinition[1] + Math.random() * 2 * tierDefinition[1];
+    let components = componentRanges.map(r => Random.range(r[0], r[1]));
+    if (permute) {
+        components = Random.shuffle(components);
+    }
+    return makeJewel(tier, shapeType, components as JewelComponents, quality);
 }
 export const smallJewelLoot = jewelLoot(['triangle'], [1, 1], [[90, 90], [16, 20], [7, 10]], true);
 const simpleJewelLoot = jewelLoot(basicShapeTypes, [1, 1], [[90, 90], [16, 20], [7, 10]], true);

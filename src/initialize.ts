@@ -27,6 +27,7 @@ import { removeElementFromArray } from 'app/utils/index';
 import Random from 'app/utils/Random';
 import { playTrack, soundTrack } from 'app/utils/sounds';
 
+
 let gameHasBeenInitialized = false;
 export function isGameInitialized() {
     return gameHasBeenInitialized;
@@ -61,14 +62,14 @@ export function initializeGame() {
         gain('fame', 1);
         gain('coins', 50);
         gain('anima', 0);
-        let jobKey = Random.element(jobRanks[0]);
+        const jobKey = Random.element(jobRanks[0]);
         // jobKey = testJob || jobKey;
-        var startingCharacter = newCharacter(characterClasses[jobKey]);
+        const startingCharacter = newCharacter(characterClasses[jobKey]);
         updateAdventurer(startingCharacter.adventurer);
         hireCharacter(startingCharacter);
-        var otherKeys = jobRanks[0].slice();
+        const otherKeys = jobRanks[0].slice();
         removeElementFromArray(otherKeys, jobKey, true);
-        for (var i = 0; i < allApplications.length && otherKeys.length; i++) {
+        for (let i = 0; i < allApplications.length && otherKeys.length; i++) {
             allApplications[i].character = createNewHeroApplicant(otherKeys.pop());
         }
         enterArea(state.selectedCharacter.hero, guildYardEntrance);

@@ -2,7 +2,7 @@ import { abbreviate } from 'app/utils/formatters';
 import { tag } from 'app/dom';
 import { bonusSourceHelpText } from 'app/helpText';
 
-export function evaluateValue(actor, value, localObject) {
+export function evaluateValue(coreObject, value, localObject) {
     if (typeof value === 'number') {
         return value;
     }
@@ -11,8 +11,8 @@ export function evaluateValue(actor, value, localObject) {
             return localObject[value.substring(6, value.length - 1)] || 0;
         }
         var statKey = value.substring(1, value.length - 1);
-        // console.log(statKey + ':' + actor[statKey]);
-        return actor[statKey] || 0;
+        // console.log(statKey + ':' + coreObject[statKey]);
+        return coreObject[statKey] || 0;
     }
     // If this is an object, just return it for further processing.
     if (value.constructor !== Array) {
@@ -26,16 +26,16 @@ export function evaluateValue(actor, value, localObject) {
     formula = formula.slice();
 
     if (formula.length == 1) {
-        value = evaluateValue(actor, formula.shift(), localObject);
+        value = evaluateValue(coreObject, formula.shift(), localObject);
     } else if (formula.length == 2 && formula[0] === '-') {
         formula.shift()
-        value = -1 * evaluateValue(actor, formula.shift(), localObject);
+        value = -1 * evaluateValue(coreObject, formula.shift(), localObject);
     } else {
-        value = evaluateValue(actor, formula.shift(), localObject);
+        value = evaluateValue(coreObject, formula.shift(), localObject);
     }
     if (formula.length > 1) {
         var operator = formula.shift();
-        var operand = evaluateValue(actor, formula.shift(), localObject);
+        var operand = evaluateValue(coreObject, formula.shift(), localObject);
         //console.log([value, operator, operand]);
         if (operator == '+') {
             value += operand;
@@ -50,12 +50,12 @@ export function evaluateValue(actor, value, localObject) {
     }
     return value;
 }
-export function evaluateForDisplay(value, actor, localObject) {
+export function evaluateForDisplay(value, coreObject, localObject) {
     if (typeof value === 'undefined') {
         throw new Error('value was undefined');
     }
-    if (!actor && actor !== null) {
-        throw new Error('Forgot to pass actor to evaluateForDisplay.');
+    if (!coreObject && coreObject !== null) {
+        throw new Error('Forgot to pass coreObject to evaluateForDisplay.');
     }
     if (typeof value === 'number') {
         return abbreviate(value);
@@ -68,7 +68,7 @@ export function evaluateForDisplay(value, actor, localObject) {
     }
     if (value.constructor !== Array) {
         if (value.bonuses) {
-            return bonusSourceHelpText(value, actor, localObject);
+            return bonusSourceHelpText(value, coreObject, localObject);
         }
         return value;
     }
@@ -88,8 +88,8 @@ export function evaluateForDisplay(value, actor, localObject) {
     if (formula.length > 1) {
         value = '(' + value + ' '+ mapOperand(formula.shift()) + ' ' + evaluateForDisplay(formula.shift(), null, localObject) +')';
     }
-    if (actor) {
-        value += ' ' + tag('span', 'formulaStat', '[=' +  evaluateValue(actor, fullFormula, localObject).format(2) +  ']');
+    if (coreObject) {
+        value += ' ' + tag('span', 'formulaStat', '[=' +  evaluateValue(coreObject, fullFormula, localObject).format(2) +  ']');
     }
     return value;
 }

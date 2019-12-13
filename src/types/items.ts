@@ -1,4 +1,4 @@
-import { Actor, Affix, Bonuses, SavedAffix } from 'app/types';
+import { Actor, Affix, Bonuses, SavedAffix, Tags } from 'app/types';
 
 type AttackAnimationType = 'bowAttack' | 'throwingAttack' | 'wandAttack';
 
@@ -31,6 +31,7 @@ export type EquipmentIconType =
 
 export type Equipment = {[key in EquipmentSlot]?: Item};
 export type EquipmentData = {[key in EquipmentSlot]?: ItemData};
+export type SavedEquipment = {[key in EquipmentSlot]?: SavedItem};
 
 export interface RawItemData {
     name: string,
@@ -55,7 +56,7 @@ export interface UniqueItemData {
 export interface ItemData {
     key: string,
     name: string,
-    tags: {[key: string]: true},
+    tags: Tags,
     slot: EquipmentSlot,
     type: EquipmentType,
     level: number,

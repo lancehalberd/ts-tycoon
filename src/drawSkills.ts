@@ -174,7 +174,7 @@ function autoToggleHelpMethod() {
 
 export function getAbilityPopupTarget(x, y) {
     hoverAction = null;
-    for (var action of getState().selectedCharacter.adventurer.actions) {
+    for (const action of getState().selectedCharacter.adventurer.actions) {
         if (action.tags.basic) continue;
         // toggleButton doesn't get set until the ability is drawn the first time.
         if (isPointInRectObject(x, y, action.toggleButton && action.toggleButton.target)) {

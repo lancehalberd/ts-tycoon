@@ -18,7 +18,7 @@ import { abbreviate } from 'app/utils/formatters';
 import { getThetaDistance, rectangle, removeElementFromArray } from 'app/utils/index';
 import { centerShapesInRectangle, isPointInPoints } from 'app/utils/polygon';
 import Random from 'app/utils/Random';
-import { BonusSource } from 'app/types/bonuses';
+import { Board, BonusSource, Character } from 'app/types';
 
 export const closedChestSource = {image: requireImage('gfx/chest-closed.png'), source: rectangle(0, 0, 32, 32)};
 export const openChestSource = {image: requireImage('gfx/chest-open.png'), source: rectangle(0, 0, 32, 32)};
@@ -347,7 +347,7 @@ function objectText(text) {
     return self;
 }
 
-function adventureBoardPreview(boardPreview, character) {
+function adventureBoardPreview(boardPreview: Board, character: Character) {
     return {
         'x': 0,
         'y': 0,
@@ -359,7 +359,7 @@ function adventureBoardPreview(boardPreview, character) {
         update(area) {
         },
         isOver(x, y) {
-            for (var shape of this.boardPreview.fixed.map(j => j.shape).concat(this.boardPreview.spaces)) {
+            for (const shape of this.boardPreview.fixed.map(j => j.shape).concat(this.boardPreview.spaces)) {
                 if (isPointInPoints([x, y], shape.points)) {
                     return true;
                 }

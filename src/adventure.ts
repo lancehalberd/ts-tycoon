@@ -1,14 +1,14 @@
 import { pause, updateAdventureButtons } from 'app/adventureButtons';
 import { getEndlessLevel, showAreaMenu } from 'app/areaMenu';
 import {
-    addVariableChildToObject, initializeVariableObject,
+    addVariableChildToObject,
     recomputeDirtyStats, removeBonusSourceFromObject, setStat,
 } from 'app/bonuses';
 import {
     actorHelpText, baseDivinity, damageActor, healActor,
     initializeActorForAdventure, refreshStatsPanel
 } from 'app/character';
-import { addAreaFurnitureBonuses, Exit } from 'app/content/furniture';
+import { addAreaFurnitureBonuses } from 'app/content/furniture';
 import { guildYardEntrance } from 'app/content/guild';
 import { instantiateLevel } from 'app/content/levels';
 import { map } from 'app/content/mapData';
@@ -38,7 +38,7 @@ import { abbreviate } from 'app/utils/formatters';
 import { ifdefor } from 'app/utils/index';
 import { isMouseDown } from 'app/utils/mouse';
 
-import { BonusSource } from 'app/types/bonuses';
+import { BonusSource, Exit } from 'app/types';
 
 
 export function limitZ(zValue: number, radius: number = 0): number {

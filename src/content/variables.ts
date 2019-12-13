@@ -1,5 +1,6 @@
+import { ActionStats, ActorStats, GuildStats } from 'app/types';
 
-export const allGuildVariables = {
+export const allGuildVariables: {[key in keyof GuildStats]: string} = {
     'maxAnima': 'Maximum anima the player can hold, increased by acquiring and upgrading anima stashes',
     'maxCoins': 'Maximum coins the player can hold, increased by acquiring and upgrading coin stashes',
     'maxHeroes': 'Maximum number of heroes the guild can hold, increased by acquiring more beds',
@@ -8,7 +9,8 @@ export const allGuildVariables = {
     'hasJewelCrafting': 'Whether the guild has access to jewel crafting',
 };
 // These are the only variables on actors that can be targeted by effects.
-export const allActorVariables = {
+export const allActorVariables: {[key in keyof ActorStats]: string} = {
+    'level': 'The level of the actor',
     'levelCoefficient': 'This coefficient is used in several stats as a base for exponential scaling such as maxHealth, magicPower, armor, block and magic block',
     'dexterity': '.',
     'strength': '.',
@@ -46,7 +48,7 @@ export const allActorVariables = {
     'tint': 'Color to of glowing tint', 'tintMaxAlpha': 'Max alpha for tint.', 'tintMinAlpha': 'Min alph for tint.'
 };
 // These are variables that can be targeted by effects on any action.
-export const commonActionVariables = {
+export const commonActionVariables: {[key in keyof ActionStats]: string} = {
     // core action stats
     'accuracy': 'Checked against target\'s evasion to determine if this will hit the target.',
     'range': 'How far away this ability can target something.',

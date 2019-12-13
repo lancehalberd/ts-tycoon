@@ -1,6 +1,7 @@
 export type Color = number | string;
 
 export type Point = [number, number];
+export type Range = [number, number];
 
 export type Tags = {[key: string]: true};
 

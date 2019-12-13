@@ -19,6 +19,8 @@ import {
 import Random from 'app/utils/Random';
 import { playSound } from 'app/utils/sounds';
 
+import { Action, Actor} from 'app/types';
+
 /**
  * Checks whether an actor may use a skill on a given target.
  *
@@ -821,7 +823,7 @@ skillDefinitions.plunder = {
         stealAffixes(actor, target, plunderSkill);
     }
 };
-function stealAffixes(actor, target, skill) {
+function stealAffixes(actor: Actor, target: Actor, skill: any) {
     if (!skill.count) {
         return;
     }

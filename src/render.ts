@@ -42,8 +42,9 @@ export function render() {
         } else {
             character.characterContext.globalAlpha = .5;
         }
-        const jobSource = hero.job.iconSource;
-        drawImage(character.characterContext, jobSource.image, jobSource, {'left': 0, 'top': 0, 'width': 20, 'height': 20});
+        hero.job.iconSource.render(character.characterContext, {'left': 0, 'top': 0, 'width': 20, 'height': 20});
+        //const jobSource = hero.job.iconSource;
+        //drawImage(character.characterContext, jobSource.image, jobSource, {'left': 0, 'top': 0, 'width': 20, 'height': 20});
         character.characterContext.drawImage(hero.personCanvas, frame * 96, 0 , 96, 64, -20, -18, 96, 64);
         character.characterContext.globalAlpha = 1;
         if (state.selectedCharacter !== character) {

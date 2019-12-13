@@ -1,32 +1,42 @@
 import { accessorySlots, armorSlots, smallArmorSlots } from 'app/gameConstants';
 
+import { AffixData, BonusesRange } from 'app/types';
+
 const basicHolders = ['simplequiver', 'scabbard', 'wornebaldric'];
 const holders = ['neverendingquiver', 'runedscabbard', 'bandolier', 'heavybaldric', 'etchedsheath', 'cover', 'largescabbard'];
 const magicHolders = ['runedamulet', 'heavyamulet'];
 
-const allEnchantments = [];
+export const prefixes: AffixData[][] = [];
+export const prefixesByKey: {[key: string]: AffixData} = {};
+export const suffixes: AffixData[][] = [];
+export const suffixesByKey: {[key: string]: AffixData} = {};
+export const affixesByKey: {[key: string]: AffixData} = {};
 
-export const prefixes = [];
-export const prefixesByKey = {};
-export const suffixes = [];
-export const suffixesByKey = {};
-export const affixesByKey = {};
-
-function addPrefix(level, name, tags, bonuses) {
+function addPrefix(level, name, tags, bonuses: BonusesRange) {
+    const key = name.replace(/\s*/g, '').toLowerCase();
     let bonusesKey = '';
     for (let bonusKey in bonuses) bonusesKey += bonusKey;
-    const affix = {level, 'name':name, 'tags':tags, bonuses, 'prefix': true, bonusesKey};
+    const affix: AffixData = {
+        key, level, name, tags, bonuses, bonusesKey, prefix: true,
+    };
+    if (affixesByKey[key]) throw new Error('affix key ' + key + ' is already used.');
+    prefixesByKey[key] = affix;
+    affixesByKey[key] = affix;
     prefixes[level] = prefixes[level] || [];
     prefixes[level].push(affix);
-    allEnchantments.push(affix);
 }
-function addSuffix(level, name, tags, bonuses) {
+function addSuffix(level, name, tags, bonuses: BonusesRange) {
+    const key = name.replace(/\s*/g, '').toLowerCase();
     let bonusesKey = '';
     for (let bonusKey in bonuses) bonusesKey += bonusKey;
-    const affix = {level, 'name':name, 'tags':tags, bonuses, 'suffix': true, bonusesKey};
+    const affix: AffixData = {
+        key, level, name, tags, bonuses, bonusesKey, suffix: true,
+    };
+    if (affixesByKey[key]) throw new Error('affix key ' + key + ' is already used.');
+    suffixesByKey[key] = affix;
+    affixesByKey[key] = affix;
     suffixes[level] = suffixes[level] || [];
     suffixes[level].push(affix);
-    allEnchantments.push(affix);
 }
 
 addPrefix(1, 'Strong', 'weapon', {'+minWeaponPhysicalDamage': 1, '+maxWeaponPhysicalDamage': 2});
@@ -357,12 +367,3 @@ addSuffix(62, 'Peerless Will', 'amethystring', {'+intelligince': [16, 25], '+str
 addSuffix(12, 'Minor Versitility', 'diamondring', {'+dexterity': [3, 6], '+intelligince': [3, 6], '+strength': [3, 6]});
 addSuffix(32, 'Major Versitility', 'diamondring', {'+dexterity': [7, 10], '+intelligince': [7, 10], '+strength': [7, 10]});
 addSuffix(62, 'Peerless Versitility', 'diamondring', {'+dexterity': [11, 16], '+intelligince': [11, 16], '+strength': [11, 16]});
-
-for (const affix of allEnchantments) {
-    const key = affix.name.replace(/\s*/g, '').toLowerCase();
-    if (affixesByKey[key]) throw new Error('affix key ' + key + ' is already used.');
-    if (affix.suffix) suffixesByKey[key] = affix;
-    if (affix.prefix) prefixesByKey[key] = affix;
-    affixesByKey[key] = affix;
-    affix.key = key;
-}

@@ -3,7 +3,12 @@ import { allActorVariables, allGuildVariables, allRoundedVariables, commonAction
 import { evaluateValue } from 'app/evaluate';
 import { getState } from 'app/state';
 import { removeElementFromArray } from 'app/utils/index';
-import { Bonus, BonusOperator, BonusValue } from 'app/types/bonuses';
+
+import { Actor, Bonus, Bonuses, BonusOperator, BonusValue } from 'app/types';
+
+import { BonusSource, Tags, VariableObject, VariableObjectBase } from 'app/types';
+
+const operations = {'*': true, '+': true, '-': true, '%': true, '$': true, '&': true};
 
 // Parses a hash key+value like {"+melee:damage": 25} into a fully defined bonus object.
 function parseBonus(bonusKeyString: string, value: BonusValue): Bonus {
@@ -36,7 +41,7 @@ function parseBonus(bonusKeyString: string, value: BonusValue): Bonus {
     const shortHand = operator + tags.join(':') + ':' + stat + ':' + value;
     return { operator, tags, stats, value, statDependencies, shortHand };
 }
-function getStatDependencies(bonusValue, dependencies) {
+function getStatDependencies(bonusValue: BonusValue, dependencies) {
     if (typeof bonusValue === 'number') return dependencies;
     if (typeof bonusValue === 'string') {
         if (bonusValue[0] !== '{') return dependencies; // this is just a string.
@@ -44,75 +49,80 @@ function getStatDependencies(bonusValue, dependencies) {
         return dependencies
     }
     if (!bonusValue) throw Error('bonusValue was null or undefined');
-    if (bonusValue.constructor !== Array) return dependencies;
-    switch (bonusValue.length) {
-        case 1:
-            return getStatDependencies(bonusValue[0], dependencies);
-            break;
-        case 2: // Unary operators like ['-', '{intelligence}']
-            return getStatDependencies(bonusValue[1], dependencies);
-            break;
-        case 3: // Binary operators like [20, '+', '{strength}']
-            dependencies = getStatDependencies(bonusValue[0], dependencies);
-            return getStatDependencies(bonusValue[2], dependencies);
-        default:
-            console.log(bonusValue);
-            throw new Error('bonusValue formula must have exactly 2 or 3 entries, found ' + bonusValue.length);
+    if (Array.isArray(bonusValue)) {
+        switch (bonusValue.length) {
+            case 1:
+                return getStatDependencies(bonusValue[0], dependencies);
+            case 2: // Unary operators like ['-', '{intelligence}']
+                return getStatDependencies(bonusValue[1], dependencies);
+            case 3: // Binary operators like [20, '+', '{strength}']
+                dependencies = getStatDependencies(bonusValue[0], dependencies);
+                return getStatDependencies(bonusValue[2], dependencies);
+            default:
+                console.log(bonusValue);
+                throw new Error('bonusValue formula must have exactly 2 or 3 entries');
+        }
     }
     return dependencies;
 }
-function parseBonuses(bonusSource) {
+function parseBonuses(bonusSource: BonusSource): Bonus[] {
     if (bonusSource.parsedBonuses) return bonusSource.parsedBonuses; // Use memoized value if available. Otherwise, populate memoized value below.
     bonusSource.parsedBonuses = [];
-    for (var bonusKeyString of Object.keys(bonusSource.bonuses)) {
-        var bonus = parseBonus(bonusKeyString, bonusSource.bonuses[bonusKeyString]);
+    for (const bonusKeyString of Object.keys(bonusSource.bonuses)) {
+        const bonus = parseBonus(bonusKeyString, bonusSource.bonuses[bonusKeyString]);
         bonusSource.parsedBonuses.push(bonus);
     }
     return bonusSource.parsedBonuses;
 }
-export function initializeVariableObject(object, baseObject, actor) {
+
+export function createVariableObject(baseObject: VariableObjectBase, coreObject: VariableObject = null): VariableObject {
     if (!baseObject) throw new Error('No base object provided for new variable object');
     if (!baseObject.variableObjectType) throw new Error('variableObjectType was not set on a variable object base object');
-    // this doesn't really make sense for the guild stats object, but I don't think this is causing any issues at the moment.
-    if (!actor) throw new Error('No actor was provided for a new variable object. This must be provided for some implicit bonuses to work correctly, like range: {weaponRange} on attacks.');
-    object.actor = actor;
-    object.base = baseObject;
-    object.tags = {};
+    // this doesn't really make sense for the guild stats object,
+    // but I don't think this is causing any issues at the moment.
+    if (!coreObject) throw new Error('No coreObject was provided for a new variable object. This must be provided for some implicit bonuses to work correctly, like range: {weaponRange} on attacks.');
+    const object: VariableObject = {
+        base: baseObject,
+        core: coreObject,
+        tags: {},
+        bonusSources: [],
+        bonusesByTag: {},
+        bonusesDependingOn: {},
+        allBonuses: [],
+        dirtyStats: {},
+        operations: {},
+        stats: {},
+        variableChildren: [],
+    };
+    object.core = object.core || object;
     for (const tag of (object.base.tags || [])) {
         object.tags[tag] = true;
     }
-    object.bonusSources = [];
-    object.bonusesByTag = {};
-    object.bonusesDependingOn = {};
-    object.allBonuses = [];
-    object.dirtyStats = {};
     switch (baseObject.variableObjectType){
         case 'actor':
-            for (var actorStat of Object.keys(allActorVariables)) {
+            for (const actorStat of Object.keys(allActorVariables)) {
                 object.dirtyStats[actorStat] = true;
             }
             break;
         case 'action':
-            for (var actionStat of Object.keys(commonActionVariables)) {
+            for (const actionStat of Object.keys(commonActionVariables)) {
                 object.dirtyStats[actionStat] = true;
             }
             break;
         case 'effect':
             object.bonuses = {};
-            for (var effectStat of ['duration', 'area', 'maxStacks']) {
+            for (const effectStat of ['duration', 'area', 'maxStacks']) {
                 object.dirtyStats[effectStat] = true;
             }
             break;
         case 'guild':
-            for (var guildStat of Object.keys(allGuildVariables)) {
+            for (const guildStat of Object.keys(allGuildVariables)) {
                 object.dirtyStats[guildStat] = true;
             }
             break;
     }
-    object.variableChildren = [];
     if (object.base.bonuses) {
-
-        addBonusSourceToObject(object, object.base,
+        addBonusSourceToObject(object, object.base as BonusSource,
             // Trigger computation so that implicit bonus will set stats it defines as targetable.
             // Otherwise bonuses that target stats on the implicitBonuses but are not otherwise
             // commonly defined stats won't apply since they check if that stat is null on the object.
@@ -122,11 +132,18 @@ export function initializeVariableObject(object, baseObject, actor) {
             // the object. They also indicate that the stat should be targetable on this object in general.
             // Finally, isImplicit prevents these bonuses from being applied to children. Implicit bonuses
             // are intended only to be used as the basic stats for the object.
-            true);
+            true,
+        );
     }
     return object;
 }
-export function addBonusSourceToObject(object, bonusSource, triggerComputation = false, isImplicit = false) {
+
+export function addBonusSourceToObject(
+    object: VariableObject,
+    bonusSource: BonusSource,
+    triggerComputation = false,
+    isImplicit = false
+) {
     if (!bonusSource) debugger;
     if (!bonusSource.bonuses) return;
     // Nonimplicit bonuses apply recursively to all the children of this object (actions of actors, buffs on actions, bonuses on buffs, etc).
@@ -145,14 +162,14 @@ export function addBonusSourceToObject(object, bonusSource, triggerComputation =
             object.bonusesByTag[tag] = object.bonusesByTag[tag] || [];
             object.bonusesByTag[tag].push(bonus);
         }
-        for (var dependencyString of Object.keys(bonus.statDependencies)) {
+        for (const dependencyString of Object.keys(bonus.statDependencies)) {
             if (dependencyString.indexOf('this.') === 0) {
                 const stat = dependencyString.substring(5);
                 object.bonusesDependingOn[stat] = object.bonusesDependingOn[stat] || [];
                 object.bonusesDependingOn[stat].push({object, bonus});
             } else {
                 const stat = dependencyString;
-                const dependencySource = object.actor || object;
+                const dependencySource = object.core;
                 dependencySource.bonusesDependingOn[stat] = dependencySource.bonusesDependingOn[stat] || [];
                 dependencySource.bonusesDependingOn[stat].push({object, bonus});
             }
@@ -163,14 +180,19 @@ export function addBonusSourceToObject(object, bonusSource, triggerComputation =
         recomputeDirtyStats(object);
     }
 }
-export function removeBonusSourceFromObject(object, bonusSource, triggerComputation = false) {
+
+export function removeBonusSourceFromObject(
+    object: VariableObject,
+    bonusSource: BonusSource,
+    triggerComputation = false,
+) {
     if (!bonusSource.bonuses) return;
     // Bonuses apply recursively to all the children of this object (actions of actors, buffs on actions, bonuses on buffs, etc).
-    for (var variableChild of object.variableChildren) {
+    for (const variableChild of object.variableChildren) {
         removeBonusSourceFromObject(variableChild, bonusSource, triggerComputation);
     }
     const sourceIndex = object.bonusSources.indexOf(bonusSource);
-    if (index < 0) {
+    if (sourceIndex < 0) {
         console.log('tried to remove bonusSource that was not found on object:');
         console.log(bonusSource);
         console.log(object);
@@ -183,7 +205,7 @@ export function removeBonusSourceFromObject(object, bonusSource, triggerComputat
         // even apply to this kind of object.
         if (!doesStatApplyToObject(bonus.stats[0], object)) continue;
         for (const tag of bonus.tags) {
-            var index = object.bonusesByTag[tag].indexOf(bonus);
+            const index = object.bonusesByTag[tag].indexOf(bonus);
             object.bonusesByTag[tag].splice(index, 1);
         }
         for (const dependencyString of Object.keys(bonus.statDependencies)) {
@@ -198,7 +220,7 @@ export function removeBonusSourceFromObject(object, bonusSource, triggerComputat
                 }
             } else {
                 const stat = dependencyString;
-                const dependencySource = object.actor || object;
+                const dependencySource = object.core;
                 for (let i = 0; i < dependencySource.bonusesDependingOn[stat].length; i++) {
                     const dependency = dependencySource.bonusesDependingOn[stat][i];
                     if (dependency.object === object && dependency.bonus === bonus) {
@@ -214,18 +236,20 @@ export function removeBonusSourceFromObject(object, bonusSource, triggerComputat
         recomputeDirtyStats(object);
     }
 }
-function addBonusToObject(object, bonus, isImplicit = false) {
+
+function addBonusToObject(object: VariableObject, bonus: Bonus, isImplicit = false) {
     // Ignore this bonus for this object if the stat doesn't apply to it.
     if (!isImplicit && !doesStatApplyToObject(bonus.stats[0], object)) return;
     // Do nothing if bonus tags are not all present on the object.
     if (!object.tags)console.log(object);
-    for (var tag of bonus.tags) if (!object.tags[tag]) return;
+    for (const tag of bonus.tags) if (!object.tags[tag]) return;
     object.allBonuses.push(bonus);
     // Useful log for tracking occurences of particular bonuses.
     // console.log(new Error('Adding ' + bonus.shortHand + ' ' + countInstancesOfElementInArray(object.allBonuses, bonus)));
-    var value = evaluateValue(object.actor || object, bonus.value, object);
-    for (var statKey of bonus.stats) {
-        var statOps = object[statKey + 'Ops'] = object[statKey + 'Ops'] || {'stat': statKey};
+    const value = evaluateValue(object.core, bonus.value, object);
+    for (const statKey of bonus.stats) {
+        object.operations[statKey] = object.operations[statKey] || {'stat': statKey};
+        const statOps = object.operations[statKey];
         //console.log([bonus.operator, bonus.tags.join(':'), statKey, JSON.stringify(bonus.value), value]);
         switch (bonus.operator) {
             case '+':
@@ -256,19 +280,21 @@ function addBonusToObject(object, bonus, isImplicit = false) {
         object.dirtyStats[statKey] = true;
     }
 }
-function removeBonusFromObject(object, bonus) {
+
+function removeBonusFromObject(object: VariableObject, bonus: Bonus) {
     // Ignore this bonus for this object if the stat doesn't apply to it.
     if (!doesStatApplyToObject(bonus.stats[0], object)) return;
     // Do nothing if bonus tags are not all present on the object.
-    for (var tag of bonus.tags) if (!object.tags[tag]) return;
+    for (const tag of bonus.tags) if (!object.tags[tag]) return;
     // Passing true here will throw an error if a bonus is removed that wasn't present.
     // This is good to do as this may cause bonuses to double up if it happens.
     removeElementFromArray(object.allBonuses, bonus, true);
     // Useful log for tracking occurences of particular bonuses.
     // console.log(new Error('Removing ' + bonus.shortHand + ' ' + countInstancesOfElementInArray(object.allBonuses, bonus)));
-    var value = evaluateValue(object.actor || object, bonus.value, object);
-    for (var statKey of bonus.stats) {
-        var statOps = object[statKey + 'Ops'] = object[statKey + 'Ops'] || {'stat': statKey};
+    const value = evaluateValue(object.core, bonus.value, object);
+    for (const statKey of bonus.stats) {
+        object.operations[statKey] = object.operations[statKey] || {'stat': statKey};
+        const statOps = object.operations[statKey];
         //console.log([operator, tags.join(':'), statKey, bonus.value, value]);
         switch (bonus.operator) {
             case '+':
@@ -288,19 +314,17 @@ function removeBonusFromObject(object, bonus) {
                 statOps['%'] = (statOps['%'] || 1) - value;
                 break;
             case '*':
-                var index = statOps['*'].indexOf(value);
-                statOps['*'].splice(index, 1);
+                statOps['*'].splice(statOps['*'].indexOf(value), 1);
                 break;
             case '$':
-                var index = statOps['$'].indexOf(value);
-                statOps['$'].splice(index, 1);
+                statOps['$'].splice(statOps['$'].indexOf(value), 1);
                 break;
         }
         object.dirtyStats[statKey] = true;
     }
 }
-var operations = {'*': true, '+': true, '-': true, '%': true, '$': true, '&': true};
-function doesStatApplyToObject(stat, object) {
+
+function doesStatApplyToObject(stat: string, object: VariableObject) {
     switch (object.base.variableObjectType) {
         case 'actor':
             return allActorVariables[stat];
@@ -316,16 +340,18 @@ function doesStatApplyToObject(stat, object) {
             throw new Error('Unexpected object base variableObjectType: ' + object.base.variableObjectType);
     }
 }
-export function recomputeDirtyStats(object) {
-    for (var statKey of Object.keys(object.dirtyStats)) {
+
+export function recomputeDirtyStats(object: VariableObject) {
+    for (const statKey of Object.keys(object.dirtyStats)) {
         recomputeStat(object, statKey);
     }
-    for (var variableChild of object.variableChildren) {
+    for (const variableChild of object.variableChildren) {
         recomputeDirtyStats(variableChild);
     }
 }
-function recomputeStat(object, statKey) {
-    const statOps = object[statKey + 'Ops'] || {'stat': statKey};
+
+function recomputeStat(object: VariableObject, statKey: string) {
+    const statOps = object.operations[statKey] || {'stat': statKey};
     let newValue: any = 0;
     // Special values override all of the normal arithmetic for stats.
     if ((statOps['$'] || []).length) {
@@ -336,7 +362,7 @@ function recomputeStat(object, statKey) {
             if (object.bonusSources.length > 100) {
                 throw new Error('too many bonus sources on object');
             }
-            newValue = initializeVariableObject({}, newValue, object.actor);
+            newValue = createVariableObject(newValue, object.core);
         }
     } else {
         //console.log(statOps);
@@ -356,7 +382,7 @@ function recomputeStat(object, statKey) {
     setStat(object, statKey, newValue);
     //console.log(object[statKey]);
 }
-export function setStat(object, statKey, newValue) {
+export function setStat(object: VariableObject, statKey: string, newValue: any) {
     delete object.dirtyStats[statKey];
     // Set a hard cap of 1e12 for all computed values.
     if (typeof newValue === 'number' && newValue > 1e12) {
@@ -402,11 +428,10 @@ export function setStat(object, statKey, newValue) {
     // Changing the value of setRange changes the tags for the actor, so we need to trigger
     // and update here.
     if (statKey === 'setRange' && (oldValue || newValue)) {
-        if (object.actor !== object) {
-            console.log(object);
-            throw new Error('setRange was set on a non-actor');
+        if (object.base.variableObjectType !== 'actor') {
+            throw Error('Cannot apply "setRange" stat to type ' + object.base.variableObjectType);
         }
-        updateTags(object, recomputeActorTags(object), true);
+        updateTags(object, recomputeActorTags(object.base.actor), true);
     }
     // Recompute stat dependencies only after we've finished actually updating
     // applicable bonuses. Otherwise we might make too many updates or apply
@@ -419,14 +444,14 @@ export function setStat(object, statKey, newValue) {
     }
 }
 
-export function findVariableChildForBaseObject(parentObject, baseObject) {
+export function findVariableChildForBaseObject(parentObject: VariableObject, baseObject: VariableObjectBase) {
     for (const variableChild of parentObject.variableChildren) {
         if (variableChild.base === baseObject) return variableChild;
     }
     throw Error("Variable child was not found for given base object");
 }
 
-export function addVariableChildToObject(parentObject, child, triggerComputation = false) {
+export function addVariableChildToObject(parentObject: VariableObject, child: VariableObject, triggerComputation = false) {
     parentObject.variableChildren.push(child);
     child.tags = recomputeChildTags(parentObject, child);
     for (const bonusSource of parentObject.bonusSources) {
@@ -436,7 +461,7 @@ export function addVariableChildToObject(parentObject, child, triggerComputation
         recomputeDirtyStats(child);
     }
 }
-export function applyParentToVariableChild(parentObject, child) {
+export function applyParentToVariableChild(parentObject: VariableObject, child: VariableObject) {
     child.tags = recomputeChildTags(parentObject, child);
     for (const bonusSource of parentObject.bonusSources) {
         addBonusSourceToObject(child, bonusSource);
@@ -450,8 +475,8 @@ export function applyParentToVariableChild(parentObject, child) {
 // set of tags for the actor from scratch and similarly for each action/buff/etc.
 // Once the new set is determined, this method can be called to adjust all bonuses
 // appropriately.
-export function updateTags(object, newTags, triggerComputation = false) {
-    var lostTags = [];
+export function updateTags(object: VariableObject, newTags: Tags, triggerComputation = false) {
+    const lostTags = [];
     for (const oldTag of Object.keys(object.tags)) {
         if (!newTags[oldTag]) lostTags.push(oldTag);
     }
@@ -461,14 +486,14 @@ export function updateTags(object, newTags, triggerComputation = false) {
             removeBonusFromObject(object, lostBonus);
         }
     }
-    var addedTags = [];
+    const addedTags = [];
     for (const newTag of Object.keys(newTags)) {
         if (!object.tags[newTag]) addedTags.push(newTag);
     }
     // The new tags must be set after removing old bonuses, but before adding new bonuses,
     // since those methods will expect the tags to match in order to apply.
     object.tags = newTags;
-    for (var addedTag of addedTags) {
+    for (const addedTag of addedTags) {
         for (const addedBonus of (object.bonusesByTag[addedTag] || [])) {
             // console.log("gaining bonus from " + addedTag + " " + addedBonus.shortHand);
             addBonusToObject(object, addedBonus);
@@ -482,7 +507,7 @@ export function updateTags(object, newTags, triggerComputation = false) {
     }
 }
 
-function recomputeChildTags(parentObject, child) {
+function recomputeChildTags(parentObject: VariableObject, child: VariableObject) {
     const tags = {};
     for (const tag of (child.base.tags || [])) {
         tags[tag] = true;

@@ -8,7 +8,7 @@ import { setContext } from 'app/context';
 import { mainCanvas, mainContext, mouseContainer, titleDiv } from 'app/dom';
 import { bonusSourceHelpText } from 'app/helpText';
 import { GROUND_Y } from 'app/gameConstants';
-import { createNewHeroApplicant, hideHeroApplication, showApplication } from 'app/heroApplication';
+import { createNewHeroApplicant, hideHeroApplication, showHeroApplication } from 'app/heroApplication';
 import {
     drawImage,
     drawOutlinedImage,
@@ -23,44 +23,11 @@ import { toolTipColor } from 'app/utils/colors';
 import { fillRectangle, isPointInRectObject, rectangle, shrinkRectangle } from 'app/utils/index';
 import { getMousePosition } from 'app/utils/mouse';
 
-
-export interface Exit {
-    // The area to enter when using this exit.
-    areaKey: string,
-    // The target location to appear when entering the next area.
-    x?: number,
-    z?: number,
-}
-export interface FixedObject {
-    fixed: true,
-    base: any,
-    key: string,
-    scale: number,
-    xScale?: number,
-    yScale?: number,
-    width: number,
-    height: number,
-    depth: number,
-    x: number,
-    y: number,
-    z: number,
-    exit?: Exit,
-    // The level for the object, if it can be upgraded.
-    level?: number,
-    isEnabled: Function,
-    draw: Function,
-    helpMethod: Function,
-    target: {
-        width: number,
-        height: number,
-    },
-    loot?: any,
-    area?: any,
-}
+import { Exit, FixedObject, } from 'app/types';
 
 const guildImage = requireImage('gfx/guildhall.png');
-export const allApplications = [];
-export const allBeds = [];
+export const allApplications: FixedObject[] = [];
+export const allBeds: FixedObject[] = [];
 /*
  Fixed object properties are a little different than the properties used for actors at the moment.
  I'm not sure which is better. Actors support defining a center point to rotate around, which is not
@@ -328,24 +295,37 @@ const areaObjects = {
     'jewelShrine': {'name': 'Shrine of Creation', 'source': objectSource(guildImage, [360, 180], [60, 60, 4], {'actualWidth': 30, 'yOffset': -6}), 'action': openJewels,
         'getActiveBonusSources': () => [{'bonuses': {'$hasJewelCrafting': true}}],
     },
-    'heroApplication': {'name': 'Application', 'source': {'width': 40, 'height': 60, 'depth': 0}, 'action': showApplication, draw(area) {
-        this.target.left = this.x - this.width / 2 - area.cameraX;
-        this.target.top = GROUND_Y - this.y - this.height - this.z / 2;
-        if (getCanvasPopupTarget() === this) {
-            mainContext.fillStyle = 'white';
-            fillRectangle(mainContext, shrinkRectangle(this.target, -2));
+    'heroApplication': {
+        'name': 'Application', 'source': {'width': 40, 'height': 60, 'depth': 0},
+        action(actor) {
+            const application = this as FixedObject;
+            showHeroApplication(application);
+        },
+        draw(area) {
+            const application = this as FixedObject;
+            application.target.left = application.x - application.width / 2 - area.cameraX;
+            application.target.top = GROUND_Y - application.y - application.height - application.z / 2;
+            if (getCanvasPopupTarget() === this) {
+                mainContext.fillStyle = 'white';
+                fillRectangle(mainContext, shrinkRectangle(application.target, -2));
+            }
+            mainContext.fillStyle = '#fc8';
+            fillRectangle(mainContext, application.target);
+            if (!application.character) {
+                application.character = createNewHeroApplicant();
+            }
+            // Draw a faded job icon on the application.
+            const character =  application.character;
+            mainContext.save();
+                mainContext.globalAlpha = 0.6;
+                character.hero.job.iconSource.render(
+                    mainContext,
+                    {'left': application.target.left + 4, 'top': application.target.top + 14, 'width': 32, 'height': 32}
+                );
+                //drawImage(mainContext, jobSource.image, jobSource, {'left': application.target.left + 4, 'top': application.target.top + 14, 'width': 32, 'height': 32});
+            mainContext.restore();
         }
-        mainContext.fillStyle = '#fc8';
-        fillRectangle(mainContext, this.target);
-        if (!this.character) {
-            this.character = createNewHeroApplicant();
-        }
-        var jobSource = this.character.adventurer.job.iconSource;
-        mainContext.save();
-        mainContext.globalAlpha = 0.6;
-        drawImage(mainContext, jobSource.image, jobSource, {'left': this.target.left + 4, 'top': this.target.top + 14, 'width': 32, 'height': 32});
-        mainContext.restore();
-    }},
+    },
 
     'door': {'source': objectSource(guildImage, [240, 94], [30, 51, 0]), 'action': useDoor, 'isEnabled': isGuildExitEnabled},
     'upstairs': {'source': objectSource(guildImage, [270, 94], [30, 51, 0]), 'action': useDoor, 'isEnabled': isGuildExitEnabled},

@@ -1,5 +1,4 @@
-import { BoardData } from 'app/types';
-import { EquipmentData } from 'app/types/items';
+import { BoardData, EquipmentData } from 'app/types';
 import { JobIcon } from 'app/content/jobs';
 
 export type JobKey = 'fool' |

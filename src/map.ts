@@ -270,10 +270,10 @@ handleChildEvent('click', document.body, '.js-confirmSkill', function (confirmBu
     character.board.fixed = character.board.fixed.concat(character.board.boardPreview.fixed);
     character.board.boardPreview.fixed.forEach(function (jewel) {
         jewel.confirmed = true;
-        removeBonusSourceFromObject(character.adventurer, character.jewelBonuses, false);
+        removeBonusSourceFromObject(character.hero.stats, character.jewelBonuses, false);
         updateAdjacentJewels(jewel);
         updateJewelBonuses(character);
-        addBonusSourceToObject(character.adventurer, character.jewelBonuses, true);
+        addBonusSourceToObject(character.hero.stats, character.jewelBonuses, true);
     });
     character.board.boardPreview = null;
     drawBoardBackground(character.boardContext, character.board);

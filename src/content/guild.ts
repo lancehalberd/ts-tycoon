@@ -1,45 +1,14 @@
 import { backgrounds } from 'app/content/backgrounds';
-import { fixedObject, FixedObject } from 'app/content/furniture';
+import { fixedObject } from 'app/content/furniture';
 import { createCanvas, mainContext } from 'app/dom';
 import { drawImage, drawOutlinedImage } from 'app/images';
 import { drawTextureMap } from 'app/render/drawTextureMap';
 import { getCanvasPopupTarget } from 'app/popup';
 import { rectangle } from 'app/utils/index';
 
-interface RawGuildArea extends Partial<GuildArea>{
-    key: string,
-    width: number,
-    backgroundPatterns: {[key: string]: string},
-}
-export interface GuildArea {
-    key: string,
-    isGuildArea: true,
-    width: number,
-    backgroundPatterns: {[key: string]: string},
-    wallDecorations: any[],
-    rightWallDecorations: any[],
-    leftWallDecorations: any[],
-    rightWall?: string,
-    leftWall?: string,
-    left: number,
-    cameraX: number,
-    time: number,
+import { Exit, FixedObject, GuildArea, GuildAreas, RawGuildArea } from 'app/types';
 
-    // This defines the monster spawns for the area.
-    monsters: any[],
-
-    allies: any[],
-    enemies: any[],
-    projectiles: any[],
-    effects: any[],
-    textPopups: any[],
-    treasurePopups: any[],
-    objects: any[],
-    objectsByKey: {[key: string]: any}
-}
-type GuildAreas = {[key: string]: GuildArea};
-
-export const guildYardEntrance = {areaKey: 'guildYard'};
+export const guildYardEntrance: Exit = {areaKey: 'guildYard'};
 
 const wallOriginCoords = [-71, 213];
 const wallDepth = 120;

@@ -1,6 +1,7 @@
 import { enterArea } from 'app/adventure';
 import { newCharacter, refreshStatsPanel, setSelectedCharacter, updateAdventurer } from 'app/character';
 import { updateTrophy } from 'app/content/achievements';
+import { allApplications } from 'app/content/furniture';
 import { guildYardEntrance } from 'app/content/guild';
 import { characterClasses } from 'app/content/jobs';
 import { handleChildEvent, query, queryAll, tagElement } from 'app/dom';
@@ -13,7 +14,9 @@ import { saveGame } from 'app/saveGame';
 import { getState } from 'app/state';
 import Random from 'app/utils/Random';
 
-export const jobRanks = [
+import { Character, FixedObject, JobKey } from 'app/types';
+
+export const jobRanks: JobKey[][] = [
     ['juggler', 'blackbelt', 'priest'],
     ['corsair', 'paladin', 'dancer'],
     ['ranger', 'warrior', 'wizard'],
@@ -23,7 +26,7 @@ export const jobRanks = [
     //['master', 'fool'],
 ];
 
-export function createNewHeroApplicant(jobKey = null) {
+export function createNewHeroApplicant(jobKey: JobKey = null) {
     const { savedState } = getState();
     const fameRoll = Math.round(savedState.fame / 3 + Math.random() * savedState.fame * 5 / 6);
     if (!jobKey) {
@@ -39,9 +42,15 @@ export function createNewHeroApplicant(jobKey = null) {
     return character;
 }
 
-function setHeroApplication(applicationElement: HTMLElement, application) {
+const applicationElement: HTMLElement = query('.js-heroApplication');
+const seekNewApplicantButton = query('.js-seekNewApplicant');
+const hireApplicantButton = query('.js-hireApplicant');
+let displayedApplication: FixedObject = null;
+
+function showHeroApplication(application: FixedObject) {
+    displayedApplication = application;
     const character = application.character;
-    const jewelsCanvas = applicationElement.querySelector('.js-applicationSkillCanvas');
+    const boardCanvas = applicationElement.querySelector('.js-applicationSkillCanvas') as HTMLCanvasElement;
     const statsElement = applicationElement.querySelector('.js-stats') as HTMLElement;
     refreshStatsPanel(character, statsElement);
     statsElement.querySelector('.js-dexterityGrowth').innerHTML = '';
@@ -56,90 +65,84 @@ function setHeroApplication(applicationElement: HTMLElement, application) {
     for (let i = 0; i < character.adventurer.job.intelligenceBonus; i++) {
         statsElement.querySelector('.js-intelligenceGrowth').append(tagElement('div', 'statGrowthFill'));
     }
-    character.jewelsCanvas = jewelsCanvas;
-    updateHireButtonsForApplication(applicationElement);
+    character.boardCanvas = boardCanvas;
     const applicantPreviewContext = applicationElement.querySelector('.js-previewCanvas')[0].getContext("2d");
     applicantPreviewContext.imageSmoothingEnabled = false;
     applicantPreviewContext.clearRect(0, 0, 64, 128);
     applicantPreviewContext.globalAlpha = 1;
-    const jobSource = character.adventurer.job.iconSource;
-    drawImage(applicantPreviewContext, jobSource.image, jobSource, {'left': 0, 'top': 0, 'width': 32, 'height': 32});
+    //const jobSource = character.adventurer.job.iconSource;
+    //drawImage(applicantPreviewContext, jobSource.image, jobSource, {'left': 0, 'top': 0, 'width': 32, 'height': 32});
+    character.hero.job.iconSource.render(applicantPreviewContext, {'left': 0, 'top': 0, 'width': 32, 'height': 32});
     applicantPreviewContext.globalAlpha = .6;
     applicantPreviewContext.drawImage(character.adventurer.personCanvas, character.adventurer.source.walkFrames[0] * 96, 0, 96, 64, -64, 0, 192, 128);
-    drawBoardJewels(character, jewelsCanvas);
+    drawBoardJewels(character, boardCanvas);
+    applicationElement.style.display = '';
+    updateHireButtons();
 }
 
 export function increaseAgeOfApplications() {
-    queryAll('.js-heroApplication').forEach(function (applicationPanel) {
-        //TODO
-        const application: any = {};//applicationPanel.data('application');
+    for (const application of allApplications) {
         if (!application || !application.character) return;
         application.character.applicationAge++;
-        updateHireButtonsForApplication(applicationPanel);
-    });
+    }
+    updateHireButtons();
 }
 
 export function updateHireButtons() {
-    queryAll('.js-heroApplication').forEach(updateHireButtonsForApplication);
-}
-function updateHireButtonsForApplication(applicationElement) {
-    const application = applicationElement.data('application');
-    if (!application || !application.character) return;
-    applicationElement.querySelector('.js-hirePrice').html(points('coins', getApplicationCost(application.character)));
-    const newApplicationCost = getNewApplicationCost(application.character);
-    applicationElement.querySelector('.js-seekPrice').html(newApplicationCost ? points('coins', newApplicationCost) : ' Free!');
+    const { character } = displayedApplication;
+    if (!character) {
+        return;
+    }
+    applicationElement.querySelector('.js-hirePrice').innerHTML =
+        points('coins', getApplicationCost(character));
+    const newApplicationCost = getNewApplicationCost(character);
+    applicationElement.querySelector('.js-seekPrice').innerHTML =
+        newApplicationCost ? points('coins', newApplicationCost) : ' Free!';
 }
 
-function getApplicationCost(character) {
+function getApplicationCost(character: Character) {
     return Math.max(100, Math.round(character.fame * 100 * Math.max(.01, character.fame / getState().savedState.fame)));
 }
 
-function getNewApplicationCost(character) {
+function getNewApplicationCost(character: Character) {
     return Math.max(0, Math.round(getApplicationCost(character)* (10 - character.applicationAge) / 100));
 }
 
-handleChildEvent('click', document.body, '.js-hireApplicant', function (button) {
+hireApplicantButton.onclick = function (button) {
     const state = getState();
     if (state.characters.length >= 8) return;
     if (state.characters.length >= state.guildStats.maxHeroes) return;
-    const applicationElement = button.closest('.js-heroApplication');
-    const application = applicationElement.data('application');
-    const character = application.character;
+    const character = displayedApplication.character;
     if (!spend('coins', getApplicationCost(character))) {
         return;
     }
     hireCharacter(character);
-    application.character = createNewHeroApplicant();
+    displayedApplication.character = createNewHeroApplicant();
     updateRetireButtons();
     saveGame();
-});
-handleChildEvent('mouseover', document.body, '.js-hireApplicant', function (button) {
-    const applicationElement = button.closest('.js-heroApplication');
-    const application = applicationElement.data('application');
-    previewPointsChange('coins', -getApplicationCost(application.character));
-});
-handleChildEvent('mouseout', document.body, '.js-hireApplicant', function () {
+}
+hireApplicantButton.onmouseover = function (button) {
+    previewPointsChange('coins', -getApplicationCost(displayedApplication.character));
+}
+hireApplicantButton.onmouseout = function () {
     hidePointsPreview();
-});
-handleChildEvent('click', document.body, '.js-seekNewApplicant', function (button) {
-    const applicationElement = button.closest('.js-heroApplication');
-    const application = applicationElement.data('application');
-    if (!spend('coins', getNewApplicationCost(application.character))) {
+}
+seekNewApplicantButton.onclick = function () {
+    if (!spend('coins', getNewApplicationCost(displayedApplication.character))) {
         return;
     }
-    application.character = createNewHeroApplicant();
-    setHeroApplication(applicationElement, application);
+    displayedApplication.character = createNewHeroApplicant();
+    showHeroApplication(displayedApplication);
     saveGame();
-});
-handleChildEvent('mouseover', document.body, '.js-seekNewApplicant', function (button) {
-    const applicationElement = button.closest('.js-heroApplication');
-    const application = applicationElement.data('application');
-    previewPointsChange('coins', -getNewApplicationCost(application.character));
-});
-handleChildEvent('mouseout', document.body, '.js-seekNewApplicant', function () {
+}
+seekNewApplicantButton.onmouseover = function () {
+    previewPointsChange('coins', -getNewApplicationCost(displayedApplication.character));
+}
+seekNewApplicantButton.onmouseout = function () {
     hidePointsPreview();
-});
-function hireHeroHelpMethod($button) {
+}
+
+function hireHeroHelpMethod() {
     const state = getState();
     if (state.characters.length >= state.guildStats.maxHeroes) return 'You do not have enough beds to hire another hero. Dismiss a hero or explore the guild for more beds.';
     return 'Hire this hero. The more famous your guild is, the cheaper it is to hire heroes.';
@@ -148,7 +151,7 @@ function hireHeroHelpMethod($button) {
 //TODO
 //$('.js-hireApplicant').data('helpMethod', hireHeroHelpMethod);
 
-export function hireCharacter(character) {
+export function hireCharacter(character: Character) {
     const state = getState();
     if (state.characters.length > 0 && state.characters.length >= state.guildStats.maxHeroes) return;
     unlockMapLevel(character.currentLevelKey);
@@ -163,11 +166,6 @@ export function hireCharacter(character) {
     setSelectedCharacter(character);
 }
 
-const heroApplicationElement: HTMLElement = query('.js-heroApplication');
-export function showApplication(actor) {
-    setHeroApplication(heroApplicationElement, this);
-    heroApplicationElement.style.display = '';
-}
 export function hideHeroApplication() {
-    heroApplicationElement.style.display = 'none';
+    applicationElement.style.display = 'none';
 }

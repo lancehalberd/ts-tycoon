@@ -1,3 +1,7 @@
+import {
+    Affix, BonusSource, JobKey, SavedEquipment,
+    ActorStats, VariableObject
+} from 'app/types';
 import { Ability, Action, Effect } from 'app/types/abilities';
 import { Character } from 'app/types/Character';
 import { Equipment } from 'app/types/items';
@@ -37,36 +41,54 @@ export interface Actor {
     percentHealth: number,
     percentTargetHealth: number,
     helpMethod: Function,
-    character: Character,
+    character?: Character,
     heading: [number, number, number], // Character moves left to right by default.
-    bonusMaxHealth: number,
-    // Will be set when bonuses are calculated.
-    maxHealth?: number,
     tags?: string[],
-    actions?: Action[],
-    reactions?: Action[],
+    actions?: VariableObject[],
+    reactions?: VariableObject[],
     isActor: true,
-    maxReflectBarrier: number,
-    reflectBarrier: number,
-    stunned: 0,
+    maxReflectBarrier?: number,
+    reflectBarrier?: number,
+    stunned?: number,
     pull?: any,
     chargeEffect?: any,
-    time: number,
-    isDead: boolean,
+    time?: number,
+    isDead?: boolean,
     timeOfDeath?: number,
     skillInUse?: Action,
-    slow: 0,
-    rotation: 0,
-    activity: any,
-    imprintedSpell: any,
+    slow?: number,
+    rotation?: number,
+    activity?: any,
+    imprintedSpell?: any,
     minions: any[],
-    boundEffects: Effect[],
+    boundEffects?: Effect[],
     stopTimeAction?: Action,
-    temporalShield: number,
-    maxTemporalShield: number,
-    dexterity?: number,
-    strength?: number,
-    intelligence?: number,
-    speed?: number,
-    healthRegen?: number,
+    // These fields may be set by variable calculations.
+    temporalShield?: number,
+    maxTemporalShield?: number,
+    // The are the actor is currently in.
+    area?: any,
+
+    // This is usually only on monsters, but we may add these to heroes,
+    // although we have to be careful about enemies stealing them and making
+    // sure they support all the behaviors we need hero affixes to support, like
+    // increased core state growth.
+    prefixes?: Affix[],
+    suffixes?: Affix[],
+    variableObject?: VariableObject,
+    stats?: ActorStats,
+
+    onHitEffects?: VariableObject[],
+    onCritEffects?: VariableObject[],
+    onMissEffects?: VariableObject[],
+    allEffects?: VariableObject[],
+    minionBonusSources?: BonusSource[],
+}
+export interface SavedActor {
+    equipment: SavedEquipment,
+    hairOffset: number,
+    skinColorOffset: number,
+    jobKey: JobKey,
+    level: number,
+    name: string,
 }

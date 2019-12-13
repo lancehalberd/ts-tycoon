@@ -1,11 +1,11 @@
-type Collection = {[key:string]:any} | Array<any>;
+type Collection<T> = {[key:string]: T} | Array<T>;
 
 const Random = {
     /**
      * @param {number} min  The smallest returned value
      * @param {number} max  The largest returned value
      */
-    range(A:number, B:number) {
+    range(A:number, B:number): number {
         var min = Math.min(A, B);
         var max = Math.max(A, B);
         return Math.floor(Math.random() * (max + 1 - min)) + min;
@@ -14,7 +14,7 @@ const Random = {
     /**
      * @param {Collection} collection  The collection of elements to return random element from
      */
-    element(collection:Collection) {
+    element<T>(collection: Collection<T>): T {
         if (collection.constructor == Object) {
             const keys = Object.keys(collection);
             return collection[this.element(keys)];
@@ -30,7 +30,7 @@ const Random = {
     /**
      * @param {Array} array  The array of elements to return random element from
      */
-    removeElement(collection:Collection) {
+    removeElement<T>(collection: Collection<T>): T {
         if (collection.constructor == Object) {
             const keys = Object.keys(collection);
             const key = this.element(keys);
@@ -54,7 +54,7 @@ const Random = {
      *
      * @param {Array} array  The array of elements to shuffle
      */
-    shuffle(array:Array<any>) {
+    shuffle<T>(array:T[]):T[] {
         array = [...array];
         let currentIndex = array.length, temporaryValue, randomIndex;
         // While there remain elements to shuffle...

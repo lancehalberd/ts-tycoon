@@ -14,11 +14,13 @@ import {
     originalJewelScale, updateAdjacentJewels,
 } from 'app/jewels';
 import { exportState, getState, importState, SavedState } from 'app/state';
-import { makeShape, shapeDefinitions } from 'app/utils/polygon';
+import { makeShape, Polygon, shapeDefinitions } from 'app/utils/polygon';
 
-import { Character } from 'app/types/character';
-import { SavedAffix, } from 'app/types/enchantments';
-import { Item, SavedItem, } from 'app/types/items';
+import {
+    Actor, Affix, Board, Character, Item, Jewel, JewelComponents,
+    SavedActor, SavedAffix, SavedBoard, SavedCharacter,
+    SavedItem, SavedFixedJewel, SavedJewel, SavedShape
+} from 'app/types';
 
 export function loadSavedData() {
     if (window.location.search.substr(1) === 'reset' && confirm("Clear your saved data?")) {
@@ -38,34 +40,42 @@ export function saveGame() {
 export function eraseSave() {
     window.localStorage.clear()
 }
-export function exportCharacter(character) {
+export function exportCharacter(character: Character): SavedCharacter {
     return {
-        hero: exportAdventurer(character.hero),
+        hero: exportHero(character.hero),
+        context: character.context,
+        selectedLevelKey: character.selectedLevelKey,
         autoActions: character.autoActions,
         manualActions: character.manualActions,
         board: exportJewelBoard(character.board),
-        autoplay: character.autoplay,
-        gameSpeed: character.gameSpeed,
         divinityScores: character.divinityScores,
         levelTimes: character.levelTimes,
         fame: character.fame,
         divinity: character.divinity,
         currentLevelKey: character.currentLevelKey,
         applicationAge: character.applicationAge || 0,
+        paused: character.paused,
+        autoplay: character.autoplay,
+        skipShrines: character.skipShrines,
+        replay: character.replay,
+        gameSpeed: character.gameSpeed,
+        loopSkip: character.loopSkip,
     };
 }
-export function importCharacter(characterData) {
+export function importCharacter(characterData: SavedCharacter) {
     const characterCanvas = createCanvas(40, 20);
     characterCanvas.setAttribute('helptext', '');
     characterCanvas.classList.add('js-character', 'character');
     const boardCanvas = createCanvas(jewelsCanvas.width, jewelsCanvas.height);
-    const hero = importAdventurer(characterData.hero || characterData.adventurer);
+    const hero = importAdventurer(characterData.hero);
     hero.heading = [1, 0, 0]; // Character moves left to right.
     hero.bonusMaxHealth = 0;
     const character: Character = {
     // Old saves used adventurer instead of hero.
         board: null,
         hero,
+        context: characterData.context,
+        selectedLevelKey: characterData.selectedLevelKey,
         adventurer: hero,
         autoActions: characterData.autoActions || {},
         manualActions: characterData.manualActions || {},
@@ -74,16 +84,21 @@ export function importCharacter(characterData) {
         boardCanvas,
         boardContext: boardCanvas.getContext("2d"),
         time: Date.now(),
-        autoplay: characterData.autoplay,
-        gameSpeed: characterData.gameSpeed,
-        replay: false,
         divinityScores: characterData.divinityScores || {},
         levelTimes: characterData.levelTimes || {},
         divinity: characterData.divinity || 0,
         currentLevelKey: characterData.currentLevelKey || 'guild',
         fame: characterData.fame || Math.ceil(characterData.divinity / 10),
         applicationAge: characterData.applicationAge || 0,
+        // This will get populated when updateJewelBonuses is called.
+        jewelBonuses: {bonuses: {}},
         // Equiping the jewels cannot be done until character.board is actually set.
+        paused: characterData.paused,
+        autoplay: characterData.autoplay,
+        skipShrines: characterData.skipShrines,
+        replay: characterData.replay,
+        gameSpeed: characterData.gameSpeed,
+        loopSkip: characterData.loopSkip,
     };
     if (isNaN(character.divinity) || typeof(character.divinity) !== "number") {
         character.divinity = 0;
@@ -103,7 +118,7 @@ export function importCharacter(characterData) {
     updateAdventurer(character.adventurer);
     return character;
 }
-function exportAdventurer(hero) {
+function exportHero(hero: Actor): SavedActor {
     const data = {
         equipment: {},
         hairOffset: hero.hairOffset,
@@ -118,7 +133,7 @@ function exportAdventurer(hero) {
     }
     return data;
 }
-function importAdventurer(heroData) {
+function importAdventurer(heroData: SavedActor): Actor {
     const hero = makeAdventurerFromData(heroData);
     /*if (window.location.search.substr(1) === 'test') {
         for (const ability of (window.testAbilities, [])) {
@@ -162,13 +177,13 @@ export function importItem(itemData: SavedItem): Item {
     domElement.setAttribute('helptext', '-');
     return item;
 }
-function exportAffix(affix): SavedAffix {
+function exportAffix(affix: Affix): SavedAffix {
     return {
         affixKey: affix.base.key,
         bonuses: {...affix.bonuses},
     };
 }
-function importAffix(affixData: SavedAffix) {
+function importAffix(affixData: SavedAffix): Affix {
     const baseAffix = affixesByKey[affixData.affixKey];
     if (!baseAffix) return null;
     return {
@@ -176,23 +191,24 @@ function importAffix(affixData: SavedAffix) {
         bonuses: affixData.bonuses
     };
 }
-export function exportJewelBoard(board) {
+export function exportJewelBoard(board: Board): SavedBoard {
     return {
-        fixed: board.fixed.map(fixedJewel => {
-            return {
-                abilityKey: fixedJewel.ability.key,
-                shape: exportShape(fixedJewel.shape),
-                confirmed: fixedJewel.confirmed,
-                disabled: fixedJewel.disabled || false,
-            }
-        }),
+        fixed: board.fixed.map(exportFixedJewel),
         jewels: board.jewels.map(exportJewel),
         spaces: board.spaces.map(exportShape),
     };
 }
+function exportFixedJewel(fixedJewel: Jewel): SavedFixedJewel {
+    return {
+        abilityKey: fixedJewel.ability.key,
+        shape: exportShape(fixedJewel.shape),
+        confirmed: fixedJewel.confirmed,
+        disabled: fixedJewel.disabled || false,
+    };
+}
 // In addition to creating the jewel board, it also applies abilities to the adventurer.
-function importJewelBoard(jewelBoardData, character) {
-    const jewelBoard = {
+function importJewelBoard(jewelBoardData: SavedBoard, character: Character): Board {
+    const jewelBoard: Board = {
         fixed: [],
         jewels: jewelBoardData.jewels.map(importJewel),
         spaces: jewelBoardData.spaces.map(importShape),
@@ -216,15 +232,15 @@ function importJewelBoard(jewelBoardData, character) {
     }
     return jewelBoard;
 }
-export function exportJewel(jewel) {
+export function exportJewel(jewel: Jewel): SavedJewel {
     return {
         tier: jewel.tier,
         quality: jewel.quality,
-        components: [...jewel.components],
+        components: [...jewel.components] as JewelComponents,
         shape: exportShape(jewel.shape)
     }
 }
-export function importJewel(jewelData) {
+export function importJewel(jewelData: SavedJewel): Jewel {
     return makeJewelProper(
         jewelData.tier,
         importShape(jewelData.shape),
@@ -232,7 +248,7 @@ export function importJewel(jewelData) {
         jewelData.quality
     );
 }
-function exportShape(shape) {
+function exportShape(shape: Polygon): SavedShape {
     return {
         shapeKey: shape.key,
         x: shape.points[0][0] * originalJewelScale / displayJewelShapeScale,
@@ -240,7 +256,7 @@ function exportShape(shape) {
         rotation: shape.angles[0],
     };
 }
-function importShape(shapeData) {
+function importShape(shapeData: SavedShape): Polygon {
     return makeShape(
         shapeData.x * displayJewelShapeScale / originalJewelScale,
         shapeData.y * displayJewelShapeScale / originalJewelScale,
