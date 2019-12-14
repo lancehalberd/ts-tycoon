@@ -42,7 +42,7 @@ import { centerShapesInRectangle, Polygon } from 'app/utils/polygon';
 import Random from 'app/utils/Random';
 
 import {
-    Action, Actor, ActorStats, Board, BoardData, Character,
+    Ability, Action, Actor, ActorStats, Board, BoardData, Character,
     Effect, Equipment, EquipmentData,
     Job, Tags, VariableObject
 } from 'app/types';
@@ -91,8 +91,8 @@ export const coreStatBonusSource: BonusSource = {'bonuses': {
 
 export function initializeActorForAdventure(actor: Actor) {
     actor.isActor = true;
-    setStat(actor.variableStats, 'bonusMaxHealth', 0);
-    setActorHealth(actor, actor.variableStats.maxHealth);
+    setStat(actor.variableObject, 'bonusMaxHealth', 0);
+    setActorHealth(actor, actor.stats.maxHealth);
     actor.maxReflectBarrier = actor.reflectBarrier = 0;
     actor.stunned = 0;
     actor.pull = null;
@@ -120,21 +120,21 @@ export function refreshStatsPanel(
     statsPanelElement.querySelector('.js-playerName').textContent = adventurer.job.name + ' ' + adventurer.name;
     statsPanelElement.querySelector('.js-playerLevel').textContent = '' + adventurer.level;
     statsPanelElement.querySelector('.js-fame').textContent = character.fame.toFixed(1);
-    statsPanelElement.querySelector('.js-dexterity').textContent = adventurer.dexterity.toFixed(0);
-    statsPanelElement.querySelector('.js-strength').textContent = adventurer.strength.toFixed(0);
-    statsPanelElement.querySelector('.js-intelligence').textContent = adventurer.intelligence.toFixed(0);
+    statsPanelElement.querySelector('.js-dexterity').textContent = adventurer.stats.dexterity.toFixed(0);
+    statsPanelElement.querySelector('.js-strength').textContent = adventurer.stats.strength.toFixed(0);
+    statsPanelElement.querySelector('.js-intelligence').textContent = adventurer.stats.intelligence.toFixed(0);
     query('.js-global-divinity').textContent = abbreviate(character.divinity);
-    statsPanelElement.querySelector('.js-maxHealth').textContent = abbreviate(adventurer.maxHealth, 0);
+    statsPanelElement.querySelector('.js-maxHealth').textContent = abbreviate(adventurer.stats.maxHealth, 0);
     if (adventurer.actions.length) {
         statsPanelElement.querySelector('.js-range').textContent = getBasicAttack(adventurer).range.toFixed(2);
     }
-    statsPanelElement.querySelector('.js-speed').textContent = adventurer.speed.toFixed(1);
-    statsPanelElement.querySelector('.js-healthRegen').textContent = adventurer.healthRegen.toFixed(1);
+    statsPanelElement.querySelector('.js-speed').textContent = adventurer.stats.speed.toFixed(1);
+    statsPanelElement.querySelector('.js-healthRegen').textContent = adventurer.stats.healthRegen.toFixed(1);
     updateDamageInfo(character, statsPanelElement);
 }
 export function newCharacter(job: Job): Character {
     const hero = makeAdventurerFromJob(job, 1, job.startingEquipment || {});
-    setActorHealth(hero, hero.maxHealth);
+    setActorHealth(hero, hero.stats.maxHealth);
     const characterCanvas = createCanvas(40, 20);
     const characterContext = characterCanvas.getContext('2d');
     characterCanvas.classList.add('js-character', 'character');
@@ -190,7 +190,13 @@ export function newCharacter(job: Job): Character {
     jewelInventoryState.overJewel = null;
     return character;
 }
-export function makeAdventurerFromData(adventurerData): Actor {
+export function makeAdventurerFromData({
+        jobKey,
+        level,
+        name,
+        hairOffset,
+        skinColorOffset = Random.range(0, 2),
+}): Actor {
     const personCanvas = createCanvas(personFrames * 96, 64);
     const personContext = personCanvas.getContext("2d");
     personContext.imageSmoothingEnabled = false;
@@ -200,7 +206,7 @@ export function makeAdventurerFromData(adventurerData): Actor {
         y: 0,
         z: 0,
         equipment: {},
-        job: characterClasses[adventurerData.jobKey],
+        job: characterClasses[jobKey],
         source: setupActorSource({
             width: 96,
             height: 64,
@@ -217,10 +223,10 @@ export function makeAdventurerFromData(adventurerData): Actor {
         unlockedAbilities: {},
         abilities: [],
         minions: [],
-        name: adventurerData.name,
-        hairOffset: adventurerData.hairOffset % 6,
-        skinColorOffset: ifdefor(adventurerData.skinColorOffset, Random.range(0, 2)) % 3,
-        level: adventurerData.level,
+        name,
+        hairOffset: hairOffset % 6,
+        skinColorOffset: ifdefor(skinColorOffset) % 3,
+        level,
         image: personCanvas,
         personCanvas,
         personContext,
@@ -239,12 +245,11 @@ export function makeAdventurerFromData(adventurerData): Actor {
 }
 export function makeAdventurerFromJob(job: Job, level: number, equipment: EquipmentData): Actor {
     const adventurer = makeAdventurerFromData({
-        'jobKey': job.key,
+        jobKey: job.key,
         level,
-        'name': Random.element(names),
-        'hairOffset': Random.range(0, 6),
-        'skinColorOffset': Random.range(0, 2),
-        equipment,
+        name: Random.element(names),
+        hairOffset: Random.range(0, 6),
+        skinColorOffset: Random.range(0, 2),
     });
     const state = getState();
     for (const item of Object.values(equipment)) {
@@ -254,7 +259,7 @@ export function makeAdventurerFromJob(job: Job, level: number, equipment: Equipm
     updateAdventurer(adventurer);
     return adventurer;
 }
-export function readBoardFromData(boardData: BoardData, character, ability, confirmed = false): Board {
+export function readBoardFromData(boardData: BoardData, character, ability: Ability, confirmed = false): Board {
     return {
         fixed: boardData.fixed.map(convertShapeDataToShape)
             .map(function(fixedJewelData: Polygon) {
@@ -267,7 +272,7 @@ export function readBoardFromData(boardData: BoardData, character, ability, conf
     };
 }
 
-export function addActions(actor: Actor, source) {
+export function addActions(actor: Actor, source: Ability) {
     let effect: VariableObject, action: VariableObject;
     const parent: VariableObject = actor.variableObject;
     if (source.onHitEffect) {
@@ -296,32 +301,32 @@ export function addActions(actor: Actor, source) {
         addVariableChildToObject(parent, action);
     }
     if (source.minionBonuses) {
-        actor.minionBonusSources.push({'bonuses': source.minionBonuses});
+        actor.minionBonusSources.push({bonuses: source.minionBonuses});
     }
 }
-export function removeActions(actor: Actor, source) {
+export function removeActions(actor: Actor, source: Ability) {
     let variableChild: VariableObject;
-    if (ifdefor(source.onHitEffect)) {
+    if (source.onHitEffect) {
         variableChild = findVariableChildForBaseObject(actor.variableObject, source.onHitEffect);
         removeElementFromArray(actor.onHitEffects, variableChild);
         removeElementFromArray(actor.variableObject.variableChildren, variableChild);
     }
-    if (ifdefor(source.onCritEffect)) {
+    if (source.onCritEffect) {
         variableChild = findVariableChildForBaseObject(actor.variableObject, source.onCritEffect);
         removeElementFromArray(actor.onCritEffects, variableChild);
         removeElementFromArray(actor.variableObject.variableChildren, variableChild);
     }
-    if (ifdefor(source.action)) {
+    if (source.action) {
         variableChild = findVariableChildForBaseObject(actor.variableObject, source.action);
         removeElementFromArray(actor.actions, variableChild);
         removeElementFromArray(actor.variableObject.variableChildren, variableChild);
     }
-    if (ifdefor(source.reaction)) {
+    if (source.reaction) {
         variableChild = findVariableChildForBaseObject(actor.variableObject, source.reaction);
         removeElementFromArray(actor.reactions, variableChild);
         removeElementFromArray(actor.variableObject.variableChildren, variableChild);
     }
-    if (ifdefor(source.minionBonuses)) {
+    if (source.minionBonuses) {
         for (var bonusSource of actor.minionBonusSources) {
             if (bonusSource.bonuses === source.minionBonuses) {
                 removeElementFromArray(actor.minionBonusSources, bonusSource);
@@ -331,7 +336,7 @@ export function removeActions(actor: Actor, source) {
 }
 export function updateAdventurer(adventurer: Actor) {
     // Clear the character's bonuses and graphics.
-    adventurer.variableObject = createVariableObject({'variableObjectType': 'actor'});
+    adventurer.variableObject = createVariableObject({variableObjectType: 'actor'});
     adventurer.actions = [];
     adventurer.reactions = [];
     adventurer.onHitEffects = [];
@@ -365,13 +370,13 @@ export function updateAdventurer(adventurer: Actor) {
         '+unarmed:attackSpeed': .5,
         '+weaponless:critChance': .01
     };
-    adventurer.tags = recomputeActorTags(adventurer);
+    adventurer.variableObject.tags = recomputeActorTags(adventurer);
     updateAdventurerGraphics(adventurer);
     addActions(adventurer, abilities.basicAttack);
     adventurer.abilities.forEach(function (ability) {
         addActions(adventurer, ability);
         if (ability.bonuses) {
-            addBonusSourceToObject(adventurer.variableObject, ability as BonusSource);
+            addBonusSourceToObject(adventurer.variableObject, ability);
         }
     });
     if (adventurer.character) {
@@ -380,7 +385,7 @@ export function updateAdventurer(adventurer: Actor) {
     }
     // Add the adventurer's current equipment to bonuses and graphics
     equipmentSlots.forEach(function (type) {
-        var equipment = adventurer.equipment[type];
+        const equipment = adventurer.equipment[type];
         if (!equipment) {
             return;
         }
@@ -481,12 +486,12 @@ export function recomputeActorTags(actor: Actor): Tags {
         }
     }
     if (actor.base && actor.base.tags) {
-        for (const tag of ifdefor(actor.base.tags, [])) tags[tag] = true;
+        for (const tag of (actor.base.tags || [])) tags[tag] = true;
         if (tags['ranged']) delete tags['melee'];
         else tags['melee'] = true;
     }
-    if (actor.setRange) {
-        if (actor.setRange === 'ranged') {
+    if (actor.stats.setRange) {
+        if (actor.stats.setRange === 'ranged') {
             tags['ranged'] = true;
             delete tags['melee'];
         } else {
@@ -494,9 +499,9 @@ export function recomputeActorTags(actor: Actor): Tags {
             delete tags['ranged'];
         }
     }
-    return tags;
+    return tags as Tags;
 }
-export function actorHelpText(actor) {
+export function actorHelpText(actor: Actor) {
     var name = actor.name;
     if (actor.job) {
         name = actor.job.name + ' ' + name;
@@ -509,84 +514,85 @@ export function actorHelpText(actor) {
     if (suffixNames.length) name = name + ' of ' + suffixNames.join(' and ');
     var title = 'Lvl ' + actor.level + ' ' + name;
     var sections = ['Health: ' + abbreviate(Math.ceil(actor.health)) +
-        '/' + abbreviate(Math.ceil(actor.maxHealth))];
+        '/' + abbreviate(Math.ceil(actor.stats.maxHealth))];
     if (actor.temporalShield > 0) {
-        sections.push('Temporal Shield: ' + actor.temporalShield.format(1) + 's');
+        sections.push('Temporal Shield: ' + actor.temporalShield.toFixed(1) + 's');
     }
     if (actor.reflectBarrier > 0) {
-        sections.push('Reflect: ' + abbreviate(actor.reflectBarrier.format(0)));
+        sections.push('Reflect: ' + abbreviate(actor.reflectBarrier.toFixed(0)));
     }
-    ifdefor(actor.prefixes, []).forEach(function (affix) {
+    (actor.prefixes || []).forEach(function (affix) {
         sections.push(bonusSourceHelpText(affix, actor));
     });
-    ifdefor(actor.suffixes, []).forEach(function (affix) {
+    (actor.suffixes || []).forEach(function (affix) {
         sections.push(bonusSourceHelpText(affix, actor));
     });
-    var countMap = {};
+    const countMap = {};
     ifdefor(actor.allEffects, []).forEach(function (effect) {
         var effectText = bonusSourceHelpText(effect, actor);
         countMap[effectText] = ifdefor(countMap[effectText], 0) + 1;
     });
-    for (var text in countMap) {
+    for (let text in countMap) {
         if (countMap[text] > 1) text += tag('div', 'effectCounter', 'x' + countMap[text]);
         sections.push(tag('div', 'effectText', text));
     }
     return titleDiv(title) + sections.map(bodyDiv).join('');
 }
-export function gainLevel(adventurer) {
-    adventurer.level++;
-    updateTrophy('level-' + adventurer.job.key, adventurer.level);
-    adventurer.fame += adventurer.level;
-    gain('fame', adventurer.level);
-    // We need to update the adventurer from scratch here because we cannot
+export function gainLevel(hero: Actor) {
+    hero.level++;
+    updateTrophy('level-' + hero.job.key, hero.level);
+    hero.character.fame += hero.level;
+    gain('fame', hero.level);
+    // We need to update the hero from scratch here because we cannot
     // remove their bonuses based on their level since no reference is stored to it.
     // One way to avoid this in the future would be to store this as a single bonus
-    // that uses the character level as input. Then if we called setStat(adventurer, 'level', adventurer.level + 1);
+    // that uses the character level as input. Then if we called setStat(hero, 'level', hero.level + 1);
     // All the other stats would be updated as a result. A similar approach could be used to set the base monster bonuses.
     // The formulate for monster health is too complicated for the bonus system to support at the moment though.
-    updateAdventurer(adventurer);
+    updateAdventurer(hero);
     refreshStatsPanel();
     updateEquipableItems();
-    // Enable the skipShrines option only once an adventurer levels the first time.
+    // Enable the skipShrines option only once an hero levels the first time.
     getState().savedState.skipShrinesEnabled = true;
     query('.js-shrineButton').style.display = '';
 }
-export function damageActor(actor, damage) {
+export function damageActor(actor: Actor, damage: number) {
     actor.targetHealth -= damage;
 }
-export function healActor(actor, healAmount) {
+export function healActor(actor: Actor, healAmount: number) {
     actor.targetHealth += healAmount;
 }
-export function setActorHealth(actor, health) {
+export function setActorHealth(actor: Actor, health: number) {
     actor.targetHealth = actor.health = health;
-    actor.percentHealth = actor.percentTargetHealth = health / actor.maxHealth;
+    actor.percentHealth = actor.percentTargetHealth = health / actor.stats.maxHealth;
 }
 
-function divinityToLevelUp(currentLevel) {
+function divinityToLevelUp(currentLevel: number): number {
     return Math.ceil(baseDivinity(currentLevel)*(1 + (currentLevel - 1) / 10));
 }
-export function baseDivinity(level) {
+export function baseDivinity(level: number): number {
     return 10 * Math.pow(1.25, level - 1);
 }
 
-export function totalCostForNextLevel(character: Character, level): number {
+export function totalCostForNextLevel(character: Character, level: {level: number}): number {
     let totalDivinityCost = divinityToLevelUp(character.adventurer.level);
     if (character.adventurer.level > 1) {
-        totalDivinityCost += Math.ceil((level.skill.costCoefficient || 1) * baseDivinity(level.level));
+        // Could add a cost coefficient to make certain skills more expensive/cheaper
+        totalDivinityCost += Math.ceil(baseDivinity(level.level));
     }
-    return Math.ceil((1 - (character.adventurer.reducedDivinityCost || 0)) * totalDivinityCost);
+    return Math.ceil((1 - (character.adventurer.stats.reducedDivinityCost || 0)) * totalDivinityCost);
 }
 export function setSelectedCharacter(character: Character) {
     const state = getState();
     state.selectedCharacter = character;
     // For debug purposes, put selected hero on window.Hero.
-    window['Hero'] = state.selectedCharacter.hero;
-    var adventurer = character.adventurer;
+    window['Hero'] = character.hero;
+    const hero = character.hero;
     // update the equipment displayed.
     equipmentSlots.forEach(function (type) {
         //detach any existing item
         query('.js-equipment .js-' + type + ' .js-item').remove();
-        const equipment: Item = adventurer.equipment[type];
+        const equipment: Item = hero.equipment[type];
         if (equipment) {
             query('.js-equipment .js-' + type).append(equipment.domElement);
         }
@@ -596,11 +602,9 @@ export function setSelectedCharacter(character: Character) {
     refreshStatsPanel(character, query('.js-characterColumn .js-stats'));
     updateOffhandDisplay();
     // update controls:
-    //TODO
-    //$('.js-jewelBoard .js-skillCanvas').data('character', character);
-    character.boardCanvas = query('.js-jewelBoard .js-skillCanvas') as HTMLCanvasElement;
+    character.boardCanvas = jewelsCanvas;
     const jewelBonusContainer = query('.js-jewelBonuses .js-content');
-    jewelBonusContainer.innerText = bonusSourceHelpText(character.jewelBonuses, character.adventurer);
+    jewelBonusContainer.innerText = bonusSourceHelpText(character.jewelBonuses, character.hero);
     centerMapOnLevel(map[character.currentLevelKey]);
     updateAdventureButtons();
     updateSkillConfirmationButtons();
@@ -610,12 +614,15 @@ export function setSelectedCharacter(character: Character) {
     showContext(character.context);
     // Immediately show the desired camera position so the camera doesn't have to
     // catch up on showing the area (the camera isn't updated when the character isn't selected).
-    var actor = character.adventurer;
-    if (actor.area) actor.area.cameraX = getTargetCameraX(actor);
+    if (hero.area) {
+        hero.area.cameraX = getTargetCameraX(hero);
+    }
 }
 
 export function recomputeAllCharacterDirtyStats() {
     const state = getState();
     recomputeDirtyStats(state.guildStats);
-    for (const character of state.characters) recomputeDirtyStats(character.adventurer);
+    for (const { hero } of state.characters) {
+        recomputeDirtyStats(hero.variableObject);
+    }
 }

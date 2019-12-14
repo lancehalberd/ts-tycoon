@@ -18,7 +18,10 @@ import { abbreviate } from 'app/utils/formatters';
 import { getThetaDistance, rectangle, removeElementFromArray } from 'app/utils/index';
 import { centerShapesInRectangle, isPointInPoints } from 'app/utils/polygon';
 import Random from 'app/utils/Random';
-import { Board, BonusSource, Character } from 'app/types';
+import {
+    Actor, Area, Board, BoardData, BonusSource, Character, JewelComponents,
+    Level, LevelData, LevelDifficulty, Range, ShapeData, ShapeType,
+} from 'app/types';
 
 export const closedChestSource = {image: requireImage('gfx/chest-closed.png'), source: rectangle(0, 0, 32, 32)};
 export const openChestSource = {image: requireImage('gfx/chest-open.png'), source: rectangle(0, 0, 32, 32)};
@@ -29,7 +32,12 @@ interface MonsterSpawn {
     bonusSources?: BonusSource[],
     rarity?: number,
 }
-export function instantiateLevel(levelData, levelDifficulty = 'normal', difficultyCompleted = false, level = 0) {
+export function instantiateLevel(
+    levelData: LevelData,
+    levelDifficulty: LevelDifficulty = 'normal',
+    difficultyCompleted = false,
+    level = 0
+): Level {
     level = level || levelData.level;
     var levelDegrees = (360 + 180 * Math.atan2(levelData.coords[1], levelData.coords[0]) / Math.PI) % 360;
     var possibleMonsters = levelData.monsters.slice();
@@ -45,15 +53,15 @@ export function instantiateLevel(levelData, levelDifficulty = 'normal', difficul
     var allMonsters = strengthMonsters.concat(strengthEventMonsters).concat(strengthBosses)
                         .concat(intelligenceMonsters).concat(intelligenceEventMonsters).concat(intelligenceBosses)
                         .concat(dexterityMonsters).concat(dexterityEventMonsters).concat(dexterityBosses);
-    for (var monsterKey of allMonsters) {
+    for (const monsterKey of allMonsters) {
         if (!monsters[monsterKey]) {
             throw new Error('Invalid monster key: ' + monsterKey);
         }
     }
     if (!possibleMonsters.length) {
-        var desiredNumberOfMonsters = Math.min(4, Math.floor(Math.sqrt(level)));
+        const desiredNumberOfMonsters = Math.min(4, Math.floor(Math.sqrt(level)));
         while (possibleMonsters.length < desiredNumberOfMonsters) {
-            var roll = (360 + levelDegrees - 30 + Math.random() * 60) % 360;
+            const roll = (360 + levelDegrees - 30 + Math.random() * 60) % 360;
             if (roll >= 330 || roll < 90) { // Strength
                 possibleMonsters.push(Random.removeElement(strengthMonsters))
             } else if (roll < 210) { // Intelligence
@@ -64,10 +72,10 @@ export function instantiateLevel(levelData, levelDifficulty = 'normal', difficul
         }
         //console.log(JSON.stringify(monsters));
     }
-    var events = levelData.events.slice();
+    const events = levelData.events.slice();
     if (!events.length) {
-        var eventMonsters, bossMonsters;
-        var roll = (360 + levelDegrees - 30 + Math.random() * 60) % 360;
+        let eventMonsters, bossMonsters;
+        const roll = (360 + levelDegrees - 30 + Math.random() * 60) % 360;
         if (roll >= 330 || roll < 90) { // strength
             eventMonsters = strengthEventMonsters;
             bossMonsters = strengthBosses;
@@ -84,20 +92,20 @@ export function instantiateLevel(levelData, levelDifficulty = 'normal', difficul
         events.push([Random.element(possibleMonsters), Random.element(eventMonsters), Random.element(bossMonsters)]);
         //console.log(JSON.stringify(events));
     }
-    var minMonstersPerArea = levelData.minMonstersPerArea || Math.ceil(Math.min(4, 1.5 * level / events.length));
-    var maxMonstersPerArea = levelData.maxMonstersPerArea || Math.floor(Math.min(10, 4 * level / events.length));
+    const minMonstersPerArea = Math.ceil(Math.min(4, 1.5 * level / events.length));
+    const maxMonstersPerArea = Math.floor(Math.min(10, 4 * level / events.length));
 
-    var eventsLeft = events;
-    var areas = new Map();
-    var lastArea;
-    var levelBonuses = (levelData.enemySkills || []).map(abilityKey => abilities[abilityKey]);
+    const eventsLeft = events;
+    const areas = new Map();
+    let lastArea;
+    const levelBonuses: BonusSource[] = (levelData.enemySkills || []).map(abilityKey => abilities[abilityKey]);
     if (levelDifficulty === 'easy') levelBonuses.push(easyBonuses);
     else if (levelDifficulty === 'hard' || levelDifficulty === 'endless') levelBonuses.push(hardBonuses);
-    var maxLoops = 2000;
+    let maxLoops = 2000;
     // most objects are always enabled in levels.
-    var isEnabled = () => true;
+    const isEnabled = () => true;
     while (true) {
-        var area = {
+        const area: Area = {
             key: `area${areas.size}`,
             isBossArea: false,
             left: 0,
@@ -123,10 +131,10 @@ export function instantiateLevel(levelData, levelDifficulty = 'normal', difficul
         areas.set(area.key, area);
         lastArea = area;
         if (!eventsLeft.length) break;
-        var eventMonsters = eventsLeft.shift().slice();
+        const eventMonsters = eventsLeft.shift().slice();
         area.isBossArea = !eventsLeft.length;
-        var numberOfMonsters = Random.range(minMonstersPerArea, maxMonstersPerArea);
-        var areaMonsters = [];
+        const numberOfMonsters = Random.range(minMonstersPerArea, maxMonstersPerArea);
+        const areaMonsters = [];
         // Add random monsters to the beginning of the area to fill it up the desired amount.
         while (areaMonsters.length < numberOfMonsters - eventMonsters.length) {
             const monster: MonsterSpawn = {
@@ -181,15 +189,18 @@ export function instantiateLevel(levelData, levelDifficulty = 'normal', difficul
         // component can be as high as 120 so if it is at least 90 we are within 30 degrees of a primary leyline
         var maxComponent = Math.max(redComponent, blueComponent, greenComponent);
         const tier = getJewelTiewerForLevel(level);
-        var components = [[(redComponent + allComponent) * 0.9, (redComponent + allComponent) * 1.1],
-                          [(greenComponent + allComponent) * 0.9, (greenComponent + allComponent) * 1.1],
-                          [(blueComponent + allComponent) * 0.9, (blueComponent + allComponent) * 1.1]];
+        var components: [Range, Range, Range] = [
+            [(redComponent + allComponent) * 0.9, (redComponent + allComponent) * 1.1],
+            [(greenComponent + allComponent) * 0.9, (greenComponent + allComponent) * 1.1],
+            [(blueComponent + allComponent) * 0.9, (blueComponent + allComponent) * 1.1]
+        ];
+        let shapeTypes: ShapeType[];
         if (maxComponent < 90) {
-            var shapeTypes = ['rhombus']
+            shapeTypes = ['rhombus']
             if (levelDifficulty !== 'easy') shapeTypes.push('square');
             if (levelDifficulty === 'hard') shapeTypes.push('trapezoid');
         } else {
-            var shapeTypes = ['triangle'];
+            shapeTypes = ['triangle'];
             if (levelDifficulty !== 'easy') shapeTypes.push('diamond');
             if (levelDifficulty === 'hard') shapeTypes.push('trapezoid');
         }
@@ -229,7 +240,7 @@ export function instantiateLevel(levelData, levelDifficulty = 'normal', difficul
             object.area = area;
     });
     return {
-        'base': levelData,
+        base: levelData,
         level,
         levelDifficulty,
         entrance: {areaKey: 'area0', x: 120, z: 0},
@@ -255,12 +266,12 @@ var drawLetter = (context, letter, x, y) => {
     context.fillText(letter, x, y + 7);
 };
 
-export function activateShrine(actor) {
-    var character = actor.character;
+export function activateShrine(actor: Actor) {
+    const character = actor.character;
     // Don't activate the shrine a second time.
     if (character.isStuckAtShrine) return;
-    var area = actor.area;
-    var level = map[character.currentLevelKey];
+    const area = actor.area;
+    const level: LevelData = map[character.currentLevelKey];
     if (character.adventurer.level >= MAX_LEVEL) {
         messageCharacter(character, character.adventurer.name + ' is already max level');
         return;
@@ -269,31 +280,31 @@ export function activateShrine(actor) {
         messageCharacter(character, 'Ability already learned');
         return;
     }
-    var divinityNeeded = totalCostForNextLevel(character, level) - character.divinity;
+    const divinityNeeded = totalCostForNextLevel(character, level) - character.divinity;
     if (divinityNeeded > 0) {
         messageCharacter(character, 'Still need ' + abbreviate(divinityNeeded) + ' Divinity');
         return;
     }
     // TBD: Make this number depend on the game state so it can be improved over time.
-    var boardOptions = 2;
-    for (var i = 0; i < boardOptions; i++) {
-        var boardData = getBoardDataForLevel(level);
-        var boardPreview = readBoardFromData(boardData, character, abilities[level.skill]);
-        var boardPreviewSprite = adventureBoardPreview(boardPreview, character);
+    const boardOptions = 2;
+    for (let i = 0; i < boardOptions; i++) {
+        const boardData = getBoardDataForLevel(level);
+        const boardPreview = readBoardFromData(boardData, character, abilities[level.skill]);
+        const boardPreviewSprite = adventureBoardPreview(boardPreview, character);
         boardPreviewSprite.x = this.x - (boardOptions * 150 - 150) / 2 + 150 * i;
         boardPreviewSprite.y = 250;
         area.objects.push(boardPreviewSprite);
     }
-    var blessingText = objectText('Choose Your Blessing');
+    const blessingText = objectText('Choose Your Blessing');
     blessingText.x = this.x;
     blessingText.y = 330;
     area.objects.push(blessingText);
     character.isStuckAtShrine = true;
 }
-export function finishShrine(character) {
-    var objects = character.hero.area.objects;
-    for (var i = 0; i < objects.length; i++) {
-        var object = objects[i];
+export function finishShrine(character: Character) {
+    const objects = character.hero.area.objects;
+    for (let i = 0; i < objects.length; i++) {
+        const object = objects[i];
         if (object.type === 'button' || object.type === 'text') {
             objects.splice(i--, 1);
         } else if (object.type === 'shrine') {
@@ -304,7 +315,7 @@ export function finishShrine(character) {
 }
 
 function iconButton(iconSource, width, height, onClick, helpText) {
-    var self = {
+    const self = {
         'x': 0,
         'y': 0,
         left: 0,
@@ -366,7 +377,7 @@ function adventureBoardPreview(boardPreview: Board, character: Character) {
             }
             return false;
         },
-        onClick(character) {
+        onClick(character: Character) {
             centerShapesInRectangle(this.boardPreview.fixed.map(j => j.shape).concat(this.boardPreview.spaces), rectangle(0, 0, character.boardCanvas.width, character.boardCanvas.height));
             snapBoardToBoard(this.boardPreview, character.board);
             character.board.boardPreview = this.boardPreview;
@@ -374,7 +385,7 @@ function adventureBoardPreview(boardPreview: Board, character: Character) {
             updateSkillConfirmationButtons();
             setContext('jewel');
         },
-        draw(area) {
+        draw(area: Area) {
             // Remove the preview from the character if we draw it to the adventure screen since they both use the same coordinate variables
             // and displaying it in the adventure screen will mess up the display of it on the character's board. I think this will be okay
             // since they can't look at both screens at once.
@@ -394,7 +405,7 @@ export function updateSkillConfirmationButtons() {
     toggleElements(queryAll('.js-augmentConfirmationButtons'), !!getState().selectedCharacter.board.boardPreview);
 }
 
-function getBoardDataForLevel(level) {
+function getBoardDataForLevel(level: LevelData): BoardData {
     let safety = 0;
     const levelDegrees = 180 * Math.atan2(level.coords[1], level.coords[0]) / Math.PI;
     // 30 degrees = red leyline, 150 degrees = blue leyline, 270 degrees = green leyline.
@@ -415,19 +426,21 @@ function getBoardDataForLevel(level) {
     if (chosenTemplate.size <= totalValue) {
         throw new Error('No template found for a board of size ' + totalValue);
     }
-    var currentSize = chosenTemplate.size;
-    var shapesToKeep = chosenTemplate.shapes.slice();
-    var removedShapes = [];
+    let currentSize = chosenTemplate.size;
+    let shapesToKeep = chosenTemplate.shapes.slice();
+    let removedShapes: ShapeData[] = [];
     // This loop randomly adds and removes shapes until we get to the right value. Since some shapes are worth 2 points, and others worth 1,
     // it may overshoot, but eventually it will hit the target.
     while (currentSize !== totalValue && safety++ < 100) {
         if (currentSize > totalValue) {
             // Get rid of a shape to keep if the board is too large.
-            removedShapes = removedShapes.concat(shapesToKeep.splice(Math.floor(Math.random() * shapesToKeep.length), 1));
+            //removedShapes = removedShapes.concat(shapesToKeep.splice(Math.floor(Math.random() * shapesToKeep.length), 1));
+            removedShapes.push(Random.removeElement(shapesToKeep));
             currentSize -= shapeValues[removedShapes[removedShapes.length - 1].k]
         } else {
             // Add a shape back in if the board is too small.
-            shapesToKeep = shapesToKeep.concat(removedShapes.splice(Math.floor(Math.random() * removedShapes.length), 1));
+            //shapesToKeep = shapesToKeep.concat(removedShapes.splice(Math.floor(Math.random() * removedShapes.length), 1));
+            shapesToKeep.push(Random.removeElement(removedShapes));
             currentSize += shapeValues[shapesToKeep[shapesToKeep.length - 1].k]
         }
     }

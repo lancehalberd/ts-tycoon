@@ -1,4 +1,4 @@
-import { Actor, Board, BonusSource, JobKey, SavedActor, SavedBoard } from 'app/types';
+import { Actor, Board, BonusSource, JobKey, LevelDifficulty, SavedActor, SavedBoard } from 'app/types';
 import { JobIcon } from 'app/content/jobs';
 
 export interface Character {
@@ -6,7 +6,6 @@ export interface Character {
     fame: number,
     hero: Actor,
     board: Board,
-    currentLevelKey: string,
     characterCanvas: HTMLCanvasElement,
     characterContext: CanvasRenderingContext2D,
     boardCanvas: HTMLCanvasElement,
@@ -18,7 +17,11 @@ export interface Character {
     jewelBonuses?: BonusSource,
 
     context: string,
+    // Selected level key in the map
     selectedLevelKey?: string,
+    // Most recent level key actually played (including currently)
+    currentLevelKey: string,
+    levelDifficulty?: LevelDifficulty,
     isStuckAtShrine?: boolean,
 
     // Autoplay controls

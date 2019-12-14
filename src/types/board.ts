@@ -17,9 +17,17 @@ export interface Board {
     boardPreview?: Board,
 }
 
+// Used for fully defined boards, like those users for the job's starting boards.
 export interface BoardData {
     fixed: ShapeData[],
     spaces: ShapeData[],
+}
+
+// Used as templates for creating board augmentations when learning a new skill.
+// Shapes are removed as needed, and one shape is set to be the fixed jewel.
+export interface BoardTemplate {
+    size: number,
+    shapes: ShapeData[],
 }
 
 export interface SavedBoard {

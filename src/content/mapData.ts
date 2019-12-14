@@ -1,3 +1,5 @@
+import { LevelData } from 'app/types';
+
 export const map = {
     'academy': {
         'name': "Academy",
@@ -14,7 +16,7 @@ export const map = {
             ["gnomeMage","gnomeCleric"],
             ["gnomeWizard","gnomeCleric"]
         ]
-    },
+    } as LevelData,
     'ancientforest': {
         'name': "Ancient Forest",
         'description': "",

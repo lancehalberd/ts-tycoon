@@ -1,6 +1,6 @@
 import { getThetaDistance, removeElementFromArray } from 'app/utils/index';
 import Random from 'app/utils/Random';
-import { BoardData, ShapeData } from 'app/types/board';
+import { BoardData, BoardTemplate, ShapeData } from 'app/types';
 import { JobKey } from 'app/types/jobs';
 
 function board(shapes: ShapeData[]): BoardData {
@@ -39,14 +39,14 @@ export const squareBoard = {
         {"k":"rhombus","p":[144.98076211353316,121],"t":60},{"k":"rhombus","p":[73.99999999999999,50.01923788646685],"t":60}]
 };
 
-export const basicTemplateBoards = [
+export const basicTemplateBoards: BoardTemplate[] = [
     {'size': 4, 'shapes': [{"k":"triangle","p":[70,185.01923788646684],"t":-60},{"k":"triangle","p":[55,211],"t":-60},{"k":"triangle","p":[70,185.01923788646684],"t":0},{"k":"triangle","p":[85,211],"t":-60}]},
     {'size': 6, 'shapes': [{"k":"triangle","p":[199.51923788646684,208.99038105676658],"t":-60},{"k":"triangle","p":[214.51923788646684,183.00961894323342],"t":-60},{"k":"triangle","p":[199.51923788646684,157.02885682970026],"t":0},{"k":"triangle","p":[184.51923788646684,183.00961894323342],"t":-60},{"k":"triangle","p":[214.51923788646684,183.00961894323342],"t":0},{"k":"triangle","p":[184.51923788646684,183.00961894323342],"t":0}]},
     {'size': 6, 'shapes': [{"k":"triangle","p":[155,79],"t":120},{"k":"triangle","p":[155,79],"t":180},{"k":"diamond","p":[155,79],"t":0},{"k":"triangle","p":[170,53.01923788646684],"t":120},{"k":"triangle","p":[155,79],"t":300}]},
     {'size': 9, 'shapes': [{"k":"triangle","p":[327.01923788646684,211],"t":-60},{"k":"diamond","p":[357.01923788646684,159.03847577293368],"t":120},{"k":"diamond","p":[327.01923788646684,211],"t":-180},{"k":"triangle","p":[312.01923788646684,185.01923788646684],"t":-60},{"k":"diamond","p":[372.01923788646684,185.01923788646684],"t":60},{"k":"triangle","p":[342.01923788646684,185.01923788646684],"t":-60}]},
     {'size': 10, 'shapes': [{"k":"diamond","p":[150,60.01923788646684],"t":-60},{"k":"triangle","p":[165,86],"t":300},{"k":"triangle","p":[165,86],"t":120},{"k":"diamond","p":[150,111.98076211353316],"t":-60},{"k":"diamond","p":[180,111.98076211353316],"t":-120},{"k":"diamond","p":[135,86],"t":-120}]}
 ];
-export const complexTemplateBoards = [
+export const complexTemplateBoards: BoardTemplate[] = [
     {'size': 5, 'shapes': [{"k":"triangle","p":[509.9615242270663,226.96152422706632],"t":210},{"k":"square","p":[509.9615242270663,196.9615242270663],"t":0},{"k":"triangle","p":[509.9615242270663,196.96152422706632],"t":300},{"k":"rhombus","p":[498.98076211353316,185.98076211353316],"t":-30}]},
     {'size': 5, 'shapes': [{"k":"rhombus","p":[579.9615242270664,109.99999999999969],"t":-240},{"k":"square","p":[534.9615242270663,105.98076211353316],"t":0},{"k":"triangle","p":[579.9615242270664,79.99999999999973],"t":480},{"k":"triangle","p":[534.9615242270664,105.98076211353299],"t":300}]},
     {'size': 7, 'shapes': [{"k":"diamond","p":[525.9615242270663,201.94228634059948],"t":-210},{"k":"square","p":[525.9615242270663,171.94228634059948],"t":0},{"k":"rhombus","p":[514.9807621135332,160.96152422706632],"t":-30},{"k":"diamond","p":[555.9615242270663,171.94228634059948],"t":-180}]},
@@ -57,7 +57,7 @@ export const complexTemplateBoards = [
     {'size': 9, 'shapes': [{"k":"rhombus","p":[359,37.01923788646684],"t":-30},{"k":"rhombus","p":[318.01923788646684,48],"t":30},{"k":"square","p":[318.01923788646684,48],"t":-60},{"k":"rhombus","p":[359,88.98076211353316],"t":90},{"k":"square","p":[344,63],"t":-30},{"k":"square","p":[314,63],"t":0}]}
 ];
 
-export const classBoards: {[key in JobKey]: Board} = {
+export const classBoards: {[key in JobKey]: BoardData} = {
     'juggler': board([{"k":"triangle","p":[274,113],"t":60},{"k":"diamond","p":[274,113],"t":-60},{"k":"diamond","p":[244,113],"t":0},{"k":"diamond","p":[289,138.98076211353316],"t":60}]),
     'ranger': board([{"k":"triangle","p":[274,113],"t":60},{"k":"diamond","p":[244,164.96152422706632],"t":-60},{"k":"diamond","p":[304,113],"t":0},{"k":"diamond","p":[274,113],"t":-60},
                      {"k":"diamond","p":[289,138.98076211353316],"t":60},{"k":"diamond","p":[259,87.01923788646684],"t":60},{"k":"diamond","p":[244,113],"t":0}]),

@@ -8,4 +8,5 @@ export * from 'app/types/guild';
 export * from 'app/types/items';
 export * from 'app/types/jewels';
 export * from 'app/types/jobs';
+export * from 'app/types/level';
 export * from 'app/types/other';

@@ -1,4 +1,3 @@
-import { initializeVariableObject } from 'app/bonuses';
 import {
     actorHelpText, makeAdventurerFromData, setActorHealth, updateAdventurer
 } from 'app/character';
@@ -69,7 +68,6 @@ export function importCharacter(characterData: SavedCharacter) {
     const boardCanvas = createCanvas(jewelsCanvas.width, jewelsCanvas.height);
     const hero = importAdventurer(characterData.hero);
     hero.heading = [1, 0, 0]; // Character moves left to right.
-    hero.bonusMaxHealth = 0;
     const character: Character = {
     // Old saves used adventurer instead of hero.
         board: null,
@@ -109,7 +107,7 @@ export function importCharacter(characterData: SavedCharacter) {
         jewel.character = character;
         updateAdjacentJewels(jewel);
     }
-    setActorHealth(hero, hero.maxHealth);
+    setActorHealth(hero, hero.stats.maxHealth);
     if (!map[character.currentLevelKey]) {
         character.currentLevelKey = 'guild';
     }

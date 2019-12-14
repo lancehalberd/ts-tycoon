@@ -38,13 +38,13 @@ import { abbreviate } from 'app/utils/formatters';
 import { ifdefor } from 'app/utils/index';
 import { isMouseDown } from 'app/utils/mouse';
 
-import { BonusSource, Exit } from 'app/types';
+import { BonusSource, Character, Exit } from 'app/types';
 
 
 export function limitZ(zValue: number, radius: number = 0): number {
     return Math.max(MIN_Z + radius, Math.min(MAX_Z - radius, zValue));
 }
-export function startLevel(character, index) {
+export function startLevel(character: Character, index: string) {
     if (!map[index]) {
         throw new Error('No level found for ' + index);
     }
@@ -128,10 +128,15 @@ export function enterArea(actor, {x, z, areaKey}: Exit) {
     actor.enemies = area.enemies;
     actor.activity = null;
 }
-export function addMonstersToArea(area, monsters, extraBonuses = [], specifiedRarity = 0) {
+export function addMonstersToArea(
+    area,
+    monsters,
+    extraBonuses: BonusSource[] = [],
+    specifiedRarity = 0
+) {
     area.enemies = [];
     for (const monsterData of (monsters || [])) {
-        const bonusSources = (monsterData.bonusSources || []).concat(extraBonuses);
+        const bonusSources = [...(monsterData.bonusSources || []), ...extraBonuses];
         const rarity = monsterData.rarity || specifiedRarity;
         const newMonster = makeMonster(monsterData.key, monsterData.level, bonusSources, rarity);
         newMonster.heading = [-1, 0, 0]; // Monsters move right to left

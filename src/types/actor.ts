@@ -5,7 +5,7 @@ import {
 import { Ability, Action, Effect } from 'app/types/abilities';
 import { Character } from 'app/types/Character';
 import { Equipment } from 'app/types/items';
-import { Job } from 'app/types/jobs';
+import { Job, Level } from 'app/types';
 
 export interface ActorSource {
     width: number,
@@ -27,6 +27,8 @@ export interface Actor {
     z: number,
     equipment: Equipment,
     job: Job,
+    // Set for monsters.
+    base?: any, // MonsterData once it exists.
     source: ActorSource,
     unlockedAbilities: {[key: string]: true},
     abilities: Ability[],
@@ -44,8 +46,8 @@ export interface Actor {
     character?: Character,
     heading: [number, number, number], // Character moves left to right by default.
     tags?: string[],
-    actions?: VariableObject[],
-    reactions?: VariableObject[],
+    actions?: Action[],
+    reactions?: Action[],
     isActor: true,
     maxReflectBarrier?: number,
     reflectBarrier?: number,
@@ -66,8 +68,12 @@ export interface Actor {
     // These fields may be set by variable calculations.
     temporalShield?: number,
     maxTemporalShield?: number,
+    health?: number,
+    targetHealth?: number,
     // The are the actor is currently in.
     area?: any,
+    // The general level the character is in (composed of multiple areas).
+    levelInstance?: Level,
 
     // This is usually only on monsters, but we may add these to heroes,
     // although we have to be careful about enemies stealing them and making
@@ -83,6 +89,9 @@ export interface Actor {
     onMissEffects?: VariableObject[],
     allEffects?: VariableObject[],
     minionBonusSources?: BonusSource[],
+}
+export interface Hero extends Actor {
+
 }
 export interface SavedActor {
     equipment: SavedEquipment,

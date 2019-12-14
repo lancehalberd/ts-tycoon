@@ -1,4 +1,4 @@
-import { Character } from 'app/types';
+import { Area, Character } from 'app/types';
 
 export interface Exit {
     // The area to enter when using this exit.
@@ -45,30 +45,10 @@ export interface RawGuildArea extends Partial<GuildArea>{
     width: number,
     backgroundPatterns: {[key: string]: string},
 }
-export interface GuildArea {
-    key: string,
+export interface GuildArea extends Area {
     isGuildArea: true,
-    width: number,
-    backgroundPatterns: {[key: string]: string},
-    wallDecorations: any[],
-    rightWallDecorations: any[],
-    leftWallDecorations: any[],
-    rightWall?: string,
-    leftWall?: string,
-    left: number,
-    cameraX: number,
-    time: number,
-
     // This defines the monster spawns for the area.
     monsters: any[],
-
-    allies: any[],
-    enemies: any[],
-    projectiles: any[],
-    effects: any[],
-    textPopups: any[],
-    treasurePopups: any[],
-    objects: any[],
-    objectsByKey: {[key: string]: any}
+    objectsByKey: {[key: string]: any},
 }
 export type GuildAreas = {[key: string]: GuildArea};

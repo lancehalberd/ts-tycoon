@@ -1,8 +1,15 @@
 import { JobIcon } from 'app/content/jobs';
 import { Bonuses } from 'app/types/bonuses';
-import { Frame } from 'app/types';
+import { ActionStats, Frame, VariableObject } from 'app/types';
 
 export interface Action {
+    readyAt: number,
+    variableObject: VariableObject,
+    stats: ActionStats,
+    source: Ability,
+}
+
+export interface ActionData {
     type: string,
     name?: string,
     key?: string,
@@ -23,13 +30,14 @@ export interface Effect {
 }
 
 interface TriggerEffect {
-
+    variableObjectType: 'trigger',
+    bonuses?: Bonuses,
 }
 export interface Ability {
     key?: string,
     name: string,
-    action?: Action,
-    reaction?: Action,
+    action?: ActionData,
+    reaction?: ActionData,
     onCritEffect?: TriggerEffect,
     onHitEffect?: TriggerEffect,
     onMissEffect?: TriggerEffect,

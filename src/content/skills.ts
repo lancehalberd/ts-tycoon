@@ -6,13 +6,13 @@ import { GROUND_Y } from 'app/gameConstants';
 import { drawTintedImage, requireImage, staticAnimation } from 'app/images';
 import { rectangle } from 'app/utils/index';
 
-import { Action, Effect } from 'app/types/abilities';
+import { ActionData, Effect } from 'app/types/abilities';
 import { Bonuses } from 'app/types/bonuses';
 import { Frame } from 'app/types';
 
 const scrollIconSource = 'gfx/496RpgIcons/openScroll.png';
 
-function genericAction(type, rawAction, bonuses: Bonuses, helpText = ''): Action {
+function genericAction(type, rawAction, bonuses: Bonuses, helpText = ''): ActionData {
     const action = {
         icon: scrollIconSource,
         ...rawAction,
@@ -29,7 +29,7 @@ function genericAction(type, rawAction, bonuses: Bonuses, helpText = ''): Action
     return action;
 }
 
-function movementAction(type, rawAction, bonuses: Bonuses, helpText = ''): Action {
+function movementAction(type, rawAction, bonuses: Bonuses, helpText = ''): ActionData {
     const action = {
         icon: scrollIconSource,
         ...rawAction,
@@ -43,7 +43,7 @@ function movementAction(type, rawAction, bonuses: Bonuses, helpText = ''): Actio
 }
 
 
-function attackAction(type, rawAction, bonuses: Bonuses, helpText = ''): Action {
+function attackAction(type, rawAction, bonuses: Bonuses, helpText = ''): ActionData {
     const action = {
         icon: scrollIconSource,
         ...rawAction,
@@ -59,7 +59,7 @@ function attackAction(type, rawAction, bonuses: Bonuses, helpText = ''): Action 
     return action;
 }
 
-function spellAction(type, rawAction, bonuses: Bonuses, helpText = ''): Action {
+function spellAction(type, rawAction, bonuses: Bonuses, helpText = ''): ActionData {
     const action = {
         icon: jobIcons.sage,
         ...rawAction,

@@ -73,7 +73,7 @@ const bgSources = {
     woodFloorEdge: backgroundSource(guildImage, 0, 240, 60, 60),
 };
 
-export const backgrounds: {[key: string]: BackgroundSection[]} = {
+export const backgrounds = {
     oldGuild: [
         {'source': bgSources.crackedWall},
         {'source': bgSources.oldFloorBoards},

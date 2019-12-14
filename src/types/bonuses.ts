@@ -17,7 +17,9 @@ export interface BonusesRange {
 }
 
 export interface BonusSource {
-    bonuses: Bonuses,
+    // We often include things that could have bonuses but don't.
+    // For those we just ignore them.
+    bonuses?: Bonuses,
     // This will get cached on the bonus source.
     parsedBonuses?: Bonus[],
 }
@@ -92,7 +94,7 @@ export interface ActorStats {
     healOnCast?: number,
     castKnockBack?: number,
     // Used by Throwing Paradigm Shift which turns throwing weapons into melee weapons.
-    setRange?: number,
+    setRange?: 'melee' | 'ranged',
     cannotAttack?: boolean,
     healingAttacks?: boolean,
     imprintSpell?: boolean,

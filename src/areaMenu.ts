@@ -5,6 +5,8 @@ import { query, toggleElements } from 'app/dom';
 import { centerMapOnLevel } from 'app/map';
 import { getState } from 'app/state';
 
+import { Character, LevelData, LevelDifficulty } from 'app/types';
+
 const areaMenuElement = query('.js-areaMenu');
 const easyDifficulty = query('.js-areaMenu .js-easyDifficulty');
 const normalDifficulty = query('.js-areaMenu .js-normalDifficulty');
@@ -62,7 +64,7 @@ normalDifficulty.onclick = () => selectDifficulty('normal');
 hardDifficulty.onclick = () => selectDifficulty('hard');
 endlessDifficulty.onclick = () => selectDifficulty('endless');
 
-function selectDifficulty(difficulty) {
+function selectDifficulty(difficulty: LevelDifficulty) {
     hideAreaMenu();
     const state = getState();
     state.selectedCharacter.levelDifficulty = difficulty;
@@ -70,7 +72,7 @@ function selectDifficulty(difficulty) {
     startLevel(state.selectedCharacter, state.selectedCharacter.selectedLevelKey);
 }
 
-export function getEndlessLevel(character, level) {
+export function getEndlessLevel(character: Character, level: LevelData): number {
     const times = character.levelTimes[level.levelKey] || {};
     return times['endless'] || level.level + 5;
 }
