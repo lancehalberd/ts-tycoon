@@ -1,6 +1,6 @@
 import {
-    Affix, BonusSource, JobKey, SavedEquipment,
-    ActorStats, VariableObject
+    ActorStats, Affix, Area, BonusSource, JobKey, SavedEquipment,
+    VariableObject
 } from 'app/types';
 import { Ability, Action, Effect } from 'app/types/abilities';
 import { Character } from 'app/types/Character';
@@ -71,9 +71,10 @@ export interface Actor {
     health?: number,
     targetHealth?: number,
     // The are the actor is currently in.
-    area?: any,
+    area?: Area,
     // The general level the character is in (composed of multiple areas).
     levelInstance?: Level,
+    goalTarget?: any,
 
     // This is usually only on monsters, but we may add these to heroes,
     // although we have to be careful about enemies stealing them and making
@@ -84,10 +85,11 @@ export interface Actor {
     variableObject?: VariableObject,
     stats?: ActorStats,
 
-    onHitEffects?: VariableObject[],
-    onCritEffects?: VariableObject[],
-    onMissEffects?: VariableObject[],
-    allEffects?: VariableObject[],
+    onHitEffects?: Action[],
+    onCritEffects?: Action[],
+    onMissEffects?: Action[],
+
+    allEffects?: BonusSource[],
     minionBonusSources?: BonusSource[],
 }
 export interface Hero extends Actor {

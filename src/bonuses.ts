@@ -444,13 +444,6 @@ export function setStat(object: VariableObject, statKey: string, newValue: any) 
     }
 }
 
-export function findVariableChildForBaseObject(parentObject: VariableObject, baseObject: VariableObjectBase) {
-    for (const variableChild of parentObject.variableChildren) {
-        if (variableChild.base === baseObject) return variableChild;
-    }
-    throw Error("Variable child was not found for given base object");
-}
-
 export function addVariableChildToObject(parentObject: VariableObject, child: VariableObject, triggerComputation = false) {
     parentObject.variableChildren.push(child);
     child.tags = recomputeChildTags(parentObject, child);

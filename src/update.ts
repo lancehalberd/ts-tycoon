@@ -1,10 +1,19 @@
-import { updateTrophy } from 'app/content/achievements';
-import { FRAME_LENGTH } from 'app/gameConstants';
+import { updateArea } from 'app/adventure';
+import { refreshStatsPanel } from 'app/character';
+import { updateTrophyPopups } from 'app/content/achievements';
+import { mainCanvas, query } from 'app/dom';
+import { updateCraftingCanvas } from 'app/equipmentCrafting';
+import { FRAME_LENGTH, GROUND_Y } from 'app/gameConstants';
 import { initializeGame } from 'app/initialize';
 import { areAllImagesLoaded } from 'app/images';
+import { updateMap } from 'app/map';
+import { handleAdventureMouseIsDown } from 'app/main';
+import { checkremovePopup } from 'app/popup';
+import { getState } from 'app/state';
 import { getMousePosition, isMouseDown } from 'app/utils/mouse';
 import { areAllSoundsLoaded } from 'app/utils/sounds';
-import { mainCanvas } from 'app/dom';
+
+import { Actor } from 'app/types';
 
 let isGameInitialized = false;
 export function update() {
@@ -17,67 +26,72 @@ export function update() {
         }
         return;
     }
-    /*try {
-    var characters = testingLevel ? [state.selectedCharacter] : state.characters;
-    var mousePosition = relativeMousePosition($(mainCanvas));
-    var activeGuildAreaHash = {};
-    for (var character of characters) {
-        var hero = character.hero;
+    try {
+    const state = getState();
+    //var characters = testingLevel ? [state.selectedCharacter] : state.characters;
+    const characters = state.characters;
+    const [x, y] = getMousePosition(mainCanvas);
+    const activeGuildAreaHash = {};
+    for (const character of characters) {
+        const hero = character.hero;
         if (character.context === 'guild' ||
             (character.context === 'adventure' && !isCharacterPaused(character))
         ) {
-            character.loopCount = ifdefor(character.loopCount) + 1;
-            var loopSkip = (character.autoplay) ? ifdefor(character.loopSkip, 1) : 1;
+            character.loopCount = (character.loopCount || 0) + 1;
+            const loopSkip = (character.autoplay) ? (character.loopSkip || 1) : 1;
             if (character.loopCount % loopSkip) break;
-            var gameSpeed = (character.autoplay) ? character.gameSpeed : 1;
-            for (var i = 0; i < gameSpeed  && character.adventurer.area; i++) {
+            const gameSpeed = (character.autoplay) ? character.gameSpeed : 1;
+            for (let i = 0; i < gameSpeed  && character.adventurer.area; i++) {
                 character.time += FRAME_LENGTH / 1000;
                 if (character.context === 'adventure') {
                     updateAreaCamera(hero.area, hero);
-                    updateArea(hero.area, FRAME_LENGTH / 1000);
-                } else if (character.context === 'guild') activeGuildAreaHash[character.guildAreaKey] = true;
+                    updateArea(hero.area);
+                } else if (character.context === 'guild') {
+                    activeGuildAreaHash[character.hero.area.key] = true;
+                }
             }
         }
     }
-    for (var guildAreaKey in activeGuildAreaHash) {
-        updateAreaCamera(guildAreas[guildAreaKey], state.selectedCharacter.hero);
-        updateArea(guildAreas[guildAreaKey]);
+    for (let guildAreaKey in activeGuildAreaHash) {
+        updateAreaCamera(state.guildAreas[guildAreaKey], state.selectedCharacter.hero);
+        updateArea(state.guildAreas[guildAreaKey]);
     }
-    if (state.selectedCharacter.context === 'adventure' || state.selectedCharacter.context === 'guild') {
-        var hero = state.selectedCharacter.adventurer;
-        if (isMouseDown() && state.selectedCharacter.hero.area && clickedToMove) {
-            var targetZ = -(mousePosition[1] - groundY) * 2;
-            if (targetZ >= -200 || targetZ <= 200) {
-                setActorDestination(hero, {'x': hero.area.cameraX + mousePosition[0], 'z': targetZ});
-            }
-        }
+    if (isMouseDown() && state.selectedCharacter.context === 'adventure' || state.selectedCharacter.context === 'guild') {
+        handleAdventureMouseIsDown(x, y);
     }
-    if (state.selectedCharacter.context === 'map') updateMap();
-    if (state.selectedCharacter.context === 'item') updateCraftingCanvas();
-    if (state.selectedCharacter.hero.area) refreshStatsPanel(state.selectedCharacter, $('.js-characterColumn .js-stats'))
-    $('.js-inventorySlot').toggle($('.js-inventory .js-item').length === 0);
+    if (state.selectedCharacter.context === 'map') {
+        updateMap();
+    }
+    if (state.selectedCharacter.context === 'item') {
+        updateCraftingCanvas();
+    }
+    if (state.selectedCharacter.hero.area) {
+        refreshStatsPanel(state.selectedCharacter, query('.js-characterColumn .js-stats'))
+    }
+    // TODO: do we need to do this every frame?
+    query('.js-inventorySlot').style.display = query('.js-inventory .js-item') ? 'none' : '';
     checkremovePopup();
     updateTrophyPopups();
     } catch (e) {
         console.log(e.stack);
         debugger;
-    }*/
+    }
 }
 
 function updateAreaCamera(area, hero) {
     // Only update the camera for the guild for the selected character, but
     // always update the camera for characters in adventure areas.
     if (hero.area === area || (area && !area.isGuildArea)) {
-        var targetCameraX = getTargetCameraX(hero);
+        const targetCameraX = getTargetCameraX(hero);
         area.cameraX = Math.round((area.cameraX * 15 + targetCameraX) / 16);
     }
 }
 
-export const getTargetCameraX = (actor) => {
+export function getTargetCameraX(actor: Actor) {
     const [x, y] = getMousePosition(mainCanvas);
-    var area = actor.area;
-    var centerX = actor.x;
-    var mouseX = Math.max(0, Math.min(800, x));
+    const area = actor.area;
+    let centerX = actor.x;
+    const mouseX = Math.max(0, Math.min(800, x));
     if (actor.activity && actor.activity.type === 'move') {
         centerX = (centerX + actor.activity.x) / 2;
     } else if (actor.goalTarget && !actor.goalTarget.isDead) {
@@ -85,12 +99,12 @@ export const getTargetCameraX = (actor) => {
     }
     if (mouseX > 700) centerX = centerX + (mouseX - 700) / 2;
     else if (mouseX < 100) centerX = centerX + (mouseX - 100) / 2;
-    var target = Math.min(actor.x - 20, centerX - 400);
+    let target = Math.min(actor.x - 20, centerX - 400);
     target = Math.max(area.left || 0, target);
     if (area.width) target = Math.min(area.width - 800, target);
     // If a timestop is in effect, the caster must be in the frame.
     if (area.timeStopEffect) {
-        var focusTarget = area.timeStopEffect.actor;
+        const focusTarget = area.timeStopEffect.actor;
         target = Math.max(focusTarget.x + focusTarget.width + 64 - 800, target);
         target = Math.min(focusTarget.x - 64, target);
     }

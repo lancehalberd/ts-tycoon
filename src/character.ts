@@ -1,8 +1,8 @@
+import * as _ from 'lodash';
 import { updateActorDimensions } from 'app/adventure';
 import { updateAdventureButtons } from 'app/adventureButtons';
 import {
     addBonusSourceToObject, addVariableChildToObject,
-    findVariableChildForBaseObject,
     createVariableObject,
     recomputeDirtyStats, removeBonusSourceFromObject,
     setStat,
@@ -42,7 +42,8 @@ import { centerShapesInRectangle, Polygon } from 'app/utils/polygon';
 import Random from 'app/utils/Random';
 
 import {
-    Ability, Action, Actor, ActorStats, Board, BoardData, Character,
+    Ability, Action, ActionStats, Actor, ActorStats,
+    Board, BoardData, Character,
     Effect, Equipment, EquipmentData,
     Job, Tags, VariableObject
 } from 'app/types';
@@ -271,69 +272,72 @@ export function readBoardFromData(boardData: BoardData, character, ability: Abil
         jewels: []
     };
 }
-
+function addAction(actor: Actor, source: Ability, baseAction: any): Action {
+    const variableObject = createVariableObject(baseAction, actor.variableObject);
+    const action: Action = {
+        readyAt: 0,
+        variableObject,
+        stats: variableObject.stats as ActionStats,
+        source,
+    }
+    addVariableChildToObject(actor.variableObject, variableObject);
+    return action;
+}
 export function addActions(actor: Actor, source: Ability) {
-    let effect: VariableObject, action: VariableObject;
+    let variableObject: VariableObject;
     const parent: VariableObject = actor.variableObject;
     if (source.onHitEffect) {
-        effect = createVariableObject(source.onHitEffect, parent);
-        actor.onHitEffects.push(effect);
-        addVariableChildToObject(parent, effect);
+        actor.onHitEffects.push(addAction(actor, source, source.onHitEffect));
     }
     if (source.onCritEffect) {
-        effect = createVariableObject(source.onCritEffect, parent);
-        actor.onCritEffects.push(effect);
-        addVariableChildToObject(parent, effect);
+        actor.onCritEffects.push(addAction(actor, source, source.onCritEffect));
     }
     if (source.onMissEffect) {
-        effect = createVariableObject(source.onMissEffect, parent);
-        actor.onMissEffects.push(effect);
-        addVariableChildToObject(parent, effect);
+        actor.onMissEffects.push(addAction(actor, source, source.onMissEffect));
     }
     if (source.action) {
-        action = createVariableObject(source.action, parent);
-        actor.actions.push(action);
-        addVariableChildToObject(parent, action);
+        actor.actions.push(addAction(actor, source, source.action));
     }
     if (source.reaction) {
-        action = createVariableObject(source.reaction, parent);
-        actor.reactions.push(action);
-        addVariableChildToObject(parent, action);
+        actor.reactions.push(addAction(actor, source, source.reaction));
     }
     if (source.minionBonuses) {
         actor.minionBonusSources.push({bonuses: source.minionBonuses});
     }
 }
 export function removeActions(actor: Actor, source: Ability) {
-    let variableChild: VariableObject;
     if (source.onHitEffect) {
-        variableChild = findVariableChildForBaseObject(actor.variableObject, source.onHitEffect);
-        removeElementFromArray(actor.onHitEffects, variableChild);
-        removeElementFromArray(actor.variableObject.variableChildren, variableChild);
+        const action: Action = _.find(actor.onHitEffects, {source});
+        removeElementFromArray(actor.onHitEffects, action);
+        removeElementFromArray(actor.variableObject.variableChildren, action.variableObject);
     }
     if (source.onCritEffect) {
-        variableChild = findVariableChildForBaseObject(actor.variableObject, source.onCritEffect);
-        removeElementFromArray(actor.onCritEffects, variableChild);
-        removeElementFromArray(actor.variableObject.variableChildren, variableChild);
+        const action: Action = _.find(actor.onCritEffects, {source});
+        removeElementFromArray(actor.onCritEffects, action);
+        removeElementFromArray(actor.variableObject.variableChildren, action.variableObject);
+    }
+    if (source.onMissEffect) {
+        const action: Action = _.find(actor.onMissEffects, {source});
+        removeElementFromArray(actor.onMissEffects, action);
+        removeElementFromArray(actor.variableObject.variableChildren, action.variableObject);
     }
     if (source.action) {
-        variableChild = findVariableChildForBaseObject(actor.variableObject, source.action);
-        removeElementFromArray(actor.actions, variableChild);
-        removeElementFromArray(actor.variableObject.variableChildren, variableChild);
+        const action: Action = _.find(actor.actions, {source});
+        removeElementFromArray(actor.actions, action);
+        removeElementFromArray(actor.variableObject.variableChildren, action.variableObject);
     }
     if (source.reaction) {
-        variableChild = findVariableChildForBaseObject(actor.variableObject, source.reaction);
-        removeElementFromArray(actor.reactions, variableChild);
-        removeElementFromArray(actor.variableObject.variableChildren, variableChild);
+        const action: Action = _.find(actor.reactions, {source});
+        removeElementFromArray(actor.reactions, action);
+        removeElementFromArray(actor.variableObject.variableChildren, action.variableObject);
     }
     if (source.minionBonuses) {
-        for (var bonusSource of actor.minionBonusSources) {
-            if (bonusSource.bonuses === source.minionBonuses) {
-                removeElementFromArray(actor.minionBonusSources, bonusSource);
-            }
-        }
+        const bonusSource: BonusSource =
+            _.find(actor.minionBonusSources, {bonuses: source.minionBonuses});
+        removeElementFromArray(actor.minionBonusSources, bonusSource);
     }
 }
+
 export function updateAdventurer(adventurer: Actor) {
     // Clear the character's bonuses and graphics.
     adventurer.variableObject = createVariableObject({variableObjectType: 'actor'});
@@ -621,7 +625,7 @@ export function setSelectedCharacter(character: Character) {
 
 export function recomputeAllCharacterDirtyStats() {
     const state = getState();
-    recomputeDirtyStats(state.guildStats);
+    recomputeDirtyStats(state.guildVariableObject);
     for (const { hero } of state.characters) {
         recomputeDirtyStats(hero.variableObject);
     }

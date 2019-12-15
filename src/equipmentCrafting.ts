@@ -173,7 +173,7 @@ function craftNewItems() {
     });
     saveGame();
 }
-function updateCraftingCanvas() {
+export function updateCraftingCanvas() {
     const state = getState();
     if (!state.selectedCharacter) return;
     if (!craftingCanvasMousePosition) return;

@@ -194,7 +194,7 @@ mouseContainer.addEventListener('mousemove', function (event) {
     updateToolTip();
 });
 
-function checkremovePopup() {
+export function checkremovePopup() {
     if (!popup.element && !canvasPopupTarget && !popup.target) {
         return;
     }

@@ -45,6 +45,7 @@ export interface Area {
     left: number,
     cameraX: number,
     time: number,
+    timeStopEffect?: any,
 
     allies: any[],
     enemies: any[],

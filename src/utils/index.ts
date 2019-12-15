@@ -175,13 +175,13 @@ export function fixFloat(f) {
     return Math.round(1000000 * f) / 1000000;
 }
 
-export function removeElementFromArray(array, element, throwErrorIfMissing = false) {
+export function removeElementFromArray<T>(array: T[], element: T, throwErrorIfMissing = false): T {
     const index = array.indexOf(element);
     if (index < 0) {
         if (throwErrorIfMissing) throw new Error("Element was not found to remove from array.");
         return;
     }
-    array.splice(index, 1);
+    return array.splice(index, 1)[0];
 }
 export function countInstancesOfElementInArray(array, element) {
     let count = 0;

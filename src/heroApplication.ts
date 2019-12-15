@@ -47,7 +47,7 @@ const seekNewApplicantButton = query('.js-seekNewApplicant');
 const hireApplicantButton = query('.js-hireApplicant');
 let displayedApplication: FixedObject = null;
 
-function showHeroApplication(application: FixedObject) {
+export function showHeroApplication(application: FixedObject) {
     displayedApplication = application;
     const character = application.character;
     const boardCanvas = applicationElement.querySelector('.js-applicationSkillCanvas') as HTMLCanvasElement;

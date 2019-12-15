@@ -77,6 +77,15 @@ function handleAdventureClick(x, y, event) {
         }
     }
 }
+export function handleAdventureMouseIsDown(x, y) {
+    var hero = getState().selectedCharacter.hero;
+    if (hero.area && clickedToMove) {
+        var targetZ = -(y - GROUND_Y) * 2;
+        if (targetZ >= -200 || targetZ <= 200) {
+            setActorDestination(hero, {'x': hero.area.cameraX + x, 'z': targetZ});
+        }
+    }
+}
 export function getTargetLocation(area, canvasX, canvasY) {
     var z = -(canvasY - GROUND_Y) * 2;
     if (z < -190 || z > 190) return null;

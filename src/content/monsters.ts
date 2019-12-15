@@ -1,4 +1,4 @@
-import { initializeVariableObject, addBonusSourceToObject, recomputeDirtyStats } from 'app/bonuses';
+import { createVariableObject, addBonusSourceToObject, recomputeDirtyStats } from 'app/bonuses';
 import { actorHelpText, addActions, coreStatBonusSource, personFrames, recomputeActorTags } from 'app/character';
 import { abilities, leapAndAct } from 'app/content/abilities';
 import { itemsByKey } from 'app/content/equipment/index';
@@ -162,7 +162,7 @@ function matchingMonsterAffixes(list, monster, alreadyUsed) {
 }
 export function updateMonster(monster) {
     // Clear the character's bonuses and graphics.
-    initializeVariableObject(monster, monster.base, monster);
+    createVariableObject(monster.base, monster);
     monster.actions = [];
     monster.reactions = [];
     monster.onHitEffects = [];

@@ -1,5 +1,5 @@
 import { enterArea } from 'app/adventure';
-import { addBonusSourceToObject, initializeVariableObject } from 'app/bonuses';
+import { addBonusSourceToObject, createVariableObject } from 'app/bonuses';
 import { setSelectedCharacter } from 'app/character';
 import { addTrophyToAltar, checkIfAltarTrophyIsAvailable, updateTrophy } from 'app/content/achievements';
 import { addAllUnlockedFurnitureBonuses, allApplications, allBeds,  } from 'app/content/furniture';
@@ -18,7 +18,7 @@ import {
 } from 'app/saveGame';
 import { Polygon } from 'app/utils/polygon';
 
-import { Character, Jewel, SavedItem } from 'app/types';
+import { Character, GuildStats, Jewel, SavedItem, VariableObject } from 'app/types';
 import { ShapeType } from 'app/types/board';
 import { BonusSource } from 'app/types/bonuses';
 import { Item } from 'app/types/items';
@@ -65,7 +65,8 @@ export type SavedState = {
     trophies: any,
 }
 export interface GameState {
-    guildStats: any,
+    guildVariableObject: VariableObject,
+    guildStats: GuildStats,
     savedState: SavedState,
     selectedCharacter: Character,
     lastSelectedCharacter?: any,
@@ -114,6 +115,7 @@ function getDefaultSavedState(): SavedState {
 function getDefaultState(): GameState {
     return {
         savedState: getDefaultSavedState(),
+        guildVariableObject: null,
         guildStats: null,
         selectedCharacter: null,
         visibleLevels: {}, // This isn't stored, it is computed from completedLevels on load.
@@ -196,8 +198,9 @@ export function importState(savedState: SavedState) {
         ...getDefaultState(),
         savedState,
     };
-    initializeVariableObject(state.guildStats, {'variableObjectType': 'guild'}, state.guildStats);
-    addBonusSourceToObject(state.guildStats, implicitGuildBonusSource);
+    state.guildVariableObject = createVariableObject({'variableObjectType': 'guild'});
+    state.guildStats = state.guildVariableObject.stats as GuildStats;
+    addBonusSourceToObject(state.guildVariableObject, implicitGuildBonusSource);
     const guildAreas = savedState.guildAreas || {};
     for (let areaKey in defaultGuildAreas) {
         state.guildAreas[areaKey] = defaultGuildAreas[areaKey];

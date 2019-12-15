@@ -1,5 +1,5 @@
 import { getAbilityIconSource } from 'app/content/abilities';
-import { applyParentToVariableChild, initializeVariableObject } from 'app/bonuses';
+import { applyParentToVariableChild, createVariableObject } from 'app/bonuses';
 import { editingMapState } from 'app/development/editLevel';
 import { bodyDiv, createCanvas, mainCanvas, mainContext, titleDiv } from 'app/dom';
 import { bonusSourceHelpText } from 'app/helpText';
@@ -192,7 +192,7 @@ export function getAbilityPopupTarget(x, y) {
 function actionHelptText(action) {
     var actor = action.actor;
     var actionSource = action.ability.action;
-    var actionInstance = initializeVariableObject({}, actionSource, actor);
+    var actionInstance = createVariableObject(actionSource, actor);
     applyParentToVariableChild(actor, actionInstance);
     return titleDiv(action.ability.name) + bodyDiv(bonusSourceHelpText(actionSource, actor, actionInstance));
 }

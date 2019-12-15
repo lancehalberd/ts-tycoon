@@ -38,7 +38,7 @@ import { worldCamera } from 'app/WorldCamera';
 export const mapLocation = new SphereVector(WORLD_RADIUS);
 
 var mapCenteringTarget = null, centerInstantly = false;
-function updateMap() {
+export function updateMap() {
     if (mapState.draggedMap) {
         return;
     }

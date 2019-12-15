@@ -1,4 +1,4 @@
-import { applyParentToVariableChild, initializeVariableObject } from 'app/bonuses';
+import { applyParentToVariableChild, createVariableObject } from 'app/bonuses';
 import { tag, titleDiv } from 'app/dom';
 import { evaluateForDisplay } from 'app/evaluate';
 import { getState } from 'app/state';
@@ -6,7 +6,7 @@ import { isTwoHandedWeapon, sellValue, tagToDisplayName } from 'app/inventory';
 import { points } from 'app/points';
 import { properCase } from 'app/utils/formatters';
 
-import { Affix, Item } from 'app/types';
+import { Ability, Actor, Affix, Item } from 'app/types';
 
 export function getNameWithAffixes(name: string, prefixes: Affix[], suffixes: Affix[]): string {
     const prefixNames = prefixes.map(affix => affix.base.name);
@@ -218,13 +218,13 @@ export function renderBonusText(bonusMap, bonusKey, bonusSource, coreObject, loc
     }
     return text.split(wildcard).join(renderedValue);
 }
-export function abilityHelpText(ability, actor) {
+export function abilityHelpText(ability: Ability, actor: Actor) {
     const sections = [];
-    if (ability.bonuses) sections.push(bonusSourceHelpText(ability, actor));
+    if (ability.bonuses) sections.push(bonusSourceHelpText(ability, actor.variableObject));
     const action = ability.action || ability.reaction;
     if (action) {
-        const actionInstance = initializeVariableObject({}, action, actor);
-        applyParentToVariableChild(actor, actionInstance);
+        const actionInstance = createVariableObject(action, actor.variableObject);
+        applyParentToVariableChild(actor.variableObject, actionInstance);
         // TODO: display action restrictions, if any.
         sections.push(tag('div', 'abilityText', bonusSourceHelpText(action, actor, actionInstance)));
     }

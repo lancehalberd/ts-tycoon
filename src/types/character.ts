@@ -31,6 +31,7 @@ export interface Character {
     replay?: boolean, // Make character replay the current adventure
     gameSpeed: number, // Used for fast forward
     loopSkip?: number, // Used to skip update loops for slow motion
+    loopCount?: number, // Used for determining which loops to skip.
 
     // Skill controls
     manualActions: {[key in string]: boolean},

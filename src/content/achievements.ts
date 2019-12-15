@@ -352,7 +352,7 @@ function showTrophyPopup(trophy) {
         }
     });
 }
-function updateTrophyPopups() {
+export function updateTrophyPopups() {
     let previousPopup;
     for (const trophyPopup of trophyPopups) {
         if (!trophyPopup.dismissed && previousPopup && trophyPopup.left < previousPopup.left - 5 - trophyPopupWidth) {

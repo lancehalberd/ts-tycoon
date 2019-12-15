@@ -1,6 +1,6 @@
 // Load any graphic assets needed by the game here.
 import { enterArea, startLevel } from 'app/adventure';
-import { addBonusSourceToObject, initializeVariableObject } from 'app/bonuses';
+import { addBonusSourceToObject, createVariableObject } from 'app/bonuses';
 import { newCharacter,updateAdventurer } from 'app/character';
 import { addAltarTrophies } from 'app/content/achievements';
 import { addAllItems } from 'app/content/equipment/index';
@@ -27,6 +27,8 @@ import { removeElementFromArray } from 'app/utils/index';
 import Random from 'app/utils/Random';
 import { playTrack, soundTrack } from 'app/utils/sounds';
 
+import { GuildStats } from 'app/types';
+
 
 let gameHasBeenInitialized = false;
 export function isGameInitialized() {
@@ -49,12 +51,14 @@ export function initializeGame() {
             eraseSave();
         }
     }
-    const state = getState();
     if (loadSavedData()) {
+        const state = getState();
         showContext(state.selectedCharacter.context);
     } else {
-        initializeVariableObject(state.guildStats, {'variableObjectType': 'guild'}, state.guildStats);
-        addBonusSourceToObject(state.guildStats, implicitGuildBonusSource);
+        const state = getState();
+        state.guildVariableObject = createVariableObject({'variableObjectType': 'guild'});
+        state.guildStats = state.guildVariableObject.stats as GuildStats;
+        addBonusSourceToObject(state.guildVariableObject, implicitGuildBonusSource);
         addAllUnlockedFurnitureBonuses();
         gainJewel(makeJewel(1, 'triangle', [90, 5, 5], 1.1));
         gainJewel(makeJewel(1, 'triangle', [5, 90, 5], 1.1));
@@ -74,6 +78,7 @@ export function initializeGame() {
         }
         enterArea(state.selectedCharacter.hero, guildYardEntrance);
     }
+    const state = getState();
     if (window.location.search.substr(1) === 'test') {
         setContext('adventure');
         state.selectedCharacter.autoplay = state.selectedCharacter.replay = true;

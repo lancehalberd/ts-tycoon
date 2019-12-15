@@ -38,7 +38,7 @@ import { abbreviate } from 'app/utils/formatters';
 import { ifdefor } from 'app/utils/index';
 import { isMouseDown } from 'app/utils/mouse';
 
-import { BonusSource, Character, Exit } from 'app/types';
+import { Actor, BonusSource, Character, Exit } from 'app/types';
 
 
 export function limitZ(zValue: number, radius: number = 0): number {
@@ -69,7 +69,7 @@ export function startLevel(character: Character, index: string) {
     } else {
         hero.levelInstance = instantiateLevel(map[index], character.levelDifficulty, difficultyCompleted);
     }
-    for (var action of hero.actions.concat(hero.reactions)) action.readyAt = 0;
+    for (const action of hero.actions.concat(hero.reactions)) action.readyAt = 0;
     enterArea(hero, hero.levelInstance.entrance);
     if (getState().selectedCharacter === character) {
         updateAdventureButtons();
@@ -77,7 +77,7 @@ export function startLevel(character: Character, index: string) {
     saveGame();
 }
 
-export function enterArea(actor, {x, z, areaKey}: Exit) {
+export function enterArea(actor: Actor, {x, z, areaKey}: Exit) {
     var character = actor.character;
     if (areaKey === 'worldMap') {
         returnToMap(character);
@@ -98,7 +98,6 @@ export function enterArea(actor, {x, z, areaKey}: Exit) {
         if (character) {
             character.context = 'guild'
             character.currentLevelKey = 'guild';
-            character.guildAreaKey = area.key;
             if (character === state.selectedCharacter) {
                 updateAdventureButtons();
                 showContext('guild');
@@ -270,7 +269,7 @@ function unlockGuildArea(guildArea) {
     saveGame();
 }
 
-function updateArea(area) {
+export function updateArea(area) {
     if (area.isGuildArea && !getState().savedState.unlockedGuildAreas[area.key] && !area.enemies.length && area.allies.some(actor => !actor.isDead)) {
         unlockGuildArea(area);
     }
