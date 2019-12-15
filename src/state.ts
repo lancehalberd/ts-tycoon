@@ -18,7 +18,9 @@ import {
 } from 'app/saveGame';
 import { Polygon } from 'app/utils/polygon';
 
-import { Character, GuildStats, Jewel, SavedItem, VariableObject } from 'app/types';
+import {
+    Character, GuildAreas, GuildStats, Jewel, SavedItem, VariableObject,
+} from 'app/types';
 import { ShapeType } from 'app/types/board';
 import { BonusSource } from 'app/types/bonuses';
 import { Item } from 'app/types/items';
@@ -77,7 +79,7 @@ export interface GameState {
     items: Item[],
     craftingItems: Item[],
     enchantmentItem: Item,
-    guildAreas?: any,
+    guildAreas: GuildAreas,
     guildBonusSources: BonusSource[];
     altarTrophies?: any,
     availableBeds?: any[],
@@ -125,6 +127,7 @@ function getDefaultState(): GameState {
         enchantmentItem: null,
         characters: [],
         applicants: [],
+        guildAreas: {},
         guildBonusSources: [],
     };
 }
@@ -201,10 +204,10 @@ export function importState(savedState: SavedState) {
     state.guildVariableObject = createVariableObject({'variableObjectType': 'guild'});
     state.guildStats = state.guildVariableObject.stats as GuildStats;
     addBonusSourceToObject(state.guildVariableObject, implicitGuildBonusSource);
-    const guildAreas = savedState.guildAreas || {};
+    const savedGuildAreas = savedState.guildAreas || {};
     for (let areaKey in defaultGuildAreas) {
         state.guildAreas[areaKey] = defaultGuildAreas[areaKey];
-        var savedAreaData = guildAreas[areaKey] || {objects: {}};
+        var savedAreaData = savedGuildAreas[areaKey] || {objects: {}};
         for (var objectKey in savedAreaData.objects) {
             var savedObjectData = savedAreaData.objects[objectKey];
             try {

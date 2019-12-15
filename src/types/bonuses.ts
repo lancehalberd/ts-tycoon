@@ -1,4 +1,4 @@
-import { Actor, Color, Effect, Tags } from 'app/types';
+import { Ability, Actor, Color, Effect, Tags } from 'app/types';
 
 export type BonusOperator = '+' | '-' | '%' | '*' | '/' | '&' | '$';
 
@@ -13,13 +13,13 @@ export interface Bonuses {
     [key: string]: BonusValue,
 }
 export interface BonusesRange {
-    [key: string]: number | [number, number] | [number, number, number],
+    [key: string]: true | string | number | [number, number] | [number, number, number],
 }
 
-export interface BonusSource {
+export interface BonusSource extends Partial<Ability> {
     // We often include things that could have bonuses but don't.
     // For those we just ignore them.
-    bonuses?: Bonuses,
+    // bonuses?: Bonuses,
     // This will get cached on the bonus source.
     parsedBonuses?: Bonus[],
 }

@@ -38,7 +38,9 @@ import { abbreviate } from 'app/utils/formatters';
 import { ifdefor } from 'app/utils/index';
 import { isMouseDown } from 'app/utils/mouse';
 
-import { Actor, BonusSource, Character, Exit } from 'app/types';
+import {
+    Actor, Area, BonusSource, Character, Exit, MonsterData
+} from 'app/types';
 
 
 export function limitZ(zValue: number, radius: number = 0): number {
@@ -78,19 +80,19 @@ export function startLevel(character: Character, index: string) {
 }
 
 export function enterArea(actor: Actor, {x, z, areaKey}: Exit) {
-    var character = actor.character;
-    if (areaKey === 'worldMap') {
+    const character = actor.character;
+    if (areaKey === 'worldMap' && character) {
         returnToMap(character);
         return;
     }
     leaveCurrentArea(actor);
-    var area;
+    let area: Area;
     const state = getState();
     if (state.guildAreas[areaKey]) {
-        area = state.guildAreas[areaKey];
+        const guildArea = state.guildAreas[areaKey];
         initializeActorForAdventure(actor);
-        if (!area.allies.length && !state.savedState.unlockedGuildAreas[area.key]) {
-            addMonstersToArea(area, area.monsters, [], 0);
+        if (!guildArea.allies.length && !state.savedState.unlockedGuildAreas[guildArea.key]) {
+            addMonstersToArea(guildArea, guildArea.monsters, [], 0);
         }
         actor.actions.concat(actor.reactions).forEach(function (action) {
             action.readyAt = 0;
@@ -103,6 +105,7 @@ export function enterArea(actor: Actor, {x, z, areaKey}: Exit) {
                 showContext('guild');
             }
         }
+        area = guildArea;
     } else {
         area = (actor.owner || actor).levelInstance.areas.get(areaKey);
     }
@@ -128,8 +131,8 @@ export function enterArea(actor: Actor, {x, z, areaKey}: Exit) {
     actor.activity = null;
 }
 export function addMonstersToArea(
-    area,
-    monsters,
+    area: Area,
+    monsters: MonsterData[],
     extraBonuses: BonusSource[] = [],
     specifiedRarity = 0
 ) {

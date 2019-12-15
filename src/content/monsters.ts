@@ -11,7 +11,11 @@ import { makeItem } from 'app/inventory';
 import { ifdefor } from 'app/utils/index';
 import Random from 'app/utils/Random';
 
-import { BonusSource } from 'app/types/bonuses';
+import {
+    Ability, Actor, ActorStats, Affix, AffixData,
+    Bonuses, BonusSource, Equipment, EquipmentSlot,
+    Monster, MonsterData, Source,
+} from 'app/types';
 
 export const enchantedMonsterBonuses: BonusSource = { 'bonuses': {
     '*maxHealth': 1.5, '*tenacity': 2, '*weaponDamage': 1.5, '*coins': 2, '*anima': 3,
@@ -41,7 +45,7 @@ export const bossMonsterBonuses: BonusSource = {'bonuses': {
     '*healthRegen': [1, '/', [1.5, '+', ['{level}', '/', 2]]], '+coins': 2, '*coins': 4, '+anima': 1, '*anima': 4,
     '$uncontrollable': 'Cannot be controlled.', '$tint': 'red', '$tintMinAlpha': 0.2, '$tintMaxAlpha': 0.5,
 }};
-var monsterPrefixes = [
+const monsterPrefixes: AffixData[][] = [
     [
         {'name': 'Hawkeye', 'bonuses': {'+accuracy': [5, 10]}},
         {'name': 'Giant', 'bonuses': {'*maxHealth': 2, '*scale': 1.3}}
@@ -59,7 +63,7 @@ var monsterPrefixes = [
         {'name': 'Lethal', 'bonuses': {'+critChance': [10, 20, 100], '+critDamage': [20, 50, 100], '+critAccuracy': [20, 50, 100]}}
     ]
 ];
-var monsterSuffixes = [
+const monsterSuffixes: AffixData[][] = [
     [
         {'name': 'Frost', 'bonuses': {'+slowOnHit': [1, 2, 10]}},
         {'name': 'Confusion', 'bonuses': {'+damageOnMiss': [2, 3]}}
@@ -75,21 +79,14 @@ var monsterSuffixes = [
     ]
 ];
 
-export function makeMonster(monsterData, level, extraSkills, specifiedRarity) {
-    var monster:Monster = {
-        level,
-        'slow': 0,
-        'equipment': {},
-        'attackCooldown': 0,
-        'prefixes': [],
-        'suffixes': [],
-        'extraSkills': ifdefor(extraSkills, []),
-        'aggroRadius': 600,
-        percentHealth: 1,
-        percentTargetHealth: 1,
-        helpMethod: actorHelpText,
-    };
-    var baseMonster;
+export function makeMonster(
+    monsterData,
+    level,
+    extraSkills: (Ability | BonusSource)[],
+    specifiedRarity: number = null,
+): Monster {
+    extraSkills = extraSkills || [];
+    let baseMonster: MonsterData;
     if (typeof(monsterData) == 'string') {
         baseMonster = monsters[monsterData];
         if (!baseMonster) {
@@ -98,7 +95,7 @@ export function makeMonster(monsterData, level, extraSkills, specifiedRarity) {
     } else if (typeof(monsterData) == 'object') {
         baseMonster = monsters[monsterData.key];
         if (monsterData.bonuses) {
-            monster.extraSkills.push({'bonuses': monsterData.bonuses});
+            extraSkills.push({'bonuses': monsterData.bonuses});
         }
     }
     if (!baseMonster) {
@@ -106,13 +103,36 @@ export function makeMonster(monsterData, level, extraSkills, specifiedRarity) {
         console.log(monsterData);
         throw new Error('could not determine base monster type');
     }
-    monster.base = baseMonster;
-    monster.source = baseMonster.source;
-    monster.stationary = ifdefor(baseMonster.stationary);
-    monster.noBasicAttack = ifdefor(baseMonster.noBasicAttack);
-    monster.baseY = monster.y = ifdefor(monster.source.y, 0);
+    const monster: Monster = {
+        type: 'monster',
+        x: 0, y: 0, z: 0,
+        isActor: true,
+        level,
+        name: baseMonster.name,
+        slow: 0,
+        equipment: {},
+        attackCooldown: 0,
+        prefixes: [],
+        suffixes: [],
+        extraSkills,
+        aggroRadius: 600,
+        percentHealth: 1,
+        percentTargetHealth: 1,
+        helpMethod: actorHelpText,
+        heading: [-1, 0, 0],
+        base: baseMonster,
+        source: baseMonster.source,
+        stationary: baseMonster.stationary,
+        noBasicAttack: baseMonster.noBasicAttack,
+        baseY: baseMonster.source.y || 0,
+        allEffects: [],
+        minionBonusSources: [],
+        // This will get set in updateMonster.
+        // It can change if the monsters gains/loses affixes.
+        image: null,
+    };
 
-    var rarity = (ifdefor(specifiedRarity) !== null) // Note (null >= 0) is true...
+    const rarity = (specifiedRarity !== null)
         ? specifiedRarity
         : ((Math.random() < .25) ? (Math.random() * (level - 1) * .6) : 0);
     if (rarity < 1) {
@@ -134,92 +154,86 @@ export function makeMonster(monsterData, level, extraSkills, specifiedRarity) {
         addMonsterPrefix(monster);
         addMonsterSuffix(monster);
     }
-    monster.allEffects = [];
-    monster.minionBonusSources = [];
     updateMonster(monster);
     return monster;
 }
-function addMonsterPrefix(monster) {
-    var alreadyUsed = [];
-    monster.prefixes.forEach(function (affix) {alreadyUsed.push(affix.base);});
+function addMonsterPrefix(monster: Monster) {
+    const alreadyUsed = monster.prefixes.map(affix => affix.base);
     monster.prefixes.push(makeAffix(Random.element(matchingMonsterAffixes(monsterPrefixes, monster, alreadyUsed))));
 }
-function addMonsterSuffix(monster) {
-    var alreadyUsed = [];
-    monster.suffixes.forEach(function (affix) {alreadyUsed.push(affix.base);});
+function addMonsterSuffix(monster: Monster) {
+    const alreadyUsed = monster.suffixes.map(affix => affix.base);
     monster.suffixes.push(makeAffix(Random.element(matchingMonsterAffixes(monsterSuffixes, monster, alreadyUsed))));
 }
-function matchingMonsterAffixes(list, monster, alreadyUsed) {
-    var choices = [];
-    for (var level = 0; level < monster.level && level < list.length; level++) {
-        list[level].forEach(function (affix) {
-            if (alreadyUsed.indexOf(affix) < 0) {
+function matchingMonsterAffixes(list: AffixData[][], monster: Monster, alreadyUsed: AffixData[]) {
+    const choices = [];
+    for (let level = 0; level < monster.level && level < list.length; level++) {
+        for (const affix of list[level]) {
+            if (!alreadyUsed.includes(affix)) {
                 choices.push(affix);
             }
-        });
+        }
     }
     return choices;
 }
-export function updateMonster(monster) {
+export function updateMonster(monster: Monster) {
     // Clear the character's bonuses and graphics.
-    createVariableObject(monster.base, monster);
+    const variableObject = createVariableObject(monster.base);
+    monster.variableObject = variableObject;
+    monster.stats = variableObject.stats as ActorStats;
     monster.actions = [];
     monster.reactions = [];
     monster.onHitEffects = [];
     monster.onCritEffects = [];
     monster.onMissEffects = [];
-    monster.tags = recomputeActorTags(monster);
-    addBonusSourceToObject(monster, {'bonuses': monster.base.implicitBonuses}, false);
-    addBonusSourceToObject(monster, {'bonuses': getMonsterBonuses(monster)}, false);
-    addBonusSourceToObject(monster, coreStatBonusSource, false);
+    monster.variableObject.tags = recomputeActorTags(monster);
+    addBonusSourceToObject(variableObject, {'bonuses': monster.base.implicitBonuses}, false);
+    addBonusSourceToObject(variableObject, {'bonuses': getMonsterBonuses(monster)}, false);
+    addBonusSourceToObject(variableObject, coreStatBonusSource, false);
     var enchantments = monster.prefixes.length + monster.suffixes.length;
     if (monster.base.source.image.normal) monster.image = monster.base.source.image.normal;
     else monster.image = monster.base.source.image;
     if (enchantments > 2) {
-        addBonusSourceToObject(monster, imbuedMonsterBonuses, false);
+        addBonusSourceToObject(variableObject, imbuedMonsterBonuses, false);
     } else if (enchantments) {
-        addBonusSourceToObject(monster, enchantedMonsterBonuses, false);
+        addBonusSourceToObject(variableObject, enchantedMonsterBonuses, false);
     }
-    ifdefor(monster.extraSkills, []).concat(ifdefor(monster.base.abilities, [])).forEach(function (ability) {
-        addBonusSourceToObject(monster, ability, false);
+    for (const ability of [...(monster.extraSkills, []), ...(monster.base.abilities || [])]) {
+        addBonusSourceToObject(variableObject, ability, false);
         addActions(monster, ability);
-    });
+    }
     monster.prefixes.forEach(function (affix) {
-        addBonusSourceToObject(monster, affix, false);
-        addActions(monster, affix);
+        addBonusSourceToObject(variableObject, affix, false);
+        //addActions(monster, affix);
     });
     monster.suffixes.forEach(function (affix) {
-        addBonusSourceToObject(monster, affix, false);
-        addActions(monster, affix);
+        addBonusSourceToObject(variableObject, affix, false);
+        //addActions(monster, affix);
     });
-    monster.name = monster.base.name;
     // Add the character's current equipment to bonuses and graphics
     equipmentSlots.forEach(function (type) {
         const equipment = monster.equipment[type];
         if (!equipment) {
             return;
         }
-        addBonusSourceToObject(monster, equipment.base, false);
+        addBonusSourceToObject(variableObject, equipment.base, false);
         addActions(monster, equipment.base);
         equipment.prefixes.forEach(function (affix) {
-            addBonusSourceToObject(monster, affix, false);
-            addActions(monster, affix);
+            addBonusSourceToObject(variableObject, affix, false);
+            //addActions(monster, affix);
         })
         equipment.suffixes.forEach(function (affix) {
-            addBonusSourceToObject(monster, affix, false);
-            addActions(monster, affix);
+            addBonusSourceToObject(variableObject, affix, false);
+            //addActions(monster, affix);
         })
     });
     if (!monster.noBasicAttack) addActions(monster, abilities.basicAttack);
-    recomputeDirtyStats(monster);
+    recomputeDirtyStats(variableObject);
     //console.log(monster);
 }
-interface Monster {
-    [key:string]: any
-}
 
-export const monsters:{[key:string]: Monster} = {};
-function addMonster(key, data, parent = null) {
+export const monsters:{[key:string]: MonsterData} = {};
+function addMonster(key: string, data, parent: MonsterData = null) {
     data.key = key;
     data.variableObjectType = 'actor';
 
@@ -239,13 +253,14 @@ function addMonster(key, data, parent = null) {
     }
     monsters[key] = data;
 }
-function getMonsterBonuses(monster) {
-    var growth = monster.level - 1;
-    var levelCoefficient = Math.pow(1.07, monster.level);
+function getMonsterBonuses(monster: Monster): Bonuses {
+    const growth = monster.level - 1;
+    const levelCoefficient = Math.pow(1.07, monster.level);
     return {
         // Health scales linearly to level 10, then 10% a level.
         '+maxHealth': (10 + 25 * growth),
         '+tenacity': 1 + growth / 100,
+        '+level': monster.level,
         '+levelCoefficient': levelCoefficient,
         '+range': 1,
         '+minWeaponPhysicalDamage': Math.round(.9 * (5 + 5 * growth)) * levelCoefficient,
@@ -271,23 +286,29 @@ function getMonsterBonuses(monster) {
         '+anima': Random.range(1, Math.floor((growth + 1) * Math.pow(1.15, growth + 1)))
     };
 }
-export function setupActorSource(source) {
+export function setupActorSource(source: Partial<Source>): Source {
     if (!source.walkFrames) {
         source.walkFrames = [];
-        for (var i = 0; i < source.frames; i++) source.walkFrames[i] = i;
+        for (let i = 0; i < source.frames; i++) {
+            source.walkFrames[i] = i;
+        }
     }
-    source.attackPreparationFrames = ifdefor(source.attackPreparationFrames, source.walkFrames);
+    source.attackPreparationFrames = source.attackPreparationFrames || source.walkFrames;
     // If attack recovery frames aren't specified, just play the prep frames backwards.
-    source.attackRecoveryFrames = ifdefor(source.attackRecoveryFrames, source.attackPreparationFrames.slice().reverse());
+    source.attackRecoveryFrames = source.attackRecoveryFrames || source.attackPreparationFrames.slice().reverse();
     return setupSource(source);
 }
-function createEquippedActorSource(baseImage, row, equipment) {
-    var actorCanvas = createCanvas(personFrames * 96, 64);
-    var actorContext = actorCanvas.getContext('2d');
+function createEquippedActorSource(
+    baseImage: HTMLImageElement | HTMLCanvasElement,
+    row: number,
+    equipment: Equipment,
+): HTMLCanvasElement {
+    const actorCanvas = createCanvas(personFrames * 96, 64);
+    const actorContext = actorCanvas.getContext('2d');
     //return baseImage;
-    var hideHair = true;
+    const hideHair = true;
     //var hairYOffset = actor.hairOffset;
-    for (var frame = 0; frame < personFrames; frame++) {
+    for (let frame = 0; frame < personFrames; frame++) {
         // Draw the person legs then body then hair then under garment then leg gear then body gear.
         actorContext.drawImage(baseImage, frame * 96 + 64, row * 64 , 32, 64, frame * 96 + 32, 0, 32, 64); //legs
         actorContext.drawImage(baseImage, frame * 96, row * 64 , 32, 64, frame * 96 + 32, 0, 32, 64); //body
@@ -306,28 +327,28 @@ function createEquippedActorSource(baseImage, row, equipment) {
         }
         */
         // leg + body gear
-        for (var subX of [64, 0]) {
+        for (const subX of [64, 0]) {
             equipmentSlots.forEach(function (type) {
-                var item = equipment[type];
+                const item = equipment[type];
                 if (!item || !item.base.source) return;
-                var source = item.base.source;
+                const source = item.base.source;
                 if (source.xOffset !== subX) return;
                 actorContext.drawImage(requireImage('gfx/equipment.png'), frame * 96 + source.xOffset, source.yOffset, 32, 64, frame * 96 + 32, 0, 32, 64);
             });
         }
         // Draw the weapon under the arm
-        var weapon = equipment.weapon;
+        const weapon = equipment.weapon;
         if (weapon && weapon.base.source) {
-            var source = weapon.base.source;
+            const source = weapon.base.source;
             actorContext.drawImage(requireImage('gfx/weapons.png'), frame * 96, source.yOffset, 96, 64, frame * 96, 0, 96, 64);
         }
         // Draw the person arm then arm gear
         actorContext.drawImage(baseImage, frame * 96 + 32, row * 64 , 32, 64, frame * 96 + 32, 0, 32, 64); // arm
         //arm gear
         equipmentSlots.forEach(function (type) {
-            var item = equipment[type];
+            const item = equipment[type];
             if (!item || !item.base.source) return;
-            var source = item.base.source;
+            const source = item.base.source;
             if (source.xOffset !== 32) return; // don't draw this if it isn't arm gear
             actorContext.drawImage(requireImage('gfx/equipment.png'), frame * 96 + source.xOffset, source.yOffset, 32, 64, frame * 96 + 32, 0, 32, 64);
         });
@@ -335,33 +356,33 @@ function createEquippedActorSource(baseImage, row, equipment) {
     return actorCanvas;
 }
 export function initializeMonsters() {
-    var caterpillarSource = setupActorSource({'image': requireImage('gfx/caterpillar.png'), 'width': 48, 'height': 64, 'actualHeight': 24, 'yOffset': 40, frames: 4});
-    var gnomeSource = setupActorSource({'image': requireImage('gfx/gnome.png'), 'width': 32, 'height': 64, 'actualHeight': 38, 'yOffset': 26, 'flipped': true, frames: 4});
-    var skeletonSource = setupActorSource({'image': requireImage('gfx/skeletonSmall.png'), 'width': 48, 'height': 64, 'actualHeight': 38, 'yOffset': 26, frames: 7});
-    var butterflySource = setupActorSource({'image': requireImage('gfx/yellowButterfly.png'), 'width': 64, 'actualWidth': 48, 'height': 64,
+    const caterpillarSource = setupActorSource({'image': requireImage('gfx/caterpillar.png'), 'width': 48, 'height': 64, 'actualHeight': 24, 'yOffset': 40, frames: 4});
+    const gnomeSource = setupActorSource({'image': requireImage('gfx/gnome.png'), 'width': 32, 'height': 64, 'actualHeight': 38, 'yOffset': 26, 'flipped': true, frames: 4});
+    const skeletonSource = setupActorSource({'image': requireImage('gfx/skeletonSmall.png'), 'width': 48, 'height': 64, 'actualHeight': 38, 'yOffset': 26, frames: 7});
+    const butterflySource = setupActorSource({'image': requireImage('gfx/yellowButterfly.png'), 'width': 64, 'actualWidth': 48, 'height': 64,
             framesPerRow: 7, walkFrames: [1, 2, 3, 4, 5, 6, 4, 2, 0], 'attackPreparationFrames': [7, 10, 11], deathFrames: [7, 8, 9, 9]});
-    var skeletonGiantSource = setupActorSource({'image': requireImage('gfx/skeletonGiant.png'), 'width': 48, frames: 7});
-    var dragonSource = setupActorSource({'image': requireImage('gfx/dragon.png'), 'width': 64, 'actualWidth': 48, 'height': 64,
+    const skeletonGiantSource = setupActorSource({'image': requireImage('gfx/skeletonGiant.png'), 'width': 48, frames: 7});
+    const dragonSource = setupActorSource({'image': requireImage('gfx/dragon.png'), 'width': 64, 'actualWidth': 48, 'height': 64,
             framesPerRow: 7, walkFrames: [1, 2, 3, 4], 'attackPreparationFrames': [5, 6, 7], deathFrames: [8, 9, 10]});
-    var batSource = setupActorSource({'image': requireImage('gfx/bat.png'), 'width': 32, 'height': 32, 'flipped': true, frames: 5, 'y': 30});
-    var spiderSource = setupActorSource({'image': requireImage('gfx/spider.png'), 'width': 48, 'height': 48, 'y': -10,
+    const batSource = setupActorSource({'image': requireImage('gfx/bat.png'), 'width': 32, 'height': 32, 'flipped': true, frames: 5, 'y': 30});
+    const spiderSource = setupActorSource({'image': requireImage('gfx/spider.png'), 'width': 48, 'height': 48, 'y': -10,
             framesPerRow: 10, walkFrames: [4, 5, 6, 7, 8, 9], 'attackPreparationFrames': [0, 1, 2, 3], deathFrames: [10, 11, 12, 13]});
-    var wolfSource = setupActorSource({'image': requireImage('gfx/wolf.png'), 'width': 64, 'height': 32,
+    const wolfSource = setupActorSource({'image': requireImage('gfx/wolf.png'), 'width': 64, 'height': 32,
             framesPerRow: 7, walkFrames: [0, 1, 2, 3], 'attackPreparationFrames': [6, 4, 5, 0], deathFrames: [0, 7, 8, 9]});
-    var turtleSource = {'image': requireImage('gfx/turtle.png'), 'xOffset': 0, 'width': 64, 'height': 64,
+    const turtleSource = {'image': requireImage('gfx/turtle.png'), 'xOffset': 0, 'width': 64, 'height': 64,
             framesPerRow: 5, walkFrames: [0, 1, 2, 3], 'attackPreparationFrames': [5, 6], deathFrames: [5, 7, 8, 9]};
-    var monarchSource = setupActorSource({'image': requireImage('gfx/monarchButterfly.png'), 'width': 64, 'actualWidth': 48, 'height': 64,
+    const monarchSource = setupActorSource({'image': requireImage('gfx/monarchButterfly.png'), 'width': 64, 'actualWidth': 48, 'height': 64,
             framesPerRow: 7, walkFrames: [1, 2, 3, 4, 5, 6, 4, 2, 0], 'attackPreparationFrames': [7, 10, 11], deathFrames: [7, 8, 9, 9]});
-    var skeletonRow = 0;
-    var goblinRow = 1;
-    var vampireRow = 2;
-    var skeletonWithHatCanvas = createEquippedActorSource(requireImage('gfx/monsterPeople.png'), skeletonRow, {'head': makeItem(itemsByKey.strawhat, 1)});
-    var skeletonWithHelmetCanvas = createEquippedActorSource(requireImage('gfx/monsterPeople.png'), skeletonRow, {'head': makeItem(itemsByKey.copperhelmet, 1), 'weapon': makeItem(itemsByKey.gladius, 1)});
-    var skeletonNakedCanvas = createEquippedActorSource(requireImage('gfx/monsterPeople.png'), skeletonRow, {});
-    var skeletonWarriorCanvas = createEquippedActorSource(requireImage('gfx/monsterPeople.png'), skeletonRow, {'weapon': makeItem(itemsByKey.hatchet, 1), 'head': makeItem(itemsByKey.irongreathelm, 1)});
-    var goblinWithHeavyArmorCanvas = createEquippedActorSource(requireImage('gfx/monsterPeople.png'), goblinRow, {'body': makeItem(itemsByKey.platedcoat, 1), 'legs': makeItem(itemsByKey.copperskirt, 1), 'head': makeItem(itemsByKey.copperhelmet, 1), 'feet': makeItem(itemsByKey.coppersabatons, 1)});
-    var goblinTatteredShortsCanvas = createEquippedActorSource(requireImage('gfx/monsterPeople.png'), goblinRow, {'legs': makeItem(itemsByKey.leatherkilt, 1)});
-    var humanoidMonsterBaseSource ={
+    const skeletonRow = 0;
+    const goblinRow = 1;
+    const vampireRow = 2;
+    const skeletonWithHatCanvas = createEquippedActorSource(requireImage('gfx/monsterPeople.png'), skeletonRow, {'head': makeItem(itemsByKey.strawhat, 1)});
+    const skeletonWithHelmetCanvas = createEquippedActorSource(requireImage('gfx/monsterPeople.png'), skeletonRow, {'head': makeItem(itemsByKey.copperhelmet, 1), 'weapon': makeItem(itemsByKey.gladius, 1)});
+    const skeletonNakedCanvas = createEquippedActorSource(requireImage('gfx/monsterPeople.png'), skeletonRow, {});
+    const skeletonWarriorCanvas = createEquippedActorSource(requireImage('gfx/monsterPeople.png'), skeletonRow, {'weapon': makeItem(itemsByKey.hatchet, 1), 'head': makeItem(itemsByKey.irongreathelm, 1)});
+    const goblinWithHeavyArmorCanvas = createEquippedActorSource(requireImage('gfx/monsterPeople.png'), goblinRow, {'body': makeItem(itemsByKey.platedcoat, 1), 'legs': makeItem(itemsByKey.copperskirt, 1), 'head': makeItem(itemsByKey.copperhelmet, 1), 'feet': makeItem(itemsByKey.coppersabatons, 1)});
+    const goblinTatteredShortsCanvas = createEquippedActorSource(requireImage('gfx/monsterPeople.png'), goblinRow, {'legs': makeItem(itemsByKey.leatherkilt, 1)});
+    const humanoidMonsterBaseSource: Partial<Source> ={
         'width': 96,
         'height': 64,
         'yCenter': 44, // Measured from the top of the source
@@ -375,12 +396,12 @@ export function initializeMonsters() {
         'attackRecoveryFrames': [4, 3]
     };
 
-    var skeletonWithHatSource = setupActorSource({...humanoidMonsterBaseSource, image: skeletonWithHatCanvas});
-    var skeletonWithHelmetSource = setupActorSource({...humanoidMonsterBaseSource, image: skeletonWithHelmetCanvas});
-    var skeletonWarriorSource = setupActorSource({...humanoidMonsterBaseSource, image: skeletonWarriorCanvas});
-    var skeletonNakedSource = setupActorSource({...humanoidMonsterBaseSource, image: skeletonNakedSource});
-    var goblinWithHeavyArmorSource = setupActorSource({...humanoidMonsterBaseSource, image: goblinWithHeavyArmorSource});
-    var goblinTatteredShortsSource = setupActorSource({...humanoidMonsterBaseSource, image: goblinTatteredShortsSource});
+    const skeletonWithHatSource = setupActorSource({...humanoidMonsterBaseSource, image: skeletonWithHatCanvas});
+    const skeletonWithHelmetSource = setupActorSource({...humanoidMonsterBaseSource, image: skeletonWithHelmetCanvas});
+    const skeletonWarriorSource = setupActorSource({...humanoidMonsterBaseSource, image: skeletonWarriorCanvas});
+    const skeletonNakedSource = setupActorSource({...humanoidMonsterBaseSource, image: skeletonNakedCanvas});
+    const goblinWithHeavyArmorSource = setupActorSource({...humanoidMonsterBaseSource, image: goblinWithHeavyArmorCanvas});
+    const goblinTatteredShortsSource = setupActorSource({...humanoidMonsterBaseSource, image: goblinTatteredShortsCanvas});
 
     addMonster('dummy', {
         'name': 'Dummy', 'source': caterpillarSource,

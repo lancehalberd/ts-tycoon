@@ -47,8 +47,8 @@ export interface Area {
     time: number,
     timeStopEffect?: any,
 
-    allies: any[],
-    enemies: any[],
+    allies: Actor[],
+    enemies: Actor[],
     projectiles: any[],
     effects: any[],
     textPopups: any[],

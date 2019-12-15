@@ -1,22 +1,22 @@
 import { accessorySlots, armorSlots, smallArmorSlots } from 'app/gameConstants';
 
-import { AffixData, BonusesRange } from 'app/types';
+import { EquipmentAffixData, BonusesRange } from 'app/types';
 
 const basicHolders = ['simplequiver', 'scabbard', 'wornebaldric'];
 const holders = ['neverendingquiver', 'runedscabbard', 'bandolier', 'heavybaldric', 'etchedsheath', 'cover', 'largescabbard'];
 const magicHolders = ['runedamulet', 'heavyamulet'];
 
-export const prefixes: AffixData[][] = [];
-export const prefixesByKey: {[key: string]: AffixData} = {};
-export const suffixes: AffixData[][] = [];
-export const suffixesByKey: {[key: string]: AffixData} = {};
-export const affixesByKey: {[key: string]: AffixData} = {};
+export const prefixes: EquipmentAffixData[][] = [];
+export const prefixesByKey: {[key: string]: EquipmentAffixData} = {};
+export const suffixes: EquipmentAffixData[][] = [];
+export const suffixesByKey: {[key: string]: EquipmentAffixData} = {};
+export const affixesByKey: {[key: string]: EquipmentAffixData} = {};
 
 function addPrefix(level, name, tags, bonuses: BonusesRange) {
     const key = name.replace(/\s*/g, '').toLowerCase();
     let bonusesKey = '';
     for (let bonusKey in bonuses) bonusesKey += bonusKey;
-    const affix: AffixData = {
+    const affix: EquipmentAffixData = {
         key, level, name, tags, bonuses, bonusesKey, prefix: true,
     };
     if (affixesByKey[key]) throw new Error('affix key ' + key + ' is already used.');
@@ -29,7 +29,7 @@ function addSuffix(level, name, tags, bonuses: BonusesRange) {
     const key = name.replace(/\s*/g, '').toLowerCase();
     let bonusesKey = '';
     for (let bonusKey in bonuses) bonusesKey += bonusKey;
-    const affix: AffixData = {
+    const affix: EquipmentAffixData = {
         key, level, name, tags, bonuses, bonusesKey, suffix: true,
     };
     if (affixesByKey[key]) throw new Error('affix key ' + key + ' is already used.');

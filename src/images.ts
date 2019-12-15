@@ -3,6 +3,8 @@ import {
     drawRectangle, fillRectangle, ifdefor, shrinkRectangle
 } from 'app/utils/index';
 
+import { Source } from 'app/types';
+
 export const images = {};
 function loadImage(source, callback) {
     images[source] = new Image();
@@ -240,16 +242,16 @@ function logPixel(context, x, y) {
     var imgd = context.getImageData(x, y, 1, 1);
     console.log(imgd.data)
 }
-export function setupSource(source) {
-    source.width = ifdefor(source.width, 48);
-    source.height = ifdefor(source.height, 64);
-    source.actualHeight = ifdefor(source.actualHeight, source.height);
-    source.actualWidth = ifdefor(source.actualWidth, source.width);
+export function setupSource(source: Partial<Source>): Source {
+    source.width = source.width || 48;
+    source.height = source.height || 64;
+    source.actualHeight = source.actualHeight || source.height;
+    source.actualWidth = source.actualWidth || source.width;
     source.xOffset = ifdefor(source.xOffset, 0);
     source.yOffset = ifdefor(source.yOffset, 0);
     source.xCenter = ifdefor(source.xCenter, source.actualWidth / 2 + source.xOffset);
     source.yCenter = ifdefor(source.yCenter, source.actualHeight / 2 + source.yOffset);
-    return source;
+    return source as Source;
 }
 
 export function drawAbilityIcon(context, icon, target) {

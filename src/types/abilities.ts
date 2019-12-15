@@ -35,7 +35,7 @@ interface TriggerEffect {
 }
 export interface Ability {
     key?: string,
-    name: string,
+    name?: string,
     action?: ActionData,
     reaction?: ActionData,
     onCritEffect?: TriggerEffect,

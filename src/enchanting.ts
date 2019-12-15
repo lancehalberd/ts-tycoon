@@ -9,10 +9,12 @@ import { saveGame } from 'app/saveGame';
 import { getState } from 'app/state';
 import Random from 'app/utils/Random';
 
-export function makeAffix(baseAffix) {
-    var affix = {
-        'base': baseAffix,
-        'bonuses': {}
+import { Affix, AffixData} from 'app/types';
+
+export function makeAffix(baseAffix: AffixData): Affix {
+    const affix: Affix = {
+        base: baseAffix,
+        bonuses: {}
     };
     for (const key in baseAffix.bonuses) {
         const value = baseAffix.bonuses[key];

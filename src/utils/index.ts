@@ -4,7 +4,7 @@ import * as _ from 'lodash';
  * Makes a deep copy of an object. Note that this will not make deep copies of
  * objects with prototypes.
  */
-export function copy(object) {
+export function copy<T>(object: T): T {
     if (typeof(object) === 'undefined' || object === null) {
         return null;
     }
@@ -14,7 +14,7 @@ export function copy(object) {
     return _.cloneDeep(object);
 }
 
-export function shallowCopy(object) {
+export function shallowCopy<T>(object): T {
     if (typeof(object) === 'undefined' || object === null) {
         return null;
     }
@@ -35,29 +35,29 @@ export function shallowCopy(object) {
  * @param {Number} y2
  * @return {Number}
  */
-export function atan2(x1, y1, x2, y2) {
+export function atan2(x1: number, y1: number, x2: number, y2: number): number {
     if (x1 == x2) {
         return(y2 > y1) ? Math.PI / 2 : -Math.PI / 2;
     }
     return Math.atan((y2 - y1) / (x2 - x1)) + (x2 < x1 ? Math.PI : 0);
 }
 
-export function ifdefor(value, defaultValue = null) {
+export function ifdefor<T>(value: T, defaultValue: T = null): T {
     if (value !== undefined && !(typeof value === 'number' && isNaN(value))) {
         return value;
     }
     return defaultValue;
 }
 
-export function now() {
+export function now(): number {
     return Date.now();
 }
 
-export function isPointInRect(x, y, l, t, w, h) {
+export function isPointInRect(x: number, y: number, l: number, t: number, w: number, h: number): boolean {
     return !(y < t || y > (t + h) || x < l || x > (l + w));
 }
 
-export function isPointInRectObject(x, y, rectangle) {
+export function isPointInRectObject(x: number, y: number, rectangle): boolean {
     if (!rectangle || ifdefor(rectangle.top) === null || ifdefor(rectangle.left) === null
          || ifdefor(rectangle.width) === null || ifdefor(rectangle.height) === null) {
         return false;
@@ -82,19 +82,17 @@ export function collision(element1: HTMLElement, element2: HTMLElement) {
 }
 
 // returns the area overlap between two divs.
-export function getCollisionArea($div1, $div2) {
-    var T = $div1.offset().top;
-    var L = $div1.offset().left;
-    var B = T + $div1.outerHeight(true);
-    var R = L + $div1.outerWidth(true);
-    var t = $div2.offset().top;
-    var l = $div2.offset().left;
-    var b = t + $div2.outerHeight(true);
-    var r = l + $div2.outerWidth(true);
+export function getCollisionArea(element1: HTMLElement, element2: HTMLElement) {
+    const { y: t, x: l, width: w, height: h } = element1.getBoundingClientRect();
+    const b = t + h;
+    const r = l + w;
+    const { y: T, x: L, width: W, height: H } = element2.getBoundingClientRect();
+    const B = T + H;
+    const R = L + W;
     return Math.max(Math.min(B - t, b - T), 0) * Math.max(Math.min(R - l, r - L), 0);
 }
 
-export function getElementRectangle(element, container = null) {
+export function getElementRectangle(element: HTMLElement, container = null) {
     const rect = {...element.getBoundingClientRect()};
     // If container is specified, return the rectangle relative to the container's coordinates.
     if (container) {
@@ -105,20 +103,20 @@ export function getElementRectangle(element, container = null) {
     return rect;
 }
 
-export function resize(element, width, height, left = null, top = null) {
+export function resize(element: HTMLElement, width: number, height: number, left: number = null, top: number = null) {
     element.style.width = `${width}px`;
     element.style.height = `${height}px`;
     if (left !== null) element.style.left = `${left}px`;
     if (top !== null) element.style.top = `${top}px`;
 }
 
-export function constrain(value, min, max) {
+export function constrain(value: number, min: number, max: number): number {
     return Math.min(max, Math.max(min, value));
 }
-export function fillRectangle(context, rectangle) {
+export function fillRectangle(context: CanvasRenderingContext2D, rectangle) {
     context.fillRect(rectangle.left, rectangle.top, rectangle.width, rectangle.height);
 }
-export function drawRectangle(context, rectangle) {
+export function drawRectangle(context: CanvasRenderingContext2D, rectangle) {
     context.rect(rectangle.left, rectangle.top, rectangle.width, rectangle.height);
 }
 export function rectangle(left, top, width, height) {

@@ -44,8 +44,8 @@ import Random from 'app/utils/Random';
 import {
     Ability, Action, ActionStats, Actor, ActorStats,
     Board, BoardData, Character,
-    Effect, Equipment, EquipmentData,
-    Job, Tags, VariableObject
+    Effect, Equipment, EquipmentData, Hero,
+    Job, Monster, Tags, VariableObject
 } from 'app/types';
 import { Bonuses, BonusSource } from 'app/types/bonuses';
 import { Item } from 'app/types/items';
@@ -197,11 +197,13 @@ export function makeAdventurerFromData({
         name,
         hairOffset,
         skinColorOffset = Random.range(0, 2),
-}): Actor {
+}): Hero {
     const personCanvas = createCanvas(personFrames * 96, 64);
     const personContext = personCanvas.getContext("2d");
     personContext.imageSmoothingEnabled = false;
-    const hero: Actor = {
+    const hero: Hero = {
+        type: 'hero',
+        character: null,
         isActor: true,
         x: 0,
         y: 0,
@@ -244,8 +246,8 @@ export function makeAdventurerFromData({
     });
     return hero;
 }
-export function makeAdventurerFromJob(job: Job, level: number, equipment: EquipmentData): Actor {
-    const adventurer = makeAdventurerFromData({
+export function makeAdventurerFromJob(job: Job, level: number, equipment: EquipmentData): Hero {
+    const hero = makeAdventurerFromData({
         jobKey: job.key,
         level,
         name: Random.element(names),
@@ -255,10 +257,10 @@ export function makeAdventurerFromJob(job: Job, level: number, equipment: Equipm
     const state = getState();
     for (const item of Object.values(equipment)) {
         state.savedState.craftedItems[item.key] = (state.savedState.craftedItems[item.key] || 0) | CRAFTED_NORMAL;
-        equipItemProper(adventurer, makeItem(item, 1), false);
+        equipItemProper(hero, makeItem(item, 1), false);
     }
-    updateAdventurer(adventurer);
-    return adventurer;
+    updateAdventurer(hero);
+    return hero;
 }
 export function readBoardFromData(boardData: BoardData, character, ability: Ability, confirmed = false): Board {
     return {
@@ -338,7 +340,7 @@ export function removeActions(actor: Actor, source: Ability) {
     }
 }
 
-export function updateAdventurer(adventurer: Actor) {
+export function updateAdventurer(adventurer: Hero) {
     // Clear the character's bonuses and graphics.
     adventurer.variableObject = createVariableObject({variableObjectType: 'actor'});
     adventurer.actions = [];
@@ -489,7 +491,8 @@ export function recomputeActorTags(actor: Actor): Tags {
             }
         }
     }
-    if (actor.base && actor.base.tags) {
+
+    if (actor.type === 'monster' && actor.base && actor.base.tags) {
         for (const tag of (actor.base.tags || [])) tags[tag] = true;
         if (tags['ranged']) delete tags['melee'];
         else tags['melee'] = true;
@@ -542,7 +545,7 @@ export function actorHelpText(actor: Actor) {
     }
     return titleDiv(title) + sections.map(bodyDiv).join('');
 }
-export function gainLevel(hero: Actor) {
+export function gainLevel(hero: Hero) {
     hero.level++;
     updateTrophy('level-' + hero.job.key, hero.level);
     hero.character.fame += hero.level;
@@ -596,7 +599,7 @@ export function setSelectedCharacter(character: Character) {
     equipmentSlots.forEach(function (type) {
         //detach any existing item
         query('.js-equipment .js-' + type + ' .js-item').remove();
-        const equipment: Item = hero.equipment[type];
+        const equipment = hero.equipment[type];
         if (equipment) {
             query('.js-equipment .js-' + type).append(equipment.domElement);
         }

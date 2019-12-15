@@ -1,3 +1,5 @@
+import { EquipmentSlot } from 'app/types';
+
 // Update duration in milliseconds.
 export const FRAME_LENGTH = 20;
 // Minimum effective slowing coefficient from slowing effects.
@@ -18,7 +20,7 @@ export const MAP_TOP = -MAP_HEIGHT / 2;
 
 export const WORLD_RADIUS = 600;
 
-export const armorSlots = ['body', 'feet', 'head', 'offhand', 'arms', 'legs'];
-export const smallArmorSlots = ['feet', 'head', 'offhand', 'arms', 'legs'];
-export const accessorySlots = ['back', 'ring'];
-export const equipmentSlots = ['weapon', 'body', 'feet', 'head', 'offhand', 'arms', 'legs', 'back', 'ring'];
+export const armorSlots: EquipmentSlot[] = ['body', 'feet', 'head', 'offhand', 'arms', 'legs'];
+export const smallArmorSlots: EquipmentSlot[] = ['feet', 'head', 'offhand', 'arms', 'legs'];
+export const accessorySlots: EquipmentSlot[] = ['back', 'ring'];
+export const equipmentSlots: EquipmentSlot[] = ['weapon', 'body', 'feet', 'head', 'offhand', 'arms', 'legs', 'back', 'ring'];
