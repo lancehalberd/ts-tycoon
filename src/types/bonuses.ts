@@ -158,6 +158,9 @@ export interface ActionStats {
     pullsTarget?: boolean,
     undodgeable?: boolean,
     dodge?: boolean,
+    healthSacrifice?: number,
+    // Specifically for fireball.
+    explode?: number,
 }
 
 export interface GuildStats {

@@ -82,17 +82,17 @@ function unequipSlot(actor: Actor, slotKey: EquipmentSlot, update: boolean = fal
         item.actor = null;
         actor.equipment[slotKey] = null;
         removeActions(actor, item.base);
-        removeBonusSourceFromObject(actor, item.base, false);
+        removeBonusSourceFromObject(actor.variableObject, item.base, false);
         item.prefixes.forEach(function (affix) {
             removeActions(actor, affix);
-            removeBonusSourceFromObject(actor, affix, false);
+            removeBonusSourceFromObject(actor.variableObject, affix, false);
         })
         item.suffixes.forEach(function (affix) {
             removeActions(actor, affix);
-            removeBonusSourceFromObject(actor, affix, false);
+            removeBonusSourceFromObject(actor.variableObject, affix, false);
         })
         if (update) {
-            updateTags(actor, recomputeActorTags(actor), true);
+            updateTags(actor.variableObject, recomputeActorTags(actor), true);
             if (getState().selectedCharacter === actor.character) {
                 refreshStatsPanel(actor.character, query('.js-characterColumn .js-stats'));
                 query('.js-equipment .js-' + slotKey + ' .js-placeholder').style.display = '';
@@ -152,7 +152,7 @@ export function makeItem(base: ItemData, level: number): Item {
     }
     return item;
 }
-export function getItemForElement(itemElement): Item {
+export function getItemForElement(itemElement: HTMLElement): Item {
     for (const item of getState().items) {
         if (item.domElement === itemElement) {
             return item;

@@ -110,27 +110,27 @@ export function initializeActorForAdventure(actor: Actor) {
     actor.boundEffects = actor.boundEffects || [];
     // actor.heading = [1, 0, 0];
     var stopTimeAction = findActionByTag(actor.reactions, 'stopTime');
-    actor.temporalShield = actor.maxTemporalShield = (stopTimeAction ? stopTimeAction.duration : 0);
+    actor.temporalShield = actor.maxTemporalShield = (stopTimeAction ? stopTimeAction.stats.duration : 0);
     updateActorDimensions(actor);
 }
 export function refreshStatsPanel(
     character = getState().selectedCharacter,
     statsPanelElement: HTMLElement = query('.js-characterColumn .js-stats')
 ) {
-    const adventurer = character.adventurer;
-    statsPanelElement.querySelector('.js-playerName').textContent = adventurer.job.name + ' ' + adventurer.name;
-    statsPanelElement.querySelector('.js-playerLevel').textContent = '' + adventurer.level;
+    const hero = character.hero;
+    statsPanelElement.querySelector('.js-playerName').textContent = hero.job.name + ' ' + hero.name;
+    statsPanelElement.querySelector('.js-playerLevel').textContent = '' + hero.level;
     statsPanelElement.querySelector('.js-fame').textContent = character.fame.toFixed(1);
-    statsPanelElement.querySelector('.js-dexterity').textContent = adventurer.stats.dexterity.toFixed(0);
-    statsPanelElement.querySelector('.js-strength').textContent = adventurer.stats.strength.toFixed(0);
-    statsPanelElement.querySelector('.js-intelligence').textContent = adventurer.stats.intelligence.toFixed(0);
+    statsPanelElement.querySelector('.js-dexterity').textContent = hero.stats.dexterity.toFixed(0);
+    statsPanelElement.querySelector('.js-strength').textContent = hero.stats.strength.toFixed(0);
+    statsPanelElement.querySelector('.js-intelligence').textContent = hero.stats.intelligence.toFixed(0);
     query('.js-global-divinity').textContent = abbreviate(character.divinity);
-    statsPanelElement.querySelector('.js-maxHealth').textContent = abbreviate(adventurer.stats.maxHealth, 0);
-    if (adventurer.actions.length) {
-        statsPanelElement.querySelector('.js-range').textContent = getBasicAttack(adventurer).range.toFixed(2);
+    statsPanelElement.querySelector('.js-maxHealth').textContent = abbreviate(hero.stats.maxHealth, 0);
+    if (hero.actions.length) {
+        statsPanelElement.querySelector('.js-range').textContent = getBasicAttack(hero).stats.range.toFixed(2);
     }
-    statsPanelElement.querySelector('.js-speed').textContent = adventurer.stats.speed.toFixed(1);
-    statsPanelElement.querySelector('.js-healthRegen').textContent = adventurer.stats.healthRegen.toFixed(1);
+    statsPanelElement.querySelector('.js-speed').textContent = hero.stats.speed.toFixed(1);
+    statsPanelElement.querySelector('.js-healthRegen').textContent = hero.stats.healthRegen.toFixed(1);
     updateDamageInfo(character, statsPanelElement);
 }
 export function newCharacter(job: Job): Character {
@@ -281,6 +281,7 @@ function addAction(actor: Actor, source: Ability, baseAction: any): Action {
         variableObject,
         stats: variableObject.stats as ActionStats,
         source,
+        base: baseAction,
     }
     addVariableChildToObject(actor.variableObject, variableObject);
     return action;
@@ -510,7 +511,7 @@ export function recomputeActorTags(actor: Actor): Tags {
 }
 export function actorHelpText(actor: Actor) {
     var name = actor.name;
-    if (actor.job) {
+    if (actor.type === 'hero') {
         name = actor.job.name + ' ' + name;
     }
     var prefixNames = [];
@@ -535,9 +536,9 @@ export function actorHelpText(actor: Actor) {
         sections.push(bonusSourceHelpText(affix, actor));
     });
     const countMap = {};
-    ifdefor(actor.allEffects, []).forEach(function (effect) {
+    (actor.allEffects || []).forEach(function (effect) {
         var effectText = bonusSourceHelpText(effect, actor);
-        countMap[effectText] = ifdefor(countMap[effectText], 0) + 1;
+        countMap[effectText] = (countMap[effectText] || 0) + 1;
     });
     for (let text in countMap) {
         if (countMap[text] > 1) text += tag('div', 'effectCounter', 'x' + countMap[text]);

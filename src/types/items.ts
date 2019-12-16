@@ -1,4 +1,4 @@
-import { Actor, Affix, Bonuses, SavedAffix, Tags } from 'app/types';
+import { Actor, Bonuses, EquipmentAffix, SavedAffix, Tags } from 'app/types';
 
 type AttackAnimationType = 'bowAttack' | 'throwingAttack' | 'wandAttack';
 
@@ -78,8 +78,8 @@ export interface Item {
     itemLevel: number,
     // This won't be set until updateItem populates it.
     requiredLevel?: number,
-    prefixes: Affix[],
-    suffixes: Affix[],
+    prefixes: EquipmentAffix[],
+    suffixes: EquipmentAffix[],
     unique: boolean,
     actor?: Actor,
     // This can override the default display name.

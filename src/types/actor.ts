@@ -31,6 +31,10 @@ export interface BaseActor {
     x: number,
     y: number,
     z: number,
+    // Set by updateActorDimensions.
+    scale?: number,
+    width?: number,
+    height?: number,
     equipment: Equipment,
     // Set for monsters.
     source: ActorSource,

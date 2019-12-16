@@ -16,6 +16,11 @@ export interface EquipmentAffixData extends AffixData {
     bonusesKey: string,
 }
 
+export interface EquipmentAffix {
+    base: EquipmentAffixData,
+    bonuses,
+}
+
 export interface Affix {
     base: AffixData,
     bonuses: Bonuses,

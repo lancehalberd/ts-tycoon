@@ -1,10 +1,10 @@
-import { Actor, Board, BonusSource, JobKey, LevelDifficulty, SavedActor, SavedBoard } from 'app/types';
+import { Actor, Board, BonusSource, Hero, JobKey, LevelDifficulty, SavedActor, SavedBoard } from 'app/types';
 import { JobIcon } from 'app/content/jobs';
 
 export interface Character {
-    adventurer: Actor,
+    adventurer: Hero,
     fame: number,
-    hero: Actor,
+    hero: Hero,
     board: Board,
     characterCanvas: HTMLCanvasElement,
     characterContext: CanvasRenderingContext2D,

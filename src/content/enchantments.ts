@@ -12,7 +12,7 @@ export const suffixes: EquipmentAffixData[][] = [];
 export const suffixesByKey: {[key: string]: EquipmentAffixData} = {};
 export const affixesByKey: {[key: string]: EquipmentAffixData} = {};
 
-function addPrefix(level, name, tags, bonuses: BonusesRange) {
+function addPrefix(level: number, name: string, tags: string | string[], bonuses: BonusesRange) {
     const key = name.replace(/\s*/g, '').toLowerCase();
     let bonusesKey = '';
     for (let bonusKey in bonuses) bonusesKey += bonusKey;
@@ -25,7 +25,7 @@ function addPrefix(level, name, tags, bonuses: BonusesRange) {
     prefixes[level] = prefixes[level] || [];
     prefixes[level].push(affix);
 }
-function addSuffix(level, name, tags, bonuses: BonusesRange) {
+function addSuffix(level: number, name: string, tags: string | string[], bonuses: BonusesRange) {
     const key = name.replace(/\s*/g, '').toLowerCase();
     let bonusesKey = '';
     for (let bonusKey in bonuses) bonusesKey += bonusKey;
@@ -103,33 +103,33 @@ addPrefix(31, 'Invigorating', smallArmorSlots.concat(accessorySlots), {'%maxHeal
 addPrefix(51, 'Abiding', smallArmorSlots.concat(accessorySlots), {'%maxHealth': [20, 25, 100]});
 addPrefix(71, 'Everlasting', smallArmorSlots.concat(accessorySlots), {'%maxHealth': [25, 30, 100]});
 
-addPrefix(11, 'Rough', armorSlots.concat(['Plated Cloak']), {'%armor': [2, 6, 100]});
-addPrefix(21, 'Thick', armorSlots.concat(['Plated Cloak']), {'%armor': [5, 10, 100]});
-addPrefix(31, 'Refined', armorSlots.concat(['Plated Cloak']), {'%armor': [10, 15, 100]});
-addPrefix(41, 'Hardened', armorSlots.concat(['Plated Cloak']), {'%armor': [15, 20, 100]});
-addPrefix(51, 'Petrified', armorSlots.concat(['Plated Cloak']), {'%armor': [20, 25, 100]});
-addPrefix(71, 'Unbreakable', armorSlots.concat(['Plated Cloak']), {'%armor': [25, 30, 100]});
+addPrefix(11, 'Rough', [...armorSlots, 'Plated Cloak'], {'%armor': [2, 6, 100]});
+addPrefix(21, 'Thick', [...armorSlots, 'Plated Cloak'], {'%armor': [5, 10, 100]});
+addPrefix(31, 'Refined', [...armorSlots, 'Plated Cloak'], {'%armor': [10, 15, 100]});
+addPrefix(41, 'Hardened', [...armorSlots, 'Plated Cloak'], {'%armor': [15, 20, 100]});
+addPrefix(51, 'Petrified', [...armorSlots, 'Plated Cloak'], {'%armor': [20, 25, 100]});
+addPrefix(71, 'Unbreakable', [...armorSlots, 'Plated Cloak'], {'%armor': [25, 30, 100]});
 
-addPrefix(11, 'Circumspect', armorSlots.concat(['Travelers Cloak']), {'%evasion': [2, 6, 100]});
-addPrefix(21, 'Disguised', armorSlots.concat(['Travelers Cloak']), {'%evasion': [5, 10, 100]});
-addPrefix(31, 'Evasive', armorSlots.concat(['Travelers Cloak']), {'%evasion': [10, 15, 100]});
-addPrefix(41, 'Elusive', armorSlots.concat(['Travelers Cloak']), {'%evasion': [15, 20, 100]});
-addPrefix(51, 'Hidden', armorSlots.concat(['Travelers Cloak']), {'%evasion': [20, 25, 100]});
-addPrefix(71, 'Invisible', armorSlots.concat(['Travelers Cloak']), {'%evasion': [25, 30, 100]});
+addPrefix(11, 'Circumspect', [...armorSlots, 'Travelers Cloak'], {'%evasion': [2, 6, 100]});
+addPrefix(21, 'Disguised', [...armorSlots, 'Travelers Cloak'], {'%evasion': [5, 10, 100]});
+addPrefix(31, 'Evasive', [...armorSlots, 'Travelers Cloak'], {'%evasion': [10, 15, 100]});
+addPrefix(41, 'Elusive', [...armorSlots, 'Travelers Cloak'], {'%evasion': [15, 20, 100]});
+addPrefix(51, 'Hidden', [...armorSlots, 'Travelers Cloak'], {'%evasion': [20, 25, 100]});
+addPrefix(71, 'Invisible', [...armorSlots, 'Travelers Cloak'], {'%evasion': [25, 30, 100]});
 
-addPrefix(11, 'Hindering', armorSlots.concat(['Fur Cloak']), {'%block': [2, 6, 100]});
-addPrefix(21, 'Impeding', armorSlots.concat(['Fur Cloak']), {'%block': [5, 10, 100]});
-addPrefix(31, 'Obstructing', armorSlots.concat(['Fur Cloak']), {'%block': [10, 15, 100]});
-addPrefix(41, 'Halting', armorSlots.concat(['Fur Cloak']), {'%block': [15, 20, 100]});
-addPrefix(51, 'Arresting', armorSlots.concat(['Fur Cloak']), {'%block': [20, 25, 100]});
-addPrefix(71, 'Sequestering', armorSlots.concat(['Fur Cloak']), {'%block': [25, 30, 100]});
+addPrefix(11, 'Hindering', [...armorSlots, 'Fur Cloak'], {'%block': [2, 6, 100]});
+addPrefix(21, 'Impeding', [...armorSlots, 'Fur Cloak'], {'%block': [5, 10, 100]});
+addPrefix(31, 'Obstructing', [...armorSlots, 'Fur Cloak'], {'%block': [10, 15, 100]});
+addPrefix(41, 'Halting', [...armorSlots, 'Fur Cloak'], {'%block': [15, 20, 100]});
+addPrefix(51, 'Arresting', [...armorSlots, 'Fur Cloak'], {'%block': [20, 25, 100]});
+addPrefix(71, 'Sequestering', [...armorSlots, 'Fur Cloak'], {'%block': [25, 30, 100]});
 
-addPrefix(11, 'Annoying', armorSlots.concat(['Etched Band']), {'%magicBlock': [2, 6, 100]});
-addPrefix(21, 'Distracting', armorSlots.concat(['Etched Band']), {'%magicBlock': [5, 10, 100]});
-addPrefix(31, 'Disconcerting', armorSlots.concat(['Etched Band']), {'%magicBlock': [10, 15, 100]});
-addPrefix(41, 'Baffling', armorSlots.concat(['Etched Band']), {'%magicBlock': [15, 20, 100]});
-addPrefix(51, 'Bewildering', armorSlots.concat(['Etched Band']), {'%magicBlock': [20, 25, 100]});
-addPrefix(71, 'Confounding', armorSlots.concat(['Etched Band']), {'%magicBlock': [25, 30, 100]});
+addPrefix(11, 'Annoying', [...armorSlots, 'Etched Band'], {'%magicBlock': [2, 6, 100]});
+addPrefix(21, 'Distracting', [...armorSlots, 'Etched Band'], {'%magicBlock': [5, 10, 100]});
+addPrefix(31, 'Disconcerting', [...armorSlots, 'Etched Band'], {'%magicBlock': [10, 15, 100]});
+addPrefix(41, 'Baffling', [...armorSlots, 'Etched Band'], {'%magicBlock': [15, 20, 100]});
+addPrefix(51, 'Bewildering', [...armorSlots, 'Etched Band'], {'%magicBlock': [20, 25, 100]});
+addPrefix(71, 'Confounding', [...armorSlots, 'Etched Band'], {'%magicBlock': [25, 30, 100]});
 
 addPrefix(1, 'Relaxing', armorSlots.concat(accessorySlots), {'+healthRegen': [10, 20, 10]});
 addPrefix(12, 'Relieving', armorSlots.concat(accessorySlots), {'+healthRegen': [20, 50, 10]});
@@ -261,33 +261,33 @@ addSuffix(40, 'Boosting', smallArmorSlots.concat(accessorySlots), {'+maxHealth':
 addSuffix(55, 'Amplifcation', smallArmorSlots.concat(accessorySlots), {'+maxHealth': [84, 96]});
 addSuffix(70, 'Maximization', smallArmorSlots.concat(accessorySlots), {'+maxHealth': [108, 120]});
 
-addSuffix(1, 'Shininess', armorSlots.concat(['Etched Band']), {'+magicBlock': [1, 3]});
-addSuffix(9, 'Brightness', armorSlots.concat(['Etched Band']), {'+magicBlock': [4, 6]});
-addSuffix(24, 'Lustrousness', armorSlots.concat(['Etched Band']), {'+magicBlock': [7, 10]});
-addSuffix(39, 'Glory', armorSlots.concat(['Etched Band']), {'+magicBlock': [11, 15]});
-addSuffix(54, 'The Moon', armorSlots.concat(['Etched Band']), {'+magicBlock': [16, 22]});
-addSuffix(69, 'The Sun', armorSlots.concat(['Etched Band']), {'+magicBlock': [23, 30]});
+addSuffix(1, 'Shininess', [...armorSlots, 'Etched Band'], {'+magicBlock': [1, 3]});
+addSuffix(9, 'Brightness', [...armorSlots, 'Etched Band'], {'+magicBlock': [4, 6]});
+addSuffix(24, 'Lustrousness', [...armorSlots, 'Etched Band'], {'+magicBlock': [7, 10]});
+addSuffix(39, 'Glory', [...armorSlots, 'Etched Band'], {'+magicBlock': [11, 15]});
+addSuffix(54, 'The Moon', [...armorSlots, 'Etched Band'], {'+magicBlock': [16, 22]});
+addSuffix(69, 'The Sun', [...armorSlots, 'Etched Band'], {'+magicBlock': [23, 30]});
 
-addSuffix(1, 'Toughness', armorSlots.concat(['Plated Cloak']), {'+armor': [2, 6]});
-addSuffix(10, 'Durability', armorSlots.concat(['Plated Cloak']), {'+armor': [8, 12]});
-addSuffix(20, 'Permanence', armorSlots.concat(['Plated Cloak']), {'+armor': [14, 20]});
-addSuffix(30, 'The Mountain', armorSlots.concat(['Plated Cloak']), {'+armor': [22, 30]});
-addSuffix(40, 'The Paladin', armorSlots.concat(['Plated Cloak']), {'+armor': [32, 44]});
-addSuffix(50, 'Indestructibility', armorSlots.concat(['Plated Cloak']), {'+armor': [46, 60]});
+addSuffix(1, 'Toughness', [...armorSlots, 'Plated Cloak'], {'+armor': [2, 6]});
+addSuffix(10, 'Durability', [...armorSlots, 'Plated Cloak'], {'+armor': [8, 12]});
+addSuffix(20, 'Permanence', [...armorSlots, 'Plated Cloak'], {'+armor': [14, 20]});
+addSuffix(30, 'The Mountain', [...armorSlots, 'Plated Cloak'], {'+armor': [22, 30]});
+addSuffix(40, 'The Paladin', [...armorSlots, 'Plated Cloak'], {'+armor': [32, 44]});
+addSuffix(50, 'Indestructibility', [...armorSlots, 'Plated Cloak'], {'+armor': [46, 60]});
 
-addSuffix(1, 'Delaying', armorSlots.concat(['Fur Cloak']), {'+block': [2, 6]});
-addSuffix(11, 'Intercepting', armorSlots.concat(['Fur Cloak']), {'+block': [8, 12]});
-addSuffix(21, 'Blocking', armorSlots.concat(['Fur Cloak']), {'+block': [14, 20]});
-addSuffix(31, 'Guarding', armorSlots.concat(['Fur Cloak']), {'+block': [22, 30]});
-addSuffix(41, 'Protecting', armorSlots.concat(['Fur Cloak']), {'+block': [32, 44]});
-addSuffix(51, 'The Wall', armorSlots.concat(['Fur Cloak']), {'+block': [46, 60]});
+addSuffix(1, 'Delaying', [...armorSlots, 'Fur Cloak'], {'+block': [2, 6]});
+addSuffix(11, 'Intercepting', [...armorSlots, 'Fur Cloak'], {'+block': [8, 12]});
+addSuffix(21, 'Blocking', [...armorSlots, 'Fur Cloak'], {'+block': [14, 20]});
+addSuffix(31, 'Guarding', [...armorSlots, 'Fur Cloak'], {'+block': [22, 30]});
+addSuffix(41, 'Protecting', [...armorSlots, 'Fur Cloak'], {'+block': [32, 44]});
+addSuffix(51, 'The Wall', [...armorSlots, 'Fur Cloak'], {'+block': [46, 60]});
 
-addSuffix(1, 'Mitigation', armorSlots.concat(['Travelers Cloak']), {'+evasion': [2, 6]});
-addSuffix(12, 'Dodging', armorSlots.concat(['Travelers Cloak']), {'+evasion': [8, 12]});
-addSuffix(22, 'Evasion', armorSlots.concat(['Travelers Cloak']), {'+evasion': [14, 20]});
-addSuffix(32, 'Avoidance', armorSlots.concat(['Travelers Cloak']), {'+evasion': [22, 30]});
-addSuffix(42, 'Illusion', armorSlots.concat(['Travelers Cloak']), {'+evasion': [32, 44]});
-addSuffix(52, 'Vanishing', armorSlots.concat(['Travelers Cloak']), {'+evasion': [46, 60]});
+addSuffix(1, 'Mitigation', [...armorSlots, 'Travelers Cloak'], {'+evasion': [2, 6]});
+addSuffix(12, 'Dodging', [...armorSlots, 'Travelers Cloak'], {'+evasion': [8, 12]});
+addSuffix(22, 'Evasion', [...armorSlots, 'Travelers Cloak'], {'+evasion': [14, 20]});
+addSuffix(32, 'Avoidance', [...armorSlots, 'Travelers Cloak'], {'+evasion': [22, 30]});
+addSuffix(42, 'Illusion', [...armorSlots, 'Travelers Cloak'], {'+evasion': [32, 44]});
+addSuffix(52, 'Vanishing', [...armorSlots, 'Travelers Cloak'], {'+evasion': [46, 60]});
 
 addSuffix(1, 'Speed', 'feet', {'+speed': [10, 20]});
 addSuffix(20, 'Velocity', 'feet', {'+speed': [25, 40]});

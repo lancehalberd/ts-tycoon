@@ -8,12 +8,13 @@ import { rectangle } from 'app/utils/index';
 
 import { ActionData, Effect } from 'app/types/abilities';
 import { Bonuses } from 'app/types/bonuses';
-import { Frame } from 'app/types';
+import { Actor, Frame } from 'app/types';
 
 const scrollIconSource = 'gfx/496RpgIcons/openScroll.png';
 
-function genericAction(type, rawAction, bonuses: Bonuses, helpText = ''): ActionData {
-    const action = {
+
+function genericAction(type, rawAction: Partial<ActionData>, bonuses: Bonuses, helpText = ''): ActionData {
+    const action: ActionData = {
         icon: scrollIconSource,
         ...rawAction,
         type,
@@ -29,8 +30,8 @@ function genericAction(type, rawAction, bonuses: Bonuses, helpText = ''): Action
     return action;
 }
 
-function movementAction(type, rawAction, bonuses: Bonuses, helpText = ''): ActionData {
-    const action = {
+function movementAction(type, rawAction: Partial<ActionData>, bonuses: Bonuses, helpText = ''): ActionData {
+    const action: ActionData = {
         icon: scrollIconSource,
         ...rawAction,
         type,
@@ -43,8 +44,8 @@ function movementAction(type, rawAction, bonuses: Bonuses, helpText = ''): Actio
 }
 
 
-function attackAction(type, rawAction, bonuses: Bonuses, helpText = ''): ActionData {
-    const action = {
+function attackAction(type, rawAction: Partial<ActionData>, bonuses: Bonuses, helpText = ''): ActionData {
+    const action: ActionData = {
         icon: scrollIconSource,
         ...rawAction,
         type,
@@ -59,8 +60,8 @@ function attackAction(type, rawAction, bonuses: Bonuses, helpText = ''): ActionD
     return action;
 }
 
-function spellAction(type, rawAction, bonuses: Bonuses, helpText = ''): ActionData {
-    const action = {
+function spellAction(type, rawAction: Partial<ActionData>, bonuses: Bonuses, helpText = ''): ActionData {
+    const action: ActionData = {
         icon: jobIcons.sage,
         ...rawAction,
         type,
@@ -82,15 +83,15 @@ function spellAction(type, rawAction, bonuses: Bonuses, helpText = ''): ActionDa
 }
 
 
-export function buffEffect(rawEffect, bonuses: Bonuses): Effect {
+export function buffEffect(rawEffect: Partial<Effect>, bonuses: Bonuses): Effect {
     return {
         ...rawEffect,
         variableObjectType: 'effect',
         tags: ['buff', ...(rawEffect.tags || [])],
         bonuses,
-    }
+    };
 }
-export function debuffEffect(rawEffect, bonuses: Bonuses): Effect {
+export function debuffEffect(rawEffect: Partial<Effect>, bonuses: Bonuses): Effect {
     return {
         ...rawEffect,
         variableObjectType: 'effect',
@@ -99,12 +100,12 @@ export function debuffEffect(rawEffect, bonuses: Bonuses): Effect {
     }
 }
 
-const effectSourceUp = ['gfx/militaryIcons.png', 17, 23, 16, 16, 0, 0];
-const effectSourceArmor = ['gfx/militaryIcons.png', 65, 180, 12, 12, 8, 8];
+const effectSourceUp: Frame = ['gfx/militaryIcons.png', 17, 23, 16, 16, 0, 0];
+const effectSourceArmor: Frame = ['gfx/militaryIcons.png', 65, 180, 12, 12, 8, 8];
 //const effectSourceSword = ['gfx/militaryIcons.png', 52, 180, 12, 12, 8, 8];
-const effectSourceSword = ['gfx/militaryIcons.png', 85, 74, 16, 16, 6, 4];
+const effectSourceSword: Frame = ['gfx/militaryIcons.png', 85, 74, 16, 16, 6, 4];
 
-export const skills: {[key: string]: Action} = {
+export const skills: {[key: string]: ActionData} = {
     // Movement actions
     'dodge': movementAction('dodge', {'icon': jobIcons.dancer, jump: true}, {'+cooldown': 10, '+distance': -128, '$buff': buffEffect({}, {'+%evasion': .5, '+duration': 5})},
                             'Leap back to dodge an attack and gain: {$buff}'),
@@ -249,7 +250,7 @@ export const skills: {[key: string]: Action} = {
     'revive': spellAction('revive', {'icon': 'gfx/496RpgIcons/spellRevive.png', showName: true}, {'+cooldown': 120},
             'Upon receiving a lethal blow, cast a spell that brings you back to life with {+power} health.'),
     'protect': spellAction('effect', {'icon': 'gfx/496RpgIcons/spellProtect.png', 'target': 'allies', showName: true},
-            {'+cooldown': 30, '+range': 10, '$buff': buffEffect({'icons': [effectSourceUp, effectSourceArmor], drawGround(actor) {
+            {'+cooldown': 30, '+range': 10, '$buff': buffEffect({'icons': [effectSourceUp, effectSourceArmor], drawGround(actor: Actor) {
                 //const animation = effectAnimations.blueRune;
                 const size = Math.max(actor.width, 128);
                 //const frame = animation.frames[frame];

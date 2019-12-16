@@ -153,14 +153,14 @@ export function addMonstersToArea(
         newMonster.allies.push(newMonster);
     }
 }
-function checkIfActorDied(actor) {
+function checkIfActorDied(actor: Actor) {
     const area = actor.area;
     // The actor who has stopped time cannot die while the effect is in place.
     if (area.timeStopEffect && area.timeStopEffect.actor === actor) return;
     // Actor has not died if they are already dead, have postiive health, cannot die or are currently being pulled.
-    if (actor.isDead || actor.health > 0 || actor.undying || actor.pull) return;
+    if (actor.isDead || actor.health > 0 || actor.pull) return;
     // If the actor is about to die, check to activate their temporal shield if they have one.
-    var stopTimeAction = findActionByTag(actor.reactions, 'stopTime');
+    const stopTimeAction = findActionByTag(actor.reactions, 'stopTime');
     if (stopTimeAction && canUseReaction(actor, stopTimeAction, {})) {
         useReaction(actor, stopTimeAction, {});
         return;
@@ -342,7 +342,7 @@ export function updateArea(area) {
     everybody.forEach(updateActorAnimationFrame);
     everybody.forEach(updateActorHelpText);
 }
-export function updateActorDimensions(actor) {
+export function updateActorDimensions(actor: Actor) {
     var source = actor.source;
     const scale = (actor.scale || 1);
     actor.width = source.actualWidth * scale;

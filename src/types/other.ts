@@ -1,3 +1,5 @@
+import { JobIcon } from 'app/content/jobs';
+
 export type Color = number | string;
 
 export type Point = [number, number];
@@ -5,7 +7,7 @@ export type Range = [number, number];
 
 export type Tags = {[key: string]: true};
 
-export interface Frame {
+export interface BasicFrame {
     image: HTMLCanvasElement | HTMLImageElement,
     left: number,
     top: number,
@@ -13,8 +15,11 @@ export interface Frame {
     height: number,
     draw?: Function,
 }
+export type ArrayFrame = [string, number, number, number, number, number, number];
 
-export interface TintedFrame extends Frame {
+export type Frame = string | JobIcon | BasicFrame | ArrayFrame;
+
+export interface TintedFrame extends BasicFrame {
     color: Color,
 }
 
