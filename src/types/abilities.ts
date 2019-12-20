@@ -1,6 +1,6 @@
 import { JobIcon } from 'app/content/jobs';
 import { Bonuses } from 'app/types/bonuses';
-import { ActionStats, Actor, Color, Frame, VariableObject } from 'app/types';
+import { ActionStats, Actor, Area, Color, Frame, VariableObject } from 'app/types';
 
 export interface Action {
     readyAt: number,
@@ -8,6 +8,8 @@ export interface Action {
     stats: ActionStats,
     source: Ability,
     base: ActionData,
+    // This is set as the player uses the skill.
+    totalPreparationTime?: number,
 }
 
 export interface ActionData {
@@ -47,7 +49,6 @@ export interface ActionData {
     afterImages?: number,
     // For monster minion skills
     monsterKey?: string,
-
 }
 
 export interface Effect {
@@ -58,6 +59,15 @@ export interface Effect {
     tags: string[],
     icons?: Frame[],
     drawGround?: (actor: Actor) => void,
+}
+
+export interface ActiveEffect {
+    update: (area: Area) => void,
+    finish?: Function,
+    attackStats: any,
+    currentFrame: number,
+    done: boolean,
+    drawGround?: (area: Area) => void,
 }
 
 interface TriggerEffect {

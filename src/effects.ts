@@ -14,6 +14,8 @@ import { rectangle } from 'app/utils/index';
 import Random from 'app/utils/Random';
 import { playSound } from 'app/utils/sounds';
 
+import { ActiveEffect } from 'app/types';
+
 export function songEffect(attackStats) {
     var color = (attackStats.attack.base.color || 'red');
     var alpha = (attackStats.attack.base.alpha || .3);
@@ -31,7 +33,7 @@ export function songEffect(attackStats) {
     var notes = [];
     var thetaOffset = Math.PI * Math.random();
     var effectedTargets = new Set();
-    var self = {
+    const self: ActiveEffect = {
         attackStats, 'currentFrame': 0, 'done': false,
         update(area) {
             self.currentFrame++;

@@ -180,30 +180,30 @@ export function shouldUseSkillOnTarget(actor, skill, target) {
  *
  * @return boolean True if the skill was used. Only false if the ability is probabilistic like raise dead.
  */
-export function prepareToUseSkillOnTarget(actor, skill, target) {
+export function prepareToUseSkillOnTarget(actor: Actor, skill: Action, target: Actor) {
     if (target.isActor && skill.base.consumeCorpse && target.isDead) {
         removeActor(target);
     }
     // Only use skill if they meet the RNG for using it. This is currently only used by the
     // 15% chance to raise dead on unit, which is why it comes after consuming the corpse.
-    if (skill.chance < Math.random()) {
+    if (skill.stats.chance < Math.random()) {
         return;
     }
-    if (skill.tags['attack']) {
+    if (skill.variableObject.tags['attack']) {
         // The wind up for an attack is at most .2s but is typically half the attack duration.
         // We don't make it longer than .2s because the wind up stops user movement and leaves the
         // attacker vulnerable to interrupt and because the attack animation looks bad slow during
         // the attack stage. Making the recovery stage be > .2s is fine because the user can still
         // move (slowly) and the recover animation doesn't look terrible slow.
-        skill.totalPreparationTime = Math.min(.2, (1 / skill.attackSpeed) / 2);
+        skill.totalPreparationTime = Math.min(.2, (1 / skill.stats.attackSpeed) / 2);
         // Whatever portion of the attack time isn't used by the prep time is designated as recoveryTime.
-        actor.totalRecoveryTime = 1 / skill.attackSpeed - skill.totalPreparationTime;
+        actor.totalRecoveryTime = 1 / skill.stats.attackSpeed - skill.totalPreparationTime;
     } else {
         // As of writing this, no skill uses prepTime, but we could use it to make certain spells
         // take longer to cast than others.
         // prepTime and recoveryTime cannot be 0 as programmed.
-        skill.totalPreparationTime = skill.prepTime || .2;
-        actor.totalRecoveryTime = skill.recoveryTime || .1;
+        skill.totalPreparationTime = skill.stats.prepTime || .2;
+        actor.totalRecoveryTime = skill.stats.recoveryTime || .1;
     }
     actor.skillInUse = skill;
     actor.skillTarget = target;

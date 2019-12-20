@@ -1,6 +1,6 @@
 import { backgrounds } from 'app/content/backgrounds';
 import { map } from 'app/content/mapData';
-import { Exit } from 'app/types';
+import { ActiveEffect, Actor, Exit } from 'app/types';
 
 export type LevelDifficulty = 'easy' | 'normal' | 'hard' | 'endless';
 
@@ -27,6 +27,7 @@ export interface Level {
     levelDifficulty: LevelDifficulty,
     entrance: Exit,
     areas: Map<string, Area>,
+    completed?: boolean,
 }
 
 export interface Area {
@@ -50,7 +51,7 @@ export interface Area {
     allies: Actor[],
     enemies: Actor[],
     projectiles: any[],
-    effects: any[],
+    effects: ActiveEffect[],
     textPopups: any[],
     treasurePopups: any[],
     objects: any[],

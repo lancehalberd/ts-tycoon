@@ -8,6 +8,7 @@ import { getState } from 'app/state';
 import { canUseSkillOnTarget, prepareToUseSkillOnTarget } from 'app/useSkill';
 import { fillRectangle, isPointInRectObject, rectangle, shrinkRectangle } from 'app/utils/index';
 
+import { Actor } from 'app/types';
 let goldFrame, silverFrame;
 let tinyGoldFrame, tinySilverFrame;
 let actionShortcuts = {};
@@ -43,7 +44,7 @@ function createScaledFrame(r, frame, scale = 1) {
     drawImage(context, smallCanvas, rectangle(0, 0, r.width / scale, r.height / scale), r);
     return canvas;
 }
-export function drawSkills(actor) {
+export function drawSkills(actor: Actor) {
     var context = mainContext;
     context.font = "10px Arial";
     context.textBaseline = 'middle';

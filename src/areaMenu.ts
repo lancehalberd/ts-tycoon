@@ -20,6 +20,8 @@ export function hideAreaMenu() {
     areaMenuElement.style.display = 'none';
 }
 
+const levelDifficulties: LevelDifficulty[] = ['easy', 'normal', 'hard'];
+
 export function showAreaMenu() {
     const state = getState();
     const selectedLevel = map[state.selectedCharacter.selectedLevelKey];
@@ -30,7 +32,7 @@ export function showAreaMenu() {
         areaMenuElement.style.display = '';
         toggleElements(areaMenuElement.querySelectorAll('.js-areaMenu .js-areaMedal'), false);
         const times = state.selectedCharacter.levelTimes[selectedLevel.levelKey] || {};
-        for (const difficulty of ['easy', 'normal', 'hard', 'challenge']) {
+        for (const difficulty of levelDifficulties) {
             if (!times[difficulty]) continue;
             const medal = query('.js-areaMenu .js-' + difficulty + 'Difficulty .js-areaMedal');
             medal.classList.remove('bronzeMedal', 'silverMedal', 'goldMedal');

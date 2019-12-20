@@ -1,12 +1,12 @@
 import {
-    ActorStats, Affix, Area, BonusSource, JobKey, Monster,
+    ActiveEffect, ActorStats, Affix, Area, BonusSource, Exit,
+    Job, JobKey, Level, Monster,
     SavedEquipment, Source,
     VariableObject
 } from 'app/types';
 import { Ability, Action, Effect } from 'app/types/abilities';
 import { Character } from 'app/types/Character';
 import { Equipment } from 'app/types/items';
-import { Job, Level } from 'app/types';
 
 /*export interface ActorSource {
     width: number,
@@ -63,7 +63,7 @@ export interface BaseActor {
     rotation?: number,
     activity?: any,
     imprintedSpell?: any,
-    boundEffects?: Effect[],
+    boundEffects?: ActiveEffect[],
     stopTimeAction?: Action,
     // These fields may be set by variable calculations.
     temporalShield?: number,
@@ -100,6 +100,22 @@ export interface BaseActor {
 
     allEffects?: BonusSource[],
     minionBonusSources?: BonusSource[],
+    escapeExit?: Exit,
+
+    totalRecoveryTime?: number,
+    preparationTime?: number,
+    recoveryTime?: number,
+    walkFrame?: number,
+    attackFrame?: number,
+    isMoving?: boolean,
+    skillTarget?: Actor,
+
+    // This will be set if an actor is being flung as an attack.
+    dominoAttackStats?: any,
+    // Temporarily set when checking what to autotarget.
+    priority?: number,
+    // Used for actors that can cloak.
+    cloaked?: boolean,
 }
 export interface Hero extends BaseActor {
     type: 'hero',

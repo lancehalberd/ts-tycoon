@@ -12,7 +12,7 @@ export interface Character {
     boardContext: CanvasRenderingContext2D,
     time: number,
     divinityScores: {[key in string]: number},
-    levelTimes: {[key in string]: number},
+    levelTimes: {[key in string]: {[key in string]: number}},
     divinity: number,
     jewelBonuses?: BonusSource,
 

@@ -4,8 +4,11 @@ import { drawAbilityIcon } from 'app/images';
 import { jewelInventoryState } from 'app/jewelInventory';
 import { jewelTierLevels } from 'app/jewels';
 import { getMousePosition, isMouseOverElement } from 'app/utils/mouse';
+import { Polygon } from 'app/utils/polygon';
 
-function drawShapesPath(context, shapes, fill, stroke) {
+import { Board, Character, Color, Point } from 'app/types';
+
+function drawShapesPath(context: CanvasRenderingContext2D, shapes: Polygon[], fill = false, stroke = false) {
     for (const shape of shapes) {
         const points = shape.points;
         context.beginPath();
@@ -19,14 +22,14 @@ function drawShapesPath(context, shapes, fill, stroke) {
     }
 }
 
-export function drawBoardJewels(character, canvas) {
-    var context = canvas.getContext('2d');
-    var board = character.board;
+export function drawBoardJewels(character: Character, canvas: HTMLCanvasElement) {
+    const context = canvas.getContext('2d');
+    const board = character.board;
     context.clearRect(0, 0, canvas.width, canvas.height);
     context.drawImage(character.boardCanvas, 0, 0, character.boardCanvas.width, character.boardCanvas.height);
     // Show open spaces as green or red when the player is dragging a jewel, indicating the character can equip the jewel or not.
     if (jewelInventoryState.draggedJewel && !jewelInventoryState.overVertex) {
-        var fillColor = (jewelTierLevels[jewelInventoryState.draggedJewel.tier] > character.adventurer.level) ? '#FF0000' : '#00FF00';
+        const fillColor = (jewelTierLevels[jewelInventoryState.draggedJewel.tier] > character.adventurer.level) ? '#FF0000' : '#00FF00';
         context.fillStyle = fillColor;
         context.globalAlpha = .5;
         drawShapesPath(context, board.spaces, true, false);
@@ -34,16 +37,16 @@ export function drawBoardJewels(character, canvas) {
     }
     drawBoardJewelsProper(context, getMousePosition(canvas), board, isMouseOverElement(canvas));
 }
-export function drawBoardJewelsProper(context, lightSource, board, mouseIsOverBoard = false) {
-    //var focusedJewelIsOnBoard = false;
-    var fixedJewels = board.fixed;
-    for (var i = 0; i < board.jewels.length; i++) {
-        var jewel = board.jewels[i];
+export function drawBoardJewelsProper(context: CanvasRenderingContext2D, lightSource: Point, board: Board, mouseIsOverBoard = false) {
+    //const focusedJewelIsOnBoard = false;
+    const fixedJewels = board.fixed;
+    for (let i = 0; i < board.jewels.length; i++) {
+        const jewel = board.jewels[i];
         drawJewel(context, jewel.shape, lightSource);
         //focusedJewelIsOnBoard = focusedJewelIsOnBoard || jewelInventoryState.draggedJewel == jewel || jewelInventoryState.overJewel == jewel;
     }
-    for (var i = 0; i < fixedJewels.length; i++) {
-        var jewel = fixedJewels[i];
+    for (let i = 0; i < fixedJewels.length; i++) {
+        const jewel = fixedJewels[i];
         if (jewel.disabled) {
             context.save();
             context.globalAlpha = .3;
@@ -54,7 +57,7 @@ export function drawBoardJewelsProper(context, lightSource, board, mouseIsOverBo
             jewel.shape.color = '#333';
             drawJewel(context, jewel.shape, lightSource);
         }
-        var iconSource = getAbilityIconSource(jewel.ability);
+        const iconSource = getAbilityIconSource(jewel.ability);
         if (mouseIsOverBoard && iconSource) {
             drawAbilityIcon(context, iconSource,
                 {'left': jewel.shape.center[0] - 10, 'top': jewel.shape.center[1] - 10, 'width': 20, 'height': 20});
@@ -75,7 +78,7 @@ export function drawBoardJewelsProper(context, lightSource, board, mouseIsOverBo
     }*/
 }
 
-export function drawBoardBackground(context, board) {
+export function drawBoardBackground(context: CanvasRenderingContext2D, board: Board) {
     context.lineWidth = 10;
     context.lineCap = 'round';
     context.lineJoin = 'round';
@@ -88,15 +91,12 @@ export function drawBoardBackground(context, board) {
     context.strokeStyle = '#666655';
     drawShapesPath(context, board.spaces, true, true);
 }
-export function drawBoardPreview(context, lightSource, boardPreview, showIcon) {
+export function drawBoardPreview(context: CanvasRenderingContext2D, lightSource: Point, boardPreview: Board, showIcon = false) {
     drawBoardBackground(context, boardPreview);
-
-
-
-    var fixedJewel = boardPreview.fixed[0];
+    const fixedJewel = boardPreview.fixed[0];
     context.globalAlpha = 1;
     drawJewel(context, fixedJewel.shape, lightSource);
-    var iconSource = getAbilityIconSource(fixedJewel.ability);
+    const iconSource = getAbilityIconSource(fixedJewel.ability);
     if (showIcon && iconSource) {
         drawAbilityIcon(context, iconSource,
                 {'left': fixedJewel.shape.center[0] - 10, 'top': fixedJewel.shape.center[1] - 10, 'width': 20, 'height': 20});

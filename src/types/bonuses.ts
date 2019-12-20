@@ -61,6 +61,7 @@ export interface ActorStats {
     strength?: number,
     intelligence?: number,
     maxHealth?: number,
+    bonusMaxHealth?: number,
     healthRegen?: number,
     tenacity?: number,
     speed?: number,
@@ -161,6 +162,7 @@ export interface ActionStats {
     healthSacrifice?: number,
     // Specifically for fireball.
     explode?: number,
+    chance?: number,
 }
 
 export interface GuildStats {

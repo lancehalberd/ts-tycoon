@@ -349,8 +349,7 @@ function drawMinimap(area) {
 }
 
 function drawMapButton() {
-    const state = getState();
-    this.flashColor = state.selectedCharacter.hero.area.completed ? 'white' : null;
+    this.flashColor = getState().selectedCharacter.hero.levelInstance.completed ? 'white' : null;
     drawHudElement.call(this);
 }
 function drawHudElement() {
