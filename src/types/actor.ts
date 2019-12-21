@@ -1,5 +1,5 @@
 import {
-    ActiveEffect, ActorStats, Affix, Area, BonusSource, Exit,
+    ActiveEffect, ActorStats, Affix, Area, AreaEntity, BonusSource, Exit,
     Job, JobKey, Level, Monster,
     SavedEquipment, Source,
     VariableObject
@@ -25,7 +25,7 @@ export interface ActorSource extends Source {
 
 }
 
-export interface BaseActor {
+export interface BaseActor extends AreaEntity {
     character?: Character,
     type: string,
     x: number,
@@ -45,7 +45,7 @@ export interface BaseActor {
     percentHealth: number,
     percentTargetHealth: number,
     helpMethod: Function,
-    heading: [number, number, number], // Character moves left to right by default.
+    heading: number[], // Character moves left to right by default.
     tags?: string[],
     actions?: Action[],
     reactions?: Action[],

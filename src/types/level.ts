@@ -1,6 +1,10 @@
 import { backgrounds } from 'app/content/backgrounds';
-import { map } from 'app/content/mapData';
 import { ActiveEffect, Actor, Exit } from 'app/types';
+
+// Things the exist in areas need at least these spatial properties.
+export interface AreaEntity {
+    x: number, y: number, z: number, width?: number,
+}
 
 export type LevelDifficulty = 'easy' | 'normal' | 'hard' | 'endless';
 
@@ -11,7 +15,7 @@ export interface LevelData {
     level: number,
     coords: number[],
     background: keyof typeof backgrounds,
-    unlocks: (keyof typeof map)[],
+    unlocks: string[],
     skill: string,
     enemySkills: string[],
     monsters: string[],

@@ -39,7 +39,7 @@ import { ifdefor } from 'app/utils/index';
 import { isMouseDown } from 'app/utils/mouse';
 
 import {
-    Actor, Area, BonusSource, Character, Exit, GuildArea, Hero, LevelData, LevelDifficulty, MonsterData
+    Actor, Area, AreaEntity, BonusSource, Character, Exit, GuildArea, Hero, LevelData, LevelDifficulty, MonsterData
 } from 'app/types';
 
 
@@ -443,7 +443,7 @@ function processStatusEffects(target: Actor) {
         // End the pull if the target hits something.
         for (const object of target.area.objects) {
             if (object.solid === false) continue;
-            const distance = getDistanceOverlap(target as Sprite, object);
+            const distance = getDistanceOverlap(target, object);
             if (distance <= -8) {
                 target.pull = null;
                 target.y = (target.type === 'monster') && target.baseY || 0;
@@ -562,11 +562,11 @@ function runActorLoop(actor: Actor) {
     }
     const targets = [];
     for (const ally of actor.allies) {
-        ally.priority = getDistance(actor as Sprite, ally as Sprite) - 1000;
+        ally.priority = getDistance(actor, ally) - 1000;
         targets.push(ally);
     }
     for (const enemy of actor.enemies) {
-        enemy.priority = getDistance(actor as Sprite, enemy as Sprite);
+        enemy.priority = getDistance(actor, enemy);
         // actor.skillTarget will hold the last target the actor tried to use a skill on.
         // This lines causes the actor to prefer to continue attacking the same enemy continuously
         // even if they aren't the closest target any longer.
@@ -622,17 +622,13 @@ export function actorShouldAutoplay(actor: Actor) {
         && (actor.character.autoplay || (actor.character !== getState().selectedCharacter && actor.enemies.length));
 }
 
-interface Sprite {
-    x: number, y: number, z: number, width: number,
-}
-
 // The distance functions assume objects are circular in the x/z plane and are calculating
 // only distance within that plane, ignoring the height of objects and their y positions.
-export function getDistance(spriteA: Sprite, spriteB: Sprite) {
+export function getDistance(spriteA: AreaEntity, spriteB: AreaEntity) {
     const distance = getDistanceOverlap(spriteA, spriteB);
     return Math.max(0, distance);
 }
-export function getDistanceOverlap(spriteA: Sprite, spriteB: Sprite) {
+export function getDistanceOverlap(spriteA: AreaEntity, spriteB: AreaEntity) {
     const dx = spriteA.x - spriteB.x;
     const dz = spriteA.z - spriteB.z;
     const distance = Math.sqrt(dx*dx + dz*dz) - ((spriteA.width || 0) + (spriteB.width || 0)) / 2;

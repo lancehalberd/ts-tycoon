@@ -163,6 +163,14 @@ export interface ActionStats {
     // Specifically for fireball.
     explode?: number,
     chance?: number,
+    teleport?: number,
+    // number of prefixes to steal for plunder, for instance.
+    count?: number,
+    rangeDamage?: number, // hook does more damage at further range.
+    lifeSteal?: number,
+    stun?: number,
+    dragStun?: number,
+    dragDamage?: number,
 }
 
 export interface GuildStats {

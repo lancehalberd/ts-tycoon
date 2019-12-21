@@ -45,3 +45,13 @@ export interface Source {
     framesPerRow?: number,
     attackY?: number,
 }
+
+export interface TextPopup {
+    value?: string | number,
+    fontSize?: number,
+    x: number, y: number, z: number,
+    vx: number, vy: number,
+    color: Color,
+    duration?: number,
+    gravity?: number,
+}

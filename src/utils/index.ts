@@ -14,7 +14,7 @@ export function copy<T>(object: T): T {
     return _.cloneDeep(object);
 }
 
-export function shallowCopy<T>(object): T {
+export function shallowCopy<T>(object: T): T {
     if (typeof(object) === 'undefined' || object === null) {
         return null;
     }

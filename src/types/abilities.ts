@@ -87,3 +87,35 @@ export interface Ability {
     icon?: JobIcon | Frame | string,
     helpText?: string,
 }
+
+export interface AttackData {
+    // How far the attack has traveled (used on projectiles).
+    distance: number,
+    animation: any,
+    sound: any,
+    size: number,
+    gravity: number,
+    speed: number,
+    healthSacrificed: number,
+    source: Actor,
+    attack: Action,
+    isCritical: boolean,
+    damage: number,
+    magicDamage: number,
+    accuracy: number,
+    explode: number,
+    cleave: number,
+    piercing: boolean,
+    strikes: number,
+    imprintedSpell?: Action,
+    // Set by certain effects like novas.
+    effectiveness?: number,
+    projectile?: any,
+    y?: number,
+    evaded?: boolean,
+    deflected?: boolean,
+    dodged?: boolean,
+    stopped?: boolean,
+    // Calculated each time the attack is applied.
+    totalDamage?: number,
+}

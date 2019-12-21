@@ -1,6 +1,5 @@
 import { addBonusSourceToObject, recomputeDirtyStats, removeBonusSourceFromObject } from 'app/bonuses';
 import { recomputeAllCharacterDirtyStats } from 'app/character';
-import { FixedObject } from 'app/content/furniture';
 import { characterClasses } from 'app/content/jobs';
 import { bodyDiv, divider, mainContext, titleDiv } from 'app/dom';
 import { bonusSourceHelpText } from 'app/helpText';
@@ -11,7 +10,7 @@ import { getState } from 'app/state';
 import { isPointInRectObject, rectangle } from 'app/utils/index';
 
 import { Bonuses } from 'app/types/bonuses';
-import { Color } from 'app/types';
+import { Color, FixedObject } from 'app/types';
 import { JobKey } from 'app/types/jobs';
 
 

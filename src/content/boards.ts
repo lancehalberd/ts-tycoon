@@ -31,7 +31,7 @@ const pieBoard = board([{"k":"triangle","p":[90,148.03847577293365],"t":60}, {"k
 const helmBoard = board([{"k":"trapezoid","p":[151,87],"t":0},{"k":"diamond","p":[151,87],"t":-240},{"k":"diamond","p":[181,87],"t":-60},{"k":"triangle","p":[166,61.01923788646684],"t":60}]);
 const crownBoard = board([{"k":"triangle","p":[443,326.1346123343714],"t":-60},{"k":"diamond","p":[488,352.11537444790457],"t":-540},{"k":"triangle","p":[458,352.11537444790457],"t":-120},{"k":"diamond","p":[428,352.11537444790457],"t":-120}]);
 
-export const squareBoard = {
+export const squareBoard: BoardData = {
     'fixed': [{"k":"square","p":[89,76],"t":0}],
     'spaces': [{"k":"hexagon","p":[89,106],"t":0},{"k":"hexagon","p":[89,24.03847577293368],"t":0},
         {"k":"hexagon","p":[144.98076211353316,61],"t":30},{"k":"hexagon","p":[63.01923788646684,61],"t":30},

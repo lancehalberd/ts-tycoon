@@ -8,21 +8,26 @@ import { applyAttackToTarget, createAttackStats, getBasicAttack } from 'app/perf
 import { isMouseDown } from 'app/utils/mouse';
 import Vector from 'app/utils/Vector';
 
+import { Actor } from 'app/types';
+
 const rotationA = Math.cos(Math.PI / 20);
 const rotationB = Math.sin(Math.PI / 20);
 
-export function moveActor(actor) {
+export function moveActor(actor: Actor) {
     const area = actor.area;
     if (!area) {
         return;
     }
-    var delta = FRAME_LENGTH / 1000;
-    if (actor.isDead || actor.stunned || actor.pull || actor.stationary || (actor.skillInUse && actor.preparationTime < actor.skillInUse.totalPreparationTime)) {
+    const delta = FRAME_LENGTH / 1000;
+    if (actor.isDead || actor.stunned || actor.pull || (actor.skillInUse && actor.preparationTime < actor.skillInUse.totalPreparationTime)) {
         return;
     }
-    var goalTarget = (actor.skillInUse && actor.skillTarget !== actor) ? actor.skillTarget : null;
+    if (actor.type === 'monster' && actor.stationary) {
+        return;
+    }
+    let goalTarget = (actor.skillInUse && actor.skillTarget !== actor) ? actor.skillTarget : null;
     actor.isMoving = false;
-    var speedBonus = 1;
+    let speedBonus = 1;
     if (actor.chargeEffect) {
         goalTarget = actor.chargeEffect.target;
     } else if (actor.activity) {
@@ -68,10 +73,10 @@ export function moveActor(actor) {
         }
     }
     if ((actor.chargeEffect || (actorShouldAutoplay(actor) && !actor.activity)) && (!goalTarget || goalTarget.isDead)) {
-        var bestDistance = actor.aggroRadius || 10000;
+        let bestDistance = actor.aggroRadius || 10000;
         actor.enemies.forEach(function (target) {
             if (target.isDead) return;
-            var distance = getDistance(actor, target);
+            const distance = getDistance(actor, target);
             if (distance < bestDistance) {
                 bestDistance = distance;
                 goalTarget = target;
@@ -80,10 +85,10 @@ export function moveActor(actor) {
     }
     if (!goalTarget && actor.owner) {
         // Set desired relative position to ahead if there are enemies and to follow if there are none.
-        var pointPosition = actor.owner.enemies.length
+        const pointPosition = actor.owner.enemies.length
             ? {x: actor.owner.x + actor.owner.heading[0] * 300, y: 0, z: Math.max(-180, Math.min(180, actor.owner.z + actor.owner.heading[2] * 100))}
             : {x: actor.owner.x - actor.owner.heading[2] * 200, y: 0, z: actor.owner.z > 0 ? actor.owner.z - 150 : actor.owner.z + 150};
-        var distanceToGoal = getDistance(actor, pointPosition);
+        const distanceToGoal = getDistance(actor, pointPosition);
         if (distanceToGoal > 20) {
             // Minions tend to be faster than their owners, so if they are following them they will stutter as they
             // try to match the desired relative position. To prevent this from happening, we slow minions down as they approach
@@ -116,7 +121,7 @@ export function moveActor(actor) {
     }
     if (actor.chargeEffect) {
         speedBonus *= actor.chargeEffect.chargeSkill.speedBonus;
-        actor.chargeEffect.distance += speedBonus * actor.speed * Math.max(MIN_SLOW, 1 - actor.slow) * delta;
+        actor.chargeEffect.distance += speedBonus * actor.stats.speed * Math.max(MIN_SLOW, 1 - actor.slow) * delta;
         // Cancel charge if they run for too long.
         if (actor.chargeEffect.distance > 2000) {
             actor.chargeEffect = null;
@@ -148,8 +153,8 @@ export function moveActor(actor) {
     var blockedByEnemy = null;
     var blockedByAlly = null;
     while (true) {
-        actor.x = currentX + speedBonus * actor.speed * actor.heading[0] * Math.max(MIN_SLOW, 1 - actor.slow) * delta;
-        actor.z = currentZ + speedBonus * actor.speed * actor.heading[2] * Math.max(MIN_SLOW, 1 - actor.slow) * delta;
+        actor.x = currentX + speedBonus * actor.stats.speed * actor.heading[0] * Math.max(MIN_SLOW, 1 - actor.slow) * delta;
+        actor.z = currentZ + speedBonus * actor.stats.speed * actor.heading[2] * Math.max(MIN_SLOW, 1 - actor.slow) * delta;
         if (isNaN(actor.x) || isNaN(actor.z)) {
             debugger;
         }
@@ -239,11 +244,11 @@ export function moveActor(actor) {
     }
 }
 
-function finishChargeEffect(actor, target) {
-    var attackStats = createAttackStats(actor, actor.chargeEffect.chargeSkill, target);
+function finishChargeEffect(actor: Actor, target: Actor) {
+    const attackStats = createAttackStats(actor, actor.chargeEffect.chargeSkill, target);
     attackStats.distance = actor.chargeEffect.distance;
-    var hitTargets = getAllInRange(target ? target.x : actor.x, actor.chargeEffect.chargeSkill.area, actor.enemies);
-    for (var hitTarget of hitTargets) {
+    const hitTargets = getAllInRange(target ? target.x : actor.x, actor.chargeEffect.chargeSkill.area, actor.enemies);
+    for (const hitTarget of hitTargets) {
         applyAttackToTarget(attackStats, hitTarget);
     }
     actor.chargeEffect = null;
