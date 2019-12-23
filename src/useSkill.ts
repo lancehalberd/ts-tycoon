@@ -13,13 +13,13 @@ import { effectAnimations } from 'app/content/effectAnimations';
 import { enchantedMonsterBonuses, imbuedMonsterBonuses, makeMonster, updateMonster } from 'app/content/monsters';
 import { addTimedEffect, animationEffect } from 'app/effects';
 import {
-    appendTextPopup, castAttackSpell, createAttackStats, createSpellStats,
+    appendTextPopup, castAttackSpell, createAttackStats,
     performAttack, performAttackProper
 } from 'app/performAttack';
 import Random from 'app/utils/Random';
 import { playSound } from 'app/utils/sounds';
 
-import { Action, Actor} from 'app/types';
+import { Action, Actor, AreaEntity, AttackData, BonusSource, Monster, TextPopup} from 'app/types';
 
 /**
  * Checks whether an actor may use a skill on a given target.
@@ -28,30 +28,38 @@ import { Action, Actor} from 'app/types';
  * @param object skill       The skill being performed.
  * @param object target      The target to attack for active abilities.
  */
-export function canUseSkillOnTarget(actor, skill, target) {
+export function canUseSkillOnTarget(actor: Actor, skill: Action, target: Actor | AreaEntity): boolean {
     if (!actor) throw new Error('No actor was passed to canUseSkillOnTarget');
     if (!skill) throw new Error('No skill was passed to canUseSkillOnTarget');
     if (!target) throw new Error('No target was passed to canUseSkillOnTarget');
     if (skill.readyAt > actor.time) return false; // Skill is still on cool down.
-    if (skill.tags['basic'] && actor.healingAttacks) return false;
-    if (!!skill.base.targetDeadUnits !== !!target.isDead) return false; // targetDeadUnits must match target.isDead.
-    for (var i = 0; i < (skill.base.restrictions || []).length; i++) {
-        if (!actor.tags[skill.base.restrictions[i]]) {
+    const skillTags = skill.variableObject.tags;
+    if (skillTags.basic && actor.stats.healingAttacks) {
+        return false;
+    }
+    for (let i = 0; i < (skill.base.restrictions || []).length; i++) {
+        if (!actor.variableObject.tags[skill.base.restrictions[i]]) {
             return false;
         }
     }
-    if (actor.cannotAttack && skill.tags['attack']) return false; // Jujutsu prevents a user from using active attacks.
-    // Make sure target matches the target type of the skill.
-    if (target.isActor && !skill.tags.field) {
-        if (skill.base.target === 'self' && actor !== target) return false;
-        if (skill.base.target === 'otherAllies' && (actor === target || actor.allies.indexOf(target) < 0)) return false;
-        if (skill.base.target === 'allies' && actor.allies.indexOf(target) < 0) return false;
-        if ((skill.base.target || 'enemies') === 'enemies' && actor.enemies.indexOf(target) < 0) return false;
-        if ((skill.base.target || 'enemies') === 'enemies' && target.cloaked) return false;
+    if (actor.stats.cannotAttack && skillTags.attack) {
+        return false; // Jujutsu prevents a user from using active attacks.
     }
-    var skillDefinition = skillDefinitions[skill.base.type];
+    // Make sure target matches the target type of the skill.
+    if (target.isActor && !skillTags.field) {
+        const actorTarget = target as Actor;
+        if (!!skill.base.targetDeadUnits !== !!actorTarget.isDead) return false; // targetDeadUnits must match target.isDead.
+        if (skill.base.target === 'self' && actor !== actorTarget) return false;
+        if (skill.base.target === 'otherAllies' && (actor === target || actor.allies.indexOf(actorTarget) < 0)) return false;
+        if (skill.base.target === 'allies' && actor.allies.indexOf(actorTarget) < 0) return false;
+        if ((skill.base.target || 'enemies') === 'enemies' && actor.enemies.indexOf(actorTarget) < 0) return false;
+        if ((skill.base.target || 'enemies') === 'enemies' && actorTarget.cloaked) return false;
+    } else {
+        if (skill.base.targetDeadUnits) return false;
+    }
+    const skillDefinition = actionDefinitions[skill.base.type];
     if (!skillDefinition) return false; // Invalid skill, maybe from a bad/old save file.
-    return !skillDefinition.isValid || skillDefinition.isValid(actor, skill, target);
+    return !skillDefinition.isValid || !!skillDefinition.isValid(actor, skill, target);
 }
 
 /**
@@ -61,19 +69,19 @@ export function canUseSkillOnTarget(actor, skill, target) {
  * @param object skill       The skill being performed.
  * @param object target      The target to attack for active abilities.
  */
-export function canUseReaction(actor, reaction, attackStats) {
+export function canUseReaction(actor: Actor, reaction: Action, attackStats: AttackData): boolean {
     if (!actor) throw new Error('No actor was passed to canUseReaction');
     if (!reaction) throw new Error('No reaction was passed to canUseReaction');
     if (!attackStats) throw new Error('No attackStats was passed to canUseReaction');
     if (reaction.readyAt > actor.time) return false;
-    var reactionDefinition = skillDefinitions[reaction.base.type];
+    const reactionDefinition = reactionDefinitions[reaction.base.type];
     if (!reactionDefinition) return false;
     for (const restriction of (reaction.base.restrictions || [])) {
-        if (!actor.tags[restriction]) {
+        if (!actor.variableObject.tags.restriction) {
             return false;
         }
     }
-    return !reactionDefinition.isValid || reactionDefinition.isValid(actor, reaction, attackStats);
+    return !reactionDefinition.isValid || !!reactionDefinition.isValid(actor, reaction, attackStats);
 }
 
 /**
@@ -83,22 +91,23 @@ export function canUseReaction(actor, reaction, attackStats) {
  * @param object skill       The skill being performed.
  * @param object target      The target to attack for active abilities.
  */
-export function isTargetInRangeOfSkill(actor, skill, pointOrTarget) {
+export function isTargetInRangeOfSkill(actor: Actor, skill: Action, pointOrTarget: AreaEntity): boolean {
     if (skill.base.target === 'none') return true;
-    var isAOE = skill.cleave || skill.tags['nova'] || skill.tags['field'] || skill.tags['blast'] || skill.tags['rain'];
+    const skillTags = skill.variableObject.tags;
+    const isAOE = skill.stats.cleave || skillTags['nova'] || skillTags['field'] || skillTags['blast'] || skillTags['rain'];
     // Nova skills use area instead of range for checking for valid targets.
-    if (skill.tags['nova']) return getDistance(actor, pointOrTarget) < skill.area * 32 / 2;
-    if (skill.tags['field']) return getDistance(actor, pointOrTarget) < skill.area * 32 / 2;
-    return getDistance(actor, pointOrTarget) <= (skill.range + (skill.teleport || 0)) * 32;
+    if (skillTags['nova']) return getDistance(actor, pointOrTarget) < skill.stats.area * 32 / 2;
+    if (skillTags['field']) return getDistance(actor, pointOrTarget) < skill.stats.area * 32 / 2;
+    return getDistance(actor, pointOrTarget) <= (skill.stats.range + (skill.stats.teleport || 0)) * 32;
 }
 
-export function isActorDying(actor) {
-    var percentHealth = actor.health / actor.maxHealth;
+export function isActorDying(actor: Actor): boolean {
+    const percentHealth = actor.health / actor.stats.maxHealth;
     // It will take this many seconds for the target to reach 0 life if they lose life constantly.
-    var secondsLeft = actor.tenacity * percentHealth;
+    const secondsLeft = actor.stats.tenacity * percentHealth;
     // If their target health is low enough that after secondsLeft passes, they will not have
     // regenerated above zero health, then the target is dying.
-    return actor.targetHealth < -actor.healthRegen * secondsLeft;
+    return actor.targetHealth < -actor.stats.healthRegen * secondsLeft;
 }
 
 /**
@@ -116,14 +125,14 @@ export function isActorDying(actor) {
  *
  * @return boolean True if the skill was used.
  */
-export function shouldUseSkillOnTarget(actor, skill, target) {
+export function shouldUseSkillOnTarget(actor: Actor, skill: Action, target: Actor): boolean {
     if (!actor.character && target.character) return true; // Enemies always use skills on the hero, since they win if the hero dies.
     if ((skill.base.target || 'enemies') === 'enemies') {
-        var percentHealth = target.health / target.maxHealth;
+        var percentHealth = target.health / target.stats.maxHealth;
         if (// If this ability targets an enemy, don't use it if the enemy is already going to die.
             isActorDying(target)
             // Unless the enemy has low enough health that they can be culled by this skill.
-            && (skill.cull || 0) < percentHealth
+            && (skill.stats.cull || 0) < percentHealth
         ) {
             return false;
         }
@@ -131,11 +140,12 @@ export function shouldUseSkillOnTarget(actor, skill, target) {
     // Make sure combined health of enemies in range is less than the raw damage of the attack, or that the ability
     // will result in life gain that makes it worth using
     if ((skill.base.target || 'enemies') === 'enemies'
-        && (skill.cooldown || 0) >= 10 // Don't worry about wasting skills with short cool downs.
+        && (skill.stats.cooldown || 0) >= 10 // Don't worry about wasting skills with short cool downs.
     ) {
-        var health = 0;
-        if (skill.cleave || skill.tags['nova'] || skill.tags['field'] || skill.tags['blast'] || skill.tags['rain']) {
-            var targetsInRange = getEnemiesLikelyToBeHitIfEnemyIsTargetedBySkill(actor, skill, target);
+        let health = 0;
+        const skillTags = skill.variableObject.tags;
+        if (skill.stats.cleave || skillTags['nova'] || skillTags['field'] || skillTags['blast'] || skillTags['rain']) {
+            const targetsInRange = getEnemiesLikelyToBeHitIfEnemyIsTargetedBySkill(actor, skill, target);
             if (targetsInRange.length === 0) {
                 return false;
             }
@@ -147,10 +157,10 @@ export function shouldUseSkillOnTarget(actor, skill, target) {
         } else {
             health = target.health;
         }
-        var previewAttackStats = skill.tags['spell'] ? createSpellStats(actor, skill, target) : createAttackStats(actor, skill, target);
+        const previewAttackStats = createAttackStats(actor, skill, target);
         // Any life gained by this attack should be considered in the calculation as well in favor of using the attack.
-        var possibleLifeGain = (previewAttackStats.damage + previewAttackStats.magicDamage) * (skill.lifeSteal || 0);
-        var actualLifeGain = actorCanOverHeal(actor) ? possibleLifeGain : Math.min(actor.maxHealth - actor.health, possibleLifeGain);
+        const possibleLifeGain = (previewAttackStats.damage + previewAttackStats.magicDamage) * (skill.stats.lifeSteal || 0);
+        const actualLifeGain = actorCanOverHeal(actor) ? possibleLifeGain : Math.min(actor.stats.maxHealth - actor.health, possibleLifeGain);
         // Make sure the total health of the target/combined targets is at least
         // the damage output of the attack.
         // We weight wasted life gain very high to avoid using life stealing moves when the user has full life,
@@ -160,7 +170,7 @@ export function shouldUseSkillOnTarget(actor, skill, target) {
         }
     }
     // Some (but not all) skill definitions have specific criteria for using them or not (like heal checks that the full heal will be used or you might die soon).
-    var skillDefinition = skillDefinitions[skill.base.type];
+    const skillDefinition = actionDefinitions[skill.base.type];
     if (skillDefinition.shouldUse && !skillDefinition.shouldUse(actor, skill, target)) return false;
     return true;
 }
@@ -209,8 +219,10 @@ export function prepareToUseSkillOnTarget(actor: Actor, skill: Action, target: A
     actor.skillTarget = target;
     // These values will count up until completion. If a character is slowed, it will reduce how quickly these numbers accrue.
     actor.preparationTime = actor.recoveryTime = 0;
-    var skillDefinition = skillDefinitions[skill.base.type];
-    if (skillDefinition.prepareToUseSkillOnTarget) skillDefinition.prepareToUseSkillOnTarget(actor, skill, target);
+    const skillDefinition = actionDefinitions[skill.base.type];
+    if (skillDefinition.prepareToUseSkillOnTarget) {
+        skillDefinition.prepareToUseSkillOnTarget(actor, skill, target);
+    }
 }
 
 /**
@@ -220,25 +232,25 @@ export function prepareToUseSkillOnTarget(actor: Actor, skill: Action, target: A
  *
  * @return boolean True if the skill was used. Only false if the ability is probabilistic like raise dead.
  */
-export function useSkill(actor) {
-    var skill = actor.skillInUse;
-    var target = actor.skillTarget
+export function useSkill(actor: Actor) {
+    const skill = actor.skillInUse;
+    const target = actor.skillTarget
     if (!skill || !target) {
         actor.skillInUse = actor.skillTarget = null;
         return;
     }
-    skill.readyAt = actor.time + (skill.cooldown || 0);
+    skill.readyAt = actor.time + (skill.stats.cooldown || 0);
     // Show the name of the skill used if it isn't a basic attack. When skills have distinct
     // visible animations, we should probably remove this.
     if (skill.base.showName) {
-        const hitText = {
+        const hitText: TextPopup = {
             x: actor.x, y: actor.height, z: actor.z,
             color: 'white', fontSize: 15, 'vx': 0, 'vy': 1, 'gravity': .1,
             value: skill.base.name,
         };
         appendTextPopup(actor.area, hitText, true);
     }
-    skillDefinitions[skill.base.type].use(actor, skill, target);
+    actionDefinitions[skill.base.type].use(actor, skill, target);
     triggerSkillEffects(actor, skill);
 }
 
@@ -251,18 +263,18 @@ export function useSkill(actor) {
  * @param object skill  The skill being performed.
  * @param object target The target to attack for active abilities.
  */
-export function useReaction(actor, reaction, attackStats) {
-    reaction.readyAt = actor.time + (reaction.cooldown || 0);
+export function useReaction(actor: Actor, reaction: Action, attackStats: AttackData) {
+    reaction.readyAt = actor.time + (reaction.stats.cooldown || 0);
     // Show the name of the skill. When skills have distinct visible animations, we should probably remove this.
     if (reaction.base.showName) {
-        var skillPopupText = {
+        const skillPopupText: TextPopup = {
             x: actor.x, y: actor.height, z: actor.z,
             color: 'white', fontSize: 15, 'vx': 0, 'vy': 1, 'gravity': .1,
             value: reaction.base.name,
         };
         appendTextPopup(actor.area, skillPopupText, true);
     }
-    skillDefinitions[reaction.base.type].use(actor, reaction, attackStats);
+    reactionDefinitions[reaction.base.type].use(actor, reaction, attackStats);
     triggerSkillEffects(actor, reaction);
 }
 
@@ -278,46 +290,47 @@ export function useReaction(actor, reaction, attackStats) {
  *
  * @return void
  */
-function triggerSkillEffects(actor, skill) {
+function triggerSkillEffects(actor: Actor, skill: Action) {
     // Apply instant cooldown if it is set.
-    if (skill.instantCooldown) {
-        // * is wild card meaning all other skills
-        for (const otherSkill of (actor.actions || [])) {
-            if ((skill !== otherSkill && skill.instantCooldown === '*') || otherSkill.tags[skill.instantCooldown]) {
-                otherSkill.readyAt = actor.time;
-            }
-        }
-        for (const otherSkill of (actor.reactions || [])) {
-            if ((skill !== otherSkill && skill.instantCooldown === '*') || otherSkill.tags[skill.instantCooldown]) {
+    if (skill.stats.instantCooldown) {
+        for (const otherSkill of [...(actor.actions || []), ...(actor.reactions || [])]) {
+            if (skill === otherSkill) continue;
+            // * is wild card meaning all other skills
+            if (skill.stats.instantCooldown === '*' ||
+                otherSkill.variableObject.tags[skill.stats.instantCooldown]
+            ) {
                 otherSkill.readyAt = actor.time;
             }
         }
     }
-    if (skill.tags.spell && actor.castKnockBack) {
-        for (var enemy of getActorsInRange(actor, actor.castKnockBack, actor.enemies)) {
-            banishTarget(actor, enemy, actor.castKnockBack, 30);
+    // Priest implicit knocks nearby enemies away when casting spells.
+    if (skill.variableObject.tags.spell && actor.stats.castKnockBack) {
+        for (var enemy of getActorsInRange(actor, actor.stats.castKnockBack, actor.enemies)) {
+            banishTarget(actor, enemy, actor.stats.castKnockBack, 30);
         }
     }
-    if (skill.tags.spell && actor.healOnCast) {
-        healActor(actor, actor.maxHealth * actor.healOnCast);
+    // Priest implicit heals caster when casting spells
+    if (skill.variableObject.tags.spell && actor.stats.healOnCast) {
+        healActor(actor, actor.stats.maxHealth * actor.stats.healOnCast);
     }
 }
 
-function getEnemiesLikelyToBeHitIfEnemyIsTargetedBySkill(actor, skill, skillTarget) {
-    const targets = [];
+function getEnemiesLikelyToBeHitIfEnemyIsTargetedBySkill(actor: Actor, skill: Action, skillTarget: Actor): Actor[] {
+    const targets: Actor[] = [];
+    const skillTags = skill.variableObject.tags;
     // Rain targets everything on the field.
-    if (skill.tags['rain']) {
+    if (skillTags['rain']) {
         return actor.enemies.slice();
     }
     for (let i = 0; i < actor.enemies.length; i++) {
         const target = actor.enemies[i];
-        if (skill.tags['nova'] || skill.tags['field']) {
-            if (getDistance(actor, target) < skill.area * 32) {
+        if (skillTags['nova'] || skillTags['field']) {
+            if (getDistance(actor, target) < skill.stats.area * 32) {
                 targets.push(target);
                 continue;
             }
-        } else if (skill.area) {
-            if (getDistance(skillTarget, target) < skill.area * 32) {
+        } else if (skill.stats.area) {
+            if (getDistance(skillTarget, target) < skill.stats.area * 32) {
                 targets.push(target);
                 continue;
             }
@@ -325,7 +338,7 @@ function getEnemiesLikelyToBeHitIfEnemyIsTargetedBySkill(actor, skill, skillTarg
     }
     return targets;
 }
-function getActorsInRange(source, range, targets) {
+function getActorsInRange(source: Actor, range: number, targets: Actor[]): Actor[] {
     const targetsInRange = [];
     for (const target of targets) {
         if (target !== source && getDistance(source, target) < range * 32) {
@@ -335,7 +348,7 @@ function getActorsInRange(source, range, targets) {
     return targetsInRange;
 }
 
-function closestEnemyDistance(actor) {
+function closestEnemyDistance(actor: Actor): number {
     let distance = 2000;
     for (const enemy of actor.enemies) {
         distance = Math.min(distance, getDistance(actor, enemy));
@@ -343,59 +356,67 @@ function closestEnemyDistance(actor) {
     return distance;
 }
 
-/**
- * Hash of skill methods that causes an actor to perform a skill on the given target.
- *
- * No logic about whether the actor can use this skill is included. This can
- * be used when an actor mimics a target and uses a skill they don't possess,
- * or when a pet is ordered to use a skill they cannot otherwise or when a skill
- * is performed even though its cooldown is not available, such as commanding
- * a pet to attack when the "Sick 'em" ability is used.
- *
- * The methods each have the following signature:
- * @param object actor  The actor performing the skill.
- * @param object skill  The skill being performed.
- * @param object target The target to consider using the skill on.
- * @return void
- */
-const skillDefinitions: any = {};
+interface ActionDefinition {
+    // Whether the skill can be used at all for this target.
+    isValid?: (actor: Actor, skill: Action, target: Actor | AreaEntity) => number | boolean,
+    // Whether the ai should use this skill.
+    shouldUse?: (actor: Actor, skill: Action, target: Actor) => number | boolean,
+    // Optional method for special logic on preparation
+    prepareToUseSkillOnTarget?: (actor: Actor, skill: Action, target: Actor) => void,
+    // Actually use the skill, called after preparation finishes.
+    use: (actor: Actor, skill: Action, target: Actor) => void,
+}
+interface ReactionDefinition {
+    // Whether the skill can be used at all for this target.
+    isValid?: (actor: Actor, skill: Action, attackStats: AttackData) => number | boolean,
+    // Whether the ai should use this skill.
+    shouldUse?: (actor: Actor, skill: Action, attackStats: AttackData) => number | boolean,
+    // Actually use the skill, called after preparation finishes.
+    use: (actor: Actor, skill: Action, attackStats: AttackData) => void,
+}
+const actionDefinitions: {
+    [key: string]: ActionDefinition
+} = {};
+const reactionDefinitions: {
+    [key: string]: ReactionDefinition
+} = {};
 
-skillDefinitions.attack = {
+actionDefinitions.attack = {
     isValid: (actor, attackSkill, target) => target.isActor,
     use: performAttack
 };
 
-skillDefinitions.spell = {
-    isValid: (actor, spellSkill, target) => target.isActor || spellSkill.area,
+actionDefinitions.spell = {
+    isValid: (actor, spellSkill, target) => target.isActor || spellSkill.stats.area > 0,
     use: castAttackSpell
 };
 
-skillDefinitions.consume = {
+actionDefinitions.consume = {
     isValid: (actor, consumeSkill, target) => target.isActor,
     use: function (actor, consumeSkill, target) {
-        healActor(actor, target.maxHealth * (consumeSkill.consumeRatio || 1));
+        healActor(actor, target.stats.maxHealth * (consumeSkill.stats.consumeRatio || 1));
         stealAffixes(actor, target, consumeSkill);
     }
 };
-skillDefinitions.song = {
+actionDefinitions.song = {
     shouldUse: function (actor, songSkill, target) {
         return closestEnemyDistance(actor) < 500;
     },
     use: function (actor, songSkill, target) {
-        performAttackProper(createSpellStats(actor, songSkill, target), target);
+        performAttackProper(createAttackStats(actor, songSkill, target), target);
     }
 };
-skillDefinitions.heroSong = {
+actionDefinitions.heroSong = {
     shouldUse: function (actor, songSkill, target) {
         // Use ability if an ally is on low life.
-        return target !== actor && (target.health / target.maxHealth) < .3;
+        return target !== actor && (target.health / target.stats.maxHealth) < .3;
     },
     use: function (actor, songSkill, target) {
-        performAttackProper(createSpellStats(actor, songSkill, target), target);
+        performAttackProper(createAttackStats(actor, songSkill, target), target);
     }
 };
 
-skillDefinitions.revive = {
+reactionDefinitions.revive = {
     isValid: function (actor, reviveSkill, attackStats) {
         if (attackStats.evaded) return false;
         // Cast revive only when the incoming hit would kill the character.
@@ -403,16 +424,17 @@ skillDefinitions.revive = {
     },
     use: function (actor, reviveSkill, attackStats) {
         attackStats.stopped = true;
-        setActorHealth(actor, reviveSkill.power);
-        if (reviveSkill.buff) {
-            addTimedEffect(actor, reviveSkill.buff, 0);
+        setActorHealth(actor, reviveSkill.stats.power);
+        if (reviveSkill.stats.buff) {
+            addTimedEffect(actor, reviveSkill.stats.buff, 0);
         }
     }
 };
 
-skillDefinitions.stop = {
+// Note that attackStats won't actually be passed in for this skill.
+reactionDefinitions.stop = {
     isValid: function (actor, stopSkill, attackStats) {
-        return (actor.health / actor.maxHealth < .1) && (actor.temporalShield > 0);
+        return (actor.health / actor.stats.maxHealth < .1) && (actor.temporalShield > 0);
     },
     use: function (actor, stopSkill, attackStats) {
         actor.area.timeStopEffect = {actor};
@@ -422,22 +444,30 @@ skillDefinitions.stop = {
     }
 };
 
-skillDefinitions.minion = {
+actionDefinitions.minion = {
     // Only use minion skills when there are enemies present.
-    shouldUse: (actor, minionSkill, target) => actor.enemies.length,
+    shouldUse: (actor, minionSkill, target) => !!actor.enemies.length,
     isValid: function (actor, minionSkill, target) {
+        if (!target.isActor && minionSkill.base.consumeCorpse) {
+            return false;
+        }
+        const actorTarget = target as Actor;
         var count = 0;
         // Cannot raise corpses of uncontrollable enemies as minions.
-        if (minionSkill.base.consumeCorpse && (!target.isActor || target.uncontrollable || target.stationary)) {
+        if (minionSkill.base.consumeCorpse && (
+                !actorTarget.isActor || actorTarget.stats.uncontrollable ||
+                (actorTarget.type === 'monster' && actorTarget.base.stationary)
+            )
+        ) {
             return false;
         }
         actor.allies.forEach(function (ally) {
             if (ally.skillSource == minionSkill) count++;
         });
-        return count < minionSkill.limit;
+        return count < minionSkill.stats.limit;
     },
-    use: function (actor, minionSkill, target) {
-        var newMonster;
+    use: function (actor, minionSkill, target: Monster) {
+        let newMonster: Monster;
         if (minionSkill.base.consumeCorpse) {
             newMonster = makeMonster({'key': target.base.key}, target.level, [], 0);
             newMonster.x = target.x;
@@ -463,9 +493,9 @@ skillDefinitions.minion = {
     }
 };
 
-function cloneActor(actor, skill) {
-    var clone;
-    if (actor.personCanvas) {
+function cloneActor(actor: Actor, skill: Action): Actor {
+    let clone;
+    if (actor.type === 'hero') {
         clone = makeAdventurerFromJob(actor.job, actor.level, {});
         clone.hairOffset = actor.hairOffset;
         clone.skinColorOffset = actor.skinColorOffset;
@@ -473,7 +503,7 @@ function cloneActor(actor, skill) {
         updateAdventurer(clone);
         // Add bonuses from source character's abilities/jewel board.
         // Note that we don't give the clone the source character's actions.
-        for (var ability of actor.abilities) {
+        for (const ability of actor.abilities) {
             if (ability.bonuses) addBonusSourceToObject(clone, ability);
         }
         if (actor.character) addBonusSourceToObject(clone, actor.character.jewelBonuses);
@@ -496,29 +526,29 @@ function cloneActor(actor, skill) {
     addMinionBonuses(actor, skill, clone);
     return clone;
 }
-function addMinionBonuses(actor, skill, minion) {
-    var newTags = {};
+function addMinionBonuses(actor: Actor, skill: Action, minion: Actor) {
+    const newTags = {};
     // Add skill tags to the clone's tags. This is how minion bonuses can target minion's
     // produced by specific skills like '*shadowClone:damage': .1
-    for (const tag of Object.keys(minion.tags)) newTags[tag] = true;
-    for (let tag in skill.tags) {
+    for (let tag in minion.variableObject.tags) newTags[tag] = true;
+    for (let tag in skill.variableObject.tags) {
         if (tag != 'melee' && tag != 'ranged') newTags[tag] = true;
     }
-    updateTags(minion, newTags, true);
-    for (var minionBonusSource of actor.minionBonusSources) {
-        addBonusSourceToObject(minion, minionBonusSource, false);
+    updateTags(minion.variableObject, newTags, true);
+    for (const minionBonusSource of actor.minionBonusSources) {
+        addBonusSourceToObject(minion.variableObject, minionBonusSource, false);
     }
-    addBonusSourceToObject(minion, getMinionSpeedBonus(actor, minion), true);
+    addBonusSourceToObject(minion.variableObject, getMinionSpeedBonus(actor, minion), true);
 }
 
-function getMinionSpeedBonus(actor, minion) {
-    return {'bonuses': {'*speed': Math.max(.5, (actor.speed + 40) /  minion.speed)}};
+function getMinionSpeedBonus(actor: Actor, minion: Actor): BonusSource {
+    return {'bonuses': {'*speed': Math.max(.5, (actor.stats.speed + 40) /  minion.stats.speed)}};
 }
 
-skillDefinitions.clone = {
+reactionDefinitions.clone = {
     isValid: function (actor, cloneSkill, attackStats) {
         var numberOfClones = actor.allies.filter(ally => ally.skillSource === cloneSkill).length;
-        return numberOfClones < cloneSkill.limit && Math.random() < cloneSkill.chance;
+        return numberOfClones < cloneSkill.stats.limit && Math.random() < cloneSkill.stats.chance;
     },
     use: function (actor, cloneSkill, attackStats) {
         var clone = cloneActor(actor, cloneSkill);
@@ -526,15 +556,15 @@ skillDefinitions.clone = {
         clone.owner = actor;
         actor.minions.push(clone);
         clone.name = actor.name + ' shadow clone';
-        setActorHealth(clone, actor.percentHealth * clone.maxHealth);
+        setActorHealth(clone, actor.percentHealth * clone.stats.maxHealth);
         actor.allies.push(clone);
     }
 };
 
-skillDefinitions.decoy = {
+reactionDefinitions.decoy = {
     isValid: function (actor, decoySkill, attackStats) {
         var numberOfDecoys = actor.allies.filter(ally => ally.skillSource === decoySkill).length;
-        return numberOfDecoys < (decoySkill.limit || 10);
+        return numberOfDecoys < (decoySkill.stats.limit || 10);
     },
     use: function (actor, decoySkill, attackStats) {
         var clone = cloneActor(actor, decoySkill);
@@ -544,11 +574,11 @@ skillDefinitions.decoy = {
         clone.name = actor.name + ' decoy';
         addActions(clone, abilities.explode);
         actor.allies.push(clone);
-        setActorHealth(clone, Math.max(1, clone.maxHealth * actor.percentHealth));
+        setActorHealth(clone, Math.max(1, clone.stats.maxHealth * actor.percentHealth));
     }
 };
 
-skillDefinitions.explode = {
+reactionDefinitions.explode = {
     isValid: function (actor, explodeSkill, attackStats) {
         if (attackStats.evaded) return false;
         // Cast only on death.
@@ -558,48 +588,50 @@ skillDefinitions.explode = {
         // Shoot a projectile at every enemy.
         for (var i = 0; i < actor.enemies.length; i++) {
             performAttackProper({
-                'distance': 0,
-                'gravity': explodeSkill.gravity || explodeSkill.base.gravity || 0.8,
-                'speed': explodeSkill.speed || explodeSkill.base.speed || (explodeSkill.range || 10) * 2.5,
-                'source': actor,
-                'attack': explodeSkill,
-                'isCritical': true,
-                'damage': 0,
-                'magicDamage': explodeSkill.power,
-                'accuracy': 0,
+                distance: 0,
+                gravity: explodeSkill.base.gravity || 0.8,
+                speed: explodeSkill.base.speed || (explodeSkill.stats.range || 10) * 2.5,
+                source: actor,
+                attack: explodeSkill,
+                isCritical: true,
+                damage: 0,
+                magicDamage: explodeSkill.stats.power,
+                accuracy: 0,
             }, actor.enemies[i]);
         }
     }
 };
 
-skillDefinitions.heal = {
+actionDefinitions.heal = {
     isValid: (actor, healSkill, target) => target.isActor,
     shouldUse: function (actor, healSkill, target) {
         // Don't use a heal ability unless none of it will be wasted or the actor is below half life.
-        return (actorCanOverHeal(target) && actor.enemies.length) || (target.health + healSkill.power <= target.maxHealth) || (target.health <= target.maxHealth / 2);
+        return (actorCanOverHeal(target) && actor.enemies.length)
+            || (target.health + healSkill.stats.power <= target.stats.maxHealth)
+            || (target.health <= target.stats.maxHealth / 2);
     },
     use: function (actor, healSkill, target) {
-        healActor(target, healSkill.power);
+        healActor(target, healSkill.stats.power);
         actor.area.effects.push(animationEffect(effectAnimations.heal, target, {scale: [2, 1]}));
-        if (healSkill.area > 0) {
-            for (target of getActorsInRange(target, healSkill.area, target.allies)) {
-                healActor(target, healSkill.power);
+        if (healSkill.stats.area > 0) {
+            for (target of getActorsInRange(target, healSkill.stats.area, target.allies)) {
+                healActor(target, healSkill.stats.power);
                 actor.area.effects.push(animationEffect(effectAnimations.heal, target, {scale: [2, 1]}));
             }
         }
     }
 };
 
-skillDefinitions.effect = {
+actionDefinitions.effect = {
     isValid: function (actor, effectSkill, target) {
         // Effects with buff/debuff require a target.
-        return target.isActor || (!effectSkill.buff && !effectSkill.debuff);
+        return target.isActor || (!effectSkill.stats.buff && !effectSkill.stats.debuff);
     },
     shouldUse: function (actor, effectSkill, target) {
         if (closestEnemyDistance(target) >= 500) {
             return false;
         }
-        if (effectSkill.allyBuff) {
+        if (effectSkill.stats.allyBuff) {
             return actor.allies.length > 1;
         }
         // It would be nice to have some way to avoid using buffs too pre emptively here.
@@ -607,23 +639,23 @@ skillDefinitions.effect = {
         return true;
     },
     use: function (actor, effectSkill, target) {
-        if (effectSkill.buff) {
-            addTimedEffect(target, effectSkill.buff);
+        if (effectSkill.stats.buff) {
+            addTimedEffect(target, effectSkill.stats.buff);
         }
         // Ranger's Sic 'em ability buffs all allies but not the actor.
-        if (effectSkill.allyBuff) {
+        if (effectSkill.stats.allyBuff) {
             for (var i = 0; i < actor.allies.length; i++) {
                 if (actor.allies[i] === actor) continue;
-                addTimedEffect(actor.allies[i], effectSkill.allyBuff, 0);
+                addTimedEffect(actor.allies[i], effectSkill.stats.allyBuff, 0);
             }
         }
-        if (effectSkill.debuff) {
-            addTimedEffect(target, effectSkill.debuff);
+        if (effectSkill.stats.debuff) {
+            addTimedEffect(target, effectSkill.stats.debuff);
         }
     }
 };
 
-skillDefinitions.dodge = {
+reactionDefinitions.dodge = {
     isValid: function (actor, dodgeSkill, attackStats) {
         // side step can only dodge ranged attacked.
         if (dodgeSkill.base.rangedOnly && !attackStats.projectile) {
@@ -633,34 +665,34 @@ skillDefinitions.dodge = {
     },
     use: function (actor, dodgeSkill, attackStats) {
         attackStats.dodged = true;
-        if (dodgeSkill.distance) {
-            var minX = actor.area.left, maxX = actor.area.width - actor.width / 2;
-            var targetX = actor.x + actor.heading[0] * dodgeSkill.distance;
+        if (dodgeSkill.stats.distance) {
+            const minX = actor.area.left, maxX = actor.area.width - actor.width / 2;
+            let targetX = actor.x + actor.heading[0] * dodgeSkill.stats.distance;
             // If the dodgeSkill distance is negative, it is designed to get away from the enemy.
             // However, if the actor is cornered, this isn't possible by jumping backwards,
             // so in this case, reverse the direction of the dodge skill.
-            if (dodgeSkill.distance < 0 && targetX < minX || targetX > maxX) {
-                targetX = actor.x - actor.heading[0] * dodgeSkill.distance;
+            if (dodgeSkill.stats.distance < 0 && targetX < minX || targetX > maxX) {
+                targetX = actor.x - actor.heading[0] * dodgeSkill.stats.distance;
             }
             // Constrain the landing position to the bounds of the area.
             targetX = Math.min(maxX, Math.max(minX, targetX));
             actor.pull = {'x': targetX,
-                        'z': actor.z + actor.heading[2] * dodgeSkill.distance,
-                        'y': dodgeSkill.base.jump ? Math.min(100, Math.max(20, Math.abs(dodgeSkill.distance / 2))) : 0,
-                        'time': actor.time + (dodgeSkill.moveDuration || .3), 'damage': 0};
+                        'z': actor.z + actor.heading[2] * dodgeSkill.stats.distance,
+                        'y': dodgeSkill.base.jump ? Math.min(100, Math.max(20, Math.abs(dodgeSkill.stats.distance / 2))) : 0,
+                        'time': actor.time + (dodgeSkill.stats.moveDuration || .3), 'damage': 0};
         }
-        if (dodgeSkill.buff) {
-            addTimedEffect(actor, dodgeSkill.buff, 0);
+        if (dodgeSkill.stats.buff) {
+            addTimedEffect(actor, dodgeSkill.stats.buff, 0);
         }
-        if (dodgeSkill.globalDebuff) {
+        if (dodgeSkill.stats.globalDebuff) {
             actor.enemies.forEach(function (enemy) {
-                addTimedEffect(enemy, dodgeSkill.globalDebuff, 0);
+                addTimedEffect(enemy, dodgeSkill.stats.globalDebuff, 0);
             });
         }
     }
 };
 
-skillDefinitions.sideStep = {
+reactionDefinitions.sideStep = {
     isValid: function (actor, dodgeSkill, attackStats) {
         // side step can only dodge ranged attacked.
         if (dodgeSkill.base.rangedOnly && !attackStats.projectile ) {
@@ -674,26 +706,26 @@ skillDefinitions.sideStep = {
     },
     use: function (actor, dodgeSkill, attackStats) {
         attackStats.dodged = true;
-        if (dodgeSkill.distance) {
+        if (dodgeSkill.stats.distance) {
             var attacker = attackStats.source;
-            actor.pull = {'time': actor.time + (dodgeSkill.moveDuration || 0.3), 'damage': 0};
-            if (attacker.x > actor.x) actor.pull.x = Math.min(actor.x + actor.heading[0] * dodgeSkill.distance, attacker.x - (attacker.width + actor.width) / 2);
-            else actor.pull.x = Math.max(actor.x + actor.heading[0] * dodgeSkill.distance, attacker.x + (attacker.width + actor.width) / 2);
-            if (attacker.z > actor.z) actor.pull.z = Math.min(actor.z + actor.heading[2] * dodgeSkill.distance, attacker.z - (attacker.width + actor.width) / 2);
-            else actor.pull.z = Math.max(actor.z + actor.heading[2] * dodgeSkill.distance, attacker.z + (attacker.width + actor.width) / 2);
+            actor.pull = {'time': actor.time + (dodgeSkill.stats.moveDuration || 0.3), 'damage': 0};
+            if (attacker.x > actor.x) actor.pull.x = Math.min(actor.x + actor.heading[0] * dodgeSkill.stats.distance, attacker.x - (attacker.width + actor.width) / 2);
+            else actor.pull.x = Math.max(actor.x + actor.heading[0] * dodgeSkill.stats.distance, attacker.x + (attacker.width + actor.width) / 2);
+            if (attacker.z > actor.z) actor.pull.z = Math.min(actor.z + actor.heading[2] * dodgeSkill.stats.distance, attacker.z - (attacker.width + actor.width) / 2);
+            else actor.pull.z = Math.max(actor.z + actor.heading[2] * dodgeSkill.stats.distance, attacker.z + (attacker.width + actor.width) / 2);
         }
-        if (dodgeSkill.buff) {
-            addTimedEffect(actor, dodgeSkill.buff, 0);
+        if (dodgeSkill.stats.buff) {
+            addTimedEffect(actor, dodgeSkill.stats.buff, 0);
         }
-        if (dodgeSkill.globalDebuff) {
+        if (dodgeSkill.stats.globalDebuff) {
             actor.enemies.forEach(function (enemy) {
-                addTimedEffect(enemy, dodgeSkill.globalDebuff, 0);
+                addTimedEffect(enemy, dodgeSkill.stats.globalDebuff, 0);
             });
         }
     }
 };
 // Counters with the skill if the player would receive more than half their remaining health in damage
-skillDefinitions.criticalCounter = {
+reactionDefinitions.criticalCounter = {
     isValid: function (actor, counterSkill, attackStats) {
         if (attackStats.evaded) return false;
         // Cast stop only when the incoming hit would deal more than half of the
@@ -701,25 +733,25 @@ skillDefinitions.criticalCounter = {
         return attackStats.totalDamage >= actor.health / 2;
     },
     use: function (actor, counterSkill, attackStats) {
-        if (counterSkill.dodgeAttack) attackStats.dodged = true;
-        if (counterSkill.stopAttack) attackStats.stopped = true;
-        if (counterSkill.distance) {
-            actor.pull = {'x': actor.x + actor.heading[0] * (counterSkill.distance || 64),
-                        'z': actor.z + actor.heading[2] * (counterSkill.distance || 64),
-                        'time': actor.time + (counterSkill.moveDuration || .3), 'damage': 0};
+        if (counterSkill.stats.dodgeAttack) attackStats.dodged = true;
+        if (counterSkill.stats.stopAttack) attackStats.stopped = true;
+        if (counterSkill.stats.distance) {
+            actor.pull = {'x': actor.x + actor.heading[0] * (counterSkill.stats.distance || 64),
+                        'z': actor.z + actor.heading[2] * (counterSkill.stats.distance || 64),
+                        'time': actor.time + (counterSkill.stats.moveDuration || .3), 'damage': 0};
         }
-        if (counterSkill.buff) {
-            addTimedEffect(actor, counterSkill.buff, 0);
+        if (counterSkill.stats.buff) {
+            addTimedEffect(actor, counterSkill.stats.buff, 0);
         }
-        if (counterSkill.globalDebuff) {
+        if (counterSkill.stats.globalDebuff) {
             actor.enemies.forEach(function (enemy) {
-                addTimedEffect(enemy, counterSkill.globalDebuff, 0);
+                addTimedEffect(enemy, counterSkill.stats.globalDebuff, 0);
             });
         }
     }
 };
 
-skillDefinitions.counterAttack = {
+reactionDefinitions.counterAttack = {
     isValid: function (actor, counterAttackSkill, attackStats) {
         if (attackStats.evaded) {
             //console.log("Attack was evaded.");
@@ -727,7 +759,7 @@ skillDefinitions.counterAttack = {
         }
         var distance = getDistance(actor, attackStats.source);
         // Can only counter attack if the target is in range, and
-        if (distance > counterAttackSkill.range * 32 + 4) { // Give the range a tiny bit of lee way
+        if (distance > counterAttackSkill.stats.range * 32 + 4) { // Give the range a tiny bit of lee way
             //console.log("Attacker is too far away: " + [distance, counterAttackSkill.range]);
             return false;
         }
@@ -739,17 +771,17 @@ skillDefinitions.counterAttack = {
         return true;
     },
     use: function (actor, counterAttackSkill, attackStats) {
-        if (counterAttackSkill.dodge) {
+        if (counterAttackSkill.stats.dodge) {
             attackStats.dodged = true;
         }
         performAttack(actor, counterAttackSkill, attackStats.source);
     }
 };
-skillDefinitions.deflect = {
+reactionDefinitions.deflect = {
     isValid: function (actor, deflectSkill, attackStats) {
         if (attackStats.evaded) return false;
         // Only non-spell, projectile attacks can be deflected.
-        return attackStats.projectile && !attackStats.attack.tags['spell'];
+        return attackStats.projectile && !attackStats.attack.variableObject.tags['spell'];
     },
     use: function (actor, deflectSkill, attackStats) {
         var projectile = attackStats.projectile;
@@ -759,9 +791,9 @@ skillDefinitions.deflect = {
         projectile.target = attackStats.source;
         attackStats.source = actor;
         // Make the deflected projectiles extra accurate so they have greater impact
-        attackStats.accuracy += deflectSkill.accuracy;
-        attackStats.damage *= deflectSkill.damageRatio;
-        attackStats.magicDamage *= deflectSkill.damageRatio;
+        attackStats.accuracy += deflectSkill.stats.accuracy;
+        attackStats.damage *= deflectSkill.stats.damageRatio;
+        attackStats.magicDamage *= deflectSkill.stats.damageRatio;
         projectile.vx = -projectile.vx;
         projectile.vy = -getDistance(actor, projectile.target) / 200;
         // This prevents the attack in progress from hitting the deflector.
@@ -769,55 +801,59 @@ skillDefinitions.deflect = {
         playSound('reflect', actor.area);
     }
 };
-skillDefinitions.evadeAndCounter = {
+reactionDefinitions.evadeAndCounter = {
     isValid: function (actor, evadeAndCounterSkill, attackStats) {
         if (!attackStats.evaded) return false;
         // Can only counter attack if the target is in range, and the chance to
         // counter attack is reduced by a factor of the distance.
-        return getDistance(actor, attackStats.source) <= evadeAndCounterSkill.range * 32;
+        return getDistance(actor, attackStats.source) <= evadeAndCounterSkill.stats.range * 32;
     },
     use: function (actor, evadeAndCounterSkill, attackStats) {
         performAttack(actor, evadeAndCounterSkill, attackStats.source);
     }
 };
 
-skillDefinitions.mimic = {
+reactionDefinitions.mimic = {
     isValid: function (actor, counterAttackSkill, attackStats) {
         // Only non basic attacks can be mimicked.
-        return !attackStats.attack.tags['basic'];
+        return !attackStats.attack.variableObject.tags['basic'];
     },
     use: function (actor, counterAttackSkill, attackStats) {
         performAttack(actor, attackStats.attack, attackStats.source);
     }
 };
 
-skillDefinitions.reflect = {
+actionDefinitions.reflect = {
     isValid: function (actor, plunderSkill, target) {
-        return (actor.reflectBarrier || 0) < actor.maxHealth;
+        return (actor.reflectBarrier || 0) < actor.stats.maxHealth;
     },
     shouldUse: function (actor, reflectSkill, target) {
         // Only use reflection if it is at least 60% effective
         var currentBarrier = Math.max(0, actor.reflectBarrier || 0);
-        var maxPossibleGain = Math.min(reflectSkill.power, actor.maxHealth);
-        var actualGain = Math.min(reflectSkill.power, actor.maxHealth - currentBarrier);
+        var maxPossibleGain = Math.min(reflectSkill.stats.power, actor.stats.maxHealth);
+        var actualGain = Math.min(reflectSkill.stats.power, actor.stats.maxHealth - currentBarrier);
         return actualGain / maxPossibleGain >= .6;
     },
     use: function (actor, reflectSkill, target) {
         // Reset reflection barrier back to 0 when using the reflection barrier spell.
         // It may be negative from when it was broken.
         actor.reflectBarrier = Math.max(0, actor.reflectBarrier || 0);
-        gainReflectionBarrier(target, reflectSkill.power);
+        gainReflectionBarrier(target, reflectSkill.stats.power);
     }
 };
 
-export function gainReflectionBarrier(actor, amount) {
-    actor.maxReflectBarrier = actor.maxHealth;
+export function gainReflectionBarrier(actor: Actor, amount: number) {
+    actor.maxReflectBarrier = actor.stats.maxHealth;
     actor.reflectBarrier = Math.min(actor.maxReflectBarrier, (actor.reflectBarrier || 0) + amount);
 }
 
-skillDefinitions.plunder = {
+actionDefinitions.plunder = {
     isValid: function (actor, plunderSkill, target) {
-        return target.isActor && ((target.prefixes || []).length + (target.suffixes || []).length);
+        if (!target.isActor) {
+            return false;
+        }
+        const actorTarget = target as Actor;
+        return (actorTarget.prefixes || []).length + (actorTarget.suffixes || []).length;
     },
     use: function (actor, plunderSkill, target) {
         stealAffixes(actor, target, plunderSkill);
@@ -836,29 +872,29 @@ function stealAffixes(actor: Actor, target: Actor, skill: any) {
         if (target.suffixes.indexOf(affix) >= 0) target.suffixes.splice(target.suffixes.indexOf(affix), 1);
         const effect = {
             'bonuses': affix.bonuses,
-            'duration': skill.duration
+            stats: { duration: skill.duration },
         };
         addTimedEffect(actor, effect, 0);
         allAffixes = target.prefixes.concat(target.suffixes);
-        removeBonusSourceFromObject(target, affix);
+        removeBonusSourceFromObject(target.variableObject, affix);
     }
     if (allAffixes.length >= 2) {
         // Do nothing, monster is still imbued
     } else if (allAffixes.length > 0 && originalBonus !== enchantedMonsterBonuses) {
-        removeBonusSourceFromObject(target, originalBonus);
-        addBonusSourceToObject(target, enchantedMonsterBonuses);
+        removeBonusSourceFromObject(target.variableObject, originalBonus);
+        addBonusSourceToObject(target.variableObject, enchantedMonsterBonuses);
     } else if (allAffixes.length === 0) {
-        removeBonusSourceFromObject(target, originalBonus);
+        removeBonusSourceFromObject(target.variableObject, originalBonus);
     }
-    recomputeDirtyStats(target);
+    recomputeDirtyStats(target.variableObject);
 }
 
-skillDefinitions.banish = {
+actionDefinitions.banish = {
     isValid: (actor, banishSkill, target) => target.isActor,
     use: function (actor, banishSkill, target) {
-        var attackStats = performAttack(actor, banishSkill, target);
+        const attackStats = performAttack(actor, banishSkill, target);
         // The purify upgrade removes all enchantments from a target.
-        if (banishSkill.purify && target.prefixes.length + target.suffixes.length > 0) {
+        if (banishSkill.stats.purify && target.type === 'monster' && target.prefixes.length + target.suffixes.length > 0) {
             target.prefixes = [];
             target.suffixes = [];
             updateMonster(target);
@@ -868,26 +904,26 @@ skillDefinitions.banish = {
                 return;
             }
             var distance = getDistance(actor, enemy);
-            if (distance < 32 * banishSkill.distance) {
-                banishTarget(actor, enemy, banishSkill.distance, (banishSkill.knockbackRotation || 30));
+            if (distance < 32 * banishSkill.stats.distance) {
+                banishTarget(actor, enemy, banishSkill.stats.distance, (banishSkill.stats.knockbackRotation || 30));
                 // The shockwave upgrade applies the same damage to the targets hit by the shockwave.
-                if (banishSkill.shockwave) {
+                if (banishSkill.stats.shockwave) {
                     enemy.pull.attackStats = attackStats;
                 }
-                if (banishSkill.otherDebuff) {
-                    addTimedEffect(enemy, banishSkill.otherDebuff, 0);
+                if (banishSkill.stats.otherDebuff) {
+                    addTimedEffect(enemy, banishSkill.stats.otherDebuff, 0);
                 }
             }
         });
     }
 };
-function banishTarget(actor, target, range, rotation) {
+function banishTarget(actor: Actor, target: Actor, range: number, rotation: number) {
     // Adding the delay here creates a shockwave effect where the enemies
     // all get pushed from a certain point at the same time, rather than
     // them all immediately moving towards the point initially.
-    var dx = target.x - actor.x;
-    var dz = target.z - actor.z;
-    var mag = Math.sqrt(dx * dx + dz * dz);
+    const dx = target.x - actor.x;
+    const dz = target.z - actor.z;
+    const mag = Math.sqrt(dx * dx + dz * dz);
     target.pull = {
         'x': actor.x + actor.width / 2 + 32 * range * dx / mag,
         'z': actor.z + actor.width / 2 + 32 * range * dz / mag,
@@ -897,24 +933,28 @@ function banishTarget(actor, target, range, rotation) {
     target.rotation = getXDirection(actor) * rotation;
 }
 
-export function getXDirection(actor) {
+export function getXDirection(actor: Actor) {
     return (actor.heading[0] > 0) ? 1 : -1;
 }
 
-skillDefinitions.charm = {
+actionDefinitions.charm = {
     isValid: function (actor, charmSkill, target) {
-        return target.isActor && !(target.uncontrollable || target.stationary);
+        if (!target.isActor) {
+            return false;
+        }
+        const actorTarget = target as Actor;
+        return !(actorTarget.stats.uncontrollable || (actorTarget.type === 'monster' && actorTarget.base.stationary));
     },
     use: function (actor, charmSkill, target) {
         target.allies = actor.allies;
         target.enemies = actor.enemies;
-        addBonusSourceToObject(target, getMinionSpeedBonus(actor, target), true);
+        addBonusSourceToObject(target.variableObject, getMinionSpeedBonus(actor, target), true);
         actor.enemies.splice(actor.enemies.indexOf(target), 1);
         actor.allies.push(target);
         target.heading = actor.heading.slice();
     }
 };
-skillDefinitions.charge = {
+actionDefinitions.charge = {
     shouldUse: function (actor, chargeSkill, target) {
         return getDistance(actor, target) >= 128;
     },
@@ -926,47 +966,53 @@ skillDefinitions.charge = {
         };
     }
 };
-skillDefinitions.recover = {
+reactionDefinitions.recover = {
     // The recover skill is used whenever an actor reaches a certain health threshold for the first, time, for example 75%, then 50%, then 25%.
     // Since the threshold is stored on the actor, currently only one recover skill per actor is supported.
     isValid: (actor, recoverSkill, attackStats) => {
-        var healthThreshold = (actor.recoverSkillHealthThreshold || actor.maxHealth) - actor.maxHealth / (recoverSkill.uses + 1);
+        var healthThreshold = (actor.recoverSkillHealthThreshold || actor.stats.maxHealth) - actor.stats.maxHealth / (recoverSkill.stats.uses + 1);
         return actor.health < healthThreshold;
     },
     use: (actor, recoverSkill, attackStats) => {
         // Set the health threshold one step lower.
-        actor.recoverSkillHealthThreshold = (actor.recoverSkillHealthThreshold || actor.maxHealth) - actor.maxHealth / (recoverSkill.uses + 1);
+        actor.recoverSkillHealthThreshold = (actor.recoverSkillHealthThreshold || actor.stats.maxHealth) - actor.stats.maxHealth / (recoverSkill.stats.uses + 1);
         // Recover stops the actor from losing further health, but doesn't actually restore them above their current health.
         // It also comes built in with universal instant cooldown of abilities, which is handled in `triggerSkillEffects`.
         actor.targetHealth = actor.health;
-        actor.damageOverTime = 0;
+        actor.stats.damageOverTime = 0;
         actor.slow = 0;
     }
 };
-skillDefinitions.leap = {
+actionDefinitions.leap = {
     // Leap is basically a decorator for another action, and will only be used if that action can be used.
     isValid: (actor, leapSkill, target) => {
-        var followupAction = _.find(actor.actions, {base: {key: leapSkill.action}});
+        const followupAction: Action = _.find(actor.actions, {source: {key: leapSkill.stats.action}});
         if (followupAction.readyAt > actor.time) return false; // Skill is still on cool down.
         if (!followupAction) {
-            console.log(`Missing action ${leapSkill.action}`);
+            console.log(`Missing action ${leapSkill.stats.action}`);
             debugger;
         }
         // Use the skill directly if the target is already in range.
         if (isTargetInRangeOfSkill(actor, followupAction, target)) return false;
-        var skillDefinition = skillDefinitions[followupAction.key];
-        if (!skillDefinitions.shouldUse) return true;
-        return skillDefinitions.shouldUse(actor, followupAction, target);
+        const skillDefinition = actionDefinitions[followupAction.source.key];
+        if (!skillDefinition.isValid) return true;
+        return skillDefinition.isValid(actor, followupAction, target);
+    },
+    shouldUse: (actor, leapSkill, target) => {
+        const followupAction: Action = _.find(actor.actions, {source: {key: leapSkill.stats.action}});
+        const skillDefinition = actionDefinitions[followupAction.source.key];
+        if (!skillDefinition.shouldUse) return true;
+        return skillDefinition.shouldUse(actor, followupAction, target);
     },
     use: (actor, leapSkill, target) => {
-        var combinedRadius = (target.width + actor.width) / 2;
-        var distance = getDistance(actor, target);
+        const combinedRadius = (target.width + actor.width) / 2;
+        const distance = getDistance(actor, target);
         actor.pull = {
             x: (target.x < actor.x) ? target.x + combinedRadius : target.x - combinedRadius,
             z: (target.z < actor.z) ? target.z + combinedRadius : target.z - combinedRadius,
             y: Math.min(100, Math.max(20, distance / 2)),
             time: actor.time + .3, damage: 0,
-            action: _.find(actor.actions, {base: {key: leapSkill.action}}),
+            action: _.find(actor.actions, {base: {key: leapSkill.stats.action}}),
             target: target,
         };
     }

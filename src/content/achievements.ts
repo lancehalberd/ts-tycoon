@@ -2,6 +2,7 @@ import { addBonusSourceToObject, recomputeDirtyStats, removeBonusSourceFromObjec
 import { recomputeAllCharacterDirtyStats } from 'app/character';
 import { characterClasses } from 'app/content/jobs';
 import { bodyDiv, divider, mainContext, titleDiv } from 'app/dom';
+import { TROPHY_SIZE } from 'app/gameConstants';
 import { bonusSourceHelpText } from 'app/helpText';
 import { drawImage, drawOutlinedImage, drawRectangleBackground, drawSolidTintedImage, requireImage } from 'app/images';
 import { getCanvasCoords, getTargetLocation } from 'app/main';
@@ -10,108 +11,24 @@ import { getState } from 'app/state';
 import { isPointInRectObject, rectangle } from 'app/utils/index';
 
 import { Bonuses } from 'app/types/bonuses';
-import { Color, FixedObject } from 'app/types';
+import { Character, Color, FixedObject, JobAchievement, TrophyAltar } from 'app/types';
 import { JobKey } from 'app/types/jobs';
 
 
 let isAltarTrophyAvailable = false;
 let choosingTrophyAltar: TrophyAltar = null;
 
-const trophyPopups = [];
+const trophyPopups: {
+    left: number, top: number,
+    width: number, height: number,
+    dismissed: boolean,
+    trophy: JobAchievement,
+    time: number,
+    onClick: Function,
+}[] = [];
 const trophyPopupWidth = 160;
 const trophyPopupHeight = 80;
 
-interface AchievementBonus {
-    target: number,
-    bonuses: Bonuses,
-}
-interface TrophyAltar extends FixedObject {
-    trophy: JobAchievement,
-}
-
-class JobAchievement {
-    jobKey: JobKey;
-    title: string;
-    level: number;
-    value: number;
-    // These coordinates get set during drawTrophySelection.
-    left: number;
-    top: number;
-    width: number;
-    height: number;
-    bonusesArray: AchievementBonus[];
-    // These fields track where the trophy is displayed if it is displayed.
-    areaKey?: string;
-    objectKey?: string;
-    constructor(jobKey: JobKey, bonuses: [Bonuses, Bonuses, Bonuses, Bonuses]) {
-        const job = characterClasses[jobKey];
-        this.jobKey = jobKey;
-        this.title = job.name + ' Trophy';
-        this.level = 0;
-        this.value = 0;
-        this.width = trophySize;
-        this.height = trophySize;
-        this.bonusesArray = [
-            {target: 2, bonuses: bonuses[0]},
-            {target: 10, bonuses: bonuses[1]},
-            {target: 30, bonuses: bonuses[2]},
-            {target: 60, bonuses: bonuses[3]},
-        ];
-    }
-    draw(context, target) {
-        const jobTrophyImage = characterClasses[this.jobKey].achievementImage;
-        if (this.level === 0 ) {
-            context.save();
-            drawSolidTintedImage(context, jobTrophyImage, '#666', {'left': 0, 'top': 0, 'width': 40, 'height': 40}, target);
-            context.restore();
-            return;
-        }
-        let color: Color;
-        if (this.level === 5) {
-            // glow based on cursor distance
-            var g = '30';
-            const canvasCoords = getCanvasCoords();
-            if (canvasCoords) {
-                var dx = canvasCoords[0] - (target.left + target.width / 2);
-                var dy = canvasCoords[1] - (target.top + target.height / 2);
-                g = Math.max(48, Math.round(112 - Math.max(0, (dx * dx + dy * dy) / 100 - 20))).toString(16);
-            }
-            // glow in time
-            //var g = Math.round(64 + 32 * (1 + Math.sin(now() / 400)) / 2).toString(16);
-            if (g.length < 2) g = '0' + g;
-            color ='#FF' + g + 'FF';
-        } else {
-            color = ['#C22', '#F84', '#CCD', '#FC0', '#F4F'][this.level - 1];
-        }
-        drawSolidTintedImage(context, jobTrophyImage, color, {'left': 0, 'top': 0, 'width': 40, 'height': 40}, target);
-        drawImage(context, jobTrophyImage, {'left': 41, 'top': 0, 'width': 40, 'height': 40}, target);
-    }
-    drawWithOutline(context, color, thickness, target) {
-        const jobTrophyImage = characterClasses[this.jobKey].achievementImage;
-        drawOutlinedImage(context, jobTrophyImage, 'white', 2, {'left': 0, 'top': 0, 'width': 40, 'height': 40}, target);
-        //drawSourceWithOutline(context, jobIcons[this.jobKey], color, thickness, target);
-        this.draw(context, target);
-    }
-    helpMethod() {
-        if (this.value === 0) return titleDiv('Mysterious Trophy') + bodyDiv('???');
-        const state = getState();
-        const parts = [];
-        for (let i = 0; i < this.bonusesArray.length; i++) {
-            const textColor = (this.level > i) ? 'white' : '#888';
-            const levelData = this.bonusesArray[i];
-            const levelText = '<div style="color: ' + textColor + ';">Level ' + levelData.target + ':<div>'
-                + bonusSourceHelpText(levelData, state.selectedCharacter.adventurer)
-                + '</div></div>';
-            parts.push(levelText);
-        }
-        return titleDiv(this.title) + bodyDiv('Highest Level: ' + this.value + divider + parts.join('<br />'));
-    }
-    onClick(character) {
-        selectTrophy(this, character);
-    }
-}
-
-const trophySize = 50;
 let altarTrophies: {[key: string]: JobAchievement};
 
 export function addAltarTrophies() {
@@ -181,7 +98,7 @@ export function getChoosingTrophyAltar() {
 export function setChoosingTrophyAltar(trophyAltar: TrophyAltar) {
     choosingTrophyAltar = trophyAltar
 }
-function selectTrophy(achievement, character) {
+export function selectTrophy(achievement: JobAchievement, character: Character) {
     // A trophy must be at least level 1 to be used.
     if (!(achievement.level > 0)) return;
     // If this trophy is already placed somewhere, remove it.
@@ -218,7 +135,7 @@ function selectTrophy(achievement, character) {
     checkIfAltarTrophyIsAvailable();
     saveGame();
 }
-export function addTrophyToAltar(altar, trophy) {
+export function addTrophyToAltar(altar: TrophyAltar, trophy: JobAchievement) {
     trophy.areaKey = altar.area.key;
     trophy.objectKey = altar.key;
     altar.trophy = trophy;
@@ -248,14 +165,14 @@ export function drawTrophySelection() {
             mainContext.stroke();
             drawImage(mainContext, requireImage('gfx/militaryIcons.png'), checkSource, target);
         }
-        left += trophySize + trophySpacing;
-        if (left + trophySize + trophySpacing > trophySelectionRectangle.width - 10) {
+        left += TROPHY_SIZE + trophySpacing;
+        if (left + TROPHY_SIZE + trophySpacing > trophySelectionRectangle.width - 10) {
             left = 10;
-            top += trophySize + trophySpacing;
+            top += TROPHY_SIZE + trophySpacing;
         }
     }
 }
-export function getTrophyPopupTarget(x, y) {
+export function getTrophyPopupTarget(x: number, y: number) {
     for (let trophyKey in altarTrophies) {
         const trophy = altarTrophies[trophyKey];
         if (isPointInRectObject(x, y, trophy)) return trophy;
@@ -263,7 +180,7 @@ export function getTrophyPopupTarget(x, y) {
     return null;
 }
 
-export function updateTrophy(trophyKey, value) {
+export function updateTrophy(trophyKey: string, value: number) {
     const trophy = altarTrophies[trophyKey];
     trophy.value = Math.max(trophy.value, value);
     let i = 0;
@@ -287,7 +204,7 @@ export function updateTrophy(trophyKey, value) {
     showTrophyPopup(trophy);
 }
 
-function addTrophyBonuses(trophy, recompute = false) {
+function addTrophyBonuses(trophy: JobAchievement, recompute = false) {
     const state = getState();
     for (let i = 0; i < trophy.bonusesArray.length && i < trophy.level; i++) {
         const bonusSource = trophy.bonusesArray[i];
@@ -298,12 +215,12 @@ function addTrophyBonuses(trophy, recompute = false) {
         }
         state.guildBonusSources.push(bonusSource);
         for (const character of state.characters) {
-            addBonusSourceToObject(character.adventurer, bonusSource);
+            addBonusSourceToObject(character.hero.variableObject, bonusSource);
         }
     }
     if (recompute) recomputeAllCharacterDirtyStats();
 }
-function removeTrophyBonuses(trophy, recompute = false) {
+function removeTrophyBonuses(trophy: JobAchievement, recompute = false) {
     const state = getState();
     for (let i = 0; i < trophy.bonusesArray.length && i < trophy.level; i++) {
         const bonusSource = trophy.bonusesArray[i];
@@ -314,28 +231,29 @@ function removeTrophyBonuses(trophy, recompute = false) {
         }
         state.guildBonusSources.splice(state.guildBonusSources.indexOf(bonusSource), 1);
         for (const character of state.characters) {
-            removeBonusSourceFromObject(character.adventurer, bonusSource);
+            removeBonusSourceFromObject(character.hero.variableObject, bonusSource);
             //console.log(bonusSource.bonuses);
         }
     }
     if (recompute) recomputeAllCharacterDirtyStats();
 }
 
-export function getIsAltarTrophyAvailable() {
+export function getIsAltarTrophyAvailable(): boolean {
     return isAltarTrophyAvailable;
 }
 export function checkIfAltarTrophyIsAvailable() {
     isAltarTrophyAvailable = false;
     for (let trophyKey in altarTrophies) {
         const trophy = altarTrophies[trophyKey];
-        if (trophy.level >0 && !trophy.areaKey) {
+        if (trophy.level > 0 && !trophy.areaKey) {
             isAltarTrophyAvailable = true;
             break;
         }
     }
 }
 
-function showTrophyPopup(trophy) {
+// Show a popup when the player unlocks a new trophy.
+function showTrophyPopup(trophy: JobAchievement) {
     let lastPopup;
     if (trophyPopups.length) {
         lastPopup = trophyPopups[trophyPopups.length - 1];
@@ -346,6 +264,7 @@ function showTrophyPopup(trophy) {
         'width': trophyPopupWidth, 'height': trophyPopupHeight,
         trophy,
         'time': 0,
+        dismissed: false,
         onClick() {
             this.dismissed = true;
         }
@@ -385,15 +304,15 @@ export function drawTrophyPopups() {
         mainContext.restore();
         mainContext.strokeStyle = 'white';
         mainContext.strokeRect(trophyPopup.left, trophyPopup.top, trophyPopup.width, trophyPopup.height);
-        trophyPopup.trophy.draw(mainContext, {'left': trophyPopup.left + 5, 'top': trophyPopup.top + (trophyPopupHeight - trophySize) / 2, 'width': trophySize, 'height': trophySize});
+        trophyPopup.trophy.draw(mainContext, {'left': trophyPopup.left + 5, 'top': trophyPopup.top + (trophyPopupHeight - TROPHY_SIZE) / 2, 'width': TROPHY_SIZE, 'height': TROPHY_SIZE});
         mainContext.textAlign = 'left'
         mainContext.textBaseline = 'middle';
-        mainContext.fillText('Unlocked', trophyPopup.left + 5 + trophySize + 5, trophyPopup.top + 20);
+        mainContext.fillText('Unlocked', trophyPopup.left + 5 + TROPHY_SIZE + 5, trophyPopup.top + 20);
         mainContext.fillStyle = 'white';
         mainContext.font = '18px sans-serif';
         const titleParts = trophyPopup.trophy.title.split(' ');
         let line = titleParts.shift();
-        const textLeft = trophyPopup.left + 5 + trophySize + 5;
+        const textLeft = trophyPopup.left + 5 + TROPHY_SIZE + 5;
         let textBaseLine = trophyPopup.top + 40;
         while (titleParts.length) {
             const metrics = mainContext.measureText(line + ' ' + titleParts[0]);

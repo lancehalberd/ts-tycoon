@@ -20,7 +20,7 @@ import { centerShapesInRectangle, isPointInPoints } from 'app/utils/polygon';
 import Random from 'app/utils/Random';
 import {
     Actor, Area, Board, BoardData, BonusSource, Character, JewelComponents,
-    Level, LevelData, LevelDifficulty, Range, ShapeData, ShapeType,
+    Level, LevelData, LevelDifficulty, LevelObject, Range, ShapeData, ShapeType,
 } from 'app/types';
 
 export const closedChestSource = {image: requireImage('gfx/chest-closed.png'), source: rectangle(0, 0, 32, 32)};
@@ -222,11 +222,11 @@ export function instantiateLevel(
     chest.z = Random.range(-140, -160);
     lastArea.width = chest.x + 100;
     lastArea.drawMinimapIcon = function (context, completed, x, y) {
-        var source = this.chestOpened ? completedChestIcon : initialChestIcon;
+        const source = this.chestOpened ? completedChestIcon : initialChestIcon;
         drawImage(context, source.image, source.source, rectangle(x - 16, y - 18, 32, 32));
     }
     if (levelData.skill && abilities[levelData.skill]) {
-        var shrine = fixedObject('skillShrine', [lastArea.width + Random.range(0, 100), 20, 0], {isEnabled, scale: 3, helpMethod(actor) {
+        const shrine = fixedObject('skillShrine', [lastArea.width + Random.range(0, 100), 20, 0], {isEnabled, scale: 3, helpMethod(actor) {
             return titleDiv('Divine Shrine')
                 + bodyDiv('Offer divinity at these shrines to be blessed by the Gods with new powers.');
         }});
@@ -307,14 +307,14 @@ export function finishShrine(character: Character) {
         const object = objects[i];
         if (object.type === 'button' || object.type === 'text') {
             objects.splice(i--, 1);
-        } else if (object.type === 'shrine') {
+        } else if (object.type === 'fixedObject' && object.key === 'skillShrine') {
             object.done = true;
         }
     }
     character.isStuckAtShrine = false;
 }
 
-function iconButton(iconSource, width, height, onClick, helpText) {
+/*function iconButton(iconSource, width, height, onClick, helpText) {
     const self = {
         'x': 0,
         'y': 0,
@@ -337,12 +337,15 @@ function iconButton(iconSource, width, height, onClick, helpText) {
         }
     };
     return self;
-}
+}*/
 
-function objectText(text) {
-    var self = {
-        'x': 0,
-        'y': 0,
+function objectText(text): LevelObject {
+    return {
+        x: 0,
+        y: 0,
+        z: 0,
+        width: 0,
+        height: 0,
         'type': 'text',
         'solid': false,
         isOver(x, y) {return false;},
@@ -352,20 +355,20 @@ function objectText(text) {
             mainContext.textBaseline = "middle";
             mainContext.textAlign = 'center'
             mainContext.font = "30px sans-serif";
-            mainContext.fillText(text, self.x - area.cameraX, GROUND_Y - self.y);
+            mainContext.fillText(text, this.x - area.cameraX, GROUND_Y - this.y);
         }
     };
-    return self;
 }
 
-function adventureBoardPreview(boardPreview: Board, character: Character) {
+function adventureBoardPreview(boardPreview: Board, character: Character): LevelObject & any {
     return {
-        'x': 0,
-        'y': 0,
-        'solid': false,
-        'type': 'button',
-        'width': 150,
-        'height': 150,
+        x: 0,
+        y: 0,
+        z: 0,
+        solid: false,
+        type: 'button',
+        width: 150,
+        height: 150,
         boardPreview,
         update(area) {
         },

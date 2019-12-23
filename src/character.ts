@@ -202,12 +202,15 @@ export function makeAdventurerFromData({
     const personContext = personCanvas.getContext("2d");
     personContext.imageSmoothingEnabled = false;
     const hero: Hero = {
+        targetType: 'actor',
         type: 'hero',
         character: null,
         isActor: true,
         x: 0,
         y: 0,
         z: 0,
+        width: 0,
+        height: 0,
         equipment: {},
         job: characterClasses[jobKey],
         source: setupActorSource({
@@ -277,6 +280,7 @@ export function readBoardFromData(boardData: BoardData, character, ability: Abil
 function addAction(actor: Actor, source: Ability, baseAction: any): Action {
     const variableObject = createVariableObject(baseAction, actor.variableObject);
     const action: Action = {
+        actor,
         readyAt: 0,
         variableObject,
         stats: variableObject.stats as ActionStats,

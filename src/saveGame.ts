@@ -16,7 +16,7 @@ import { exportState, getState, importState, SavedState } from 'app/state';
 import { makeShape, Polygon, shapeDefinitions } from 'app/utils/polygon';
 
 import {
-    Actor, Affix, Board, Character, Item, Jewel, JewelComponents,
+    Actor, Affix, Board, Character, EquipmentAffix, Hero, Item, Jewel, JewelComponents,
     SavedActor, SavedAffix, SavedBoard, SavedCharacter,
     SavedItem, SavedFixedJewel, SavedJewel, SavedShape
 } from 'app/types';
@@ -116,7 +116,7 @@ export function importCharacter(characterData: SavedCharacter) {
     updateAdventurer(character.adventurer);
     return character;
 }
-function exportHero(hero: Actor): SavedActor {
+function exportHero(hero: Hero): SavedActor {
     const data = {
         equipment: {},
         hairOffset: hero.hairOffset,
@@ -131,7 +131,7 @@ function exportHero(hero: Actor): SavedActor {
     }
     return data;
 }
-function importAdventurer(heroData: SavedActor): Actor {
+function importAdventurer(heroData: SavedActor): Hero {
     const hero = makeAdventurerFromData(heroData);
     /*if (window.location.search.substr(1) === 'test') {
         for (const ability of (window.testAbilities, [])) {
@@ -163,7 +163,7 @@ export function importItem(itemData: SavedItem): Item {
     const domElement = tagElement('div', 'js-item item',
         tag('div', 'icon ' + baseItem.icon) + tag('div', 'itemLevel', '' + baseItem.level)
     );
-    var item = {
+    const item = {
         base: baseItem,
         domElement,
         itemLevel: itemData.itemLevel,
@@ -175,13 +175,13 @@ export function importItem(itemData: SavedItem): Item {
     domElement.setAttribute('helptext', '-');
     return item;
 }
-function exportAffix(affix: Affix): SavedAffix {
+function exportAffix(affix: EquipmentAffix): SavedAffix {
     return {
         affixKey: affix.base.key,
         bonuses: {...affix.bonuses},
     };
 }
-function importAffix(affixData: SavedAffix): Affix {
+function importAffix(affixData: SavedAffix): EquipmentAffix {
     const baseAffix = affixesByKey[affixData.affixKey];
     if (!baseAffix) return null;
     return {

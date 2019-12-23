@@ -8,7 +8,7 @@ import { getState } from 'app/state';
 import { canUseSkillOnTarget, prepareToUseSkillOnTarget } from 'app/useSkill';
 import { fillRectangle, isPointInRectObject, rectangle, shrinkRectangle } from 'app/utils/index';
 
-import { Actor } from 'app/types';
+import { Action, Actor, Character } from 'app/types';
 let goldFrame, silverFrame;
 let tinyGoldFrame, tinySilverFrame;
 let actionShortcuts = {};
@@ -45,47 +45,47 @@ function createScaledFrame(r, frame, scale = 1) {
     return canvas;
 }
 export function drawSkills(actor: Actor) {
-    var context = mainContext;
+    const context = mainContext;
     context.font = "10px Arial";
     context.textBaseline = 'middle';
     context.textAlign = 'center';
-    var frameSize = 10;
-    var size = 40;
-    var tinySize = 20;
-    var totalSize = size + 2 * frameSize;
+    const frameSize = 10;
+    const size = 40;
+    const tinySize = 20;
+    const totalSize = size + 2 * frameSize;
     if (!goldFrame) goldFrame = createScaledFrame(rectangle(0, 0, totalSize, totalSize), requireImage('gfx/goldFrame.png'), 2);
     if (!silverFrame) silverFrame = createScaledFrame(rectangle(0, 0, totalSize, totalSize), requireImage('gfx/silverFrame.png'), 2);
     if (!tinyGoldFrame) tinyGoldFrame = createScaledFrame(rectangle(0, 0, tinySize, tinySize), requireImage('gfx/goldFrame.png'));
     if (!tinySilverFrame) tinySilverFrame = createScaledFrame(rectangle(0, 0, tinySize, tinySize), requireImage('gfx/silverFrame.png'));
-    var margin = 20;
-    var padding = 2;
-    var top = mainCanvas.height - 30 - margin - totalSize; // 30 is the height of the minimap.
-    var left = 60 + margin; // 60 pixels to make room for the return to map button.
+    const margin = 20;
+    const padding = 2;
+    const top = mainCanvas.height - 30 - margin - totalSize; // 30 is the height of the minimap.
+    let left = 60 + margin; // 60 pixels to make room for the return to map button.
     actionShortcuts = {};
-    var keysLeft = actionKeyCodes.slice();
-    for (var action of actor.actions) {
-        if (action.tags.basic) continue;
+    const keysLeft = actionKeyCodes.slice();
+    for (const action of actor.actions) {
+        if (action.variableObject.tags.basic) continue;
         action.target = rectangle(left, top, totalSize, totalSize);
         action.onClick = onClickSkill;
-        var iconSource = getAbilityIconSource(action.ability);
+        const iconSource = getAbilityIconSource(action.source);
         context.fillStyle = 'white';
         fillRectangle(context, shrinkRectangle(action.target, 2));
         drawAbilityIcon(context, iconSource, shrinkRectangle(action.target, frameSize));
-        var frame = silverFrame;
-        var tinyFrame = tinySilverFrame;
+        let frame = silverFrame;
+        let tinyFrame = tinySilverFrame;
         if (isSkillActive(action)) {
             frame = goldFrame;
             tinyFrame = tinyGoldFrame;
         }
-        var cooldown = action.readyAt - actor.time;
+        const cooldown = action.readyAt - actor.time;
         if (cooldown > 0) {
-            var percent = cooldown / action.cooldown;
+            const percent = cooldown / action.stats.cooldown;
             context.save();
             context.globalAlpha = .7;
             context.fillStyle = 'black';
             //fillRectangle(context, shrinkRectangle(action.target, totalSize * percent / 2));
             context.beginPath();
-            var r = action.target;
+            const r = action.target;
             if (percent < 1) context.moveTo(r.left + r.width / 2, r.top + r.height / 2);
             context.arc(r.left + r.width / 2, r.top + r.height / 2, totalSize / 2, -Math.PI / 2 - percent * 2 * Math.PI, -Math.PI / 2);
             if (percent < 1) context.closePath();
@@ -95,10 +95,10 @@ export function drawSkills(actor: Actor) {
             context.restore();
         }
         drawImage(context, frame, rectangle(0, 0, totalSize, totalSize), action.target);
-        var actionKeyCode = keysLeft.length ? keysLeft.shift() : null;
+        const actionKeyCode = keysLeft.length ? keysLeft.shift() : null;
         if (actionKeyCode) {
             actionShortcuts[actionKeyCode] = action;
-            var tinyTarget = rectangle(
+            const tinyTarget = rectangle(
                     action.target.left + action.target.width - frameSize - 6,
                     action.target.top + action.target.height - frameSize - 6, tinySize, tinySize);
             context.fillStyle = 'white';
@@ -111,20 +111,20 @@ export function drawSkills(actor: Actor) {
             action.shortcutTarget = null;
         }
         // Display the Manual/Auto indicator.
-        var tinyTarget = rectangle(action.target.left + frameSize + 6 - tinySize, action.target.top + frameSize + 6 - tinySize, tinySize, tinySize);
+        const tinyTarget = rectangle(action.target.left + frameSize + 6 - tinySize, action.target.top + frameSize + 6 - tinySize, tinySize, tinySize);
         context.fillStyle = 'white';
         fillRectangle(context, shrinkRectangle(tinyTarget, 1));
         context.fillStyle = 'black';
-        var letter;
+        let letter;
         if (actor.character.autoplay) letter = actor.character.manualActions[action.base.key] ? 'M' : 'A';
         else letter = actor.character.autoActions[action.base.key] ? 'A' : 'M';
         drawImage(context, ((letter === 'M') ? tinySilverFrame : tinyGoldFrame), rectangle(0, 0, tinySize, tinySize), tinyTarget);
         context.fillText(letter, tinyTarget.left + tinyTarget.width / 2, tinyTarget.top + tinyTarget.height / 2);
         if (!action.toggleButton) {
             action.toggleButton = {
-                'onClick': onClickAutoToggle,
+                onClick: onClickAutoToggle,
                 action,
-                'helpMethod': autoToggleHelpMethod
+                helpMethod: autoToggleHelpMethod
             };
         }
         action.toggleButton.target = tinyTarget;
@@ -140,14 +140,14 @@ export function getHoverAction() {
 export function getSelectedAction() {
     return selectedAction;
 }
-export function setSelectedAction(action) {
+export function setSelectedAction(action: Action) {
     selectedAction = action;
 }
-function onClickSkill(character, action) {
+function onClickSkill(character: Character, action: Action) {
     activateAction(action);
 }
 
-function onClickAutoToggle(character, toggleButton) {
+function onClickAutoToggle(character: Character, toggleButton: any) {
     const action = this.action;
     if (character.autoplay) {
         character.manualActions[action.base.key] = !character.manualActions[action.base.key];
@@ -155,7 +155,7 @@ function onClickAutoToggle(character, toggleButton) {
         character.autoActions[action.base.key] = !character.autoActions[action.base.key];
     }
 }
-function autoToggleHelpMethod() {
+function autoToggleHelpMethod(): string {
     const action = this.action;
     const character = action.actor.character;
     if (character.autoplay) {
@@ -176,7 +176,7 @@ function autoToggleHelpMethod() {
 export function getAbilityPopupTarget(x, y) {
     hoverAction = null;
     for (const action of getState().selectedCharacter.adventurer.actions) {
-        if (action.tags.basic) continue;
+        if (action.variableObject.tags.basic) continue;
         // toggleButton doesn't get set until the ability is drawn the first time.
         if (isPointInRectObject(x, y, action.toggleButton && action.toggleButton.target)) {
             return action.toggleButton;
@@ -190,33 +190,33 @@ export function getAbilityPopupTarget(x, y) {
     return null;
 }
 
-function actionHelptText(action) {
-    var actor = action.actor;
-    var actionSource = action.ability.action;
-    var actionInstance = createVariableObject(actionSource, actor);
-    applyParentToVariableChild(actor, actionInstance);
-    return titleDiv(action.ability.name) + bodyDiv(bonusSourceHelpText(actionSource, actor, actionInstance));
+function actionHelptText(action: Action) {
+    const actor = action.actor;
+    const actionSource = action.source.action;
+    const actionInstance = createVariableObject(actionSource, actor.variableObject);
+    applyParentToVariableChild(actor.variableObject, actionInstance);
+    return titleDiv(action.source.name) + bodyDiv(bonusSourceHelpText(actionSource, actor, actionInstance));
 }
 
 // Skill is active if it is selected, or if the hero is performing/attempting to perform the skill.
-function isSkillActive(action) {
-    var hero = getState().selectedCharacter.hero;
+function isSkillActive(action: Action) {
+    const hero = getState().selectedCharacter.hero;
     return action == selectedAction
         || action == hero.skillInUse
         || (hero.activity && hero.activity.action == action);
 }
 
-export function handleSkillKeyInput(keyCode) {
-    var action = actionShortcuts[keyCode];
+export function handleSkillKeyInput(keyCode: number) {
+    const action = actionShortcuts[keyCode];
     if (!action) return false;
     activateAction(action);
     return true;
 }
 
-function activateAction(action) {
+function activateAction(action: Action) {
     if (action.readyAt > action.actor.time) return;
     // If a skill has no target, trigger it as soon as they click the skill button.
-    if (action.base.target === 'none' || action.tags.field) {
+    if (action.base.target === 'none' || action.variableObject.tags.field) {
         if (canUseSkillOnTarget(action.actor, action, action.actor)) {
             prepareToUseSkillOnTarget(action.actor, action, action.actor);
         }

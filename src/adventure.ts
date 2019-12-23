@@ -161,8 +161,8 @@ function checkIfActorDied(actor: Actor) {
     if (actor.isDead || actor.health > 0 || actor.pull) return;
     // If the actor is about to die, check to activate their temporal shield if they have one.
     const stopTimeAction = findActionByTag(actor.reactions, 'stopTime');
-    if (stopTimeAction && canUseReaction(actor, stopTimeAction, {})) {
-        useReaction(actor, stopTimeAction, {});
+    if (stopTimeAction && canUseReaction(actor, stopTimeAction, null)) {
+        useReaction(actor, stopTimeAction, null);
         return;
     }
     // The actor has actually died, mark them as such and begin their death animation and drop spoils.
@@ -531,7 +531,8 @@ function runActorLoop(actor: Actor) {
     } else if (actor.character && actorShouldAutoplay(actor) && !actor.enemies.filter(enemy => enemy.targetHealth >= 0).length) {
         const character = actor.character;
         // Code for intracting with chest/shrine at the end of level and leaving the area.
-        for (var object of area.objects) {
+        for (const object of area.objects) {
+            if (object.type !== 'fixedObject') continue;
             // Hack the actor will only check objects the he hasn't passed yet.
             if (
                 object.solid === false

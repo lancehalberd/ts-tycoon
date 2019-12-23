@@ -23,7 +23,7 @@ import { toolTipColor } from 'app/utils/colors';
 import { fillRectangle, isPointInRectObject, rectangle, shrinkRectangle } from 'app/utils/index';
 import { getMousePosition } from 'app/utils/mouse';
 
-import { Exit, FixedObject, } from 'app/types';
+import { Actor, Area, BonusSource, Exit, FixedObject, FixedObjectData, GuildArea } from 'app/types';
 
 const guildImage = requireImage('gfx/guildhall.png');
 export const allApplications: FixedObject[] = [];
@@ -57,7 +57,7 @@ function objectSource(image, coords, size, additionalProperties = {}) {
         width: size[0], height: size[1], depth: size[2] || size[0],
     };
 }
-export function openWorldMap(actor) {
+export function openWorldMap(actor: Actor) {
     const state = getState();
     // Unlock the first areas on the map if they aren't unlocked yet.
     for (const levelKey of map.guild.unlocks) {
@@ -65,13 +65,13 @@ export function openWorldMap(actor) {
     }
     setContext('map');
 }
-function openCrafting(actor) {
+function openCrafting(actor: Actor) {
     setContext('item');
 }
-function openJewels(actor) {
+function openJewels(actor: Actor) {
     setContext('jewel');
 }
-function useDoor(actor) {
+function useDoor(actor: Actor) {
     enterArea(actor, this.exit);
 }
 mouseContainer.addEventListener('mousedown', function (event) {
@@ -114,8 +114,8 @@ export const upgradeButton = {
         mainContext.strokeStyle = canUpgrade ? 'white' : '#AAA';
         mainContext.lineWidth = 2;
         mainContext.fillStyle = canUpgrade ? '#6C6' : '#CCC';
-        var padding = 7;
-        var metrics = mainContext.measureText('Upgrade to...');
+        const padding = 7;
+        const metrics = mainContext.measureText('Upgrade to...');
         this.width = metrics.width + 2 * padding;
         this.height = 20 + 2 * padding;
         this.left = upgradeRectangle.left + (upgradeRectangle.width - this.width) / 2;
@@ -125,7 +125,7 @@ export const upgradeButton = {
         mainContext.fillText('Upgrade to...', this.left + this.width / 2, this.top + this.height / 2);
     },
     helpMethod() {
-        var currentTier = upgradingObject.getCurrentTier();
+        const currentTier = upgradingObject.getCurrentTier();
         previewCost(currentTier.upgradeCost);
         return null;
     },
@@ -157,8 +157,8 @@ export function getUpgradingObject() {
 const upgradeRectangle = rectangle(250, 150, 300, 180);
 export function drawUpgradeBox() {
     drawRectangleBackground(mainContext, upgradeRectangle);
-    var currentTier = upgradingObject.getCurrentTier();
-    var nextTier = upgradingObject.getNextTier();
+    const currentTier = upgradingObject.getCurrentTier();
+    const nextTier = upgradingObject.getNextTier();
     drawImage(mainContext, currentTier.source.image, currentTier.source, {'left': upgradeRectangle.left + 10, 'top': upgradeRectangle.top + 6, 'width': 60, 'height': 60});
     drawImage(mainContext, nextTier.source.image, nextTier.source, {'left': upgradeRectangle.left + 10, 'top': upgradeRectangle.top + 105, 'width': 60, 'height': 60});
     mainContext.textAlign = 'left'
@@ -177,11 +177,17 @@ function setFontSize(context, size) {
     context.font = size +"px 'Cormorant SC', Georgia, serif";
 }
 
-const areaObjects = {
-    'mapTable': {'name': 'World Map', 'source': objectSource(guildImage, [360, 150], [60, 27, 30], {'yOffset': -6}), 'action': openWorldMap,
+const areaObjects: {[key: string]: FixedObjectData} = {
+    'mapTable': {
+        'name': 'World Map',
+        'source': objectSource(guildImage, [360, 150], [60, 27, 30], {'yOffset': -6}),
+        'action': openWorldMap,
         'getActiveBonusSources': () => [{'bonuses': {'$hasMap': true}}],
     },
-    'crackedOrb': {'name': 'Cracked Anima Orb', 'source': objectSource(guildImage, [240, 150], [30, 29, 15])},
+    'crackedOrb': {
+        'name': 'Cracked Anima Orb',
+        'source': objectSource(guildImage, [240, 150], [30, 29, 15])
+    },
     'animaOrb': {
         action() {
             removePopup();
@@ -258,10 +264,15 @@ const areaObjects = {
             hidePointsPreview();
         }
     },
-    'woodenAltar': {'name': 'Shrine of Fortune', 'source': objectSource(guildImage, [450, 150], [30, 30, 20], {'yOffset': -6}), 'action': openCrafting,
+    'woodenAltar': {
+        'name': 'Shrine of Fortune',
+        'source': objectSource(guildImage, [450, 150], [30, 30, 20], {'yOffset': -6}),
+        'action': openCrafting,
         'getActiveBonusSources': () => [{'bonuses': {'$hasItemCrafting': true}}],
     },
-    'trophyAltar': {'name': 'Trophy Altar', 'source': objectSource(guildImage, [420, 180], [30, 30, 20], {'yOffset': -6}),
+    'trophyAltar': {
+        'name': 'Trophy Altar',
+        'source': objectSource(guildImage, [420, 180], [30, 30, 20], {'yOffset': -6}),
         action(actor) {
             removePopup();
             setChoosingTrophyAltar(this);
@@ -278,7 +289,8 @@ const areaObjects = {
                 if (getCanvasPopupTarget() === this) drawSourceWithOutline(mainContext, this.trophy, '#fff', 2, this.getTrophyRectangle());
                 else this.trophy.draw(mainContext, this.getTrophyRectangle());
             }
-        }, isOver(x, y) {
+        },
+        isOver(x, y) {
             return isPointInRectObject(x, y, this.target) || (this.trophy && isPointInRectObject(x,y, this.getTrophyRectangle()));
         },
         helpMethod(object) {
@@ -296,7 +308,8 @@ const areaObjects = {
         'getActiveBonusSources': () => [{'bonuses': {'$hasJewelCrafting': true}}],
     },
     'heroApplication': {
-        'name': 'Application', 'source': {'width': 40, 'height': 60, 'depth': 0},
+        'name': 'Application',
+        'source': {'width': 40, 'height': 60, 'depth': 0},
         action(actor) {
             const application = this as FixedObject;
             showHeroApplication(application);
@@ -358,7 +371,7 @@ const areaObjects = {
     'stoneBridge': {'source': objectSource(requireImage('gfx/bridgeE.png'), [0, 0], [240, 120, 0], {yOffset: -45}), 'action': useDoor},
 }
 
-function drawFixedObject(area) {
+function drawFixedObject(area: Area) {
     var imageSource = this.source;
     if (this.lastScale !== this.scale) {
         this.width = (imageSource.actualWidth || imageSource.width) * this.scale;
@@ -386,14 +399,15 @@ function isGuildExitEnabled() {
     // It can also be used if the area it is connected to is unlocked.
     return getState().savedState.unlockedGuildAreas[this.exit.areaKey];
 }
-export function fixedObject(baseObjectKey, coords, properties: Partial<FixedObject> = {}): FixedObject {
+export function fixedObject(baseObjectKey: string, coords: number[], properties: Partial<FixedObject> = {}): FixedObject {
     const base = areaObjects[baseObjectKey];
     const imageSource = base.source;
     const newFixedObject: FixedObject = {
+        type: 'fixedObject',
         depth: imageSource.depth,
         scale: 1,
         width: imageSource.actualWidth || imageSource.width,
-        height: imageSource.acutalHeight || imageSource.height,
+        height: imageSource.actualHeight || imageSource.height,
         isEnabled: isGuildObjectEnabled,
         draw: drawFixedObject,
         helpMethod: fixedObjectHelpText,
@@ -423,15 +437,15 @@ export function fixedObject(baseObjectKey, coords, properties: Partial<FixedObje
     }
     return newFixedObject;
 }
-function fixedObjectHelpText(object) {
+function fixedObjectHelpText(object: FixedObject) {
     return object.base.name && titleDiv(object.base.name);
 }
 
-function addFurnitureBonuses(furniture, recompute) {
+function addFurnitureBonuses(furniture: FixedObject, recompute = false) {
     if (!furniture.getActiveBonusSources) return;
     const state = getState();
-    var bonusSources = furniture.getActiveBonusSources();
-    for (var bonusSource of bonusSources) {
+    const bonusSources = furniture.getActiveBonusSources();
+    for (const bonusSource of bonusSources) {
         // Multiple copies of the same furniture will have the same bonus source, so this check is not valid.
         /*if (guildBonusSources.indexOf(bonusSource) >= 0) {
             console.log(bonusSource);
@@ -439,27 +453,27 @@ function addFurnitureBonuses(furniture, recompute) {
             throw new Error('bonus source was already present in guildBonusSources!');
         }*/
         state.guildBonusSources.push(bonusSource);
-        addBonusSourceToObject(state.guildStats, bonusSource);
-        for (var character of state.characters) {
-            addBonusSourceToObject(character.adventurer, bonusSource);
+        addBonusSourceToObject(state.guildVariableObject, bonusSource);
+        for (const character of state.characters) {
+            addBonusSourceToObject(character.hero.variableObject, bonusSource);
         }
     }
     if (recompute) recomputeAllCharacterDirtyStats();
 }
-function removeFurnitureBonuses(furniture, recompute) {
+function removeFurnitureBonuses(furniture: FixedObject, recompute = false) {
     if (!furniture.getActiveBonusSources) return;
     const state = getState();
-    var bonusSources = furniture.getActiveBonusSources();
-    for (var bonusSource of bonusSources) {
+    const bonusSources = furniture.getActiveBonusSources();
+    for (const bonusSource of bonusSources) {
         if (state.guildBonusSources.indexOf(bonusSource) < 0) {
             console.log(bonusSource);
             console.log(state.guildBonusSources);
             throw new Error('bonus source was not found in guildBonusSources!');
         }
         state.guildBonusSources.splice(state.guildBonusSources.indexOf(bonusSource), 1);
-        removeBonusSourceFromObject(state.guildStats, bonusSource);
-        for (var character of state.characters) {
-            removeBonusSourceFromObject(character.adventurer, bonusSource);
+        removeBonusSourceFromObject(state.guildVariableObject, bonusSource);
+        for (const character of state.characters) {
+            removeBonusSourceFromObject(character.hero.variableObject, bonusSource);
         }
     }
     if (recompute) recomputeAllCharacterDirtyStats();
@@ -473,7 +487,7 @@ export function addAllUnlockedFurnitureBonuses() {
     recomputeAllCharacterDirtyStats();
 }
 
-export function addAreaFurnitureBonuses(guildArea, recompute = false) {
-    for (var object of guildArea.objects) addFurnitureBonuses(object, false);
+export function addAreaFurnitureBonuses(guildArea: GuildArea, recompute = false) {
+    for (const object of guildArea.objects) addFurnitureBonuses(object, false);
     if (recompute) recomputeAllCharacterDirtyStats();
 }

@@ -17,7 +17,7 @@ import { ifdefor } from 'app/utils/index';
 import Random from 'app/utils/Random';
 import { attackHitSounds, attackSounds, playSound } from 'app/utils/sounds';
 
-import { Action, Actor, Area, AttackData, Character, TextPopup } from 'app/types';
+import { Action, Actor, Area, AttackData, Character, Target, TextPopup } from 'app/types';
 
 export function getBasicAttack(actor: Actor): Action {
     return findActionByTag(actor.actions, 'basic');
@@ -391,14 +391,15 @@ export function performAttackProper(attackStats: AttackData, target: Actor) {
         applyAttackToTarget(attackStats, target);
     }
 }
-export function getAttackY(attacker: Actor) {
+export function getAttackY(actorOrLocation: Target) {
     // This could actually be a location for abilities targeting locations. Just use 0, which is the height of the floor.
-    if (!attacker.isActor) return 0;
+    if (!actorOrLocation.isActor) return 0;
+    const attacker = actorOrLocation as Actor;
     // Y value of projectiles can either be set on the source for the actor, or it will use the set yCenter or half the height.
     const height = attacker.source.height || 64;
     return attacker.scale * ifdefor(attacker.source.attackY, height - ifdefor(attacker.source.yCenter, height / 2));
 }
-export function applyAttackToTarget(attackStats: AttackData, target: Actor): boolean {
+export function applyAttackToTarget(attackStats: AttackData, actorOrLocation: Target = null): boolean {
     const attack = attackStats.attack;
     const imprintedSpell = attackStats.imprintedSpell;
     const attacker = attackStats.source;
@@ -406,7 +407,7 @@ export function applyAttackToTarget(attackStats: AttackData, target: Actor): boo
     const effectiveness = (attackStats.effectiveness || 1);
     if (attackStats.strikes > 1) {
         attackStats.strikes--;
-        applyAttackToTarget(attackStats, target);
+        applyAttackToTarget(attackStats, actorOrLocation);
     }
 
     if (attackStats.cleave > 0) {
@@ -420,7 +421,7 @@ export function applyAttackToTarget(attackStats: AttackData, target: Actor): boo
         };
         for (let i = 0; i < attackStats.source.enemies.length; i++) {
             const cleaveTarget = attackStats.source.enemies[i];
-            if (cleaveTarget === target) {
+            if (cleaveTarget === actorOrLocation) {
                 continue;
             }
             // ignore targets that got behind the attacker.
@@ -444,10 +445,10 @@ export function applyAttackToTarget(attackStats: AttackData, target: Actor): boo
                 explosionX = attackStats.projectile.x;
                 explosionY = attackStats.projectile.y;
                 explosionZ = attackStats.projectile.z;
-            } else if (target) {
-                explosionX = target.x;
-                explosionY = ifdefor(attackStats.y, getAttackY(target));
-                explosionZ = target.z;
+            } else if (actorOrLocation) {
+                explosionX = actorOrLocation.x;
+                explosionY = ifdefor(attackStats.y, getAttackY(actorOrLocation));
+                explosionZ = actorOrLocation.z;
             } else {
                 explosionX = attacker.x;
                 explosionY = ifdefor(attackStats.y, getAttackY(attacker));
@@ -459,14 +460,15 @@ export function applyAttackToTarget(attackStats: AttackData, target: Actor): boo
             // Meteor calls applyAttackToTarget with a null target so it can explode
             // anywhere. If that has happened, just return once the explosion has
             // been created.
-            if (target.isActor) explosion.hitTargets.push(target);
+            if (actorOrLocation.isActor) explosion.hitTargets.push(actorOrLocation as Actor);
         }
     }
     // All the logic beyond this point does not apply to location targets.
-    if (!target.isActor) {
+    if (!actorOrLocation || !actorOrLocation.isActor) {
         makeExplosions();
         return true;
     }
+    const target: Actor = actorOrLocation as Actor;
     const distance = attackStats.distance;
     const hitText: TextPopup = {
         x: target.x, y: target.height + 10, z: target.z,
@@ -552,7 +554,7 @@ export function applyAttackToTarget(attackStats: AttackData, target: Actor): boo
     }
     // Apply any on miss effects if the attack has missed.
     if (attackStats.evaded || (attackStats.dodged && !attack.stats.undodgeable)) {
-        for (var effect of (attacker.onMissEffects || [])) {
+        for (const effect of (attacker.onMissEffects || [])) {
             if (effect.stats.debuff) addTimedEffect(target, effect.stats.debuff, 0);
             if (effect.stats.buff) addTimedEffect(attacker, effect.stats.buff, 0);
         }

@@ -5,7 +5,7 @@ import { drawUpgradeBox, getUpgradingObject } from 'app/content/furniture';
 import { abilities } from 'app/content/abilities';
 import { boards } from 'app/content/boards';
 import { editingMapState } from 'app/development/editLevel';
-import { jewelsCanvas, mainContext, previewContext } from 'app/dom';
+import { jewelsCanvas, mainCanvas, mainContext, previewContext, query } from 'app/dom';
 import { drawArea, drawHud } from 'app/drawArea';
 import { drawBoardBackground, drawBoardJewels, drawBoardJewelsProper } from 'app/drawBoard';
 import { drawMap } from 'app/drawMap';
@@ -24,7 +24,7 @@ export function render() {
     if (!isGameInitialized()) {
         return;
     }
-    if (document.querySelector('.js-jewelInventory:visible')) {
+    if (query('.js-jewelInventory').style.display === '') {
         redrawInventoryJewels();
     }
     const state = getState();
@@ -70,7 +70,7 @@ export function render() {
     if (state.selectedCharacter.context === 'jewel') drawBoardJewels(state.selectedCharacter, jewelsCanvas);
     if (getChoosingTrophyAltar()) drawTrophySelection();
     if (getUpgradingObject()) drawUpgradeBox();
-    if (document.querySelector('.js-mainCanvas:visible')) {
+    if (mainCanvas.style.display === '') {
         drawHud();
     }
     drawTrophyPopups();

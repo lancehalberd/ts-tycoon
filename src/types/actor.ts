@@ -4,7 +4,7 @@ import {
     SavedEquipment, Source,
     VariableObject
 } from 'app/types';
-import { Ability, Action, Effect } from 'app/types/abilities';
+import { Ability, Action, ActorEffect, Effect } from 'app/types/abilities';
 import { Character } from 'app/types/Character';
 import { Equipment } from 'app/types/items';
 
@@ -27,14 +27,15 @@ export interface ActorSource extends Source {
 
 export interface BaseActor extends AreaEntity {
     character?: Character,
+    targetType: 'actor',
     type: string,
     x: number,
     y: number,
     z: number,
     // Set by updateActorDimensions.
     scale?: number,
-    width?: number,
-    height?: number,
+    width: number,
+    height: number,
     equipment: Equipment,
     // Set for monsters.
     source: ActorSource,
@@ -46,7 +47,7 @@ export interface BaseActor extends AreaEntity {
     percentTargetHealth: number,
     helpMethod: Function,
     heading: number[], // Character moves left to right by default.
-    tags?: string[],
+    // tags?: string[],
     actions?: Action[],
     reactions?: Action[],
     isActor: true,
@@ -78,6 +79,7 @@ export interface BaseActor extends AreaEntity {
     minions?: Actor[],
     // This will be set on minions.
     owner?: Actor,
+    skillSource?: Action,
     // The are the actor is currently in.
     area?: Area,
     // The general level the character is in (composed of multiple areas).
@@ -98,7 +100,7 @@ export interface BaseActor extends AreaEntity {
     onCritEffects?: Action[],
     onMissEffects?: Action[],
 
-    allEffects?: BonusSource[],
+    allEffects?: ActorEffect[],
     minionBonusSources?: BonusSource[],
     escapeExit?: Exit,
 
@@ -116,6 +118,8 @@ export interface BaseActor extends AreaEntity {
     priority?: number,
     // Used for actors that can cloak.
     cloaked?: boolean,
+    // Tracks when the next time a boss will recover.
+    recoverSkillHealthThreshold?: number,
 }
 export interface Hero extends BaseActor {
     type: 'hero',

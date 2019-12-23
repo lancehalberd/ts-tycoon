@@ -17,6 +17,8 @@ import { drawRunningAnts, rectangleFromPoints, rectanglesOverlap } from 'app/uti
 import { getMousePosition } from 'app/utils/mouse';
 import { worldCamera } from 'app/WorldCamera';
 
+import { Character } from 'app/types';
+
 export const editingMapState = {
     arrowTargetLeft: null,
     arrowTargetTop: null,
@@ -32,9 +34,9 @@ let editingEventIndex;
 let originalSelectedNodes = [];
 let selectionStartPoint = null;
 
-function optionElement(classes, label, value): HTMLOptionElement {
+function optionElement(classes: string, label: string | number, value: string | number): HTMLOptionElement {
     const option: HTMLOptionElement = tagElement('option', classes, label) as HTMLOptionElement;
-    option.value = value;
+    option.value = '' + value;
     return option;
 }
 const levelSelect: HTMLSelectElement = query('.js-levelSelect') as HTMLSelectElement;
@@ -248,12 +250,10 @@ export function startEditingLevel(level) {
     mapState.currentMapTarget = null;
     editingMapState.editingMap = false;
     editingMapState.editingLevelInstance = instantiateLevel(editingLevel, 'normal', false);
-    state.selectedCharacter.x = 120;
+    state.selectedCharacter.hero.x = 120;
     editingMapState.editingLevelInstance.cameraX = 0;
-    state.selectedCharacter.startTime = state.selectedCharacter.time;
     state.selectedCharacter.adventurer.isDead = false;
     state.selectedCharacter.adventurer.timeOfDeath = undefined;
-    state.selectedCharacter.finishTime = false;
     query('.js-editingControls').style.display = '';
     levelSelect.selectedIndex = editingLevel.level - 1;
     const selectedBackgroundOption = query('.js-levelBackgroundSelect option[value="' + editingLevel.background + '"]') as HTMLOptionElement;
@@ -307,7 +307,7 @@ function stopEditingLevel() {
     updateEditingState();
 }
 
-function startTestingLevel(character) {
+function startTestingLevel(character: Character) {
     query('.js-editingControls').style.display = 'none';
     const state = getState();
     state.lastSelectedCharacter = state.selectedCharacter;

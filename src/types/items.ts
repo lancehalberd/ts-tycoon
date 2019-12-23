@@ -1,4 +1,4 @@
-import { Actor, Bonuses, EquipmentAffix, SavedAffix, Tags } from 'app/types';
+import { Actor, BasicFrame, Bonuses, EquipmentAffix, SavedAffix, Tags } from 'app/types';
 
 type AttackAnimationType = 'bowAttack' | 'throwingAttack' | 'wandAttack';
 
@@ -70,6 +70,10 @@ export interface ItemData {
     unique?: UniqueItemData,
     gravity?: number,
     animation?: AttackAnimationType,
+    // Used by the crafting grid
+    craftingX?: number,
+    craftingY?: number,
+    iconSource?: BasicFrame,
 }
 
 export interface Item {

@@ -57,7 +57,7 @@ export interface SavedCharacter {
     selectedLevelKey: string,
 
     divinityScores: {[key in string]: number},
-    levelTimes: {[key in string]: number},
+    levelTimes: {[key in string]: {[key in string]: number}},
     fame: number,
     divinity: number,
     currentLevelKey: string,

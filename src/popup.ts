@@ -69,7 +69,7 @@ export function updateToolTip() {
         left = x + 10;
     }
     // Show the popup in a fixed location when dragging the board.
-    if (jewelInventoryState.draggingBoardJewel()) {
+    if (jewelInventoryState.draggingBoardJewel) {
         left = jewelInventoryContainer.getBoundingClientRect().left;
         top = 30;
     }
@@ -177,7 +177,7 @@ export function checkToShowJewelToolTip() {
         }
     }
     //console.log([event.pageX,event.pageY]);
-    var helpText = jewel.helpMethod ? jewel.helpMethod(jewel) : jewel.helpText;
+    const helpText = jewel.helpMethod ? jewel.helpMethod(jewel) : '';
     if (jewel.fixed && !jewel.confirmed) {
         popup.element = tagElement('div', 'toolTip js-toolTip', 'Drag and rotate to adjust this augmentation.<br/><br/> Click the "Apply" button above when you are done.<br/><br/>' + helpText);
     } else {
@@ -188,14 +188,14 @@ export function checkToShowJewelToolTip() {
     updateToolTip();
 }
 mouseContainer.addEventListener('mousemove', function (event) {
-    if (!popup.element) {
+    if (!popup || !popup.element) {
         return;
     }
     updateToolTip();
 });
 
 export function checkremovePopup() {
-    if (!popup.element && !canvasPopupTarget && !popup.target) {
+    if (!popup || (!popup.element && !canvasPopupTarget && !popup.target)) {
         return;
     }
     if (jewelInventoryState.overJewel || jewelInventoryState.draggedJewel ||
@@ -248,7 +248,7 @@ mouseContainer.addEventListener('mousemove', function (event) {
     if (!helpContainer) {
         removePopup();
     }
-    if (popup.element) {
+    if (popup && popup.element) {
         return;
     }
     removePopup();

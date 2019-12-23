@@ -64,14 +64,10 @@ document.addEventListener('keydown', function(event) {
             pasteCharacterToClipBoard(state.selectedCharacter);
         }
         if (keycode === KEY_L) {
-            if (mapState.currentMapTarget && mapState.currentMapTarget.levelKey) {
-                state.selectedCharacter.currentLevelKey = mapState.currentMapTarget.levelKey;
-                if (!state.selectedCharacter.completionTime) {
-                    state.selectedCharacter.completionTime = 100;
-                } else {
-                    state.selectedCharacter.completionTime -= 10;
-                }
-                completeLevel(state.selectedCharacter.hero, state.selectedCharacter.completionTime);
+            const mapTarget = mapState.currentMapTarget;
+            if (mapTarget && mapTarget.targetType === 'level') {
+                state.selectedCharacter.currentLevelKey = mapTarget.levelKey;
+                completeLevel(state.selectedCharacter.hero, 10);
             }
         }
     }

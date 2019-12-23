@@ -1,4 +1,4 @@
-import { Area, Character } from 'app/types';
+import { Area, BonusSource, Character, JobAchievement } from 'app/types';
 
 export interface Exit {
     // The area to enter when using this exit.
@@ -8,10 +8,41 @@ export interface Exit {
     z?: number,
 }
 
-export interface FixedObject {
+export interface FixedObjectData {
+    name?: string,
+    source: {
+        actualWidth: number,
+        actualHeight: number,
+        xOffset: number,
+        yOffset: number,
+        image: HTMLImageElement | HTMLCanvasElement,
+        left: number, top: number,
+        width: number, height: number, depth: number
+    } | {actualWidth?: number, actualHeight?: number, width: number, height: number, depth: number},
+    action?: Function,
+    getActiveBonusSources?: () => BonusSource[],
+    level?: number,
+    getCurrentTier?: () => any,
+    getNextTier?: () => any,
+    update?: Function,
+    draw?: Function,
+    helpMethod?: Function,
+    isOver?: (x: number, y: number) => boolean
+    isEnabled?: () => boolean,
+    onMouseOut?: Function,
+    width?: number, height?: number, depth?: number,
+    getTrophyRectangle?: Function,
+    solid?: boolean,
+}
+export interface TrophyAltar extends FixedObject {
+    trophy: JobAchievement,
+}
+
+export interface FixedObject extends FixedObjectData {
     fixed: true,
     base: any,
     key: string,
+    type: 'fixedObject',
     scale: number,
     xScale?: number,
     yScale?: number,
@@ -24,7 +55,7 @@ export interface FixedObject {
     exit?: Exit,
     // The level for the object, if it can be upgraded.
     level?: number,
-    isEnabled: Function,
+    isEnabled: () => boolean,
     draw: Function,
     helpMethod: Function,
     target: {
@@ -38,6 +69,10 @@ export interface FixedObject {
 
     // This is used for applications to track the character for the application.
     character?: Character,
+    // Used to indicate shrine has been visited.
+    done?: boolean,
+    // Whether the automatic controller has considered interacting with this object yet.
+    considered?: boolean,
 }
 
 export interface RawGuildArea extends Partial<GuildArea>{
@@ -49,6 +84,7 @@ export interface GuildArea extends Area {
     isGuildArea: true,
     // This defines the monster spawns for the area.
     monsters: any[],
-    objectsByKey: {[key: string]: any},
+    objects: FixedObject[],
+    objectsByKey: {[key: string]: FixedObject},
 }
 export type GuildAreas = {[key: string]: GuildArea};

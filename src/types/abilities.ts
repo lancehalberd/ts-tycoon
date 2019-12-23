@@ -1,8 +1,13 @@
 import { JobIcon } from 'app/content/jobs';
 import { Bonuses } from 'app/types/bonuses';
-import { ActionStats, Actor, Area, Color, Frame, VariableObject } from 'app/types';
+import {
+    ActionStats, Actor, Area, BonusSource,
+    Character, Color, EffectVariableObject,
+    Frame, Rectangle, Target, VariableObject, VariableObjectBase,
+} from 'app/types';
 
 export interface Action {
+    actor: Actor,
     readyAt: number,
     variableObject: VariableObject,
     stats: ActionStats,
@@ -10,6 +15,18 @@ export interface Action {
     base: ActionData,
     // This is set as the player uses the skill.
     totalPreparationTime?: number,
+    // Properties used for drawing the skill hud/targetin.
+    target?: Rectangle, // This is the rectangle for the skill HUD button
+    onClick?: (character: Character, action: Action) => void,
+    shortcutTarget?: Rectangle, // This is the rectangle for displaying the shortcut key
+    // Button for toggling manual/auto use of skill.
+    toggleButton?: {
+        onClick: (character: Character, button: any) => void,
+        action: Action
+        helpMethod: () => string,
+        target?: Rectangle,
+    }
+    helpMethod?: (action: Action) => string,
 }
 
 export interface ActionData {
@@ -63,11 +80,53 @@ export interface Effect {
 
 export interface ActiveEffect {
     update: (area: Area) => void,
+    // Some effects are bound to a target.
+    x?: number,
+    y?: number,
+    z?: number,
+    width?: number,
+    height?: number,
+    target?: Target,
+    hitTargets?: Actor[],
     finish?: Function,
-    attackStats: any,
+    attackStats?: AttackData,
     currentFrame: number,
     done: boolean,
+    draw?: (area: Area) => void,
     drawGround?: (area: Area) => void,
+}
+export interface TimedActorEffect {
+    base: VariableObjectBase,
+    bonuses: Bonuses,
+    duration: number | 'forever',
+    maxStacks: number,
+    expirationTime?: number,
+}
+// Add expirationTime to EffectVariableObject so TS let's us attempt to read it.
+export type ActorEffect = TimedActorEffect | (EffectVariableObject & {expirationTime?: number});
+export interface Projectile {
+        distance: number,
+        x: number,
+        y: number,
+        z: number,
+        vx: number,
+        vy: number,
+        vz: number,
+        size: number,
+        t: number,
+        done: boolean,
+        delay: number,
+        width: number,
+        height: number,
+        color: Color,
+        totalHits: number,
+        hit: boolean,
+        target: Target,
+        attackStats: AttackData,
+        hitTargets: Actor[],
+        stickToTarget: (target: Target) => void,
+        update: (area: Area) => void,
+        draw: (area: Area) => void,
 }
 
 interface TriggerEffect {
@@ -91,22 +150,22 @@ export interface Ability {
 export interface AttackData {
     // How far the attack has traveled (used on projectiles).
     distance: number,
-    animation: any,
-    sound: any,
-    size: number,
+    animation?: any,
+    sound?: any,
+    size?: number,
     gravity: number,
     speed: number,
-    healthSacrificed: number,
+    healthSacrificed?: number,
     source: Actor,
     attack: Action,
     isCritical: boolean,
     damage: number,
     magicDamage: number,
     accuracy: number,
-    explode: number,
-    cleave: number,
-    piercing: boolean,
-    strikes: number,
+    explode?: number,
+    cleave?: number,
+    piercing?: boolean,
+    strikes?: number,
     imprintedSpell?: Action,
     // Set by certain effects like novas.
     effectiveness?: number,
@@ -118,4 +177,6 @@ export interface AttackData {
     stopped?: boolean,
     // Calculated each time the attack is applied.
     totalDamage?: number,
+    // Used to indicate ricochet projectiles shouldn't damage their owner.
+    friendly?: boolean,
 }

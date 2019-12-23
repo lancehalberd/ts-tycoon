@@ -78,7 +78,7 @@ export function previewPointsChange(pointsType: PointsType, amount: number) {
     const balanceSpan = pointsColumn.querySelector('.js-balance');
     balanceSpan.classList.toggle('cost', balance < 0);
     if (balance < 0) balanceSpan.textContent = '-' + abbreviate(-balance);
-    else balanceSpan.textContent = balance.abbreviate();
+    else balanceSpan.textContent = abbreviate(balance);
 }
 export function hidePointsPreview() {
     // This will only hide one preview, but we only show one at a time.

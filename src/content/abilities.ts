@@ -4,7 +4,7 @@ import { drawTintedImage, drawImage, requireImage } from 'app/images';
 import { JobIcon, jobIcons } from 'app/content/jobs';
 import { Ability, Action } from 'app/types/abilities';
 import { Bonuses } from 'app/types/bonuses';
-import { TintedFrame } from 'app/types';
+import { ArrayFrame, TintedFrame } from 'app/types';
 
 /**
  * Notes on targeting skills:
@@ -65,8 +65,8 @@ function tintIcon(imageFile, color): TintedFrame {
     };
 }
 
-const effectAccuracy = ['gfx/militaryIcons.png', 65, 194, 12, 12, 8, 8];
-const effectSourcePoison = ['gfx/militaryIcons.png', 51, 74, 16, 16, 0, 0];
+const effectAccuracy: ArrayFrame = ['gfx/militaryIcons.png', 65, 194, 12, 12, 8, 8];
+const effectSourcePoison: ArrayFrame = ['gfx/militaryIcons.png', 51, 74, 16, 16, 0, 0];
 
 export function getAbilityIconSource(ability) {
     if (!ability) return null;

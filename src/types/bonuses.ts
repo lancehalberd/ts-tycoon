@@ -33,12 +33,12 @@ export interface Bonus {
     value: BonusValue,
 }
 export interface VariableObjectBase {
-    variableObjectType: string,
+    variableObjectType: 'actor' | 'action' | 'effect' | 'guild' | 'trigger',
     tags?: string[],
     bonuses?: Bonuses,
     actor?: Actor,
 }
-export interface VariableObject {
+export interface UntypedVariableObject {
     core: VariableObject,
     base: VariableObjectBase,
     tags: Tags,
@@ -48,11 +48,33 @@ export interface VariableObject {
     allBonuses: Bonus[],
     dirtyStats: {[key: string]: true},
     variableChildren: VariableObject[],
-    // This only gets set on effects
-    bonuses?: Bonuses,
     operations: any,
-    stats: ActionStats | ActorStats | GuildStats,
 }
+export interface ActorVariableObject extends UntypedVariableObject {
+    type: 'actor',
+    stats: ActorStats,
+}
+export interface ActionVariableObject extends UntypedVariableObject {
+    type: 'action',
+    stats: ActionStats,
+}
+export interface TriggerVariableObject extends UntypedVariableObject {
+    type: 'trigger',
+    stats: TriggerStats,
+}
+export interface GuildVariableObject extends UntypedVariableObject {
+    type: 'guild',
+    stats: GuildStats,
+}
+export interface EffectVariableObject extends UntypedVariableObject {
+    type: 'effect',
+    stats: EffectStats,
+    bonuses?: Bonuses,
+}
+
+export type VariableObject = ActorVariableObject
+    | ActionVariableObject | GuildVariableObject
+    | EffectVariableObject | TriggerVariableObject;
 
 export interface ActorStats {
     level?: number,
@@ -129,8 +151,12 @@ export interface ActionStats {
     power?: number,
     duration?: number,
     area?: number,
-    buff?: any,
-    debuff?: any,
+    buff?: EffectVariableObject,
+    allyBuff?: EffectVariableObject,
+    debuff?: EffectVariableObject,
+    globalDebuff?: EffectVariableObject,
+    // Applies to indirectly hit enemies by banish.
+    otherDebuff?: EffectVariableObject,
     // various effects on hit
     poison?: number,
     damageOnMiss?: number,
@@ -155,7 +181,8 @@ export interface ActionStats {
     firstStrike?: boolean,
     ignoreArmor?: boolean,
     ignoreResistance?: boolean,
-    instantCooldown?: boolean,
+    // The string pattern indicates which skills are put on cooldown, either a tag or '*' for all other skills.
+    instantCooldown?: string,
     pullsTarget?: boolean,
     undodgeable?: boolean,
     dodge?: boolean,
@@ -171,6 +198,19 @@ export interface ActionStats {
     stun?: number,
     dragStun?: number,
     dragDamage?: number,
+    consumeRatio?: number,
+    limit?: number, // For example, max summoned skeletons
+    distance?: number, // Dodger distance.
+    moveDuration?: number, // How fast to dodge.
+    dodgeAttack?: boolean,
+    stopAttack?: boolean,
+    damageRatio?: number,
+    purify?: boolean, // Tiggers affix removal for banish
+    shockwave?: boolean,
+    uses?: number, // How many times a monster can use the recovery ability.
+    action?: string, // Key for a follow up action for leapAndAct
+    areaCoefficient?: number,
+    hitsPerSecond?: number, // Used by the storm ability.
 }
 
 export interface GuildStats {
@@ -180,4 +220,14 @@ export interface GuildStats {
     hasMap?: boolean,
     hasItemCrafting?: boolean,
     hasJewelCrafting?: boolean,
+}
+
+export interface EffectStats {
+    area?: number,
+    duration?: number | 'forever',
+    maxStacks?: number,
+}
+
+export interface TriggerStats {
+    debuff: EffectVariableObject,
 }

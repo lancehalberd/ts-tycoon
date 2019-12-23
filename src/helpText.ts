@@ -27,7 +27,7 @@ export function getItemHelpText(item: Item) {
     if (item.base.tags) {
         const tagParts = [];
         for (let tag in item.base.tags) {
-            if (tag === 'offhand' && isTwoHandedWeapon(actor.equipment.weapon) && !actor.twoToOneHanded) {
+            if (tag === 'offhand' && isTwoHandedWeapon(actor.equipment.weapon) && !actor.stats.twoToOneHanded) {
                 tagParts.push('<span style="color: #c00;">' + tagToDisplayName(tag) + '</span>');
             } else {
                 tagParts.push(tagToDisplayName(tag));
@@ -121,21 +121,21 @@ export function bonusSourceHelpText(bonusSource, coreObject, localObject = null)
         displayedStats['+area'] = true;
         displayedStats['+duration'] = true;
     }
-    var sections = [];
-    var weaponRestrictions = [];
-    var weaponsStyle = '';
-    for (var restriction of (bonusSource.restrictions || [])) {
-        var style = '';
+    const sections = [];
+    const weaponRestrictions = [];
+    let weaponsStyle = '';
+    for (const restriction of (bonusSource.restrictions || [])) {
+        let style = '';
         const state = getState();
-        if (!state.selectedCharacter.adventurer.tags[restriction]) {
+        if (!state.selectedCharacter.hero.variableObject.tags[restriction]) {
             style = ' style="color: #c00;"';
         }
-        var displayName = restrictionToCategoryDisplayName(restriction);
+        const displayName = restrictionToCategoryDisplayName(restriction);
         if (displayName.indexOf('Weapons') >= 0) {
-            if (!state.selectedCharacter.adventurer.tags[restriction]) {
+            if (!state.selectedCharacter.hero.variableObject.tags[restriction]) {
                 weaponsStyle = ' style="color: #c00;"';
             }
-            var parts = displayName.split(' ');
+            const parts = displayName.split(' ');
             parts.pop();
             weaponRestrictions.push(parts.join(' '));
         } else {

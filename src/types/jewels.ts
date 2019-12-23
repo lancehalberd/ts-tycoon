@@ -1,4 +1,4 @@
-import { Ability, Bonuses, SavedShape, ShapeType } from 'app/types';
+import { Ability, Bonuses, Character, Point, SavedShape, ShapeType } from 'app/types';
 import { Polygon } from 'app/utils/polygon'
 
 export type JewelTier = 1 | 2 | 3 | 4 | 5;
@@ -31,6 +31,9 @@ export interface Jewel {
     disabled?: boolean,
     confirmed?: boolean,
     ability?: Ability,
+    // These are set during drag effects.
+    startCharacter?: Character,
+    startCenter?: Point,
 }
 
 export interface SavedJewel {

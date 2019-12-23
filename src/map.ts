@@ -35,16 +35,18 @@ import SphereVector from 'app/utils/SphereVector';
 import Vector from 'app/utils/Vector';
 import { worldCamera } from 'app/WorldCamera';
 
+import { LevelData, MapTarget, Shrine } from 'app/types';
+
 export const mapLocation = new SphereVector(WORLD_RADIUS);
 
-var mapCenteringTarget = null, centerInstantly = false;
+let mapCenteringTarget: LevelData = null, centerInstantly = false;
 export function updateMap() {
     if (mapState.draggedMap) {
         return;
     }
     if (mapCenteringTarget) {
-        var differenceVector = new Vector(mapCenteringTarget.coords).subtract(mapLocation.position);
-        var distance = differenceVector.magnitude();
+        let differenceVector = new Vector(mapCenteringTarget.coords).subtract(mapLocation.position);
+        const distance = differenceVector.magnitude();
         if (distance < 40) {
             mapCenteringTarget = null;
             return;
@@ -61,8 +63,8 @@ export function updateMap() {
             return;
         }
         differenceVector = differenceVector.normalize(5);
-        var iterations = centerInstantly ? distance / 5 : distance / 50;
-        for (var i = 0; i < iterations; i++) {
+        const iterations = centerInstantly ? distance / 5 : distance / 50;
+        for (let i = 0; i < iterations; i++) {
             mapLocation.moveByVector(differenceVector);
             // Fix the camera position each step, otherwise the up/right vectors
             // may not match what is being displayed any more.
@@ -73,13 +75,20 @@ export function updateMap() {
         }
     }
 }
-export function centerMapOnLevel(levelData, instant = false) {
+export function centerMapOnLevel(levelData: LevelData, instant = false) {
     centerInstantly = instant;
     mapCenteringTarget = levelData;
     mapState.movedMap = true;
 }
 
-export const mapState = {
+export const mapState : {
+    draggedMap: boolean,
+    visibleNodes: {[key: string]: LevelData},
+    currentMapTarget: MapTarget,
+    mapDragX: number,
+    mapDragY: number,
+    movedMap: boolean,
+} = {
     draggedMap: false,
     visibleNodes: {},
     currentMapTarget: null,
@@ -88,37 +97,37 @@ export const mapState = {
     movedMap: true,
 };
 
-export function getMapPopupTarget(x, y) {
-    var newMapTarget = null;
+export function getMapPopupTarget(x: number, y: number): MapTarget {
+    let newMapTarget: MapTarget;
     if (!mapState.draggedMap) {
         newMapTarget = getMapPopupTargetProper(x, y);
     }
     if (newMapTarget !== mapState.currentMapTarget) {
         const state = getState();
-        var level = newMapTarget ? (newMapTarget.isShrine ? newMapTarget.level.level : newMapTarget.level) : undefined;
+        var level = newMapTarget ? (newMapTarget.targetType === 'shrine' ? newMapTarget.level.level : newMapTarget.level) : undefined;
         updateDamageInfo(state.selectedCharacter, query('.js-characterColumn .js-stats'), level);
     }
-    if ((mapState.currentMapTarget && mapState.currentMapTarget.isShrine) && !(newMapTarget && newMapTarget.isShrine)) {
+    if ((mapState.currentMapTarget && mapState.currentMapTarget.targetType === 'shrine') && !(newMapTarget && newMapTarget.targetType === 'shrine')) {
         hidePointsPreview();
     }
     mapState.currentMapTarget = newMapTarget;
     mainCanvas.classList.toggle('clickable', !!mapState.currentMapTarget);
     return mapState.currentMapTarget;
 }
-function getMapPopupTargetProper(x, y) {
+function getMapPopupTargetProper(x: number, y: number): MapTarget {
     if (editingMapState.editingLevel) {
         return null;
     }
-    var newMapTarget = getMapTarget(x, y);
+    const newMapTarget: MapTarget  = getMapTarget(x, y);
     if (!newMapTarget) {
         return null;
     }
-    if (newMapTarget.isShrine) {
+    if (newMapTarget.targetType === 'shrine') {
         newMapTarget.helpMethod = getMapShrineHelpText;
         const skill = abilities[newMapTarget.level.skill];
         const { selectedCharacter } = getState();
         if (!selectedCharacter.adventurer.unlockedAbilities[skill.key]) {
-            var totalCost = totalCostForNextLevel(selectedCharacter, newMapTarget.level);
+            const totalCost = totalCostForNextLevel(selectedCharacter, newMapTarget.level);
             previewPointsChange('divinity', -totalCost);
         }
     } else {
@@ -127,7 +136,7 @@ function getMapPopupTargetProper(x, y) {
     return newMapTarget;
 }
 
-function getMapLevelHelpText(level) {
+function getMapLevelHelpText(level: LevelData): string {
     if (level.levelKey === 'guild') {
         return titleDiv('Guild');
     }
@@ -157,7 +166,7 @@ function getMapLevelHelpText(level) {
     }
     return helpText;
 }
-function getMapShrineHelpText(shrine) {
+function getMapShrineHelpText(shrine: Shrine): string {
     const state = getState();
     var skill = abilities[shrine.level.skill];
     var totalCost = totalCostForNextLevel(state.selectedCharacter, shrine.level);
@@ -176,28 +185,24 @@ function getMapShrineHelpText(shrine) {
     return helpText;
 }
 
-export function getMapTarget(x, y) {
-    let target = null;
+export function getMapTarget(x: number, y: number): MapTarget {
     for (let levelKey in mapState.visibleNodes) {
         const levelData = mapState.visibleNodes[levelKey];
         if (isPointInRect(x, y, levelData.left, levelData.top, levelData.width, levelData.height)) {
-            target = levelData;
-            return false;
+            return levelData;
         }
         if (!editingMapState.editingMap && levelData.shrine && isPointInRect(x, y, levelData.shrine.left, levelData.shrine.top, levelData.shrine.width, levelData.shrine.height)) {
-            target = levelData.shrine;
-            return false;
+            return levelData.shrine;
         }
-        return true;
     }
-    return target;
+    return null;
 }
 
 // Disable context menu while editing the map because the right click is used for making nodes and edges.
 mainCanvas.oncontextmenu = function (event) {
     return !editingMapState.editingMap;
 };
-export function handleMapMouseDown(x, y, event) {
+export function handleMapMouseDown(x: number, y: number, event) {
     //console.log(camera.unprojectPoint(x + MAP_LEFT, y + MAP_TOP, WORLD_RADIUS));
     const newMapTarget = getMapTarget(x, y);
     if (editingMapState.editingMap) {
@@ -206,16 +211,16 @@ export function handleMapMouseDown(x, y, event) {
     if (event.which != 1) return; // Handle only left click.
     if (!editingMapState.editingMap && newMapTarget) {
         const state = getState();
-        if (mapState.currentMapTarget.levelKey === 'guild') {
-            mapState.currentMapTarget = null;
-            setContext('guild');
-            return;
-        } else if (mapState.currentMapTarget.isShrine) {
+        if (mapState.currentMapTarget.targetType === 'shrine') {
             // Show them the area menu if they click on the shrine from a different area.
             state.selectedCharacter.selectedLevelKey = mapState.currentMapTarget.level.levelKey;
             showAreaMenu();
             mapState.currentMapTarget = null;
             mainCanvas.classList.toggle('clickable', false);
+            return;
+        } else if (mapState.currentMapTarget.levelKey === 'guild') {
+            mapState.currentMapTarget = null;
+            setContext('guild');
             return;
         } else if (mapState.currentMapTarget.levelKey) {
             state.selectedCharacter.selectedLevelKey = mapState.currentMapTarget.levelKey;
@@ -270,10 +275,10 @@ handleChildEvent('click', document.body, '.js-confirmSkill', function (confirmBu
     character.board.fixed = character.board.fixed.concat(character.board.boardPreview.fixed);
     character.board.boardPreview.fixed.forEach(function (jewel) {
         jewel.confirmed = true;
-        removeBonusSourceFromObject(character.hero.stats, character.jewelBonuses, false);
+        removeBonusSourceFromObject(character.hero.variableObject, character.jewelBonuses, false);
         updateAdjacentJewels(jewel);
         updateJewelBonuses(character);
-        addBonusSourceToObject(character.hero.stats, character.jewelBonuses, true);
+        addBonusSourceToObject(character.hero.variableObject, character.jewelBonuses, true);
     });
     character.board.boardPreview = null;
     drawBoardBackground(character.boardContext, character.board);
@@ -288,7 +293,7 @@ handleChildEvent('click', document.body, '.js-confirmSkill', function (confirmBu
 handleChildEvent('click', document.body, '.js-cancelSkill', () => {
     setContext('adventure');
 });
-export function unlockMapLevel(levelKey) {
+export function unlockMapLevel(levelKey: string) {
     getState().visibleLevels[levelKey] = true;
 }
 

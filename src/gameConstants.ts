@@ -24,3 +24,5 @@ export const armorSlots: EquipmentSlot[] = ['body', 'feet', 'head', 'offhand', '
 export const smallArmorSlots: EquipmentSlot[] = ['feet', 'head', 'offhand', 'arms', 'legs'];
 export const accessorySlots: EquipmentSlot[] = ['back', 'ring'];
 export const equipmentSlots: EquipmentSlot[] = ['weapon', 'body', 'feet', 'head', 'offhand', 'arms', 'legs', 'back', 'ring'];
+
+export const TROPHY_SIZE = 50;

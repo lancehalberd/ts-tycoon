@@ -7,6 +7,22 @@ export type Range = [number, number];
 
 export type Tags = {[key: string]: true};
 
+export interface FullRectangle {
+    left: number,
+    top: number,
+    width: number,
+    height: number,
+    right?: number,
+    bottom?: number,
+}
+export interface ShortRectangle {
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+}
+export type Rectangle = FullRectangle | ShortRectangle;
+
 export interface BasicFrame {
     image: HTMLCanvasElement | HTMLImageElement,
     left: number,
@@ -44,6 +60,8 @@ export interface Source {
     flipped?: boolean,
     framesPerRow?: number,
     attackY?: number,
+    // Set on source for some monsters
+    y?: number,
 }
 
 export interface TextPopup {

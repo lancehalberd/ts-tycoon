@@ -4,9 +4,12 @@ import { evaluateValue } from 'app/evaluate';
 import { getState } from 'app/state';
 import { removeElementFromArray } from 'app/utils/index';
 
-import { Actor, Bonus, Bonuses, BonusOperator, BonusValue } from 'app/types';
+import {
+    Actor, Bonus, Bonuses, BonusOperator, BonusSource, BonusValue,
+    EffectVariableObject, Tags, VariableObject, VariableObjectBase,
+} from 'app/types';
 
-import { BonusSource, Tags, VariableObject, VariableObjectBase } from 'app/types';
+import {  } from 'app/types';
 
 const operations = {'*': true, '+': true, '-': true, '%': true, '$': true, '&': true};
 
@@ -82,6 +85,7 @@ export function createVariableObject(baseObject: VariableObjectBase, coreObject:
     // but I don't think this is causing any issues at the moment.
     if (!coreObject) throw new Error('No coreObject was provided for a new variable object. This must be provided for some implicit bonuses to work correctly, like range: {weaponRange} on attacks.');
     const object: VariableObject = {
+        type: baseObject.variableObjectType,
         base: baseObject,
         core: coreObject,
         tags: {},
@@ -93,12 +97,12 @@ export function createVariableObject(baseObject: VariableObjectBase, coreObject:
         operations: {},
         stats: {},
         variableChildren: [],
-    };
+    } as VariableObject;
     object.core = object.core || object;
     for (const tag of (object.base.tags || [])) {
         object.tags[tag] = true;
     }
-    switch (baseObject.variableObjectType){
+    switch (object.type){
         case 'actor':
             for (const actorStat of Object.keys(allActorVariables)) {
                 object.dirtyStats[actorStat] = true;
@@ -414,7 +418,7 @@ export function setStat(object: VariableObject, statKey: string, newValue: any) 
         removeBonusFromObject(dependency.object, dependency.bonus);
     }
     object[statKey] = newValue;
-    if (object.base.variableObjectType === 'effect' && operations[statKey[0]]) {
+    if (object.type === 'effect' && operations[statKey[0]]) {
         object.bonuses[statKey] = newValue;
     }
     // If the new value is a variable object, add it to variable children.

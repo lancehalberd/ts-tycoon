@@ -104,8 +104,10 @@ export function makeMonster(
         throw new Error('could not determine base monster type');
     }
     const monster: Monster = {
+        targetType: 'actor',
         type: 'monster',
         x: 0, y: 0, z: 0,
+        width: 0, height: 0,
         isActor: true,
         level,
         name: baseMonster.name,

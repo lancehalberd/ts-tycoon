@@ -14,8 +14,8 @@ import { getState } from 'app/state';
 import { properCase } from 'app/utils/formatters';
 import { collision, getCollisionArea, ifdefor } from 'app/utils/index';
 import { getMousePosition } from 'app/utils/mouse';
-import { Actor } from 'app/types/actor';
-import { EquipmentSlot, Item, ItemData } from 'app/types/items';
+
+import { Actor, EquipmentSlot, Item, ItemData } from 'app/types';
 
 // Div containing items
 const inventoryElement = query('.js-inventory');
@@ -35,13 +35,13 @@ export const inventoryState: InventoryState = {
     dragged: false,
 };
 
-export function equipItemProper(actor, item: Item, update) {
+export function equipItemProper(actor: Actor, item: Item, update) {
     //console.log("equip " + item.base.slot);
     if (actor.equipment[item.base.slot]) {
         console.log("Tried to equip an item without first unequiping!");
         return;
     }
-    if (item.base.slot === 'offhand' && isTwoHandedWeapon(actor.equipment.weapon) && !ifdefor(actor.twoToOneHanded)) {
+    if (item.base.slot === 'offhand' && isTwoHandedWeapon(actor.equipment.weapon) && !ifdefor(actor.stats.twoToOneHanded)) {
         console.log("Tried to equip an offhand while wielding a two handed weapon!");
         return;
     }
@@ -54,17 +54,17 @@ export function equipItemProper(actor, item: Item, update) {
     item.actor = actor;
     actor.equipment[item.base.slot] = item;
     addActions(actor, item.base);
-    addBonusSourceToObject(actor, item.base, false);
+    addBonusSourceToObject(actor.variableObject, item.base, false);
     item.prefixes.forEach(function (affix) {
         addActions(actor, affix);
-        addBonusSourceToObject(actor, affix, false);
+        addBonusSourceToObject(actor.variableObject, affix, false);
     })
     item.suffixes.forEach(function (affix) {
         addActions(actor, affix);
-        addBonusSourceToObject(actor, affix, false);
+        addBonusSourceToObject(actor.variableObject, affix, false);
     })
     if (update) {
-        updateTags(actor, recomputeActorTags(actor), true);
+        updateTags(actor.variableObject, recomputeActorTags(actor), true);
         if (actor.character === getState().selectedCharacter) {
             refreshStatsPanel(actor.character, query('.js-characterColumn .js-stats'));
         }
@@ -105,7 +105,7 @@ function unequipSlot(actor: Actor, slotKey: EquipmentSlot, update: boolean = fal
     }
 }
 function unequipRestrictedGear() {
-    const actor = getState().selectedCharacter.adventurer;
+    const actor = getState().selectedCharacter.hero;
     for (const item of Object.values(actor.equipment)) {
         if (!item) continue;
         if (!canEquipItem(actor, item)) {
@@ -121,13 +121,13 @@ function unequipRestrictedGear() {
 export function updateOffhandDisplay() {
     var adventurer = getState().selectedCharacter.adventurer;
     // Don't show the offhand slot if equipped with a two handed weapon unless they have a special ability to allow off hand with two handed weapons.
-    query('.js-offhand').style.display = !isTwoHandedWeapon(adventurer.equipment.weapon) || adventurer.twoToOneHanded ?
+    query('.js-offhand').style.display = !isTwoHandedWeapon(adventurer.equipment.weapon) || adventurer.stats.twoToOneHanded ?
         '' : 'none';
 }
-export function isTwoHandedWeapon(item) {
+export function isTwoHandedWeapon(item: Item) {
     return item && item.base.tags['twoHanded'];
 }
-export function sellValue(item) {
+export function sellValue(item: Item) {
     return Math.floor(4 * baseItemLevelCost(item.itemLevel));
 }
 export function baseItemLevelCost(itemLevel) {
@@ -195,8 +195,8 @@ const tagToDisplayNameMap = {
     'throwing': 'Throwing',
     'skill': 'Skills'
 };
-export function tagToDisplayName(tag) {
-    return ifdefor(tagToDisplayNameMap[tag], properCase(tag));
+export function tagToDisplayName(tag: string) {
+    return tagToDisplayNameMap[tag] || properCase(tag);
 }
 export function sellItem(item: Item) {
     /* TODO: if dragging an item, only sell the item if it matches the item being dragged.
@@ -295,11 +295,11 @@ function canEquipItem(actor: Actor, item: Item): boolean {
     if (item.requiredLevel > actor.level) {
         return false;
     }
-    if (item.base.slot === 'offhand' && isTwoHandedWeapon(actor.equipment.weapon) && !actor.twoToOneHanded) {
+    if (item.base.slot === 'offhand' && isTwoHandedWeapon(actor.equipment.weapon) && !actor.stats.twoToOneHanded) {
         return false;
     }
     for (const requiredTag of (item.base.restrictions || [])) {
-        if (!actor.tags[requiredTag]) {
+        if (!actor.variableObject.tags[requiredTag]) {
             return false;
         }
     }

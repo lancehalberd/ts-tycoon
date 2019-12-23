@@ -24,10 +24,9 @@ import {
 import { ShapeType } from 'app/types/board';
 import { BonusSource } from 'app/types/bonuses';
 import { Item } from 'app/types/items';
+import { SavedCharacter, SavedJewel, TrophyAltar } from 'app/types';
 
 // Types used for saving data in local storage.
-type SavedCharacter = any;
-type SavedJewel = any;
 interface SavedGuildAreas {
     [key: string]: {
         objects: {
@@ -217,9 +216,9 @@ export function importState(savedState: SavedState) {
             }
         }
     }
-    savedState.applicants = (savedState.applicants || []).map(importCharacter);
-    for (let i = 0; i < savedState.applicants.length; i++) {
-        allApplications[i].character = savedState.applicants[i];
+    state.applicants = (savedState.applicants || []).map(importCharacter);
+    for (let i = 0; i < state.applicants.length; i++) {
+        allApplications[i].character = state.applicants[i];
     }
     setMaxAnimaJewelBonus(savedState.maxAnimaJewelMultiplier || 1);
     // Read trophy data before characters so that their bonuses will be applied when
@@ -233,7 +232,7 @@ export function importState(savedState: SavedState) {
         trophy.value = trophyData.value;
         const area = defaultGuildAreas[trophyData.areaKey];
         if (!area) continue;
-        const altar = area.objectsByKey[trophyData.objectKey];
+        const altar = area.objectsByKey[trophyData.objectKey] as TrophyAltar;
         if (!altar) continue;
         addTrophyToAltar(altar, trophy);
     }

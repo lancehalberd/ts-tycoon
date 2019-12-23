@@ -86,9 +86,9 @@ export function moveActor(actor: Actor) {
     if (!goalTarget && actor.owner) {
         // Set desired relative position to ahead if there are enemies and to follow if there are none.
         const pointPosition = actor.owner.enemies.length
-            ? {x: actor.owner.x + actor.owner.heading[0] * 300, y: 0, z: Math.max(-180, Math.min(180, actor.owner.z + actor.owner.heading[2] * 100))}
-            : {x: actor.owner.x - actor.owner.heading[2] * 200, y: 0, z: actor.owner.z > 0 ? actor.owner.z - 150 : actor.owner.z + 150};
-        const distanceToGoal = getDistance(actor, pointPosition);
+            ? {x: actor.owner.x + actor.owner.heading[0] * 300, z: Math.max(-180, Math.min(180, actor.owner.z + actor.owner.heading[2] * 100))}
+            : {x: actor.owner.x - actor.owner.heading[2] * 200, z: actor.owner.z > 0 ? actor.owner.z - 150 : actor.owner.z + 150};
+        const distanceToGoal = getDistance(actor, {...pointPosition, width: 0, height: 0, y: 0});
         if (distanceToGoal > 20) {
             // Minions tend to be faster than their owners, so if they are following them they will stutter as they
             // try to match the desired relative position. To prevent this from happening, we slow minions down as they approach
@@ -164,10 +164,10 @@ export function moveActor(actor: Actor) {
         else actor.x = Math.max((area.left || 0) + actor.width / 2, actor.x);
         if (area.rightWall) actor.x = Math.min(area.width - 25 - actor.width / 2 - actor.z / 6, actor.x);
         else actor.x = Math.min(area.width - actor.width / 2, actor.x);
-        var collision = false;
+        let collision = false;
         // Ignore ally collision during charge effects.
         if (!actor.chargeEffect) {
-            for (var ally of actor.allies) {
+            for (const ally of actor.allies) {
                 if (!ally.isDead && actor !== ally && getDistanceOverlap(actor, ally) <= -16 && new Vector([speedBonus * actor.heading[0], speedBonus * actor.heading[2]]).dotProduct(new Vector([ally.x - actor.x, ally.z - actor.z])) > 0) {
                     collision = true;
                     blockedByAlly = ally;
@@ -176,9 +176,9 @@ export function moveActor(actor: Actor) {
             }
         }
         if (!collision) {
-            for (var object of area.objects) {
+            for (const object of area.objects) {
                 if (object.solid === false) continue;
-                var distance = getDistanceOverlap(actor, object);
+                const distance = getDistanceOverlap(actor, object);
                 if (distance <= -8 && new Vector([(actor.x - currentX), (actor.z - currentZ)]).dotProduct(new Vector([object.x - currentX, object.z - currentZ])) > 0) {
                     collision = true;
                     break;
@@ -186,9 +186,9 @@ export function moveActor(actor: Actor) {
             }
         }
         if (!collision) {
-            for (var enemy of actor.enemies) {
+            for (const enemy of actor.enemies) {
                 if (enemy.isDead || actor === enemy) continue;
-                var distance = getDistanceOverlap(actor, enemy);
+                const distance = getDistanceOverlap(actor, enemy);
                 if (distance <= 0 && actor.chargeEffect) {
                     finishChargeEffect(actor, enemy);
                     // Although this is a collision, don't mark it as one so that the move will complete.
@@ -209,7 +209,7 @@ export function moveActor(actor: Actor) {
             break;
         }
         //console.log(JSON.stringify(['old', actor.heading]));
-        var oldXHeading = actor.heading[0];
+        const oldXHeading = actor.heading[0];
         if (clockwiseFailed) {
             actor.heading[0] = oldXHeading * rotationA + actor.heading[2] * rotationB;
             actor.heading[2] = actor.heading[2] * rotationA - oldXHeading * rotationB;
