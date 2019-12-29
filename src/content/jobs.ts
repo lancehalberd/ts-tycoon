@@ -5,6 +5,7 @@ import { smallJewelLoot, jewelLoot } from 'app/loot';
 import { Job, JobKey } from 'app/types';
 
 export const characterClasses:Partial<{[key in JobKey]: Job}> = {};
+window['characterClasses'] = characterClasses;
 
 const jobIconImage = requireImage('gfx/jobIcons.png');
 export class JobIcon {
@@ -56,33 +57,40 @@ export const jobIcons: {[key in JobKey]: JobIcon} = {
     master: new JobIcon(1, 2),
 };
 
-addCharacterClass('Fool', 0, 0, 0, {}, [], jobIcons.fool);
+export function initializeJobs() {
+    addCharacterClass('Fool', 0, 0, 0, {}, [], jobIcons.fool);
 
-addCharacterClass('Black Belt', 0, 2, 1, {}, jobJewels(1,0,0), jobIcons.blackbelt);
-addCharacterClass('Warrior', 1, 3, 1, {'weapon': itemsByKey.stick}, jobJewels(1,0,0), jobIcons.warrior);
-addCharacterClass('Samurai', 2, 4, 1, {'weapon': itemsByKey.stick}, jobJewels(1,0,0), jobIcons.samurai);
+    addCharacterClass('Black Belt', 0, 2, 1, {}, jobJewels(1,0,0), jobIcons.blackbelt);
+    addCharacterClass('Warrior', 1, 3, 1, {'weapon': itemsByKey.stick}, jobJewels(1,0,0), jobIcons.warrior);
+    addCharacterClass('Samurai', 2, 4, 1, {'weapon': itemsByKey.stick}, jobJewels(1,0,0), jobIcons.samurai);
 
-addCharacterClass('Juggler', 2, 1, 0, {'weapon': itemsByKey.ball}, jobJewels(0,1,0), jobIcons.juggler);
-addCharacterClass('Ranger', 3, 1, 1, {'weapon': itemsByKey.ball}, jobJewels(0,1,0), jobIcons.ranger);
-addCharacterClass('Sniper', 4, 1, 2, {'weapon': itemsByKey.ball}, jobJewels(0,1,0), jobIcons.sniper);
+    addCharacterClass('Juggler', 2, 1, 0, {'weapon': itemsByKey.ball}, jobJewels(0,1,0), jobIcons.juggler);
+    addCharacterClass('Ranger', 3, 1, 1, {'weapon': itemsByKey.ball}, jobJewels(0,1,0), jobIcons.ranger);
+    addCharacterClass('Sniper', 4, 1, 2, {'weapon': itemsByKey.ball}, jobJewels(0,1,0), jobIcons.sniper);
 
-addCharacterClass('Priest', 1, 0, 2, {'weapon': itemsByKey.stick}, jobJewels(0,0,1), jobIcons.priest);
-addCharacterClass('Wizard', 1, 1, 3, {'weapon': itemsByKey.stick}, jobJewels(0,0,1), jobIcons.wizard);
-addCharacterClass('Sorcerer', 1, 2, 4, {'weapon': itemsByKey.stick}, jobJewels(0,0,1), jobIcons.sorcerer);
+    addCharacterClass('Priest', 1, 0, 2, {'weapon': itemsByKey.stick}, jobJewels(0,0,1), jobIcons.priest);
+    addCharacterClass('Wizard', 1, 1, 3, {'weapon': itemsByKey.stick}, jobJewels(0,0,1), jobIcons.wizard);
+    addCharacterClass('Sorcerer', 1, 2, 4, {'weapon': itemsByKey.stick}, jobJewels(0,0,1), jobIcons.sorcerer);
 
-addCharacterClass('Corsair', 2, 2, 1, {'weapon': itemsByKey.rock}, jobJewels(1,1,0), jobIcons.corsair);
-addCharacterClass('Assassin', 3, 2, 1, {'weapon': itemsByKey.rock}, jobJewels(1,1,0), jobIcons.assassin);
-addCharacterClass('Ninja', 4, 4, 2, {'weapon': itemsByKey.rock}, jobJewels(1,1,0), jobIcons.ninja);
+    addCharacterClass('Corsair', 2, 2, 1, {'weapon': itemsByKey.rock}, jobJewels(1,1,0), jobIcons.corsair);
+    addCharacterClass('Assassin', 3, 2, 1, {'weapon': itemsByKey.rock}, jobJewels(1,1,0), jobIcons.assassin);
+    addCharacterClass('Ninja', 4, 4, 2, {'weapon': itemsByKey.rock}, jobJewels(1,1,0), jobIcons.ninja);
 
-addCharacterClass('Dancer', 2, 1, 2, {'weapon': itemsByKey.rock}, jobJewels(0,1,1), jobIcons.dancer);
-addCharacterClass('Bard', 2, 1, 3, {'weapon': itemsByKey.stick}, jobJewels(1,0,1), jobIcons.bard);
-addCharacterClass('Sage', 4, 2, 4, {'weapon': itemsByKey.stick}, jobJewels(1,0,1), jobIcons.sage);
+    addCharacterClass('Dancer', 2, 1, 2, {'weapon': itemsByKey.rock}, jobJewels(0,1,1), jobIcons.dancer);
+    addCharacterClass('Bard', 2, 1, 3, {'weapon': itemsByKey.stick}, jobJewels(1,0,1), jobIcons.bard);
+    addCharacterClass('Sage', 4, 2, 4, {'weapon': itemsByKey.stick}, jobJewels(1,0,1), jobIcons.sage);
 
-addCharacterClass('Paladin', 1, 2, 2, {'weapon': itemsByKey.stick}, jobJewels(1,0,1), jobIcons.paladin);
-addCharacterClass('Dark Knight', 1, 3, 2, {'weapon': itemsByKey.ball}, jobJewels(0,1,1), jobIcons. darkknight);
-addCharacterClass('Enhancer', 2, 4, 4, {'weapon': itemsByKey.ball}, jobJewels(0,1,1), jobIcons.enhancer);
+    addCharacterClass('Paladin', 1, 2, 2, {'weapon': itemsByKey.stick}, jobJewels(1,0,1), jobIcons.paladin);
+    addCharacterClass('Dark Knight', 1, 3, 2, {'weapon': itemsByKey.ball}, jobJewels(0,1,1), jobIcons. darkknight);
+    addCharacterClass('Enhancer', 2, 4, 4, {'weapon': itemsByKey.ball}, jobJewels(0,1,1), jobIcons.enhancer);
 
-addCharacterClass('Master', 4, 4, 4, {'weapon': itemsByKey.rock}, jobJewels(0,1,1), jobIcons.master);
+    addCharacterClass('Master', 4, 4, 4, {'weapon': itemsByKey.rock}, jobJewels(0,1,1), jobIcons.master);
+
+    for (let classKey in characterClasses) {
+        const jobKey = classKey as JobKey;
+        characterClasses[jobKey].achievementImage = requireImage('gfx/achievements/' + classKey + '.png');
+    }
+}
 
 function addCharacterClass(name, dexterityBonus, strengthBonus, intelligenceBonus,
     startingEquipment,
@@ -109,7 +117,4 @@ function jobJewels(r, g, b) {
              g ? [90, 100] : [base, base + 5],
              b ? [90, 100] : [base, base + 5]], false), smallJewelLoot, smallJewelLoot];
 }
-for (let classKey in characterClasses) {
-    const jobKey = classKey as JobKey;
-    characterClasses[jobKey].achievementImage = requireImage('gfx/achievements/' + classKey + '.png');
-}
+window['characterClasses'] = characterClasses;

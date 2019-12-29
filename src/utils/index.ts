@@ -93,7 +93,8 @@ export function getCollisionArea(element1: HTMLElement, element2: HTMLElement) {
 }
 
 export function getElementRectangle(element: HTMLElement, container = null) {
-    const rect = {...element.getBoundingClientRect()};
+    let b = element.getBoundingClientRect();
+    const rect = { left: b.left, top: b.top, width: b.width, height: b.height };
     // If container is specified, return the rectangle relative to the container's coordinates.
     if (container) {
         const containerRect = container.getBoundingClientRect();

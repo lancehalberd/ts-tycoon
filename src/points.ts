@@ -82,7 +82,10 @@ export function previewPointsChange(pointsType: PointsType, amount: number) {
 }
 export function hidePointsPreview() {
     // This will only hide one preview, but we only show one at a time.
-    query('.pointsColumn.showChange').classList.remove('showChange');
+    const previewColumn = query('.pointsColumn.showChange');
+    if (previewColumn) {
+        previewColumn.classList.remove('showChange');
+    }
 }
 export function gain(pointsType: PointsType, amount: number): void {
     const gameState = getState();
@@ -113,12 +116,12 @@ function capPoints() {
 // Add dynamic help text to coins+anima indicators.
 // Todo, associate this help method with these elements another way.
 /*$('.js-coinsContainer').data('helpMethod', () =>
-    titleDiv( state.coins.abbreviate() + ' / ' + state.guildStats.maxCoins.abbreviate() + ' coins')
+    titleDiv(abbreviate(state.coins) + ' / ' + abbreviate(state.guildStats.maxCoins) + ' coins')
         + bodyDiv('Coins are used to create brand new items.')
         + bodyDiv('Coins are found in chests and dropped from defeated enemies.')
 );
 $('.js-animaContainer').data('helpMethod', () =>
-    titleDiv( state.anima.abbreviate() + ' / ' + state.guildStats.maxAnima.abbreviate() + ' anima')
+    titleDiv(abbreviate(state.anima) + ' / ' + abbreviate(state.guildStats.maxAnima) + ' anima')
         + bodyDiv('Anima is used to enchant items with special powers.')
         + bodyDiv('Anima is absorbed from defeated enemies and salvaged from gems.')
 );*/

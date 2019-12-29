@@ -14,7 +14,7 @@ import { rectangle } from 'app/utils/index';
 import { getMousePosition } from 'app/utils/mouse';
 import Random from 'app/utils/Random';
 
-import { Jewel, JewelComponents, JewelTier, Range, ShapeType } from 'app/types';
+import { Area, Hero, Jewel, JewelComponents, JewelTier, Range, ShapeType } from 'app/types';
 
 const image = requireImage('gfx/moneyIcon.png');
 export const coins = [
@@ -48,10 +48,10 @@ const jewelTierDefinitions = [
     [0], [1.1, .1], [1.8, .2], [2.6, .3], [3.5, .4], [4.5, .5]
 ];
 
-function coinTreasurePopup(coin, x, y, z, vx, vy, vz, delay) {
+function coinTreasurePopup(coin: typeof coins[0], x: number, y: number, z: number, vx: number, vy: number, vz: number, delay: number) {
     return {
         x, y, z, vx, vy, vz, 't': 0, 'done': false, delay,
-        update(area) {
+        update(area: Area) {
             if (delay-- > 0) return
             this.x += this.vx;
             this.y += this.vy;
@@ -71,22 +71,22 @@ function coinTreasurePopup(coin, x, y, z, vx, vy, vz, delay) {
             this.t += 1;
             this.done = this.t > 80;
         },
-        draw(area) {
+        render(area: Area) {
             if (delay > 0) return;
-            var p = 1.4 * Math.min(1, 1 - (this.t - 60) / 20);
+             const p = 1.4 * Math.min(1, 1 - (this.t - 60) / 20);
             mainContext.drawImage(coin.image, coin.x, coin.y, coin.width, coin.height,
                 this.x - p * coin.width / 2 - area.cameraX, GROUND_Y - this.y - p * coin.height - this.z / 2, p * coin.width, p * coin.height);
         }
     };
 }
 
-export function coinsLootDrop(amount) {
+export function coinsLootDrop(amount: number) {
     return {
-        gainLoot(hero) {
-            gain('coins', Math.round(amount * (1 + hero.increasedDrops)));
+        gainLoot(hero: Hero) {
+            gain('coins', Math.round(amount * (1 + hero.stats.increasedDrops)));
         },
-        addTreasurePopup(hero, x, y, z, delay) {
-            let total = Math.round(amount * (1 + hero.increasedDrops));
+        addTreasurePopup(hero: Hero, x: number, y: number, z: number, delay: number) {
+            let total = Math.round(amount * (1 + hero.stats.increasedDrops));
             let nextDelay = delay;
             let index = coins.length - 1;
             let drops = 0;
@@ -105,7 +105,7 @@ export function coinsLootDrop(amount) {
         }
     }
 }
-export function coinsLoot(range) {
+export function coinsLoot(range: Range) {
     return {
         type: 'coinsLoot',
         generateLootDrop() {
@@ -113,10 +113,10 @@ export function coinsLoot(range) {
     }};
 }
 
-function animaTreasurePopup(hero, coin, x, y, z, vx, vy, vz, delay) {
+function animaTreasurePopup(hero: Hero, coin: typeof animaDrops[0], x: number, y: number, z: number, vx: number, vy: number, vz: number, delay: number) {
     return {
         x, y, z, vx, vy, vz, t: 0, done: false, delay,
-        update(area) {
+        update(area: Area) {
             if (delay-- > 0) return
             this.x += this.vx;
             this.y += this.vy;
@@ -130,12 +130,12 @@ function animaTreasurePopup(hero, coin, x, y, z, vx, vy, vz, delay) {
             this.t += 1;
             this.done = this.done || this.t > 60 || (Math.abs(this.x - hero.x) < 10);
         },
-        draw(area) {
+        render(area: Area) {
             if (delay > 0) return;
             mainContext.save();
             mainContext.globalAlpha = .6 + .2 * Math.cos(this.t / 5);
             // Anima disappears over time or as it approachs the hero.
-            var p = 1.5 * Math.max(0, Math.min(1, 1 - Math.max((this.t - 60) / 20, (20 - Math.abs(this.x - hero.x)) / 20)));
+            const p = 1.5 * Math.max(0, Math.min(1, 1 - Math.max((this.t - 60) / 20, (20 - Math.abs(this.x - hero.x)) / 20)));
             mainContext.drawImage(coin.image, coin.x, coin.y, coin.width, coin.height,
                 this.x - p * coin.width / 2 - area.cameraX,
                 GROUND_Y - this.y - this.z / 2 - p * coin.height / 2, p * coin.width, p * coin.height);
@@ -143,23 +143,23 @@ function animaTreasurePopup(hero, coin, x, y, z, vx, vy, vz, delay) {
         }
     };
 }
-export function animaLootDrop(amount) {
+export function animaLootDrop(amount: number) {
     return {
-        gainLoot(hero) {
-            gain('anima', Math.round(amount * (1 + hero.increasedDrops)));
+        gainLoot(hero: Hero) {
+            gain('anima', Math.round(amount * (1 + hero.stats.increasedDrops)));
         },
-        addTreasurePopup(hero, x, y, z, delay) {
-            var total = Math.round(amount * (1 + hero.increasedDrops));
-            var nextDelay = delay;
-            var index = animaDrops.length - 1;
-            var drops = 0;
+        addTreasurePopup(hero: Hero, x: number, y: number, z: number, delay: number) {
+            let total = Math.round(amount * (1 + hero.stats.increasedDrops));
+            let nextDelay = delay;
+            let index = animaDrops.length - 1;
+            let drops = 0;
             while (total > 0 && index >= 0) {
                 // Getting a single large anima drop feels underwhelming, so if no anima has dropped yet
                 // break single anima into smaller drops.
                 while (animaDrops[index].value <= total && (drops || animaDrops[index].value < total || total < 5) && drops < 50) {
                     total -= animaDrops[index].value;
                     // Set this so the anima always moves away from the hero's x location initially.
-                    var dx = (hero.x < x) ? 1 : -1;
+                    const dx = (hero.x < x) ? 1 : -1;
                     hero.area.treasurePopups.push(animaTreasurePopup(hero, animaDrops[index],
                         x, y, z,
                         dx * (10 + Math.random() * 5), 2 + Math.random() * 4, 10 + Math.random() * 10 - 5,
@@ -174,14 +174,14 @@ export function animaLootDrop(amount) {
     }
 }
 
-function jewelTreasurePopup(jewel, x, y, z, vx, vy, vz, delay) {
+function jewelTreasurePopup(jewel: Jewel, x: number, y: number, z: number, vx: number, vy: number, vz: number, delay: number) {
     // We need to duplicate the shape so we can draw it on the adventure panel
     // independent of drawing it in the inventory.
-    var popupShape = jewel.shape.clone().scale(.5);
+    const popupShape = jewel.shape.clone().scale(.5);
     popupShape.color = jewel.shape.color;
     return {
         x, y, z, vx, vy, vz, t: 0, done: false, delay,
-        update(area) {
+        update(area: Area) {
             if (delay-- > 0) return
             this.x += this.vx;
             this.y += this.vy;
@@ -189,7 +189,7 @@ function jewelTreasurePopup(jewel, x, y, z, vx, vy, vz, delay) {
             this.t += 1;
             this.done = this.t > 40;
         },
-        draw(area) {
+        render(area: Area) {
             if (delay > 0) return
             popupShape.setCenterPosition(this.x - area.cameraX, GROUND_Y - this.y - this.z / 2);
             const lightSource = getMousePosition(mainCanvas);
@@ -198,17 +198,17 @@ function jewelTreasurePopup(jewel, x, y, z, vx, vy, vz, delay) {
     };
 }
 
-function jewelLootDrop(jewel) {
+function jewelLootDrop(jewel: Jewel) {
     return {
-        gainLoot(hero) {
+        gainLoot(hero: Hero) {
             gainJewel(jewel);
             return jewel;
         },
-        addTreasurePopup(hero, x, y, z, delay) {
-            var thetaRange = Math.random() * 2 * Math.PI / 3;
-            var theta = (Math.PI - thetaRange) / 2;
-            var vx =  Math.cos(theta) * 2;
-            var vy = Math.sin(theta) * 2;
+        addTreasurePopup(hero: Hero, x: number, y: number, z: number, delay: number) {
+            const thetaRange = Math.random() * 2 * Math.PI / 3;
+            const theta = (Math.PI - thetaRange) / 2;
+            const vx =  Math.cos(theta) * 2;
+            const vy = Math.sin(theta) * 2;
             hero.area.treasurePopups.push(jewelTreasurePopup(jewel, x, y, z, vx, vy, 0, delay));
         }
     }

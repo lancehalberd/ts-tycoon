@@ -3,8 +3,6 @@ import { ActiveEffect, Actor, Exit, FixedObject, FullRectangle } from 'app/types
 
 // Things the exist in areas need at least these spatial properties.
 export interface AreaEntity {
-    isActor?: boolean,
-    scale?: number,
     x: number, y: number, z: number,
     width: number, height: number,
 }
@@ -65,7 +63,7 @@ export type LevelObject = {
     solid?: boolean,
     isOver?: (x: number, y: number) => boolean,
     onClick?: Function,
-    draw?: Function
+    render?: Function
     update?: Function,
     helpMethod?: Function,
 }

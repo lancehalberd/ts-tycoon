@@ -1,8 +1,8 @@
 import { getChoosingTrophyAltar, getTrophyPopupTarget } from 'app/content/achievements';
-import { getUpgradingObject, upgradeButton } from 'app/content/furniture';
 import { unprojectLeftWallCoords, unprojectRightWallCoords} from 'app/content/guild';
+import { getUpgradingObject, upgradeButton } from 'app/content/upgradeButton';
 import { jewelInventoryContainer, mainCanvas, mouseContainer, tagElement } from 'app/dom';
-import { globalHud } from 'app/drawArea';
+import { getGlobalHud } from 'app/drawArea';
 import { getAbilityPopupTarget } from 'app/drawSkills';
 import { equipmentCraftingState } from 'app/equipmentCrafting';
 import { GROUND_Y } from 'app/gameConstants';
@@ -25,9 +25,11 @@ let canvasPopupTarget = null;
 export function getCanvasPopupTarget() {
     return canvasPopupTarget;
 }
+window['getCanvasPopupTarget'] = getCanvasPopupTarget;
 export function setCanvasPopupTarget(target) {
     canvasPopupTarget = target;
 }
+window['setCanvasPopupTarget'] = setCanvasPopupTarget;
 //let wallMouseCoords = null;
 
 export function getPopup(): Popup {
@@ -36,12 +38,14 @@ export function getPopup(): Popup {
 
 export function removePopup() {
     if (popup) {
-        document.body.removeChild(popup.element);
-        if (popup.target.onMouseOut) {
+        popup.element.remove();
+        // popup.target will not be defined for jewel tooltips.
+        if (popup.target && popup.target.onMouseOut) {
             popup.target.onMouseOut();
         }
         popup = null;
     }
+    canvasPopupTarget = null;
 }
 
 export function addPopup(target: any, content: string): Popup {
@@ -58,6 +62,9 @@ export function addPopup(target: any, content: string): Popup {
 }
 
 export function updateToolTip() {
+    if (!popup) {
+        return;
+    }
     const box:DOMRect = popup.element.getBoundingClientRect();
     const [x, y] = getMousePosition();
     var top = y + 10;
@@ -80,7 +87,7 @@ export function updateToolTip() {
 
 export function checkToShowMainCanvasToolTip(x, y) {
     if (!(x >= 0)) return;
-    if (popup.element || mainCanvas.style.display === 'none' || canvasPopupTarget) return;
+    if ((popup && popup.element) || mainCanvas.style.display === 'none' || canvasPopupTarget) return;
     canvasPopupTarget = getMainCanvasMouseTarget(x, y);
     mainCanvas.classList.toggle('clickable', !!canvasPopupTarget);
     if (!canvasPopupTarget) {
@@ -88,8 +95,10 @@ export function checkToShowMainCanvasToolTip(x, y) {
     }
     const popupText = canvasPopupTarget.helpMethod ? canvasPopupTarget.helpMethod(canvasPopupTarget) : canvasPopupTarget.helpText;
     if (!popupText) return;
-    popup.element = tagElement('div', 'toolTip js-toolTip', popupText);
-    popup.target = canvasPopupTarget;
+    popup = {
+        target: canvasPopupTarget,
+        element: tagElement('div', 'toolTip js-toolTip', popupText),
+    }
     mouseContainer.append(popup.element);
     updateToolTip();
 }
@@ -117,7 +126,7 @@ function getMainCanvasMouseTarget(x, y) {
     const sortedObjects = area.objects.slice().sort(function (spriteA, spriteB) {
         return spriteA.z - spriteB.z;
     });
-    for (const object of [...sortedObjects, ...area.wallDecorations, ...globalHud]) {
+    for (const object of [...sortedObjects, ...(area.wallDecorations || []), ...getGlobalHud()]) {
         if (!isCanvasTargetActive(object)) continue;
         // (x,y) of objects is the bottom middle of their graphic.
         const targetRectangle = object.target || object;
@@ -157,6 +166,7 @@ function getMainCanvasMouseTarget(x, y) {
     }
     return null;
 }
+window['getMainCanvasMouseTarget'] = getMainCanvasMouseTarget;
 function isCanvasTargetActive(canvasTarget) {
     if (!canvasTarget.action && !canvasTarget.onClick) return false;
     if (canvasTarget.isVisible && !canvasTarget.isVisible()) return false;
@@ -164,11 +174,11 @@ function isCanvasTargetActive(canvasTarget) {
     return true;
 }
 export function checkToShowJewelToolTip() {
-    var jewel = jewelInventoryState.draggedJewel || jewelInventoryState.overJewel;
+    const jewel = jewelInventoryState.draggedJewel || jewelInventoryState.overJewel;
     if (!jewel) {
         return;
     }
-    if (popup.element) {
+    if (popup && popup.element) {
         const popupJewel = getElementJewel(popup.element);
         if (popupJewel === jewel) {
             return;
@@ -178,12 +188,16 @@ export function checkToShowJewelToolTip() {
     }
     //console.log([event.pageX,event.pageY]);
     const helpText = jewel.helpMethod ? jewel.helpMethod(jewel) : '';
+    let element;
     if (jewel.fixed && !jewel.confirmed) {
-        popup.element = tagElement('div', 'toolTip js-toolTip', 'Drag and rotate to adjust this augmentation.<br/><br/> Click the "Apply" button above when you are done.<br/><br/>' + helpText);
+        element = tagElement('div', 'toolTip js-toolTip', 'Drag and rotate to adjust this augmentation.<br/><br/> Click the "Apply" button above when you are done.<br/><br/>' + helpText);
     } else {
-        popup.element = tagElement('div', 'toolTip js-toolTip', helpText);
+        element = tagElement('div', 'toolTip js-toolTip', helpText);
     }
-    popup.target = null;
+    popup = {
+        element,
+        target: null,
+    };
     mouseContainer.appendChild(popup.element);
     updateToolTip();
 }
@@ -204,6 +218,7 @@ export function checkremovePopup() {
     ) {
         return;
     }
+    console.log('checkremovePopup', jewelInventoryState.overJewel, jewelInventoryState.draggedJewel);
     if (mapState.draggedMap) {
         removePopup();
         return;
@@ -223,37 +238,52 @@ export function checkremovePopup() {
             }
         }
     }
-    if (popup.target && popup.target.closest && popup.target.closest('body').length && isMouseOverElement(popup.target)) {
+    if (popup.target && popup.target.closest && popup.target.closest('body') && isMouseOverElement(popup.target)) {
         return;
     }
     removePopup();
     checkToShowMainCanvasToolTip(x, y);
 }
 function isMouseOverCanvasElement(x, y, element) {
-    if (element.isVisible && !element.isVisible()) return false;
-    if (element.isOver) return element.isOver(x, y);
-    if (element.target) return isPointInRectObject(x, y, element.target);
-    if (mapState.currentMapTarget && ifdefor(mapState.currentMapTarget.top) !== null) return isPointInRectObject(x, y, element);
+    if (element.isVisible && !element.isVisible()) {
+        return false;
+    }
+    if (element.isOver) {
+        return element.isOver(x, y);
+    }
+    if (element.target) {
+        return isPointInRectObject(x, y, element.target);
+    }
+    if (element.targetType === 'actor') {
+        return isPointInRectObject(x, y, element);
+    }
+    if (mapState.currentMapTarget && ifdefor(mapState.currentMapTarget.top) !== null) {
+        return isPointInRectObject(x, y, element);
+    }
     return false;
 }
-function getHelpText(popupTarget) {
-    if (popupTarget.data('helpMethod')) {
+function getHelpText(popupTarget: HTMLElement) {
+    /*if (popupTarget.data('helpMethod')) {
         return popupTarget.data('helpMethod')(popupTarget);
-    }
-    return popupTarget.attr('helpText');
+    }*/
+    return popupTarget.getAttribute('helpText');
 }
 
 mouseContainer.addEventListener('mousemove', function (event) {
-    const helpContainer = (event.target as HTMLElement).closest('[helpText]');
+    const helpContainer = (event.target as HTMLElement).closest('[helpText]') as HTMLElement;
+    // Do nothing if not over a help container.
     if (!helpContainer) {
-        removePopup();
+        return;
     }
-    if (popup && popup.element) {
+    // Do nothing if a popup is already being displayed.
+    if (popup) {
         return;
     }
     removePopup();
-    popup.target = helpContainer;
-    popup.element = tagElement('div', 'toolTip js-toolTip', getHelpText(popup.target));
+    popup = {
+        target: helpContainer,
+        element: tagElement('div', 'toolTip js-toolTip', getHelpText(helpContainer)),
+    };
     mouseContainer.appendChild(popup.element);
     updateToolTip();
 });

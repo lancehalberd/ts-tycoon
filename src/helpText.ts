@@ -4,9 +4,9 @@ import { evaluateForDisplay } from 'app/evaluate';
 import { getState } from 'app/state';
 import { isTwoHandedWeapon, sellValue, tagToDisplayName } from 'app/inventory';
 import { points } from 'app/points';
-import { properCase } from 'app/utils/formatters';
+import { fixedDigits, formatValue, properCase, percent } from 'app/utils/formatters';
 
-import { Ability, Actor, Affix, Item } from 'app/types';
+import { Ability, Actor, Affix, BonusSource, Item } from 'app/types';
 
 export function getNameWithAffixes(name: string, prefixes: Affix[], suffixes: Affix[]): string {
     const prefixNames = prefixes.map(affix => affix.base.name);
@@ -98,16 +98,14 @@ export function tagToCategoryDisplayName(tag) {
     return tagToCategoryMap[tag] || properCase(tag);
 }
 
-export function bonusSourceHelpText(bonusSource, coreObject, localObject = null) {
+export function bonusSourceHelpText(bonusSource: BonusSource, coreObject, localObject = null) {
     localObject = localObject || bonusSource;
     if (!bonusSource.bonuses) {
         console.log(bonusSource);
         throw new Error('bonusSource must have field called bonuses');
     }
     // Implicit bonuses are on: equipment, actions, effects and buffs.
-    const isImplicit = bonusSource.hasImplicitBonuses ||
-                    (bonusSource.variableObjectType &&
-                     (bonusSource.variableObjectType === 'action'));
+    const isImplicit = bonusSource.hasImplicitBonuses;
     //console.log(isImplicit);
     //console.log(bonusSource);
     // Some stats are displayed in the helptext. In this case, we don't display
@@ -201,22 +199,25 @@ export function bonusSourceHelpText(bonusSource, coreObject, localObject = null)
     return sections.join('<br/>');
 }
 export function renderBonusText(bonusMap, bonusKey, bonusSource, coreObject, localObject) {
-    var rawValue = bonusSource.bonuses[bonusKey] || bonusSource.bonuses['+' + bonusKey];
+    const rawValue = bonusSource.bonuses[bonusKey] || bonusSource.bonuses['+' + bonusKey];
     // Don't show help text like +0 accuracy or 0% increased accuracy, but do show 0x accuracy.
     if (rawValue === 0 && bonusKey.charAt(0) !== '*') return null;
-    if (rawValue === null) return null;
-    var textOrFunction = bonusMap[bonusKey];
+    if (rawValue === null || rawValue === undefined) return null;
+    const textOrFunction = bonusMap[bonusKey];
     if (typeof textOrFunction === 'function') return textOrFunction(bonusSource, coreObject);
-    var text = textOrFunction;
-    var matches = text.match(/(\$|\%)\d/);
+    const text = textOrFunction;
+    const matches = text.match(/(\$|\%)\d/);
     if (matches) {
-        var wildcard = matches[0];
-        var renderedValue = evaluateForDisplay(rawValue, coreObject, localObject);
-        var digits = Number(wildcard[1]);
-        if (wildcard[0] === '%') renderedValue = renderedValue.percent(digits);
-        else renderedValue = renderedValue.format(digits);
+        const wildcard = matches[0];
+        let renderedValue = evaluateForDisplay(rawValue, coreObject, localObject);
+        const digits = Number(wildcard[1]);
+        if (wildcard[0] === '%') renderedValue = percent(renderedValue, digits);
+        else if ('' + parseFloat(renderedValue) == renderedValue) {
+            renderedValue = parseFloat(renderedValue).toFixed(digits);
+        }
+        return text.split(wildcard).join(renderedValue);
     }
-    return text.split(wildcard).join(renderedValue);
+    return text;
 }
 export function abilityHelpText(ability: Ability, actor: Actor) {
     const sections = [];
@@ -236,16 +237,16 @@ export function abilityHelpText(ability: Ability, actor: Actor) {
 export const implicitBonusMap = {
     // Gear implicits
     '+minPhysicalDamage': function (bonusSource) {
-        return 'Damage: ' + bonusSource.bonuses['+minPhysicalDamage'].format(1) + ' to ' + bonusSource.bonuses['+maxPhysicalDamage'].format(1);
+        return 'Damage: ' + formatValue(bonusSource.bonuses['+minPhysicalDamage'], 1) + ' to ' + formatValue(bonusSource.bonuses['+maxPhysicalDamage'], 1);
     },
     '+minMagicDamage': function (bonusSource) {
-        return 'Magic: ' + bonusSource.bonuses['+minMagicDamage'].format(1) + ' to ' + bonusSource.bonuses['+maxMagicDamage'].format(1);
+        return 'Magic: ' + formatValue(bonusSource.bonuses['+minMagicDamage'], 1) + ' to ' + formatValue(bonusSource.bonuses['+maxMagicDamage'], 1);
     },
     '+minWeaponPhysicalDamage': function (bonusSource) {
-        return 'Damage: ' + bonusSource.bonuses['+minWeaponPhysicalDamage'].format(1) + ' to ' + bonusSource.bonuses['+maxWeaponPhysicalDamage'].format(1);
+        return 'Damage: ' + formatValue(bonusSource.bonuses['+minWeaponPhysicalDamage'], 1) + ' to ' + formatValue(bonusSource.bonuses['+maxWeaponPhysicalDamage'], 1);
     },
     '+minWeaponMagicDamage': function (bonusSource) {
-        return 'Magic: ' + bonusSource.bonuses['+minWeaponMagicDamage'].format(1) + ' to ' + bonusSource.bonuses['+maxWeaponMagicDamage'].format(1);
+        return 'Magic: ' + formatValue(bonusSource.bonuses['+minWeaponMagicDamage'], 1) + ' to ' + formatValue(bonusSource.bonuses['+maxWeaponMagicDamage'], 1);
     },
     '+weaponRange': 'Range: $1',
     '+range': 'Range: $1',
@@ -272,10 +273,14 @@ export const implicitBonusMap = {
     '+duration': 'Lasts $1 seconds'
 };
 // Use this mapping for stats that are not implicity on an item or ability.
-export const bonusMap = {
+export const bonusMap: {
+    [key: string]: string | ((bonusSource: BonusSource) => string)
+} = {
     '$setRange': function (bonusSource) {
         if (bonusSource.bonuses['$setRange'] === 'melee') return 'Attacks become melee';
         if (bonusSource.bonuses['$setRange'] === 'ranged') return 'Attacks become ranged';
+        console.log(bonusSource);
+        debugger;
         throw new Error('unexpected value ' + bonusSource.bonuses['$setRange']);
     },
     '$weaponRange': 'Weapon range is always $1',
@@ -288,16 +293,16 @@ export const bonusMap = {
     '*weaponDamage': '$3× damage',
     '%weaponDamage': '%1 increased damage',
     '+minPhysicalDamage': function (bonusSource) {
-        return bonusSource.bonuses['+minPhysicalDamage'].format(1) + ' to ' + bonusSource.bonuses['+maxPhysicalDamage'].format(1) + ' increased physical damage';
+        return formatValue(bonusSource.bonuses['+minPhysicalDamage'], 1) + ' to ' + formatValue(bonusSource.bonuses['+maxPhysicalDamage'], 1) + ' increased physical damage';
     },
     '+minMagicDamage': function (bonusSource) {
-        return bonusSource.bonuses['+minMagicDamage'].format(1) + ' to ' + bonusSource.bonuses['+maxMagicDamage'].format(1) + ' increased magic damage';
+        return formatValue(bonusSource.bonuses['+minMagicDamage'], 1) + ' to ' + formatValue(bonusSource.bonuses['+maxMagicDamage'], 1) + ' increased magic damage';
     },
     '+minWeaponPhysicalDamage': function (bonusSource) {
-        return bonusSource.bonuses['+minWeaponPhysicalDamage'].format(1) + ' to ' + bonusSource.bonuses['+maxWeaponPhysicalDamage'].format(1) + ' increased physical damage';
+        return formatValue(bonusSource.bonuses['+minWeaponPhysicalDamage'], 1) + ' to ' + formatValue(bonusSource.bonuses['+maxWeaponPhysicalDamage'], 1) + ' increased physical damage';
     },
     '+minWeaponMagicDamage': function (bonusSource) {
-        return bonusSource.bonuses['+minWeaponMagicDamage'].format(1) + ' to ' + bonusSource.bonuses['+maxWeaponMagicDamage'].format(1) + ' increased magic damage';
+        return formatValue(bonusSource.bonuses['+minWeaponMagicDamage'], 1) + ' to ' + formatValue(bonusSource.bonuses['+maxWeaponMagicDamage'], 1) + ' increased magic damage';
     },
     '+physicalDamage': '+$1 physical damage',
     '*physicalDamage': '$3× physical damage',

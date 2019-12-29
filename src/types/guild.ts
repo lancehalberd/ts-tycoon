@@ -25,7 +25,7 @@ export interface FixedObjectData {
     getCurrentTier?: () => any,
     getNextTier?: () => any,
     update?: Function,
-    draw?: Function,
+    render?: Function,
     helpMethod?: Function,
     isOver?: (x: number, y: number) => boolean
     isEnabled?: () => boolean,
@@ -36,6 +36,13 @@ export interface FixedObjectData {
 }
 export interface TrophyAltar extends FixedObject {
     trophy: JobAchievement,
+}
+export interface SavedTrophy {
+    level: number,
+    value: number,
+    // These will be set if the trophy is currently displayed somewhere.
+    areaKey?: string,
+    objectKey?: string,
 }
 
 export interface FixedObject extends FixedObjectData {
@@ -56,7 +63,7 @@ export interface FixedObject extends FixedObjectData {
     // The level for the object, if it can be upgraded.
     level?: number,
     isEnabled: () => boolean,
-    draw: Function,
+    render: Function,
     helpMethod: Function,
     target: {
         left?: number,

@@ -2,9 +2,10 @@ import { completeLevel, enterArea } from 'app/adventure';
 import { hideAreaMenu } from 'app/areaMenu';
 import { setChoosingTrophyAltar } from 'app/content/achievements';
 import { itemsByKey } from 'app/content/equipment/index';
-import { openWorldMap, setUpgradingObject } from 'app/content/furniture';
+import { openWorldMap } from 'app/content/furniture';
 import { guildYardEntrance } from 'app/content/guild';
 import { map } from 'app/content/mapData';
+import { setUpgradingObject } from 'app/content/upgradeButton';
 import { setContext } from 'app/context';
 import { query } from 'app/dom';
 import { handleSkillKeyInput } from 'app/drawSkills';
@@ -32,8 +33,10 @@ export const KEY_M = 77;
 export const KEY_R = 82;
 export const KEY_S = 83;
 
+export function addKeyCommands() {
 document.addEventListener('keydown', function(event) {
     const keycode: number = event.which;
+    console.log(keycode);
     if (handleSkillKeyInput(keycode)) return;
     if (handleEditMapKeyDown(keycode)) return;
     const state = getState();
@@ -75,7 +78,7 @@ document.addEventListener('keydown', function(event) {
         if (state.selectedCharacter.context === 'item') setContext('guild');
         else if (state.selectedCharacter.context !== 'adventure') setContext('item');
     }
-    if (keycode === KEY_J && state.guildStats.hasJewelCrafting) {
+    if (keycode === KEY_J && true || state.guildStats.hasJewelCrafting) {
         if (state.selectedCharacter.context === 'jewel') setContext('guild');
         else if (state.selectedCharacter.context !== 'adventure') setContext('jewel');
     }
@@ -162,3 +165,4 @@ document.addEventListener('keydown', function(event) {
     }*/
     //console.log(event.which);
 });
+}

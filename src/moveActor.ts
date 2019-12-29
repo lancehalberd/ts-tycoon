@@ -8,7 +8,7 @@ import { applyAttackToTarget, createAttackStats, getBasicAttack } from 'app/perf
 import { isMouseDown } from 'app/utils/mouse';
 import Vector from 'app/utils/Vector';
 
-import { Actor } from 'app/types';
+import { Actor, LocationTarget, Target } from 'app/types';
 
 const rotationA = Math.cos(Math.PI / 20);
 const rotationB = Math.sin(Math.PI / 20);
@@ -72,7 +72,10 @@ export function moveActor(actor: Actor) {
                 break;
         }
     }
-    if ((actor.chargeEffect || (actorShouldAutoplay(actor) && !actor.activity)) && (!goalTarget || goalTarget.isDead)) {
+    if (
+        (actor.chargeEffect || (actorShouldAutoplay(actor) && !actor.activity)) &&
+        (!goalTarget || (goalTarget.targetType === 'actor' && goalTarget.isDead))
+    ) {
         let bestDistance = actor.aggroRadius || 10000;
         actor.enemies.forEach(function (target) {
             if (target.isDead) return;
@@ -85,10 +88,23 @@ export function moveActor(actor: Actor) {
     }
     if (!goalTarget && actor.owner) {
         // Set desired relative position to ahead if there are enemies and to follow if there are none.
-        const pointPosition = actor.owner.enemies.length
-            ? {x: actor.owner.x + actor.owner.heading[0] * 300, z: Math.max(-180, Math.min(180, actor.owner.z + actor.owner.heading[2] * 100))}
-            : {x: actor.owner.x - actor.owner.heading[2] * 200, z: actor.owner.z > 0 ? actor.owner.z - 150 : actor.owner.z + 150};
-        const distanceToGoal = getDistance(actor, {...pointPosition, width: 0, height: 0, y: 0});
+        let pointPosition: LocationTarget = actor.owner.enemies.length
+            ? {
+                targetType: 'location',
+                x: actor.owner.x + actor.owner.heading[0] * 300,
+                y: 0,
+                z: Math.max(-180, Math.min(180, actor.owner.z + actor.owner.heading[2] * 100)),
+                width: 0,
+                height: 0,
+            } : {
+                targetType: 'location',
+                x: actor.owner.x - actor.owner.heading[2] * 200,
+                y: 0,
+                z: actor.owner.z > 0 ? actor.owner.z - 150 : actor.owner.z + 150,
+                width: 0,
+                height: 0,
+            };
+        const distanceToGoal = getDistance(actor, pointPosition);
         if (distanceToGoal > 20) {
             // Minions tend to be faster than their owners, so if they are following them they will stutter as they
             // try to match the desired relative position. To prevent this from happening, we slow minions down as they approach
@@ -120,13 +136,13 @@ export function moveActor(actor: Actor) {
         return;
     }
     if (actor.chargeEffect) {
-        speedBonus *= actor.chargeEffect.chargeSkill.speedBonus;
+        speedBonus *= actor.chargeEffect.chargeSkill.stats.speedBonus;
         actor.chargeEffect.distance += speedBonus * actor.stats.speed * Math.max(MIN_SLOW, 1 - actor.slow) * delta;
         // Cancel charge if they run for too long.
         if (actor.chargeEffect.distance > 2000) {
             actor.chargeEffect = null;
         }
-    } else if (goalTarget && !goalTarget.cloaked) {
+    } else if (goalTarget && !(goalTarget.targetType === 'actor' && goalTarget.cloaked)) {
         // If the character is closer than they need to be to auto attack then they can back away from
         // them slowly to try and stay at range.
         var skill = actor.skillInUse || (actor.activity && actor.activity.action) || getBasicAttack(actor);
@@ -134,7 +150,10 @@ export function moveActor(actor: Actor) {
         var distanceToTarget = getDistanceOverlap(actor, goalTarget);
         // Set the max distance to back away to to 10, otherwise they will back out of the range
         // of many activated abilities like fireball and meteor.
-        if (distanceToTarget < (Math.min(skillRange - 1.5, 10)) * 32 || goalTarget.targetHealth < 0) {
+        if (
+            distanceToTarget < (Math.min(skillRange - 1.5, 10)) * 32 ||
+            (goalTarget.targetType === 'actor' && goalTarget.targetHealth < 0)
+        ) {
             // Actors backing away from their targets will eventually corner themselves in the edge of the room.
             // This looks bad, so make them stop backing up within 130 pixels of the edge of the area.
             if ((actor.heading[0] > 0 && actor.x > 130) || (actor.heading[0] < 0 && actor.x < actor.area.width - 130)) {
@@ -168,7 +187,11 @@ export function moveActor(actor: Actor) {
         // Ignore ally collision during charge effects.
         if (!actor.chargeEffect) {
             for (const ally of actor.allies) {
-                if (!ally.isDead && actor !== ally && getDistanceOverlap(actor, ally) <= -16 && new Vector([speedBonus * actor.heading[0], speedBonus * actor.heading[2]]).dotProduct(new Vector([ally.x - actor.x, ally.z - actor.z])) > 0) {
+                if (!ally.isDead && actor !== ally &&
+                    getDistanceOverlap(actor, ally) <= -16 &&
+                    new Vector([speedBonus * actor.heading[0], speedBonus * actor.heading[2]])
+                        .dotProduct(new Vector([ally.x - actor.x, ally.z - actor.z])) > 0
+                ) {
                     collision = true;
                     blockedByAlly = ally;
                     break;
@@ -179,7 +202,10 @@ export function moveActor(actor: Actor) {
             for (const object of area.objects) {
                 if (object.solid === false) continue;
                 const distance = getDistanceOverlap(actor, object);
-                if (distance <= -8 && new Vector([(actor.x - currentX), (actor.z - currentZ)]).dotProduct(new Vector([object.x - currentX, object.z - currentZ])) > 0) {
+                if (distance <= -8 &&
+                    new Vector([(actor.x - currentX), (actor.z - currentZ)])
+                        .dotProduct(new Vector([object.x - currentX, object.z - currentZ])) > 0
+                ) {
                     collision = true;
                     break;
                 }
@@ -244,10 +270,10 @@ export function moveActor(actor: Actor) {
     }
 }
 
-function finishChargeEffect(actor: Actor, target: Actor) {
+function finishChargeEffect(actor: Actor, target: Target) {
     const attackStats = createAttackStats(actor, actor.chargeEffect.chargeSkill, target);
     attackStats.distance = actor.chargeEffect.distance;
-    const hitTargets = getAllInRange(target ? target.x : actor.x, actor.chargeEffect.chargeSkill.area, actor.enemies);
+    const hitTargets = getAllInRange(target ? target.x : actor.x, actor.chargeEffect.chargeSkill.stats.area, actor.enemies);
     for (const hitTarget of hitTargets) {
         applyAttackToTarget(attackStats, hitTarget);
     }

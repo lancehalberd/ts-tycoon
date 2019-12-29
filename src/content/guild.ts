@@ -8,7 +8,7 @@ import { rectangle } from 'app/utils/index';
 
 import { Exit, FixedObject, GuildArea, GuildAreas, RawGuildArea } from 'app/types';
 
-export const guildYardEntrance: Exit = {areaKey: 'guildYard'};
+export const guildYardEntrance: Exit = {areaKey: 'guildYard', x: 120, z: 0};
 
 const wallOriginCoords = [-71, 213];
 const wallDepth = 120;
@@ -281,7 +281,7 @@ export function drawLeftWall(guildArea) {
     wallContext.fillRect(0, 0, 5, wallHeight);
     wallContext.fillRect(175, 0, 5, wallHeight);
     wallContext.restore();
-    for (var decoration of guildArea.leftWallDecorations) {
+    for (const decoration of guildArea.leftWallDecorations) {
         const source = decoration.base.source;
         decoration.target = {left: (wallDepth - (decoration.z + decoration.width) * wallDepth / 180) / 2, 'top': wallHeight - decoration.y / 2 - decoration.height / 2, 'width': decoration.width * wallDepth / 180, 'height': decoration.height / 2}
         if (decoration === getCanvasPopupTarget()) drawOutlinedImage(wallContext, source.image, '#fff', 2, source, decoration.target);

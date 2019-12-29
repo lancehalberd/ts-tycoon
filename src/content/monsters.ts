@@ -108,7 +108,6 @@ export function makeMonster(
         type: 'monster',
         x: 0, y: 0, z: 0,
         width: 0, height: 0,
-        isActor: true,
         level,
         name: baseMonster.name,
         slow: 0,

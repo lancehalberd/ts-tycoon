@@ -147,7 +147,7 @@ export function makeItem(base: ItemData, level: number): Item {
     };
     updateItem(item);
     item.domElement.setAttribute('helptext', '-');
-    if (state.selectedCharacter) {
+    if (state && state.selectedCharacter) {
         item.domElement.classList.toggle('equipable', canEquipItem(state.selectedCharacter.adventurer, item));
     }
     return item;
@@ -199,10 +199,10 @@ export function tagToDisplayName(tag: string) {
     return tagToDisplayNameMap[tag] || properCase(tag);
 }
 export function sellItem(item: Item) {
-    /* TODO: if dragging an item, only sell the item if it matches the item being dragged.
-    if (inventoryState.dragHelper && (!inventoryState.dragHelper.data('$source').data('item') !== item)) {
+    // if dragging an item, only sell the item if it matches the item being dragged.
+    if (inventoryState.dragHelper && inventoryState.dragItem !== item) {
         return;
-    }*/
+    }
     if (item.actor) {
         unequipSlot(item.actor, item.base.slot, true);
     }
@@ -310,7 +310,7 @@ export function updateDragHelper() {
     if (!inventoryState.dragHelper) {
         return;
     }
-    const [x, y] = getMousePosition();
+    const [x, y] = getMousePosition(mouseContainer);
     const { dragHelper } = inventoryState;
     dragHelper.style.left = (x - dragHelper.offsetWidth / 2) + 'px';
     dragHelper.style.top = (y - dragHelper.offsetHeight / 2) + 'px';

@@ -1,7 +1,7 @@
 import { enterArea } from 'app/adventure';
 import { addBonusSourceToObject, createVariableObject } from 'app/bonuses';
 import { setSelectedCharacter } from 'app/character';
-import { addTrophyToAltar, checkIfAltarTrophyIsAvailable, updateTrophy } from 'app/content/achievements';
+import { addTrophyToAltar, checkIfAltarTrophyIsAvailable, getDefaultAltarTrophies, updateTrophy } from 'app/content/achievements';
 import { addAllUnlockedFurnitureBonuses, allApplications, allBeds,  } from 'app/content/furniture';
 import { getDefaultGuildAreas, guildYardEntrance } from 'app/content/guild';
 import { map } from 'app/content/mapData';
@@ -19,12 +19,12 @@ import {
 import { Polygon } from 'app/utils/polygon';
 
 import {
-    Character, GuildAreas, GuildStats, Jewel, SavedItem, VariableObject,
+    Character, GuildAreas, GuildStats, Jewel, SavedItem, SavedTrophy, VariableObject,
 } from 'app/types';
 import { ShapeType } from 'app/types/board';
 import { BonusSource } from 'app/types/bonuses';
 import { Item } from 'app/types/items';
-import { SavedCharacter, SavedJewel, TrophyAltar } from 'app/types';
+import { FixedObject, JobAchievement, SavedCharacter, SavedJewel, TrophyAltar } from 'app/types';
 
 // Types used for saving data in local storage.
 interface SavedGuildAreas {
@@ -36,6 +36,9 @@ interface SavedGuildAreas {
         }
     }
 }
+
+type Trophies = {[key: string]: JobAchievement};
+type SavedTrophies = {[key: string]: SavedTrophy};
 
 export type SavedState = {
     jewels: SavedJewel[],
@@ -63,7 +66,7 @@ export type SavedState = {
     skipShrinesEnabled: boolean,
     unlockedGuildAreas: {[key: string]: true},
     guildAreas: SavedGuildAreas,
-    trophies: any,
+    trophies: SavedTrophies,
 }
 export interface GameState {
     guildVariableObject: VariableObject,
@@ -80,8 +83,8 @@ export interface GameState {
     enchantmentItem: Item,
     guildAreas: GuildAreas,
     guildBonusSources: BonusSource[];
-    altarTrophies?: any,
-    availableBeds?: any[],
+    altarTrophies: Trophies,
+    availableBeds: FixedObject[],
 }
 
 function getDefaultSavedState(): SavedState {
@@ -128,14 +131,20 @@ function getDefaultState(): GameState {
         applicants: [],
         guildAreas: {},
         guildBonusSources: [],
+        altarTrophies: getDefaultAltarTrophies(),
+        availableBeds: [],
     };
 }
 
-let state: GameState = getDefaultState();
+let state: GameState;
+export function initializeState() {
+    state = getDefaultState();
+}
 
 export function getState(): GameState {
     return state;
 }
+window['getState'] = getState;
 
 export const implicitGuildBonusSource = {bonuses: {
     '+maxCoins': 100,
@@ -149,7 +158,7 @@ export function exportState(state: GameState): SavedState {
         completedLevels: {...state.savedState.completedLevels},
         items: state.items.map(exportItem),
         craftingItems: state.craftingItems.map(exportItem),
-        enchantmentItem: exportItem(state.enchantmentItem),
+        enchantmentItem: state.enchantmentItem ? exportItem(state.enchantmentItem) : null,
         guildAreas: exportGuildAreas(state.guildAreas),
         jewels: state.jewels.map(exportJewel),
         selectedCharacterIndex: state.characters.indexOf(state.selectedCharacter),
@@ -157,15 +166,15 @@ export function exportState(state: GameState): SavedState {
     };
 }
 
-function exportTrophies(altarTrophies) {
+function exportTrophies(altarTrophies: Trophies): SavedTrophies {
     const trophies = {};
     for (let trophyKey in altarTrophies) {
         const trophy = altarTrophies[trophyKey];
         trophies[trophyKey] = {
-            'level': trophy.level,
-            'value': trophy.value,
-            'areaKey': trophy.areaKey,
-            'objectKey': trophy.objectKey
+            level: trophy.level,
+            value: trophy.value,
+            areaKey: trophy.areaKey,
+            objectKey: trophy.objectKey
         };
     }
     return trophies;
@@ -242,6 +251,17 @@ export function importState(savedState: SavedState) {
             state.availableBeds.push(bed);
         }
     }
+    // TODO: jewels+items currently designed to store all jewels/items, but this means equipped/crafted
+    // jewels+items get serialized twice and then the duplicates are equiped but not in the array.
+    // Might be simplest to change these arrays to only be of unequipped jewels. Alternatively, we could
+    // store the location of the jewel
+    state.jewels = savedState.jewels.map(importJewel);
+    state.jewels.forEach(jewel => {
+        jewel.shape.setCenterPosition(jewel.canvas.width / 2, jewel.canvas.height / 2);
+        addJewelToInventory(jewel.domElement);
+    });
+    state.items = savedState.items.map(importItem).filter(item => item);
+    state.items.forEach(addToInventory);
     // This might happen if we changed how much each holder contains during an update.
     state.characters = savedState.characters.map(importCharacter);
     state.characters.forEach(character => {
@@ -271,12 +291,6 @@ export function importState(savedState: SavedState) {
         state.visibleLevels[completedLevelKey] = true;
         for (var nextLevelKey of level.unlocks) state.visibleLevels[nextLevelKey] = true;
     }
-    savedState.jewels.map(importJewel).forEach(jewel => {
-        jewel.shape.setCenterPosition(jewel.canvas.width / 2, jewel.canvas.height / 2);
-        addJewelToInventory(jewel.domElement);
-    });
-    state.items = savedState.items.map(importItem).filter(item => item);
-    state.items.forEach(addToInventory);
     const craftingItems = [...savedState.craftingItems];
     if (craftingItems.length) {
         for (const itemSlot of queryAll('.js-craftingSelectOptions .js-itemSlot')) {

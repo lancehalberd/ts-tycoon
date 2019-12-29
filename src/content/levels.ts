@@ -329,7 +329,7 @@ export function finishShrine(character: Character) {
             self.top = Math.round(GROUND_Y - self.y - self.height / 2);
         },
         onClick,
-        draw(area) {
+        render(area) {
             drawImage(mainContext, iconSource.image, iconSource, self);
         },
         helpMethod() {
@@ -350,7 +350,7 @@ function objectText(text): LevelObject {
         'solid': false,
         isOver(x, y) {return false;},
         update(area) {},
-        draw(area) {
+        render(area) {
             mainContext.fillStyle = 'white';
             mainContext.textBaseline = "middle";
             mainContext.textAlign = 'center'
@@ -388,7 +388,7 @@ function adventureBoardPreview(boardPreview: Board, character: Character): Level
             updateSkillConfirmationButtons();
             setContext('jewel');
         },
-        draw(area: Area) {
+        render(area: Area) {
             // Remove the preview from the character if we draw it to the adventure screen since they both use the same coordinate variables
             // and displaying it in the adventure screen will mess up the display of it on the character's board. I think this will be okay
             // since they can't look at both screens at once.

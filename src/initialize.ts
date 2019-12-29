@@ -2,11 +2,10 @@
 import { enterArea, startLevel } from 'app/adventure';
 import { addBonusSourceToObject, createVariableObject } from 'app/bonuses';
 import { newCharacter,updateAdventurer } from 'app/character';
-import { addAltarTrophies } from 'app/content/achievements';
 import { addAllItems } from 'app/content/equipment/index';
 import { addAllUnlockedFurnitureBonuses, allApplications } from 'app/content/furniture';
-import { guildYardEntrance } from 'app/content/guild';
-import { characterClasses } from 'app/content/jobs';
+import { getDefaultGuildAreas, guildYardEntrance } from 'app/content/guild';
+import { characterClasses, initializeJobs } from 'app/content/jobs';
 import { map } from 'app/content/mapData';
 import { initializeMonsters } from 'app/content/monsters';
 import { initializeProjectileAnimations } from 'app/content/projectileAnimations';
@@ -17,13 +16,15 @@ import { drawMap } from 'app/drawMap';
 import { updateEnchantmentOptions } from 'app/enchanting';
 import { initializeCraftingGrid, updateItemsThatWillBeCrafted } from 'app/equipmentCrafting';
 import { createNewHeroApplicant, hireCharacter, jobRanks } from 'app/heroApplication';
-import { makeJewel } from 'app/jewels';
+import { makeJewel } from 'app/jewels'
+import { addKeyCommands } from 'app/keyCommands';
 import { gainJewel } from 'app/loot';
 import { centerMapOnLevel } from 'app/map';
 import { gain } from 'app/points';
 import { eraseSave, loadSavedData } from 'app/saveGame';
-import { getState, implicitGuildBonusSource } from 'app/state';
+import { getState, implicitGuildBonusSource, initializeState } from 'app/state';
 import { removeElementFromArray } from 'app/utils/index';
+import { bindMouseListeners } from 'app/utils/mouse';
 import Random from 'app/utils/Random';
 import { playTrack, soundTrack } from 'app/utils/sounds';
 
@@ -36,12 +37,16 @@ export function isGameInitialized() {
 }
 export function initializeGame() {
     gameHasBeenInitialized = true;
+    bindMouseListeners();
     addAllItems();
-    addAltarTrophies();
+    // Depends on items being defined.
+    initializeJobs();
     initializeMonsters();
     initializeCraftingGrid();
     initializeProjectileAnimations();
     initializeLevelEditing();
+    initializeState();
+    addKeyCommands();
     query('.js-loading').style.display = 'none';
     query('.js-gameContent').style.display = '';
 
@@ -56,6 +61,7 @@ export function initializeGame() {
         showContext(state.selectedCharacter.context);
     } else {
         const state = getState();
+        state.guildAreas = getDefaultGuildAreas();
         state.guildVariableObject = createVariableObject({'variableObjectType': 'guild'});
         state.guildStats = state.guildVariableObject.stats as GuildStats;
         addBonusSourceToObject(state.guildVariableObject, implicitGuildBonusSource);

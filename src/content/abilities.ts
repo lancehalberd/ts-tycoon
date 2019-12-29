@@ -61,20 +61,20 @@ function tintIcon(imageFile, color): TintedFrame {
         width: 32,
         height: 32,
         color,
-        draw: drawTintIcon
+        render: drawTintIcon
     };
 }
 
 const effectAccuracy: ArrayFrame = ['gfx/militaryIcons.png', 65, 194, 12, 12, 8, 8];
 const effectSourcePoison: ArrayFrame = ['gfx/militaryIcons.png', 51, 74, 16, 16, 0, 0];
 
-export function getAbilityIconSource(ability) {
+export function getAbilityIconSource(ability: Ability) {
     if (!ability) return null;
     let icon = ability.icon;
     if (ability.action) icon = icon || ability.action.icon;
     if (ability.reaction) icon = icon || ability.reaction.icon;
     if (!icon) icon = 'gfx/496RpgIcons/openScroll.png';
-    if (icon.draw) return icon;
+    if (typeof icon !== 'string' && icon.render) return icon;
     return {'image': requireImage(icon), 'left': 0, 'top': 0, 'width': 34, 'height': 34};
 }
 export const abilities: {[key: string]: Ability} = {

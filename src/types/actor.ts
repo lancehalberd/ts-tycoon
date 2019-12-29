@@ -1,7 +1,7 @@
 import {
     ActiveEffect, ActorStats, Affix, Area, AreaEntity, BonusSource, Exit,
     Job, JobKey, Level, Monster,
-    SavedEquipment, Source,
+    SavedEquipment, Source, Target,
     VariableObject
 } from 'app/types';
 import { Ability, Action, ActorEffect, Effect } from 'app/types/abilities';
@@ -29,11 +29,14 @@ export interface BaseActor extends AreaEntity {
     character?: Character,
     targetType: 'actor',
     type: string,
+    // Screen coordinates of the player (for mouseover purposes)
+    top?: number,
+    left?: number,
+    // World coordinates of the player
     x: number,
     y: number,
     z: number,
     // Set by updateActorDimensions.
-    scale?: number,
     width: number,
     height: number,
     equipment: Equipment,
@@ -50,12 +53,15 @@ export interface BaseActor extends AreaEntity {
     // tags?: string[],
     actions?: Action[],
     reactions?: Action[],
-    isActor: true,
     maxReflectBarrier?: number,
     reflectBarrier?: number,
     stunned?: number,
     pull?: any,
-    chargeEffect?: any,
+    chargeEffect?: {
+        chargeSkill: Action,
+        distance: number,
+        target: Target,
+    },
     time?: number,
     isDead?: boolean,
     timeOfDeath?: number,
@@ -110,7 +116,7 @@ export interface BaseActor extends AreaEntity {
     walkFrame?: number,
     attackFrame?: number,
     isMoving?: boolean,
-    skillTarget?: Actor,
+    skillTarget?: Target,
 
     // This will be set if an actor is being flung as an attack.
     dominoAttackStats?: any,

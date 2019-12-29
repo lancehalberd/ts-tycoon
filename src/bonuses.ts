@@ -83,7 +83,7 @@ export function createVariableObject(baseObject: VariableObjectBase, coreObject:
     if (!baseObject.variableObjectType) throw new Error('variableObjectType was not set on a variable object base object');
     // this doesn't really make sense for the guild stats object,
     // but I don't think this is causing any issues at the moment.
-    if (!coreObject) throw new Error('No coreObject was provided for a new variable object. This must be provided for some implicit bonuses to work correctly, like range: {weaponRange} on attacks.');
+    // if (!coreObject) throw new Error('No coreObject was provided for a new variable object. This must be provided for some implicit bonuses to work correctly, like range: {weaponRange} on attacks.');
     const object: VariableObject = {
         type: baseObject.variableObjectType,
         base: baseObject,
@@ -333,7 +333,7 @@ function doesStatApplyToObject(stat: string, object: VariableObject) {
         case 'actor':
             return allActorVariables[stat];
         case 'action':
-            return ![undefined, null].includes(object[stat]) || commonActionVariables[stat];
+            return ![undefined, null].includes(object.stats[stat]) || commonActionVariables[stat];
         case 'effect':
             return stat === 'duration' || stat === 'area' || stat === 'maxStacks' || operations[stat.charAt(0)];
         case 'guild':
@@ -355,6 +355,7 @@ export function recomputeDirtyStats(object: VariableObject) {
 }
 
 function recomputeStat(object: VariableObject, statKey: string) {
+    //console.log('recomputing ', statKey, object);
     const statOps = object.operations[statKey] || {'stat': statKey};
     let newValue: any = 0;
     // Special values override all of the normal arithmetic for stats.
@@ -384,27 +385,28 @@ function recomputeStat(object: VariableObject, statKey: string) {
         }
     }
     setStat(object, statKey, newValue);
-    //console.log(object[statKey]);
+    //console.log(object.stats[statKey]);
 }
 export function setStat(object: VariableObject, statKey: string, newValue: any) {
+    //console.log('setting stat', statKey, newValue);
     delete object.dirtyStats[statKey];
     // Set a hard cap of 1e12 for all computed values.
     if (typeof newValue === 'number' && newValue > 1e12) {
         newValue = 1e12;
     }
-    const oldValue = object[statKey];
+    const oldValue = object.stats[statKey];
     if (oldValue === newValue) return;
     // If the old value was a variable child, remove it since it is either gone or
     // going to be replaced by a new version of the variable child.
     try {
-        // This will throw an exception if object[statKey] is null because
+        // This will throw an exception if object.stats[statKey] is null because
         // typeof null is 'object'. I'm not fixing this though because this
         // should never be null, so it is informative to have this exception
         // when that happens.
-        if (typeof object[statKey] === 'object' && object[statKey].base) {
-            const index = object.variableChildren.indexOf(object[statKey]);
+        if (typeof oldValue === 'object' && oldValue.base) {
+            const index = object.variableChildren.indexOf(oldValue);
             if (index < 0) {
-                console.log(object[statKey]);
+                console.log(oldValue);
                 console.log(object.variableChildren);
                 throw Error("Variable child was not found on parent object.");
             }
@@ -417,13 +419,13 @@ export function setStat(object: VariableObject, statKey: string, newValue: any) 
     for (const dependency of (object.bonusesDependingOn[statKey] || [])) {
         removeBonusFromObject(dependency.object, dependency.bonus);
     }
-    object[statKey] = newValue;
+    object.stats[statKey] = newValue;
     if (object.type === 'effect' && operations[statKey[0]]) {
         object.bonuses[statKey] = newValue;
     }
     // If the new value is a variable object, add it to variable children.
-    if (typeof object[statKey] === 'object' && object[statKey].base) {
-        addVariableChildToObject(object, object[statKey], true);
+    if (typeof newValue === 'object' && newValue.base) {
+        addVariableChildToObject(object, newValue, true);
     }
     // Now that the stat is updated, add all bonuses back that depend on this stat.
     for (const dependency of (object.bonusesDependingOn[statKey] || [])) {

@@ -12,7 +12,7 @@ export interface Jewel {
     bonuses: Bonuses,
     // Canvas for displaying the jewel in the inventory.
     canvas?: HTMLCanvasElement,
-    character: any,
+    character: Character,
     componentBonuses: Bonuses,
     components: JewelComponents,
     context?: CanvasRenderingContext2D,

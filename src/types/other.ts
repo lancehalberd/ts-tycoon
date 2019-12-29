@@ -1,6 +1,6 @@
 import { JobIcon } from 'app/content/jobs';
 
-export type Color = number | string;
+export type Color = string;
 
 export type Point = [number, number];
 export type Range = [number, number];
@@ -29,11 +29,11 @@ export interface BasicFrame {
     top: number,
     width: number,
     height: number,
-    draw?: Function,
+    render?: Function,
 }
 export type ArrayFrame = [string, number, number, number, number, number, number];
 
-export type Frame = string | JobIcon | BasicFrame | ArrayFrame;
+export type Frame = string | JobIcon | BasicFrame;
 
 export interface TintedFrame extends BasicFrame {
     color: Color,

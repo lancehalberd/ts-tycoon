@@ -8,10 +8,13 @@ import { rectangle } from 'app/utils/index';
 
 import { ActionData, Effect } from 'app/types/abilities';
 import { Bonuses } from 'app/types/bonuses';
-import { Actor, Frame } from 'app/types';
+import { Actor, ArrayFrame, Frame } from 'app/types';
 
 const scrollIconSource = 'gfx/496RpgIcons/openScroll.png';
-
+const effectSourceUp: ArrayFrame = ['gfx/militaryIcons.png', 17, 23, 16, 16, 0, 0];
+const effectSourceArmor: ArrayFrame = ['gfx/militaryIcons.png', 65, 180, 12, 12, 8, 8];
+//const effectSourceSword = ['gfx/militaryIcons.png', 52, 180, 12, 12, 8, 8];
+const effectSourceSword: ArrayFrame = ['gfx/militaryIcons.png', 85, 74, 16, 16, 6, 4];
 
 function genericAction(type, rawAction: Partial<ActionData>, bonuses: Bonuses, helpText = ''): ActionData {
     const action: ActionData = {
@@ -20,6 +23,7 @@ function genericAction(type, rawAction: Partial<ActionData>, bonuses: Bonuses, h
         type,
         variableObjectType: 'action',
         bonuses,
+        hasImplicitBonuses: true,
         helpText,
         tags: [type, ...(rawAction.tags || [])],
     };
@@ -37,6 +41,7 @@ function movementAction(type, rawAction: Partial<ActionData>, bonuses: Bonuses, 
         type,
         variableObjectType: 'action',
         bonuses,
+        hasImplicitBonuses: true,
         helpText,
         tags: [type, 'movement', ...(rawAction.tags || [])],
     };
@@ -54,6 +59,7 @@ function attackAction(type, rawAction: Partial<ActionData>, bonuses: Bonuses, he
             '+range': ['{weaponRange}'],
             ...bonuses,
         },
+        hasImplicitBonuses: true,
         helpText,
         tags: [type, 'attack', ...(rawAction.tags || [])],
     };
@@ -72,6 +78,7 @@ function spellAction(type, rawAction: Partial<ActionData>, bonuses: Bonuses, hel
             '+recoveryTime': 0.5,
             ...bonuses,
         },
+        hasImplicitBonuses: true,
         helpText,
         tags: [type, 'spell', ...(rawAction.tags || [])],
     };
@@ -99,11 +106,6 @@ export function debuffEffect(rawEffect: Partial<Effect>, bonuses: Bonuses): Effe
         bonuses,
     }
 }
-
-const effectSourceUp: Frame = ['gfx/militaryIcons.png', 17, 23, 16, 16, 0, 0];
-const effectSourceArmor: Frame = ['gfx/militaryIcons.png', 65, 180, 12, 12, 8, 8];
-//const effectSourceSword = ['gfx/militaryIcons.png', 52, 180, 12, 12, 8, 8];
-const effectSourceSword: Frame = ['gfx/militaryIcons.png', 85, 74, 16, 16, 6, 4];
 
 export const skills: {[key: string]: ActionData} = {
     // Movement actions

@@ -344,11 +344,11 @@ export function updateArea(area: Area) {
 }
 export function updateActorDimensions(actor: Actor) {
     const source = actor.source;
-    const scale = (actor.scale || 1);
+    const scale = (actor.stats.scale || 1);
     actor.width = source.actualWidth * scale;
     actor.height = source.actualHeight * scale;
     if (isNaN(actor.width) || isNaN(actor.height)) {
-        console.log(actor.scale);
+        console.log(actor.stats.scale);
         console.log(actor.x);
         console.log(source);
         console.log([actor.width,actor.height]);

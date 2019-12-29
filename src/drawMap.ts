@@ -26,7 +26,7 @@ const bronzeSource = {...checkSource, left: 102, top: 40};
 const silverSource = {...checkSource, left: 85, top: 40};
 const goldSource = {...checkSource, left: 68, top: 40};
 
-export function drawMap() {
+export function drawMap(): void {
     const context = mainContext;
     context.fillStyle = '#fea';
     context.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
@@ -131,7 +131,7 @@ export function drawMap() {
     for (let levelKey in map) {
         const levelData: LevelData = map[levelKey];
         if (!editingMapState.editingMap && !levelData.isGuildArea && !state.visibleLevels[levelKey]) {
-            return;
+            continue;
         }
         if (new Vector(levelData.coords).dotProduct(worldCamera.forward) <= 0) {
             const projectedPoint = worldCamera.projectPoint(levelData.coords);
@@ -225,8 +225,10 @@ export function drawMap() {
             }
             var skill = abilities[levelData.skill];
             // For some reason this was: getAbilityIconSource(skill, shrineSource)
-            if (skill) drawAbilityIcon(context, getAbilityIconSource(skill), levelData.shrine);
-            return true;
+            if (skill) {
+                drawAbilityIcon(context, getAbilityIconSource(skill), levelData.shrine);
+            }
+            continue;
         }
 
         var skill = abilities[levelData.skill];
@@ -283,7 +285,6 @@ export function drawMap() {
             context.drawImage(source.image, source.left, source.top, source.width, source.height,
                               levelData.left - 10, levelData.top + 34, 16, 16);
         }
-        return true;
     }
     const { arrowTargetLeft, arrowTargetTop, clickedMapNode } = editingMapState;
     if (mapState.draggedMap &&

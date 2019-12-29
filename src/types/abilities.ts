@@ -1,7 +1,7 @@
 import { JobIcon } from 'app/content/jobs';
 import { Bonuses } from 'app/types/bonuses';
 import {
-    ActionStats, Actor, Area, BonusSource,
+    ActionStats, Actor, ArrayFrame, Area, BonusSource,
     Character, Color, EffectVariableObject,
     Frame, Rectangle, Target, VariableObject, VariableObjectBase,
 } from 'app/types';
@@ -35,6 +35,7 @@ export interface ActionData {
     key?: string,
     variableObjectType: 'action',
     bonuses: Bonuses,
+    hasImplicitBonuses: true,
     helpText: string,
     icon: Frame,
     tags: string[],
@@ -74,7 +75,7 @@ export interface Effect {
     helpText?: string,
     icon?: Frame,
     tags: string[],
-    icons?: Frame[],
+    icons?: ArrayFrame[],
     drawGround?: (actor: Actor) => void,
 }
 
@@ -92,7 +93,7 @@ export interface ActiveEffect {
     attackStats?: AttackData,
     currentFrame: number,
     done: boolean,
-    draw?: (area: Area) => void,
+    render?: (area: Area) => void,
     drawGround?: (area: Area) => void,
 }
 export interface TimedActorEffect {
@@ -126,7 +127,7 @@ export interface Projectile {
         hitTargets: Actor[],
         stickToTarget: (target: Target) => void,
         update: (area: Area) => void,
-        draw: (area: Area) => void,
+        render: (area: Area) => void,
 }
 
 interface TriggerEffect {

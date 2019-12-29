@@ -373,7 +373,7 @@ function jewelHelpText(jewel: Jewel): string {
     sections.push(balanceComponent);
     sections.push('Quality ' + fixedDigits(jewel.quality, 2));
 
-    //sections.push('Balance ' + [(300 * normalizedComponenets[0]).format(0), (300 * normalizedComponenets[1]).format(0), (300 * normalizedComponenets[2]).format(0)].join('/'));
+    //sections.push('Balance ' + [(300 * normalizedComponenets[0]).toFixed(0), (300 * normalizedComponenets[1]).toFixed(0), (300 * normalizedComponenets[2]).toFixed(0)].join('/'));
     // sections.push('Color ' + jewel.shape.color);
     const state = getState();
     sections.push('');

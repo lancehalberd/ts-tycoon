@@ -95,7 +95,7 @@ export function updateDamageInfo(character: Character, statsPanelElement: HTMLEl
         }
     }
     const dummy = makeMonster('dummy', monsterLevel, [], 0);
-    let hitPercent;
+    let hitPercent: number;
     // tie breaker is given to hitting, so for this calculation use 1 less evasion.
     let evasion = dummy.stats.evasion;
     let accuracy = accuracyMultiplier * attack.stats.accuracy;
@@ -118,7 +118,7 @@ export function updateDamageInfo(character: Character, statsPanelElement: HTMLEl
     const expectedMagicDPS = expectedMagic * hitPercent * attackSpeed;
 
     sections.push('');
-    sections.push('Expected hit rate is ' + hitPercent.percent(1));
+    sections.push('Expected hit rate is ' + percent(hitPercent, 1));
     if (attack.stats.minPhysicalDamage && attack.stats.minMagicDamage) {
         sections.push('Total Expected DPS is ' + abbreviate(expectedPhysicalDPS + expectedMagicDPS, 1) +
             '(' + abbreviate(expectedPhysicalDPS, 1) + ' physical + ' +
@@ -190,9 +190,9 @@ export function updateDamageInfo(character: Character, statsPanelElement: HTMLEl
     evasionElement.parentElement.setAttribute('helptext', hero.stats.evasion + ' Evasion<br/><br/>' + percent(1 - hitPercent, 1) + ' estimated chance to evade attacks.');
 }
 
-export function createAttackStats(attacker: Actor, attack: Action, target: Actor): AttackData {
+export function createAttackStats(attacker: Actor, attack: Action, target: Target): AttackData {
     let isCritical = Math.random() <= attack.stats.critChance;
-    if (attack.stats.firstStrike && target && target.isActor) {
+    if (attack.stats.firstStrike && target && target.targetType === 'actor') {
         isCritical = isCritical || target.health >= target.stats.maxHealth;
     }
     const isSpell = attack.variableObject.tags.spell;
@@ -252,7 +252,7 @@ export function createAttackStats(attacker: Actor, attack: Action, target: Actor
 
 function createSpellImprintedAttackStats(attacker: Actor, attack: Action, spell: Action, target: Actor): AttackData {
     var isCritical = Math.random() <= spell.stats.critChance;
-    if (spell.stats.firstStrike && target && target.isActor) {
+    if (spell.stats.firstStrike && target && target.targetType === 'actor') {
         isCritical = isCritical || target.health >= target.stats.maxHealth;
     }
     var magicDamage = spell.stats.power;
@@ -317,7 +317,7 @@ export function castAttackSpell(attacker: Actor, spell: Action, target: Actor) {
     if (attacker.stats.imprintSpell) attacker.imprintedSpell = spell;
     return attackStats;
 }
-export function performAttackProper(attackStats: AttackData, target: Actor) {
+export function performAttackProper(attackStats: AttackData, target: Target) {
     const attacker = attackStats.source;
     const area = attacker.area;
     if (attackStats.sound) {
@@ -391,13 +391,19 @@ export function performAttackProper(attackStats: AttackData, target: Actor) {
         applyAttackToTarget(attackStats, target);
     }
 }
-export function getAttackY(actorOrLocation: Target) {
+export function getAttackY(target: Target) {
     // This could actually be a location for abilities targeting locations. Just use 0, which is the height of the floor.
-    if (!actorOrLocation.isActor) return 0;
-    const attacker = actorOrLocation as Actor;
+    if (target.targetType !== 'actor')  {
+        return 0;
+    }
     // Y value of projectiles can either be set on the source for the actor, or it will use the set yCenter or half the height.
-    const height = attacker.source.height || 64;
-    return attacker.scale * ifdefor(attacker.source.attackY, height - ifdefor(attacker.source.yCenter, height / 2));
+    const height = target.source.height || 64;
+    const y = target.stats.scale * ifdefor(target.source.attackY, height - ifdefor(target.source.yCenter, height / 2));
+    if (isNaN(y)) {
+        console.log(target, height);
+        debugger;
+    }
+    return y;
 }
 export function applyAttackToTarget(attackStats: AttackData, actorOrLocation: Target = null): boolean {
     const attack = attackStats.attack;
@@ -460,11 +466,11 @@ export function applyAttackToTarget(attackStats: AttackData, actorOrLocation: Ta
             // Meteor calls applyAttackToTarget with a null target so it can explode
             // anywhere. If that has happened, just return once the explosion has
             // been created.
-            if (actorOrLocation.isActor) explosion.hitTargets.push(actorOrLocation as Actor);
+            if (actorOrLocation.targetType === 'actor') explosion.hitTargets.push(actorOrLocation as Actor);
         }
     }
     // All the logic beyond this point does not apply to location targets.
-    if (!actorOrLocation || !actorOrLocation.isActor) {
+    if (!actorOrLocation || actorOrLocation.targetType !== 'actor') {
         makeExplosions();
         return true;
     }
@@ -570,7 +576,7 @@ export function applyAttackToTarget(attackStats: AttackData, actorOrLocation: Ta
         return false;
     }
 
-    if (target.isActor && attack.variableObject.tags['basic']) {
+    if (target.targetType === 'actor' && attack.variableObject.tags['basic']) {
         const attackType = (attacker.equipment.weapon && attacker.equipment.weapon.base.type) || (attacker.character && 'unarmed');
         const hitSound = attackHitSounds[attackType];
         if (hitSound) playSound(hitSound, area);

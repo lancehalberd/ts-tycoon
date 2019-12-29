@@ -76,10 +76,11 @@ export function initializeCraftingGrid() {
                     if (!iconSources[icon]) {
                         const itemDiv:HTMLElement = tagElement('div', 'icon ' + icon);
                         document.body.appendChild(itemDiv);
-                        console.log(itemDiv.style.backgroundImage);
                         let imageFileName;
+                        const computedStyles = getComputedStyle(itemDiv);
                         try {
-                            imageFileName = 'gfx/' + itemDiv.style.backgroundImage.split('/gfx/')[1].split('"')[0].split(')')[0];
+                            const backgroundImage = computedStyles.getPropertyValue('background-image');
+                            imageFileName = 'gfx/' + backgroundImage.split('/gfx/')[1].split('"')[0].split(')')[0];
                         } catch (e) {
                             debugger;
                         }
@@ -88,17 +89,18 @@ export function initializeCraftingGrid() {
                             continue;
                         }
                         const image = images[imageFileName];
-                        const backgroundSizeValue = itemDiv.style.backgroundSize;
+                        const backgroundSizeValue = computedStyles.getPropertyValue('background-size');
                         let scale = 1;
                         if (backgroundSizeValue && backgroundSizeValue != 'initial') {
                             const sizes = backgroundSizeValue.split(' ').map(function (string) { return parseInt(string);});
                             scale = sizes[0] / image.width;
                         }
-                        if (!itemDiv.style.backgroundPosition) {
-                            console.log(itemDiv.style.background);
+                        const backgroundPosition = computedStyles.getPropertyValue('background-position');
+                        if (!backgroundPosition) {
+                            console.log(computedStyles);
                             debugger;
                         }
-                        const offsets = itemDiv.style.backgroundPosition.split(' ').map(string => -parseInt(string));
+                        const offsets = backgroundPosition.split(' ').map(string => -parseInt(string));
                         // console.log([imageFile, offsets.join(',')]);
                         itemDiv.remove();
                         iconSources[icon] = {

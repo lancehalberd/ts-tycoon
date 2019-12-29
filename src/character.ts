@@ -33,7 +33,6 @@ import { smallJewelLoot } from 'app/loot';
 import { centerMapOnLevel } from 'app/map';
 import { findActionByTag, getBasicAttack, updateDamageInfo } from 'app/performAttack';
 import { gain } from 'app/points';
-import { getCanvasPopupTarget } from 'app/popup';
 import { getState } from 'app/state';
 import { getTargetCameraX } from 'app/update';
 import { abbreviate } from 'app/utils/formatters';
@@ -91,7 +90,6 @@ export const coreStatBonusSource: BonusSource = {'bonuses': {
 }};
 
 export function initializeActorForAdventure(actor: Actor) {
-    actor.isActor = true;
     setStat(actor.variableObject, 'bonusMaxHealth', 0);
     setActorHealth(actor, actor.stats.maxHealth);
     actor.maxReflectBarrier = actor.reflectBarrier = 0;
@@ -205,7 +203,6 @@ export function makeAdventurerFromData({
         targetType: 'actor',
         type: 'hero',
         character: null,
-        isActor: true,
         x: 0,
         y: 0,
         z: 0,
@@ -348,6 +345,7 @@ export function removeActions(actor: Actor, source: Ability) {
 export function updateAdventurer(adventurer: Hero) {
     // Clear the character's bonuses and graphics.
     adventurer.variableObject = createVariableObject({variableObjectType: 'actor'});
+    adventurer.stats = adventurer.variableObject.stats as ActorStats;
     adventurer.actions = [];
     adventurer.reactions = [];
     adventurer.onHitEffects = [];
@@ -603,7 +601,10 @@ export function setSelectedCharacter(character: Character) {
     // update the equipment displayed.
     equipmentSlots.forEach(function (type) {
         //detach any existing item
-        query('.js-equipment .js-' + type + ' .js-item').remove();
+        const itemElement = query('.js-equipment .js-' + type + ' .js-item');
+        if (itemElement) {
+            itemElement.remove();
+        }
         const equipment = hero.equipment[type];
         if (equipment) {
             query('.js-equipment .js-' + type).append(equipment.domElement);

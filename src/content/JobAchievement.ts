@@ -43,7 +43,7 @@ export default class JobAchievement {
             {target: 60, bonuses: bonuses[3]},
         ];
     }
-    draw(context, target) {
+    render(context, target) {
         const jobTrophyImage = characterClasses[this.jobKey].achievementImage;
         if (this.level === 0 ) {
             context.save();
@@ -75,7 +75,7 @@ export default class JobAchievement {
         const jobTrophyImage = characterClasses[this.jobKey].achievementImage;
         drawOutlinedImage(context, jobTrophyImage, 'white', 2, {'left': 0, 'top': 0, 'width': 40, 'height': 40}, target);
         //drawSourceWithOutline(context, jobIcons[this.jobKey], color, thickness, target);
-        this.draw(context, target);
+        this.render(context, target);
     }
     helpMethod() {
         if (this.value === 0) return titleDiv('Mysterious Trophy') + bodyDiv('???');

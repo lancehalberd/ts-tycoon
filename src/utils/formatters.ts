@@ -4,6 +4,25 @@ export function fixedDigits(number: number, digits: number): number {
     return parseFloat(number.toFixed(digits));
 }
 
+export function formatValue(value: any, digits: number): string {
+    if (typeof value === 'boolean') {
+        return value ? 'True' : 'False';
+    }
+    if (typeof value === 'string') {
+        const float = parseFloat(value);
+        if ('' + float == value) {
+            return float.toFixed(digits);
+        }
+        return value;
+    }
+    if (typeof value === 'number') {
+        return value.toFixed(digits);
+    }
+    console.log('invalid value to format: ' + value);
+    debugger;
+    throw new Error('invalid value to format: ' + value);
+}
+
 // Wrapper for toFixed that strips trailing '0's and '.'s.
 // Foundt at http://stackoverflow.com/questions/7312468/javascript-round-to-a-number-of-decimal-places-but-strip-extra-zeros
 export function abbreviate(number, digits: number = null) {
@@ -37,8 +56,8 @@ export function percent(number: any, digits: number): string {
     // Replace any numbers with n*100 since this is a percent.
     /*return this.replace(/[+-]?\d+(\.\d+)?/, function (number) {
         console.log("found number " + number);
-        console.log("changed to: " + (parseFloat(number) * 100).format(digits));
-        return (parseFloat(number) * 100).format(digits);
+        console.log("changed to: " + (parseFloat(number) * 100).toFixed(digits));
+        return (parseFloat(number) * 100).toFixed(digits);
     }) + '%';*/
 }
 

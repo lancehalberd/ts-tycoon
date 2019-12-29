@@ -211,7 +211,7 @@ export function drawSourceWithOutline(context, source, color, thickness, target)
             drawSourceAsSolidTint(context, source, color, smallTarget);
         }
     }
-    source.draw(context, target);
+    source.render(context, target);
 }
 function drawSourceAsSolidTint(context, source, tint, target) {
     // First make a solid color in the shape of the image to tint.
@@ -219,7 +219,7 @@ function drawSourceAsSolidTint(context, source, tint, target) {
     globalTintContext.fillStyle = tint;
     globalTintContext.clearRect(0, 0, source.width, source.height);
     var tintRectangle = {'left': 0, 'top': 0, 'width': source.width, 'height': source.height};
-    source.draw(globalTintContext, tintRectangle);
+    source.render(globalTintContext, tintRectangle);
     globalTintContext.globalCompositeOperation = "source-in";
     globalTintContext.fillRect(0, 0, source.width, source.height);
     drawImage(context, globalTintCanvas, tintRectangle, target);
@@ -262,8 +262,8 @@ export function drawAbilityIcon(context, icon, target) {
     var height = Math.min(icon.height, target.height);
     var vPadding = (target.height - height) / 2;
     var drawTarget = {'left': target.left + Math.ceil(hPadding), 'top': target.top + Math.ceil(vPadding), width, height};
-    if (icon.draw) {
-        icon.draw(context, drawTarget);
+    if (icon.render) {
+        icon.render(context, drawTarget);
         return;
     }
     // Default icon style is: {'image': images[icon], 'left': 0, 'top': 0, 'width': 34, 'height': 34};

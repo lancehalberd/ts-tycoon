@@ -56,13 +56,14 @@ export function update() {
         updateAreaCamera(state.guildAreas[guildAreaKey], state.selectedCharacter.hero);
         updateArea(state.guildAreas[guildAreaKey]);
     }
-    if (isMouseDown() && state.selectedCharacter.context === 'adventure' || state.selectedCharacter.context === 'guild') {
+    const context = state.selectedCharacter.context;
+    if (isMouseDown() && (context === 'adventure' || context === 'guild')) {
         handleAdventureMouseIsDown(x, y);
     }
-    if (state.selectedCharacter.context === 'map') {
+    if (context === 'map') {
         updateMap();
     }
-    if (state.selectedCharacter.context === 'item') {
+    if (context === 'item') {
         updateCraftingCanvas();
     }
     if (state.selectedCharacter.hero.area) {

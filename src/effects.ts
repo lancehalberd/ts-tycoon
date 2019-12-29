@@ -137,7 +137,7 @@ export function animationEffect(
             this.height = target.height * scale[1];
             if (!loop && this.currentFrame >= animation.frames.length) this.done = true;
         },
-        draw(area: Area) {
+        render(area: Area) {
             if (this.done) return
             mainContext.save();
             // mainContext.globalAlpha = alpha;
@@ -207,7 +207,7 @@ export function explosionEffect(attackStats: AttackData, x: number, y: number, z
                 self.hitTargets.push(target);
             }
         },
-        draw(area: Area) {
+        render(area: Area) {
             if (self.done) return
             let currentRadius = Math.round(radius * Math.min(1, self.currentFrame / frames));
             mainContext.save();
@@ -302,7 +302,7 @@ export function novaEffect(attackStats: AttackData, x: number, y: number, z: num
                 blasts.push(blast);*/
             }
         },
-        //draw(area: Area) {
+        //render(area: Area) {
             // Only the ground circle and the blasts are drawn for this effect.
         //},
         drawGround(area: Area) {
@@ -374,7 +374,7 @@ export function fieldEffect(attackStats: AttackData, followTarget: Actor) {
                 applyAttackToTarget(attackStats, Random.element(livingTargetsInRange));
             }
         },
-        draw(area: Area) {
+        render(area: Area) {
             if (self.done) return
             var currentRadius = Math.round(radius * Math.min(1, self.currentFrame / frames));
             mainContext.globalAlpha = alpha;
@@ -414,7 +414,7 @@ function afterImage({attackStats, x, y, z, vx, vy, vz, color, size, t}: Projecti
             alpha -= 1 / ((attackStats.attack.base.afterImages || 3) + 1);
             if (alpha <= 0) this.done = true;
         },
-        draw(area: Area) {
+        render(area: Area) {
             if (this.done || alpha >= 1) return;
             mainContext.save();
             mainContext.globalAlpha = alpha;
@@ -580,7 +580,7 @@ export function projectile(
                 }
             }
         },
-        draw(area: Area) {
+        render(area: Area) {
             if (self.done || self.delay > 0) return
             mainContext.save();
             mainContext.translate(self.x - area.cameraX, GROUND_Y - self.y - self.z / 2);
@@ -607,7 +607,7 @@ export function projectile(
 }
 
 export function getProjectileVelocity(attackStats: AttackData, x: number, y: number, z: number, target: Target) {
-    const scale = target.scale || 1;
+    const scale = (target.targetType === 'actor' && target.stats.scale) || 1;
     const ty = (target.y || 0) + (target.height || 128) * 3 / 4;
     const v = [target.x - x, ty - y, target.z - z];
     let distance = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);

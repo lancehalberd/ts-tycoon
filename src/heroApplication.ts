@@ -89,7 +89,7 @@ export function increaseAgeOfApplications() {
 }
 
 export function updateHireButtons() {
-    const { character } = displayedApplication;
+    const { character } = (displayedApplication || {});
     if (!character) {
         return;
     }

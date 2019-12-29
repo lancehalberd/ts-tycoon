@@ -29,10 +29,8 @@ const trophyPopups: {
 const trophyPopupWidth = 160;
 const trophyPopupHeight = 80;
 
-let altarTrophies: {[key: string]: JobAchievement};
-
-export function addAltarTrophies() {
-    altarTrophies = {
+export function getDefaultAltarTrophies(): {[key: string]: JobAchievement} {
+    return {
         'level-juggler': new JobAchievement('juggler',
             [{'+accuracy': 1}, {'%attackSpeed': 0.1}, {'+attackSpeed': 0.1}, {'*attackSpeed': 1.1}]),
         'level-ranger': new JobAchievement('ranger',
@@ -149,11 +147,12 @@ export function drawTrophySelection() {
     const checkSource = {'left': 68, 'top': 90, 'width': 16, 'height': 16};
     let left = 10;
     let top = 10;
+    const { altarTrophies } = getState();
     for (let trophyKey in altarTrophies) {
         const trophy = altarTrophies[trophyKey];
         trophy.left = trophySelectionRectangle.left + left;
         trophy.top = trophySelectionRectangle.top + top;
-        trophy.draw(mainContext, trophy);
+        trophy.render(mainContext, trophy);
         if (trophy.areaKey) {
             const target = {'left': trophy.left + trophy.width - 20, 'top': trophy.top + trophy.height - 20, 'width': 16, 'height': 16};
             mainContext.fillStyle = 'white';
@@ -173,6 +172,7 @@ export function drawTrophySelection() {
     }
 }
 export function getTrophyPopupTarget(x: number, y: number) {
+    const { altarTrophies } = getState();
     for (let trophyKey in altarTrophies) {
         const trophy = altarTrophies[trophyKey];
         if (isPointInRectObject(x, y, trophy)) return trophy;
@@ -181,6 +181,7 @@ export function getTrophyPopupTarget(x: number, y: number) {
 }
 
 export function updateTrophy(trophyKey: string, value: number) {
+    const { altarTrophies } = getState();
     const trophy = altarTrophies[trophyKey];
     trophy.value = Math.max(trophy.value, value);
     let i = 0;
@@ -242,6 +243,7 @@ export function getIsAltarTrophyAvailable(): boolean {
     return isAltarTrophyAvailable;
 }
 export function checkIfAltarTrophyIsAvailable() {
+    const { altarTrophies } = getState();
     isAltarTrophyAvailable = false;
     for (let trophyKey in altarTrophies) {
         const trophy = altarTrophies[trophyKey];
@@ -304,7 +306,7 @@ export function drawTrophyPopups() {
         mainContext.restore();
         mainContext.strokeStyle = 'white';
         mainContext.strokeRect(trophyPopup.left, trophyPopup.top, trophyPopup.width, trophyPopup.height);
-        trophyPopup.trophy.draw(mainContext, {'left': trophyPopup.left + 5, 'top': trophyPopup.top + (trophyPopupHeight - TROPHY_SIZE) / 2, 'width': TROPHY_SIZE, 'height': TROPHY_SIZE});
+        trophyPopup.trophy.render(mainContext, {'left': trophyPopup.left + 5, 'top': trophyPopup.top + (trophyPopupHeight - TROPHY_SIZE) / 2, 'width': TROPHY_SIZE, 'height': TROPHY_SIZE});
         mainContext.textAlign = 'left'
         mainContext.textBaseline = 'middle';
         mainContext.fillText('Unlocked', trophyPopup.left + 5 + TROPHY_SIZE + 5, trophyPopup.top + 20);

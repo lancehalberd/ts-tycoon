@@ -1,18 +1,20 @@
-import { abbreviate } from 'app/utils/formatters';
+import { abbreviate, formatValue } from 'app/utils/formatters';
 import { tag } from 'app/dom';
 import { bonusSourceHelpText } from 'app/helpText';
 
-export function evaluateValue(coreObject, value, localObject) {
+import { VariableObject } from 'app/types';
+
+export function evaluateValue(coreObject: VariableObject, value: any, localObject: VariableObject) {
     if (typeof value === 'number') {
         return value;
     }
     if (typeof value === 'string' && value.charAt(0) === '{') {
         if (value.indexOf('this.') >= 0) {
-            return localObject[value.substring(6, value.length - 1)] || 0;
+            return localObject.stats[value.substring(6, value.length - 1)] || 0;
         }
         var statKey = value.substring(1, value.length - 1);
         // console.log(statKey + ':' + coreObject[statKey]);
-        return coreObject[statKey] || 0;
+        return coreObject.stats[statKey] || 0;
     }
     // If this is an object, just return it for further processing.
     if (value.constructor !== Array) {
@@ -50,7 +52,7 @@ export function evaluateValue(coreObject, value, localObject) {
     }
     return value;
 }
-export function evaluateForDisplay(value, coreObject, localObject) {
+export function evaluateForDisplay(value, coreObject, localObject): string {
     if (typeof value === 'undefined') {
         throw new Error('value was undefined');
     }
@@ -64,7 +66,7 @@ export function evaluateForDisplay(value, coreObject, localObject) {
         return tag('span', 'formulaStat', value.substring(1, value.length - 1));
     }
     if (typeof value === 'string' || typeof value === 'boolean') {
-        return value;
+        return '' + value;
     }
     if (value.constructor !== Array) {
         if (value.bonuses) {
@@ -89,7 +91,7 @@ export function evaluateForDisplay(value, coreObject, localObject) {
         value = '(' + value + ' '+ mapOperand(formula.shift()) + ' ' + evaluateForDisplay(formula.shift(), null, localObject) +')';
     }
     if (coreObject) {
-        value += ' ' + tag('span', 'formulaStat', '[=' +  evaluateValue(coreObject, fullFormula, localObject).format(2) +  ']');
+        value += ' ' + tag('span', 'formulaStat', '[=' +  formatValue(evaluateValue(coreObject, fullFormula, localObject), 2) +  ']');
     }
     return value;
 }

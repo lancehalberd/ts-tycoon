@@ -1,8 +1,8 @@
 type Coords = [number, number];
 
-let mousePosition:Coords = [400, 400];
-let mouseIsDown:boolean = false;
-let rightMouseDown:boolean = false;
+let mousePosition: Coords = [400, 400];
+let mouseIsDown: boolean = false;
+let rightMouseDown: boolean = false;
 
 export function isMouseDown(): boolean {
     return mouseIsDown;
@@ -24,7 +24,7 @@ export function getMousePosition(container:HTMLElement = null): Coords {
 
 function onMouseMove(event) {
     mousePosition = [event.pageX, event.pageY];
-    console.log(mousePosition);
+    // console.log(mousePosition);
 }
 function onMouseDown(event) {
     if (event.which == 1) mouseIsDown = true;
@@ -36,15 +36,15 @@ function onMouseUp(event) {
 }
 
 export function bindMouseListeners() {
-    document.onmousemove = onMouseMove;
-    document.onmousedown = onMouseDown;
-    document.onmouseup = onMouseUp;
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('mouseup', onMouseUp);
 }
 
 export function unbindMouseListeners() {
-    document.onmousemove = null;
-    document.onmousedown = null;
-    document.onmouseup = null;
+    document.removeEventListener('mousemove', onMouseMove);
+    document.removeEventListener('mousedown', onMouseDown);
+    document.removeEventListener('mouseup', onMouseUp);
     // Prevent mouse from being "stuck down"
     mouseIsDown = false;
 }

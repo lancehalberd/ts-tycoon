@@ -16,12 +16,17 @@ export interface BonusesRange {
     [key: string]: true | string | number | [number, number] | [number, number, number],
 }
 
+export type VariableObjectType = 'actor' | 'action' | 'effect' | 'guild' | 'trigger';
+
 export interface BonusSource extends Partial<Ability> {
     // We often include things that could have bonuses but don't.
     // For those we just ignore them.
     // bonuses?: Bonuses,
     // This will get cached on the bonus source.
     parsedBonuses?: Bonus[],
+    hasImplicitBonuses?: boolean,
+    variableObjectType?: VariableObjectType,
+    restrictions?: string[],
 }
 
 export interface Bonus {
@@ -33,7 +38,7 @@ export interface Bonus {
     value: BonusValue,
 }
 export interface VariableObjectBase {
-    variableObjectType: 'actor' | 'action' | 'effect' | 'guild' | 'trigger',
+    variableObjectType: VariableObjectType,
     tags?: string[],
     bonuses?: Bonuses,
     actor?: Actor,
@@ -211,6 +216,7 @@ export interface ActionStats {
     action?: string, // Key for a follow up action for leapAndAct
     areaCoefficient?: number,
     hitsPerSecond?: number, // Used by the storm ability.
+    speedBonus?: number, // speed multiplier when charging.
 }
 
 export interface GuildStats {

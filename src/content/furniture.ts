@@ -4,6 +4,7 @@ import { recomputeAllCharacterDirtyStats } from 'app/character';
 import { getIsAltarTrophyAvailable, setChoosingTrophyAltar, trophySelectionRectangle } from 'app/content/achievements';
 import { activateShrine } from 'app/content/levels';
 import { map } from 'app/content/mapData';
+import { getUpgradeRectangle, setUpgradingObject } from 'app/content/upgradeButton';
 import { setContext } from 'app/context';
 import { mainCanvas, mainContext, mouseContainer, titleDiv } from 'app/dom';
 import { bonusSourceHelpText } from 'app/helpText';
@@ -14,12 +15,12 @@ import {
     drawOutlinedImage,
     drawRectangleBackground, drawSourceWithOutline,
     drawTintedImage,
-    drawTitleRectangle, requireImage } from 'app/images';
+    drawTitleRectangle, requireImage
+} from 'app/images';
 import { attemptToApplyCost, canAffordCost, costHelpText, hidePointsPreview, previewCost } from 'app/points';
 import { getCanvasPopupTarget, removePopup } from 'app/popup';
 import { saveGame } from 'app/saveGame';
 import { getState } from 'app/state';
-import { toolTipColor } from 'app/utils/colors';
 import { fillRectangle, isPointInRectObject, rectangle, shrinkRectangle } from 'app/utils/index';
 import { getMousePosition } from 'app/utils/mouse';
 
@@ -28,6 +29,7 @@ import { Actor, Area, BonusSource, Exit, FixedObject, FixedObjectData, GuildArea
 const guildImage = requireImage('gfx/guildhall.png');
 export const allApplications: FixedObject[] = [];
 export const allBeds: FixedObject[] = [];
+
 /*
  Fixed object properties are a little different than the properties used for actors at the moment.
  I'm not sure which is better. Actors support defining a center point to rotate around, which is not
@@ -79,7 +81,7 @@ mouseContainer.addEventListener('mousedown', function (event) {
     const [x, y] = getMousePosition(mainCanvas);
     if (!target.closest('.js-heroApplication')) hideHeroApplication();
     if (!isPointInRectObject(x, y, trophySelectionRectangle)) setChoosingTrophyAltar(null);
-    if (!isPointInRectObject(x, y, upgradeRectangle)) upgradingObject = null;
+    if (!isPointInRectObject(x, y, getUpgradeRectangle())) setUpgradingObject(null);
 });
 
 const coinStashTiers = [
@@ -101,82 +103,6 @@ const animaOrbTiers = [
     {'name': 'Perfected Anima Orb', 'bonuses': {'+maxAnima': 500e6}, 'requires': 'magicWorkshop', 'source': objectSource(guildImage, [270, 150], [30, 30], {'yOffset': -6}), 'scale': 2},
 ];
 
-export const upgradeButton = {
-    isVisible() {
-        return !!upgradingObject;
-    },
-    draw() {
-        const currentTier = upgradingObject.getCurrentTier();
-        const canUpgrade = canAffordCost(currentTier.upgradeCost);
-        mainContext.textAlign = 'center'
-        mainContext.textBaseline = 'middle';
-        setFontSize(mainContext, 18);
-        mainContext.strokeStyle = canUpgrade ? 'white' : '#AAA';
-        mainContext.lineWidth = 2;
-        mainContext.fillStyle = canUpgrade ? '#6C6' : '#CCC';
-        const padding = 7;
-        const metrics = mainContext.measureText('Upgrade to...');
-        this.width = metrics.width + 2 * padding;
-        this.height = 20 + 2 * padding;
-        this.left = upgradeRectangle.left + (upgradeRectangle.width - this.width) / 2;
-        this.top = upgradeRectangle.top + (upgradeRectangle.height - this.height) / 2;
-        drawTitleRectangle(mainContext, this)
-        mainContext.fillStyle = canUpgrade ? 'white' : '#AAA';
-        mainContext.fillText('Upgrade to...', this.left + this.width / 2, this.top + this.height / 2);
-    },
-    helpMethod() {
-        const currentTier = upgradingObject.getCurrentTier();
-        previewCost(currentTier.upgradeCost);
-        return null;
-    },
-    onMouseOut() {
-        hidePointsPreview();
-    },
-    onClick() {
-        const currentTier = upgradingObject.getCurrentTier();
-        if (!attemptToApplyCost(currentTier.upgradeCost)) return;
-        removeFurnitureBonuses(upgradingObject, false);
-        upgradingObject.level++;
-        addFurnitureBonuses(upgradingObject, true);
-        const state = getState();
-        if (!state.guildAreas[upgradingObject.area.key]) {
-            state.guildAreas[upgradingObject.area.key] = upgradingObject.area;
-        }
-        saveGame();
-        upgradingObject = null;
-    }
-};
-
-let upgradingObject = null;
-export function setUpgradingObject(object) {
-    upgradingObject = object;
-}
-export function getUpgradingObject() {
-    return upgradingObject;
-}
-const upgradeRectangle = rectangle(250, 150, 300, 180);
-export function drawUpgradeBox() {
-    drawRectangleBackground(mainContext, upgradeRectangle);
-    const currentTier = upgradingObject.getCurrentTier();
-    const nextTier = upgradingObject.getNextTier();
-    drawImage(mainContext, currentTier.source.image, currentTier.source, {'left': upgradeRectangle.left + 10, 'top': upgradeRectangle.top + 6, 'width': 60, 'height': 60});
-    drawImage(mainContext, nextTier.source.image, nextTier.source, {'left': upgradeRectangle.left + 10, 'top': upgradeRectangle.top + 105, 'width': 60, 'height': 60});
-    mainContext.textAlign = 'left'
-    mainContext.textBaseline = 'middle';
-    mainContext.fillStyle = 'white';
-    setFontSize(mainContext, 18);
-    mainContext.fillText(currentTier.name, upgradeRectangle.left + 80, upgradeRectangle.top + 25);
-    mainContext.fillText(nextTier.name, upgradeRectangle.left + 80, upgradeRectangle.top + 125);
-    mainContext.fillStyle = toolTipColor;
-    const state = getState();
-    mainContext.fillText(bonusSourceHelpText(currentTier, state.selectedCharacter.adventurer).replace(/<br ?\/?>/g, "\n"), upgradeRectangle.left + 80, upgradeRectangle.top + 45);
-    mainContext.fillText(bonusSourceHelpText(nextTier, state.selectedCharacter.adventurer).replace(/<br ?\/?>/g, "\n"), upgradeRectangle.left + 80, upgradeRectangle.top + 145);
-}
-
-function setFontSize(context, size) {
-    context.font = size +"px 'Cormorant SC', Georgia, serif";
-}
-
 const areaObjects: {[key: string]: FixedObjectData} = {
     'mapTable': {
         'name': 'World Map',
@@ -191,7 +117,7 @@ const areaObjects: {[key: string]: FixedObjectData} = {
     'animaOrb': {
         action() {
             removePopup();
-            upgradingObject = this;
+            setUpgradingObject(this);
         },
         'level': 1, 'source': animaOrbTiers[0].source,
         getActiveBonusSources() {
@@ -204,7 +130,7 @@ const areaObjects: {[key: string]: FixedObjectData} = {
             return animaOrbTiers[this.level];
         },
         'width': 60, 'height': 60, 'depth': 60,
-        draw(area) {
+        render(area) {
             const animaOrbTier = animaOrbTiers[this.level - 1];
             this.scale = animaOrbTier.scale || 1;
             this.source = animaOrbTier.source;
@@ -229,7 +155,7 @@ const areaObjects: {[key: string]: FixedObjectData} = {
     'coinStash': {
         'action':  function () {
             removePopup();
-            upgradingObject = this;
+            setUpgradingObject(this);
         },
         'level': 1, 'source': coinStashTiers[0].source,
         getActiveBonusSources() {
@@ -242,7 +168,7 @@ const areaObjects: {[key: string]: FixedObjectData} = {
             return coinStashTiers[this.level];
         },
         'width': 60, 'height': 60, 'depth': 60,
-        draw(area) {
+        render(area) {
             const coinStashTier = coinStashTiers[this.level - 1];
             this.scale = coinStashTier.scale || 1;
             this.source = coinStashTier.source;
@@ -281,13 +207,13 @@ const areaObjects: {[key: string]: FixedObjectData} = {
             return {'left': this.target.left + (this.target.width - this.trophy.width) / 2,
                     'top': this.target.top - this.trophy.height + 10, 'width': this.trophy.width, 'height': this.trophy.height};
         },
-        draw(area) {
+        render(area) {
             // Make this altar flash if it is open and there is an unused trophy available to place on it.
             this.flashColor = (!this.trophy && getIsAltarTrophyAvailable()) ? 'white' : null;
             drawFixedObject.call(this, area);
             if (this.trophy) {
                 if (getCanvasPopupTarget() === this) drawSourceWithOutline(mainContext, this.trophy, '#fff', 2, this.getTrophyRectangle());
-                else this.trophy.draw(mainContext, this.getTrophyRectangle());
+                else this.trophy.render(mainContext, this.getTrophyRectangle());
             }
         },
         isOver(x, y) {
@@ -314,7 +240,7 @@ const areaObjects: {[key: string]: FixedObjectData} = {
             const application = this as FixedObject;
             showHeroApplication(application);
         },
-        draw(area) {
+        render(area) {
             const application = this as FixedObject;
             application.target.left = application.x - application.width / 2 - area.cameraX;
             application.target.top = GROUND_Y - application.y - application.height - application.z / 2;
@@ -409,7 +335,7 @@ export function fixedObject(baseObjectKey: string, coords: number[], properties:
         width: imageSource.actualWidth || imageSource.width,
         height: imageSource.actualHeight || imageSource.height,
         isEnabled: isGuildObjectEnabled,
-        draw: drawFixedObject,
+        render: drawFixedObject,
         helpMethod: fixedObjectHelpText,
         ...base,
         key: baseObjectKey,
@@ -441,7 +367,7 @@ function fixedObjectHelpText(object: FixedObject) {
     return object.base.name && titleDiv(object.base.name);
 }
 
-function addFurnitureBonuses(furniture: FixedObject, recompute = false) {
+export function addFurnitureBonuses(furniture: FixedObject, recompute = false) {
     if (!furniture.getActiveBonusSources) return;
     const state = getState();
     const bonusSources = furniture.getActiveBonusSources();
@@ -460,7 +386,7 @@ function addFurnitureBonuses(furniture: FixedObject, recompute = false) {
     }
     if (recompute) recomputeAllCharacterDirtyStats();
 }
-function removeFurnitureBonuses(furniture: FixedObject, recompute = false) {
+export function removeFurnitureBonuses(furniture: FixedObject, recompute = false) {
     if (!furniture.getActiveBonusSources) return;
     const state = getState();
     const bonusSources = furniture.getActiveBonusSources();
