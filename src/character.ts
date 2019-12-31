@@ -615,7 +615,7 @@ export function setSelectedCharacter(character: Character) {
     refreshStatsPanel(character, query('.js-characterColumn .js-stats'));
     updateOffhandDisplay();
     // update controls:
-    character.boardCanvas = jewelsCanvas;
+    // character.boardCanvas = jewelsCanvas;
     const jewelBonusContainer = query('.js-jewelBonuses .js-content');
     jewelBonusContainer.innerText = bonusSourceHelpText(character.jewelBonuses, character.hero);
     centerMapOnLevel(map[character.currentLevelKey]);

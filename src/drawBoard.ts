@@ -79,6 +79,7 @@ export function drawBoardJewelsProper(context: CanvasRenderingContext2D, lightSo
 }
 
 export function drawBoardBackground(context: CanvasRenderingContext2D, board: Board) {
+    console.log('draw board background');
     context.lineWidth = 10;
     context.lineCap = 'round';
     context.lineJoin = 'round';

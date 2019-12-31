@@ -95,11 +95,12 @@ function redrawInventoryJewel(jewel: Jewel) {
 export function redrawInventoryJewels() {
     let jewelsDrawn = 0;
     let jewelsTotal = 0;
-    for (const element of jewelInventoryContainer.getElementsByClassName('.js-jewel') as HTMLCollectionOf<HTMLElement>) {
+    for (const element of jewelInventoryContainer.getElementsByClassName('js-jewel') as HTMLCollectionOf<HTMLElement>) {
         jewelsTotal++;
         if (element.style.display != 'none' && collision(jewelInventoryContainer, element)) {
+            const jewel = getElementJewel(element);
             jewelsDrawn++;
-            redrawInventoryJewel(getElementJewel(element));
+            redrawInventoryJewel(jewel);
         }
     }
     // Crafting slots are always visible.
@@ -259,14 +260,14 @@ function updateJewelUnderMouse(activeJewelsCanvas: HTMLCanvasElement) {
             const relativePosition = getMousePosition(jewel.canvas);
             if (isPointInPoints(relativePosition, points)) {
                 jewelInventoryState.overJewel = jewel;
-                return false;
+                break;
             }
             for (let j = 0; j < points.length; j++) {
                 if (distanceSquared(points[j], relativePosition) < 25) {
                     jewelInventoryState.overJewel = jewel;
                     jewelInventoryState.overVertex = [...points[j]] as Point;
                     checkToShowJewelToolTip();
-                    return false;
+                    break;
                 }
             }
         }
@@ -417,7 +418,7 @@ function checkIfStillOverJewel() {
     if (!jewelInventoryState.overJewel) return;
     let relativePosition;
     if (jewelInventoryState.overJewel.character) {
-        relativePosition = getMousePosition(jewelInventoryState.overJewel.character.boardCanvas);
+        relativePosition = getMousePosition(jewelsCanvas);
     } else {
         relativePosition = getMousePosition(jewelInventoryState.overJewel.canvas);
     }
@@ -432,9 +433,9 @@ function checkIfStillOverJewel() {
     }
     jewelInventoryState.overJewel = null;
 }
-// TODO: this likely does not work.
-handleChildEvent('mouseout', document.body, '.js-jewel', function (jewelElement) {
-    console.log(' leave jewel element ');
+// I'm a bit surprised that this works since I don't think mouseout is triggered on body
+// when leaving the jewel elements...
+handleChildEvent('mouseout', document.body, '.js-jewel', function (jewelElement: HTMLElement) {
     redrawInventoryJewel(getElementJewel(jewelElement));
 });
 
