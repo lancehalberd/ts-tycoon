@@ -19,7 +19,7 @@ import { getThetaDistance, rectangle, removeElementFromArray } from 'app/utils/i
 import { centerShapesInRectangle, isPointInPoints } from 'app/utils/polygon';
 import Random from 'app/utils/Random';
 import {
-    Actor, Area, Board, BoardData, BonusSource, Character, JewelComponents,
+    Actor, Area, Board, BoardData, BonusSource, Character, Hero, JewelComponents,
     Level, LevelData, LevelDifficulty, LevelObject, Range, ShapeData, ShapeType,
 } from 'app/types';
 
@@ -266,11 +266,11 @@ var drawLetter = (context, letter, x, y) => {
     context.fillText(letter, x, y + 7);
 };
 
-export function activateShrine(actor: Actor) {
-    const character = actor.character;
+export function activateShrine(hero: Hero) {
+    const character = hero.character;
     // Don't activate the shrine a second time.
     if (character.isStuckAtShrine) return;
-    const area = actor.area;
+    const area = hero.area;
     const level: LevelData = map[character.currentLevelKey];
     if (character.adventurer.level >= MAX_LEVEL) {
         messageCharacter(character, character.adventurer.name + ' is already max level');
@@ -341,6 +341,7 @@ export function finishShrine(character: Character) {
 
 function objectText(text): LevelObject {
     return {
+        targetType: 'object',
         x: 0,
         y: 0,
         z: 0,
@@ -362,6 +363,7 @@ function objectText(text): LevelObject {
 
 function adventureBoardPreview(boardPreview: Board, character: Character): LevelObject & any {
     return {
+        targetType: 'object',
         x: 0,
         y: 0,
         z: 0,

@@ -11,10 +11,10 @@ const areaMenuElement = query('.js-areaMenu');
 const easyDifficulty = query('.js-areaMenu .js-easyDifficulty');
 const normalDifficulty = query('.js-areaMenu .js-normalDifficulty');
 const hardDifficulty = query('.js-areaMenu .js-hardDifficulty');
-const challengeDifficulty = query('.js-areaMenu .js-hardDifficulty');
+const challengeDifficulty = query('.js-areaMenu .js-challengeDifficulty');
 // Currently this is unused.
 challengeDifficulty.style.display = 'none';
-const endlessDifficulty = query('.js-areaMenu .js-hardDifficulty');
+const endlessDifficulty = query('.js-areaMenu .js-endlessDifficulty');
 
 export function hideAreaMenu() {
     areaMenuElement.style.display = 'none';

@@ -213,7 +213,7 @@ export function createAttackStats(attacker: Actor, attack: Action, target: Targe
     let animation = attack.base.animation;
     let sound = attack.base.sound;
     if (!sound && !isSpell) {
-        const attackType = (attacker.equipment.weapon && attacker.equipment.weapon.base.type) || (attacker.character && 'unarmed');
+        const attackType = (attacker.equipment.weapon && attacker.equipment.weapon.base.type) || (attacker.type === 'hero' && 'unarmed');
         sound = attackSounds[attackType];
     }
     if (!animation && attacker.equipment.weapon) {
@@ -577,7 +577,7 @@ export function applyAttackToTarget(attackStats: AttackData, actorOrLocation: Ta
     }
 
     if (target.targetType === 'actor' && attack.variableObject.tags['basic']) {
-        const attackType = (attacker.equipment.weapon && attacker.equipment.weapon.base.type) || (attacker.character && 'unarmed');
+        const attackType = (attacker.equipment.weapon && attacker.equipment.weapon.base.type) || (attacker.type === 'hero' && 'unarmed');
         const hitSound = attackHitSounds[attackType];
         if (hitSound) playSound(hitSound, area);
     }

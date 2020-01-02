@@ -2,27 +2,31 @@ import { classBoards, squareBoard } from 'app/content/boards';
 import { itemsByKey } from 'app/content/equipment/index';
 import { drawImage, requireImage } from 'app/images';
 import { smallJewelLoot, jewelLoot } from 'app/loot';
-import { Job, JobKey } from 'app/types';
+import { drawFrame } from 'app/utils/animations';
+
+import { Job, JobKey, Renderable, ShortRectangle } from 'app/types';
 
 export const characterClasses:Partial<{[key in JobKey]: Job}> = {};
 window['characterClasses'] = characterClasses;
 
 const jobIconImage = requireImage('gfx/jobIcons.png');
-export class JobIcon {
-    left: number;
-    top: number;
-    width: number;
-    height: number;
+export class JobIcon extends Renderable {
+    image: HTMLImageElement = jobIconImage;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
 
     constructor(column: number, row: number) {
-        this.left = column * 41;
-        this.top = row * 41;
-        this.width = 40;
-        this.height = 40;
+        super();
+        this.x = column * 41;
+        this.y = row * 41;
+        this.w = 40;
+        this.h = 40;
     }
 
-    render(context, target) {
-        drawImage(context, jobIconImage, this, target);
+    render(context: CanvasRenderingContext2D, target: ShortRectangle) {
+        drawFrame(context, this, target);
     }
 }
 

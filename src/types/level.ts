@@ -1,5 +1,5 @@
 import { backgrounds } from 'app/content/backgrounds';
-import { ActiveEffect, Actor, Exit, FixedObject, FullRectangle } from 'app/types';
+import { ActiveEffect, Actor, Exit, FixedObject, FullRectangle, ShortRectangle } from 'app/types';
 
 // Things the exist in areas need at least these spatial properties.
 export interface AreaEntity {
@@ -15,7 +15,7 @@ export type Target = LocationTarget | Actor;
 
 export type LevelDifficulty = 'easy' | 'normal' | 'hard' | 'endless';
 
-export interface Shrine extends FullRectangle {
+export interface Shrine extends ShortRectangle {
     targetType: 'shrine',
     level: LevelData,
     helpMethod?: Function,
@@ -36,8 +36,8 @@ export interface LevelData {
     events: string[][],
     isGuildArea?: boolean,
     shrine?: Shrine,
-    left?: number, top?: number,
-    width?: number, height?: number,
+    x?: number, y?: number,
+    w?: number, h?: number,
     helpMethod?: Function,
     // Only used during testing currently.
     noTreasure?: boolean,
@@ -55,6 +55,7 @@ export interface Level {
     completed?: boolean,
 }
 export type LevelObject = {
+    targetType: 'object',
     x: number,
     y: number,
     z: number,
@@ -62,7 +63,10 @@ export type LevelObject = {
     type: 'text' | 'button',
     solid?: boolean,
     isOver?: (x: number, y: number) => boolean,
+    // Action performed when clicked on
     onClick?: Function,
+    // Action performed when an actor interacts with the object.
+    action?: Function,
     render?: Function
     update?: Function,
     helpMethod?: Function,

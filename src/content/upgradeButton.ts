@@ -22,6 +22,7 @@ export function getUpgradeRectangle() {
 }
 
 export const upgradeButton = {
+    left: 0, top: 0, width: 0, height: 0,
     isVisible() {
         return !!getUpgradingObject();
     },

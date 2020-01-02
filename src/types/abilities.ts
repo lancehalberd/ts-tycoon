@@ -3,7 +3,8 @@ import { Bonuses } from 'app/types/bonuses';
 import {
     ActionStats, Actor, ArrayFrame, Area, BonusSource,
     Character, Color, EffectVariableObject,
-    Frame, Rectangle, Target, VariableObject, VariableObjectBase,
+    Frame, Rectangle, ShortRectangle, Target, TintIcon,
+    VariableObject, VariableObjectBase,
 } from 'app/types';
 
 export interface Action {
@@ -16,15 +17,15 @@ export interface Action {
     // This is set as the player uses the skill.
     totalPreparationTime?: number,
     // Properties used for drawing the skill hud/targetin.
-    target?: Rectangle, // This is the rectangle for the skill HUD button
+    target?: ShortRectangle, // This is the rectangle for the skill HUD button
     onClick?: (character: Character, action: Action) => void,
-    shortcutTarget?: Rectangle, // This is the rectangle for displaying the shortcut key
+    shortcutTarget?: ShortRectangle, // This is the rectangle for displaying the shortcut key
     // Button for toggling manual/auto use of skill.
     toggleButton?: {
         onClick: (character: Character, button: any) => void,
         action: Action
         helpMethod: () => string,
-        target?: Rectangle,
+        target?: ShortRectangle,
     }
     helpMethod?: (action: Action) => string,
 }
@@ -37,7 +38,7 @@ export interface ActionData {
     bonuses: Bonuses,
     hasImplicitBonuses: true,
     helpText: string,
-    icon: Frame,
+    icon: string | Frame,
     tags: string[],
     // This will render the skill name as it is used.
     showName?: boolean,
@@ -144,7 +145,7 @@ export interface Ability {
     onMissEffect?: TriggerEffect,
     bonuses?: Bonuses,
     minionBonuses?: Bonuses,
-    icon?: JobIcon | Frame | string,
+    icon?: JobIcon | Frame | TintIcon | string,
     helpText?: string,
 }
 

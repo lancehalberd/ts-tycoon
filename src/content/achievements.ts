@@ -3,7 +3,6 @@ import { recomputeAllCharacterDirtyStats } from 'app/character';
 import { characterClasses } from 'app/content/jobs';
 import { bodyDiv, divider, mainContext, titleDiv } from 'app/dom';
 import { TROPHY_SIZE } from 'app/gameConstants';
-import { bonusSourceHelpText } from 'app/helpText';
 import { drawImage, drawOutlinedImage, drawRectangleBackground, drawSolidTintedImage, requireImage } from 'app/images';
 import { getCanvasCoords, getTargetLocation } from 'app/main';
 import { saveGame } from 'app/saveGame';

@@ -1,12 +1,7 @@
 import { FRAME_LENGTH } from 'app/gameConstants';
 import { requireImage } from 'app/images';
+import { Frame, ShortRectangle } from 'app/types';
 
-interface SimpleRectangle {
-    x: number, y: number, w: number, h: number,
-}
-interface Frame extends SimpleRectangle {
-    image: HTMLCanvasElement | HTMLImageElement,
-}
 interface CreateAnimationOptions {
     x?: number, y?: number,
     rows?: number, cols?: number,
@@ -28,7 +23,7 @@ export type Animation = {
 
 export function createAnimation(
     source: string,
-    rectangle: SimpleRectangle,
+    rectangle: ShortRectangle,
     {x = 0, y = 0, rows = 1, cols = 1, top = 0, left = 0, duration = 8, frameMap = null}: CreateAnimationOptions = {},
     props: ExtraAnimationProperties = {},
 ): Animation {
@@ -71,7 +66,18 @@ export function getAnimationFrameLength(animation) {
 export function drawFrame(
     context: CanvasRenderingContext2D,
     {image, x, y, w, h}: Frame,
-    {x: tx, y: ty, w: tw, h: th}: SimpleRectangle
+    {x: tx, y: ty, w: tw, h: th}: ShortRectangle
 ) {
     context.drawImage(image, x, y, w, h, tx, ty, tw, th);
 }
+
+export function drawFrameCenteredInTarget(
+    context: CanvasRenderingContext2D,
+    {image, x, y, w, h}: Frame,
+    {x: tx, y: ty, w: tw, h: th}: ShortRectangle
+) {
+    tx += Math.ceil((tw - w) / 2);
+    ty += Math.ceil((th - h) / 2);
+    context.drawImage(image, x, y, w, h, tx, ty, w, h);
+}
+

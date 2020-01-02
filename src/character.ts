@@ -102,7 +102,9 @@ export function initializeActorForAdventure(actor: Actor) {
     actor.skillInUse = null;
     actor.slow = 0;
     actor.rotation = 0;
-    actor.activity = null;
+    if (actor.type === 'hero') {
+        actor.activity = {type: 'none'};
+    }
     actor.imprintedSpell = null;
     actor.minions = actor.minions || [];
     actor.boundEffects = actor.boundEffects || [];
@@ -202,6 +204,7 @@ export function makeAdventurerFromData({
     const hero: Hero = {
         targetType: 'actor',
         type: 'hero',
+        activity: {type: 'none'},
         character: null,
         x: 0,
         y: 0,
@@ -617,7 +620,7 @@ export function setSelectedCharacter(character: Character) {
     // update controls:
     // character.boardCanvas = jewelsCanvas;
     const jewelBonusContainer = query('.js-jewelBonuses .js-content');
-    jewelBonusContainer.innerText = bonusSourceHelpText(character.jewelBonuses, character.hero);
+    jewelBonusContainer.innerHTML = bonusSourceHelpText(character.jewelBonuses, character.hero);
     centerMapOnLevel(map[character.currentLevelKey]);
     updateAdventureButtons();
     updateSkillConfirmationButtons();

@@ -17,7 +17,7 @@ import { canUseSkillOnTarget } from 'app/useSkill';
 import { toolTipColor } from 'app/utils/colors';
 import { getMousePosition } from 'app/utils/mouse';
 
-import { Action, Actor, Area, AreaObject, LocationTarget, Target } from 'app/types';
+import { Action, Actor, ActorActivity, Area, AreaObject, Hero, LocationTarget, Target } from 'app/types';
 
 let canvasCoords = null;
 export function getCanvasCoords() {
@@ -100,35 +100,35 @@ export function getTargetLocation(area: Area, canvasX: number, canvasY: number):
 document.addEventListener('mouseup',function (event) {
     clickedToMove = false;
 });
-function setActorDestination(actor: Actor, target: Target) {
-    var activity = {
+function setActorDestination(hero: Hero, target: Target) {
+    const activity: ActorActivity = {
         type: 'move',
         x: target.x,
         y: 0,
-        z: limitZ(target.z, actor.width / 2)
+        z: limitZ(target.z, hero.width / 2)
     };
-    if (getDistanceBetweenPointsSquared(actor, activity) > 200) {
-        if (!actor.activity) {
-            actor.walkFrame = 1;
+    if (getDistanceBetweenPointsSquared(hero, activity) > 200) {
+        if (hero.activity.type === 'none') {
+            hero.walkFrame = 1;
         }
-        actor.activity = activity;
+        hero.activity = activity;
     }
 }
-export function setActorAttackTarget(actor: Actor, target: Target) {
-    actor.activity = {
+export function setActorAttackTarget(hero: Hero, target: Actor) {
+    hero.activity = {
         type: 'attack',
         target
     };
 }
-function setActionTarget(actor: Actor, action: Action, target: Target) {
-    actor.activity = {
+function setActionTarget(hero: Hero, action: Action, target: Target) {
+    hero.activity = {
         type: 'action',
         action,
         target
     };
 }
-export function setActorInteractionTarget(actor: Actor, target: LocationTarget | AreaObject) {
-    actor.activity = {
+export function setActorInteractionTarget(hero: Hero, target: LocationTarget | AreaObject) {
+    hero.activity = {
         type: 'interact',
         target
     };

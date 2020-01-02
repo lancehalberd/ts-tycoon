@@ -543,10 +543,11 @@ export function stopJewelDrag() {
         // to the end. To support adding it before a target element, just append
         // to the end first so we get all the normal logic for cleaning up the
         // drag operation, then remove the item and place it before the target.
+        const domElement = jewelInventoryState.draggedJewel.domElement
         appendDraggedJewelToElement(jewelInventoryContainer);
-        filterJewel(jewelInventoryState.draggedJewel.domElement);
-        jewelInventoryState.draggedJewel.domElement.remove();
-        targetElement.before(jewelInventoryState.draggedJewel.domElement);
+        filterJewel(domElement);
+        domElement.remove();
+        targetElement.before(domElement);
     }
     if (!jewelInventoryState.draggedJewel) return;
     filterJewel(jewelInventoryState.draggedJewel.domElement);

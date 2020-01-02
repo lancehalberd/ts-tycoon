@@ -14,6 +14,8 @@ import { getState } from 'app/state';
 import { ifdefor, isPointInRect, isPointInRectObject, rectangle } from 'app/utils/index';
 import { getMousePosition, isMouseOverElement } from 'app/utils/mouse';
 
+import { FullRectangle } from 'app/types';
+
 interface Popup {
     target: any,
     element: HTMLElement,
@@ -119,7 +121,7 @@ function getMainCanvasMouseTarget(x, y) {
     if (abilityTarget) return abilityTarget;
     // Actors (heroes and enemies) have highest priority in the main game context during fights.
     for (const actor of area.allies.concat(area.enemies)) {
-        if (!actor.isDead && isPointInRectObject(x, y, actor)) {
+        if (!actor.isDead && isPointInRectObject(x, y, actor as FullRectangle)) {
             return actor;
         }
     }
@@ -208,8 +210,9 @@ mouseContainer.addEventListener('mousemove', function (event) {
     updateToolTip();
 });
 
-export function checkremovePopup() {
-    if (!popup || (!popup.element && !canvasPopupTarget && !popup.target)) {
+export function checkToRemovePopup() {
+    //console.log('checkToRemovePopup');
+    if (!popup && !canvasPopupTarget) {
         return;
     }
     if (jewelInventoryState.overJewel || jewelInventoryState.draggedJewel ||
@@ -218,7 +221,7 @@ export function checkremovePopup() {
     ) {
         return;
     }
-    console.log('checkremovePopup', jewelInventoryState.overJewel, jewelInventoryState.draggedJewel);
+    // console.log('checkToRemovePopup', jewelInventoryState.overJewel, jewelInventoryState.draggedJewel);
     if (mapState.draggedMap) {
         removePopup();
         return;
@@ -226,19 +229,20 @@ export function checkremovePopup() {
     const [x, y] = getMousePosition(mainCanvas);
     if (mainCanvas.style.display !== 'none') {
         const { selectedCharacter } = getState();
+        //console.log(canvasPopupTarget, x, y, isMouseOverCanvasElement(x, y, canvasPopupTarget));
         if (canvasPopupTarget && !canvasPopupTarget.isDead && canvasPopupTarget.area === selectedCharacter.hero.area &&
             isMouseOverCanvasElement(x, y, canvasPopupTarget)) {
             return;
         }
         if (mapState.currentMapTarget && !selectedCharacter.hero.area) {
-            if (ifdefor(mapState.currentMapTarget.top) !== null) {
-                if (isPointInRect(x, y, mapState.currentMapTarget.left, mapState.currentMapTarget.top, mapState.currentMapTarget.width, mapState.currentMapTarget.height)) {
+            if (ifdefor(mapState.currentMapTarget.y) !== null) {
+                if (isPointInRect(x, y, mapState.currentMapTarget.x, mapState.currentMapTarget.y, mapState.currentMapTarget.w, mapState.currentMapTarget.h)) {
                     return;
                 }
             }
         }
     }
-    if (popup.target && popup.target.closest && popup.target.closest('body') && isMouseOverElement(popup.target)) {
+    if (popup && popup.target && popup.target.closest && popup.target.closest('body') && isMouseOverElement(popup.target)) {
         return;
     }
     removePopup();
@@ -257,7 +261,7 @@ function isMouseOverCanvasElement(x, y, element) {
     if (element.targetType === 'actor') {
         return isPointInRectObject(x, y, element);
     }
-    if (mapState.currentMapTarget && ifdefor(mapState.currentMapTarget.top) !== null) {
+    if (mapState.currentMapTarget && ifdefor(mapState.currentMapTarget.y) !== null) {
         return isPointInRectObject(x, y, element);
     }
     return false;

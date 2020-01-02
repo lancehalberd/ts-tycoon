@@ -1,4 +1,4 @@
-import { Area, BonusSource, Character, JobAchievement } from 'app/types';
+import { Area, BonusSource, Character, Hero, JobAchievement } from 'app/types';
 
 export interface Exit {
     // The area to enter when using this exit.
@@ -9,6 +9,7 @@ export interface Exit {
 }
 
 export interface FixedObjectData {
+    targetType: 'object',
     name?: string,
     source: {
         actualWidth: number,
@@ -19,7 +20,7 @@ export interface FixedObjectData {
         left: number, top: number,
         width: number, height: number, depth: number
     } | {actualWidth?: number, actualHeight?: number, width: number, height: number, depth: number},
-    action?: Function,
+    action?: (hero: Hero) => void,
     getActiveBonusSources?: () => BonusSource[],
     level?: number,
     getCurrentTier?: () => any,
@@ -66,8 +67,8 @@ export interface FixedObject extends FixedObjectData {
     render: Function,
     helpMethod: Function,
     target: {
-        left?: number,
-        top?: number,
+        left: number,
+        top: number,
         width: number,
         height: number,
     },

@@ -8,7 +8,7 @@ import { applyAttackToTarget, createAttackStats, getBasicAttack } from 'app/perf
 import { isMouseDown } from 'app/utils/mouse';
 import Vector from 'app/utils/Vector';
 
-import { Actor, LocationTarget, Target } from 'app/types';
+import { Action, Actor, LocationTarget, Target } from 'app/types';
 
 const rotationA = Math.cos(Math.PI / 20);
 const rotationB = Math.sin(Math.PI / 20);
@@ -30,13 +30,14 @@ export function moveActor(actor: Actor) {
     let speedBonus = 1;
     if (actor.chargeEffect) {
         goalTarget = actor.chargeEffect.target;
-    } else if (actor.activity) {
-        switch (actor.activity.type) {
+    } else if (actor.type === 'hero' ) {
+        const activity = actor.activity;
+        switch (activity.type) {
             case 'move':
-                if (getDistanceBetweenPointsSquared(actor, actor.activity) < 10
+                if (getDistanceBetweenPointsSquared(actor, activity) < 10
                     || (actor.character && actor.character.paused && !isMouseDown())
                 ) {
-                    actor.activity = null;
+                    actor.activity = {type: 'none'};
                     break;
                 }
                 goalTarget = null;
@@ -44,37 +45,44 @@ export function moveActor(actor: Actor) {
                 // but we do allow them to move forward/backward in their current direction at 25% speed
                 // if they are in recovery.
                 if (actor.skillInUse) {
-                    if (actor.heading[0] * (actor.activity.x - actor.x) < 0) {
+                    if (actor.heading[0] * (activity.x - actor.x) < 0) {
                         speedBonus = -.1;
                     } else {
                         speedBonus = .25;
                     }
                 } else {
-                    actor.heading = [actor.activity.x - actor.x, 0, actor.activity.z - actor.z];
+                    actor.heading = [activity.x - actor.x, 0, activity.z - actor.z];
                 }
                 actor.isMoving = true;
                 break;
             case 'interact':
-                if (getDistanceOverlap(actor, actor.activity.target) <= 5) {
-                    if (actor.activity.target.action) {
-                        actor.activity.target.action(actor);
+                if (getDistanceOverlap(actor, activity.target) <= 5) {
+                    if (activity.target.targetType !== 'location' && activity.target.action) {
+                        activity.target.action(actor);
                     }
-                    actor.activity = null;
+                    actor.activity = {type: 'none'};
                     break;
                 }
-                actor.heading = [actor.activity.target.x - actor.x, 0, actor.activity.target.z - actor.z];
+                actor.heading = [activity.target.x - actor.x, 0, activity.target.z - actor.z];
                 if (isNaN(actor.heading[0])) debugger;
                 actor.isMoving = true;
                 break;
             case 'attack':
             case 'action':
-                goalTarget = actor.activity.target;
+                goalTarget = activity.target;
                 break;
         }
     }
+    // Choose a new target if charging or AI is in control of an actor doing nothing AND
+    // no current target or the current target is dead.
     if (
-        (actor.chargeEffect || (actorShouldAutoplay(actor) && !actor.activity)) &&
-        (!goalTarget || (goalTarget.targetType === 'actor' && goalTarget.isDead))
+        (actor.chargeEffect
+            || (
+                actorShouldAutoplay(actor)
+                && !(actor.type === 'hero' && actor.activity.type !== 'none')
+            )
+        )
+        && (!goalTarget || (goalTarget.targetType === 'actor' && goalTarget.isDead))
     ) {
         let bestDistance = actor.aggroRadius || 10000;
         actor.enemies.forEach(function (target) {
@@ -110,8 +118,10 @@ export function moveActor(actor: Actor) {
             // try to match the desired relative position. To prevent this from happening, we slow minions down as they approach
             // their desired position so the don't reach it.
             speedBonus *= Math.min(1, distanceToGoal / 80);
-            //goalTarget = pointPosition;
-            setActorInteractionTarget(actor, pointPosition);
+            goalTarget = pointPosition;
+            // We can't do this unless we enable interaction targets for non-heroes, but since
+            // non-heroes cannot interact, this seems excessive.
+            // setActorInteractionTarget(actor, pointPosition);
             //goalTarget = {x: actor.owner.x + actor.owner.heading[0] * 200, y: 0, z: actor.owner.z + actor.owner.heading[2] * 200};
         }
     }
@@ -122,7 +132,7 @@ export function moveActor(actor: Actor) {
         actor.isMoving = true;
         actor.goalTarget = goalTarget;
         // This was an attempt to move away from targets when they are dying.
-        /*if ((!actor.activity || actor.activity.target !== goalTarget) && goalTarget.targetHealth < 0) {
+        /*if ((actor.activity.type === 'none' || actor.activity.target !== goalTarget) && goalTarget.targetHealth < 0) {
             console.log('run');
             actor.heading[0] = -actor.heading[0];
             actor.heading[2] = -actor.heading[2];
@@ -145,9 +155,11 @@ export function moveActor(actor: Actor) {
     } else if (goalTarget && !(goalTarget.targetType === 'actor' && goalTarget.cloaked)) {
         // If the character is closer than they need to be to auto attack then they can back away from
         // them slowly to try and stay at range.
-        var skill = actor.skillInUse || (actor.activity && actor.activity.action) || getBasicAttack(actor);
-        var skillRange = skill.range || .5;
-        var distanceToTarget = getDistanceOverlap(actor, goalTarget);
+        const skill: Action = actor.skillInUse
+            || (actor.type === 'hero' && actor.activity.type === 'action' && actor.activity.action)
+            || getBasicAttack(actor);
+        const skillRange = skill.stats.range || .5;
+        const distanceToTarget = getDistanceOverlap(actor, goalTarget);
         // Set the max distance to back away to to 10, otherwise they will back out of the range
         // of many activated abilities like fireball and meteor.
         if (
@@ -249,11 +261,11 @@ export function moveActor(actor: Actor) {
                 actor.x = currentX;
                 actor.z = currentZ;
                 actor.heading = originalHeading.slice();
-                if (actor.activity) {
+                if (actor.type === 'hero' && actor.activity.type !== 'none') {
                     // If there is at least 1 enemy blocking the way, attack it
                     if (blockedByEnemy) setActorAttackTarget(actor, blockedByEnemy);
                     // If the way is only blocked by objects (non-enemies/non-allies), give up on the current action as those obstacles won't disappear or move.
-                    else if (!blockedByAlly) actor.activity = null;
+                    else if (!blockedByAlly) actor.activity = {type: 'none'};
                 }
                 break;
             }

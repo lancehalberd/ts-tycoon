@@ -1,12 +1,32 @@
 import {
-    ActiveEffect, ActorStats, Affix, Area, AreaEntity, BonusSource, Exit,
-    Job, JobKey, Level, Monster,
+    ActiveEffect, ActorStats, Affix, Area, AreaEntity, AreaObject,
+    BonusSource, Exit,
+    Job, JobKey, Level, LocationTarget, Monster,
     SavedEquipment, Source, Target,
     VariableObject
 } from 'app/types';
 import { Ability, Action, ActorEffect, Effect } from 'app/types/abilities';
 import { Character } from 'app/types/Character';
 import { Equipment } from 'app/types/items';
+
+export type ActorActivity = {
+    type: 'none',
+} | {
+    type: 'attack',
+    target: Actor,
+} | {
+    type: 'move',
+    x: number,
+    y: number,
+    z: number,
+} | {
+    type: 'action',
+    action: Action,
+    target: Target,
+} | {
+    type: 'interact',
+    target: LocationTarget | AreaObject,
+}
 
 /*export interface ActorSource {
     width: number,
@@ -26,7 +46,6 @@ export interface ActorSource extends Source {
 }
 
 export interface BaseActor extends AreaEntity {
-    character?: Character,
     targetType: 'actor',
     type: string,
     // Screen coordinates of the player (for mouseover purposes)
@@ -68,7 +87,6 @@ export interface BaseActor extends AreaEntity {
     skillInUse?: Action,
     slow?: number,
     rotation?: number,
-    activity?: any,
     imprintedSpell?: any,
     boundEffects?: ActiveEffect[],
     stopTimeAction?: Action,
@@ -129,6 +147,7 @@ export interface BaseActor extends AreaEntity {
 }
 export interface Hero extends BaseActor {
     type: 'hero',
+    activity: ActorActivity,
     hairOffset: number,
     skinColorOffset: number,
     personCanvas: HTMLCanvasElement,

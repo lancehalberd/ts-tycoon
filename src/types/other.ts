@@ -7,6 +7,13 @@ export type Range = [number, number];
 
 export type Tags = {[key: string]: true};
 
+export class Renderable {
+    render(context: CanvasRenderingContext2D, target: ShortRectangle) {
+        debugger;
+        throw new Error('render not implemented');
+    }
+}
+
 export interface FullRectangle {
     left: number,
     top: number,
@@ -23,21 +30,19 @@ export interface ShortRectangle {
 }
 export type Rectangle = FullRectangle | ShortRectangle;
 
+export interface Frame extends ShortRectangle {
+    image: HTMLCanvasElement | HTMLImageElement,
+}
+
 export interface BasicFrame {
     image: HTMLCanvasElement | HTMLImageElement,
     left: number,
     top: number,
     width: number,
     height: number,
-    render?: Function,
+    render?: (context: CanvasRenderingContext2D, target: FullRectangle) => void,
 }
 export type ArrayFrame = [string, number, number, number, number, number, number];
-
-export type Frame = string | JobIcon | BasicFrame;
-
-export interface TintedFrame extends BasicFrame {
-    color: Color,
-}
 
 export interface Source {
     image: HTMLCanvasElement | HTMLImageElement,

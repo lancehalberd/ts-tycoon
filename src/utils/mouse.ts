@@ -1,6 +1,6 @@
 type Coords = [number, number];
 
-let mousePosition: Coords = [400, 400];
+let mousePosition: Coords = [-1000, -1000];
 let mouseIsDown: boolean = false;
 let rightMouseDown: boolean = false;
 
@@ -11,7 +11,7 @@ export function isRightMouseDown(): boolean {
     return rightMouseDown;
 }
 
-export function getMousePosition(container:HTMLElement = null): Coords {
+export function getMousePosition(container: HTMLElement = null): Coords {
     if (container) {
         const containerRect:DOMRect = container.getBoundingClientRect();
         return [
@@ -53,7 +53,7 @@ export function unbindMouseListeners() {
     mouseDown = rightMouseDown = false;
 });*/
 
-export function isMouseOverElement(element:HTMLElement):boolean {
+export function isMouseOverElement(element: HTMLElement): boolean {
     const rect:DOMRect = element.getBoundingClientRect();
     return mousePosition[0] >= rect.x && mousePosition[0] <= rect.x + rect.width
         && mousePosition[1] >= rect.y && mousePosition[1] <= rect.y + rect.height;

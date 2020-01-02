@@ -17,7 +17,7 @@ import { drawRunningAnts, rectangleFromPoints, rectanglesOverlap } from 'app/uti
 import { getMousePosition } from 'app/utils/mouse';
 import { worldCamera } from 'app/WorldCamera';
 
-import { Character } from 'app/types';
+import { Character, FullRectangle } from 'app/types';
 
 export const editingMapState = {
     arrowTargetLeft: null,
@@ -382,7 +382,8 @@ export function handleEditMapMouseMove(x, y, event) {
         editingMapState.selectedMapNodes = originalSelectedNodes.slice();
         for (let levelKey in mapState.visibleNodes) {
             const levelData = mapState.visibleNodes[levelKey];
-            if (editingMapState.selectedMapNodes.indexOf(levelData) < 0 && rectanglesOverlap(selectedRectangle, levelData)) {
+            if (editingMapState.selectedMapNodes.indexOf(levelData) < 0 &&
+                rectanglesOverlap(selectedRectangle, {left: levelData.x, top: levelData.y, width: levelData.w, height: levelData.h})) {
                 editingMapState.selectedMapNodes.push(levelData);
             }
         }
@@ -596,5 +597,5 @@ mainCanvas.addEventListener('dblclick', function (event) {
 });
 
 export function isEditingAllowed() {
-    return window.location.search.substr(1) === 'edit';
+    return true; //window.location.search.substr(1) === 'edit';
 }

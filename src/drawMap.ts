@@ -6,25 +6,27 @@ import { map } from 'app/content/mapData';
 import { editingMapState } from 'app/development/editLevel';
 import { mainContext } from 'app/dom';
 import { MAP_LEFT, MAP_TOP, MAP_WIDTH, MAP_HEIGHT, WORLD_RADIUS } from 'app/gameConstants';
-import { drawAbilityIcon, drawImage, requireImage } from 'app/images';
+import { drawImage, requireImage } from 'app/images';
+import { drawAbilityIcon } from 'app/render/drawIcons'
 import { mapLocation, mapState } from 'app/map';
 import { shrineSource } from 'app/render';
 import { drawTextureMap } from 'app/render/drawTextureMap';
 import { getState } from 'app/state';
+import { drawFrame } from 'app/utils/animations';
 import { abbreviate } from 'app/utils/formatters';
-import { rectangle, shrinkRectangle } from 'app/utils/index';
+import { pad, r, rectangle, shrinkRectangle } from 'app/utils/index';
 import Vector from 'app/utils/Vector';
 import { worldCamera } from 'app/WorldCamera';
 
-import { FullRectangle, LevelData, Rectangle } from 'app/types';
+import { Frame, LevelData, ShortRectangle } from 'app/types';
 
 const lineColors = ['#0ff', '#08f', '#00f', '#80f', '#f0f', '#f08', '#f00','#f80','#ff0','#8f0','#0f0', '#0f8'];
 const mapTexture = requireImage('gfx/squareMap.bmp');
 
-const checkSource = {image: requireImage('gfx/militaryIcons.png'), left: 68, top: 90, width: 16, height: 16};
-const bronzeSource = {...checkSource, left: 102, top: 40};
-const silverSource = {...checkSource, left: 85, top: 40};
-const goldSource = {...checkSource, left: 68, top: 40};
+const checkSource: Frame = {image: requireImage('gfx/militaryIcons.png'), x: 68, y: 90, w: 16, h: 16};
+const bronzeSource: Frame = {...checkSource, x: 102, y: 40};
+const silverSource: Frame = {...checkSource, x: 85, y: 40};
+const goldSource: Frame = {...checkSource, x: 68, y: 40};
 
 export function drawMap(): void {
     const context = mainContext;
@@ -135,22 +137,22 @@ export function drawMap(): void {
         }
         if (new Vector(levelData.coords).dotProduct(worldCamera.forward) <= 0) {
             const projectedPoint = worldCamera.projectPoint(levelData.coords);
-            levelData.left = projectedPoint[0] - 20 - MAP_LEFT;
-            levelData.top = projectedPoint[1] - 20 - MAP_TOP;
+            levelData.x = projectedPoint[0] - 20 - MAP_LEFT;
+            levelData.y = projectedPoint[1] - 20 - MAP_TOP;
             mapState.visibleNodes[levelKey] = levelData;
             const skill = abilities[levelData.skill];
             if (skill) {
                 levelData.shrine = {
-                    ...rectangle(levelData.left - 20, levelData.top - 20, 40, 40),
+                    ...r(levelData.x - 20, levelData.y - 20, 40, 40),
                     targetType: 'shrine',
                     level: levelData,
                 };
             }
         } else {
             // Put nodes on the reverse of the sphere
-            levelData.left = levelData.top = 4000;
+            levelData.x = levelData.y = 4000;
         }
-        levelData.width = levelData.height = 40;
+        levelData.w = levelData.h = 40;
     }
     mapState.movedMap = false;
     // Draw lines connecting connected nodes.
@@ -177,11 +179,11 @@ export function drawMap(): void {
                     if (editingMap && (selectedMapNodes.indexOf(levelData) >= 0 || selectedMapNodes.indexOf(nextLevelData) >= 0)) {
                         context.strokeStyle = '#f00';
                     }
-                    drawMapArrow(context, levelData as FullRectangle, nextLevelData as FullRectangle);
+                    drawMapArrow(context, levelData as ShortRectangle, nextLevelData as ShortRectangle);
                 } else {
-                    drawMapPath(context, levelData as FullRectangle, nextLevelData as FullRectangle);
-                    context.moveTo(levelData.left + levelData.width / 2, levelData.top + levelData.height / 2);
-                    context.lineTo(nextLevelData.left + nextLevelData.width / 2, nextLevelData.top + nextLevelData.height / 2);
+                    drawMapPath(context, levelData as ShortRectangle, nextLevelData as ShortRectangle);
+                    context.moveTo(levelData.x + levelData.w / 2, levelData.y + levelData.h / 2);
+                    context.lineTo(nextLevelData.x + nextLevelData.w / 2, nextLevelData.y + nextLevelData.h / 2);
                     context.stroke();
                 }
             }
@@ -197,7 +199,7 @@ export function drawMap(): void {
         }
         context.beginPath();
         context.save();
-        context.translate(levelData.left + levelData.width / 2, levelData.top + levelData.height / 2);
+        context.translate(levelData.x + levelData.w / 2, levelData.y + levelData.h / 2);
         context.scale(1, .5);
         context.arc(0, 0, 22, 0, 2 * Math.PI);
         context.fill();
@@ -208,20 +210,20 @@ export function drawMap(): void {
         const levelData = visibleNodes[levelKey];
         if (editingMap) {
             const source = closedChestSource;
-            drawImage(context, source.image, source.source, rectangle(levelData.left + levelData.width / 2 - 16, levelData.top + levelData.height / 2 - 18, 32, 32));
+            drawImage(context, source.image, source.source, rectangle(levelData.x + levelData.w / 2 - 16, levelData.y + levelData.h / 2 - 18, 32, 32));
             context.fillStyle = new Vector(levelData.coords).dotProduct(worldCamera.forward) >= 0 ? 'red' : 'black';
-            context.fillRect(levelData.left - 30, levelData.top + 19, 100, 15);
+            context.fillRect(levelData.x - 30, levelData.y + 19, 100, 15);
             context.fillStyle = 'white';
             context.font = '10px sans-serif';
             context.textAlign = 'center'
             context.textBaseline = 'middle';
-            //context.fillText(levelData.coords.map(function (number) { return number.toFixed(0);}).join(', '), levelData.left + 20, levelData.top + 45);
-            context.fillText((levelData.level || '') + ' ' + levelData.name, levelData.left + 20, levelData.top + 27);
+            //context.fillText(levelData.coords.map(function (number) { return number.toFixed(0);}).join(', '), levelData.x + 20, levelData.y + 45);
+            context.fillText((levelData.level || '') + ' ' + levelData.name, levelData.x + 20, levelData.y + 27);
             if (levelData.skill) {
                 context.fillStyle = new Vector(levelData.coords).dotProduct(worldCamera.forward) >= 0 ? 'red' : 'black';
-                context.fillRect(levelData.left - 30, levelData.top + 34, 100, 15);
+                context.fillRect(levelData.x - 30, levelData.y + 34, 100, 15);
                 context.fillStyle = 'white';
-                context.fillText(levelData.skill, levelData.left + 20, levelData.top + 41);
+                context.fillText(levelData.skill, levelData.x + 20, levelData.y + 41);
             }
             var skill = abilities[levelData.skill];
             // For some reason this was: getAbilityIconSource(skill, shrineSource)
@@ -243,47 +245,46 @@ export function drawMap(): void {
             drawAbilityIcon(context, getAbilityIconSource(skill), levelData.shrine);
             // If the character has learned the ability for this level, draw a check mark on the shrine.
             context.globalAlpha = 1;
-            if (skillLearned) drawImage(context, checkSource.image, checkSource, shrinkRectangle(levelData.shrine, 8));
+            if (skillLearned) drawFrame(context, checkSource, pad(levelData.shrine, -8));
             context.restore();
         }
         if (state.selectedCharacter.currentLevelKey === levelKey) {
             context.save();
-            context.translate(levelData.left + 25, levelData.top - 40);
+            context.translate(levelData.x + 25, levelData.y - 40);
             context.drawImage(state.selectedCharacter.adventurer.personCanvas, state.selectedCharacter.adventurer.source.walkFrames[1] * 96, 0 , 96, 64, -32, 0, 96, 64);
             context.restore();
         }
 
         const times = state.selectedCharacter.levelTimes[levelKey] || {};
         var source = (times['easy'] && times['normal'] && times['hard']) ? openChestSource : closedChestSource;
-        drawImage(context, source.image, source.source, rectangle(levelData.left + levelData.width / 2 - 16, levelData.top + levelData.height / 2 - 18, 32, 32));
+        drawImage(context, source.image, source.source, rectangle(levelData.x + levelData.w / 2 - 16, levelData.y + levelData.h / 2 - 18, 32, 32));
 
         context.save();
         context.fillStyle = 'black';
         context.globalAlpha = .3;
-        context.fillRect(levelData.left + 9, levelData.top + 19, 22, 15);
+        context.fillRect(levelData.x + 9, levelData.y + 19, 22, 15);
         context.restore();
 
         context.fillStyle = '#fff';
         context.font = 'bold 16px sans-serif';
         context.textAlign = 'center'
         context.textBaseline = 'middle';
-        context.fillText('' + (levelData.level || ''), levelData.left + 20, levelData.top + 26);
+        context.fillText('' + (levelData.level || ''), levelData.x + 20, levelData.y + 26);
         const divinityScore = (state.selectedCharacter.divinityScores[levelKey] || 0);
         if (divinityScore > 0) {
             context.fillStyle = 'black';
-            context.fillRect(levelData.left, levelData.top + 34, 40, 15);
+            context.fillRect(levelData.x, levelData.y + 34, 40, 15);
             context.fillStyle = 'white';
             context.font = '10px sans-serif';
             context.textAlign = 'center'
-            context.fillText(abbreviate(divinityScore), levelData.left + 20, levelData.top + 42);
+            context.fillText(abbreviate(divinityScore), levelData.x + 20, levelData.y + 42);
             let source = bronzeSource;
             if (divinityScore >= Math.round(difficultyBonusMap.hard * 1.2 * baseDivinity(levelData.level))) {
                 source = goldSource;
             } else if (divinityScore >= Math.round(baseDivinity(levelData.level))) {
                 source = silverSource;
             }
-            context.drawImage(source.image, source.left, source.top, source.width, source.height,
-                              levelData.left - 10, levelData.top + 34, 16, 16);
+            drawFrame(context, source, {x: levelData.x - 10, y: levelData.y + 34, w: 16, h: 16});
         }
     }
     const { arrowTargetLeft, arrowTargetTop, clickedMapNode } = editingMapState;
@@ -296,16 +297,16 @@ export function drawMap(): void {
         context.save();
         context.lineWidth = 5;
         context.strokeStyle = '#0f0';
-        drawMapArrow(context, clickedMapNode, {'left': arrowTargetLeft, 'top': arrowTargetTop, 'width': 0, 'height': 0});
+        drawMapArrow(context, clickedMapNode, {x: arrowTargetLeft, y: arrowTargetTop, w: 0, h: 0});
         context.restore();
     }
 }
 
-function drawMapArrow(context: CanvasRenderingContext2D, targetA: FullRectangle, targetB: FullRectangle) {
-    const sx = targetA.left + targetA.width / 2;
-    const sy = targetA.top + targetA.height / 2;
-    const tx = targetB.left + targetB.width / 2;
-    const ty = targetB.top + targetB.height / 2;
+function drawMapArrow(context: CanvasRenderingContext2D, targetA: ShortRectangle, targetB: ShortRectangle) {
+    const sx = targetA.x + targetA.w / 2;
+    const sy = targetA.y + targetA.h / 2;
+    const tx = targetB.x + targetB.w / 2;
+    const ty = targetB.y + targetB.h / 2;
     const v = [tx - sx, ty - sy];
     const mag = Math.sqrt(v[0] * v[0] + v[1] * v[1]);
     v[0] /= mag;
@@ -319,11 +320,11 @@ function drawMapArrow(context: CanvasRenderingContext2D, targetA: FullRectangle,
     context.lineTo(tx - v[0] * 20, ty - v[1] * 20);
     context.stroke();
 }
-function drawMapPath(context: CanvasRenderingContext2D, targetA: FullRectangle, targetB: FullRectangle) {
-    const sx = targetA.left + targetA.width / 2;
-    const sy = targetA.top + targetA.height / 2;
-    const tx = targetB.left + targetB.width / 2;
-    const ty = targetB.top + targetB.height / 2;
+function drawMapPath(context: CanvasRenderingContext2D, targetA: ShortRectangle, targetB: ShortRectangle) {
+    const sx = targetA.x + targetA.w / 2;
+    const sy = targetA.y + targetA.h / 2;
+    const tx = targetB.x + targetB.w / 2;
+    const ty = targetB.y + targetB.h / 2;
     context.beginPath();
     context.moveTo(sx, sy);
     context.lineTo(tx, ty);

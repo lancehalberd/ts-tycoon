@@ -253,7 +253,7 @@ function drawActorEffects(actor: Actor) {
     let x = actor.left + actor.width / 2 - 32;
     // Don't allow the main character's life bar to fall off the edges of the screen.
     const state = getState();
-    if (actor.character === state.selectedCharacter) {
+    if (actor === state.selectedCharacter.hero) {
         x = Math.min(800 - 5 - 64, Math.max(5, x));
     }
     let y = actor.top - 5;
@@ -442,23 +442,23 @@ function drawTargetCircle(context, area: Area, x, z, radius, alpha) {
 }
 
 function drawActionTargetCircle(targetContext) {
-    var action = getHoverAction();
+    let action = getHoverAction();
     if (!action) action = getSelectedAction();
     if (!action) {
         const hero = getState().selectedCharacter.hero;
-        action = hero.activity ? hero.activity.action : null;
+        action = hero.activity.type === 'action' ? hero.activity.action : null;
     }
     if (!action) return;
     drawOnGround(context => {
         var area = editingMapState.editingLevelInstance || action.actor.area;
-        if (action.range) drawTargetCircle(context, area, action.actor.x, action.actor.z, action.range + 1, .1);
-        else if (action.area) drawTargetCircle(context, area, action.actor.x, action.actor.z, action.area, .1);
+        if (action.stats.range) drawTargetCircle(context, area, action.actor.x, action.actor.z, action.stats.range + 1, .1);
+        else if (action.stats.area) drawTargetCircle(context, area, action.actor.x, action.actor.z, action.stats.area, .1);
         else drawTargetCircle(context, area, action.actor.x, action.actor.z, 1, .1);
         const canvasCoords = getCanvasCoords();
         const targetLocation = getTargetLocation(area, canvasCoords[0], canvasCoords[1]);
         //console.log([targetLocation, targetLocation && canUseSkillOnTarget(action.actor, action, targetLocation)]);
         if (targetLocation && canUseSkillOnTarget(action.actor, action, targetLocation)) {
-            drawTargetCircle(context, area, targetLocation.x, targetLocation.z, action.area || .5, .3);
+            drawTargetCircle(context, area, targetLocation.x, targetLocation.z, action.stats.area || .5, .3);
         }
     });
     //var context = bufferContext;

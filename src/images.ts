@@ -1,11 +1,14 @@
+
+export const images = {};
+
 import { createCanvas } from 'app/dom';
 import {
     drawRectangle, fillRectangle, ifdefor, shrinkRectangle
 } from 'app/utils/index';
 
-import { Source } from 'app/types';
 
-export const images = {};
+import { FullRectangle, Source, JobIcon, Frame, Renderable, ShortRectangle } from 'app/types';
+
 function loadImage(source, callback) {
     images[source] = new Image();
     images[source].onload = () => callback();
@@ -127,17 +130,22 @@ export function undoFrames(frames) {
     return frames.concat(reversedFrames.reverse());
 }
 
-export function drawImage(context, image, source, target) {
+export function drawImage(
+    context: CanvasRenderingContext2D,
+    image: HTMLCanvasElement | HTMLImageElement,
+    source: FullRectangle,
+    target: FullRectangle & {xScale?: number, yScale?: number},
+) {
     context.save();
     context.translate(target.left + target.width / 2, target.top + target.height / 2);
     if (target.xScale || target.yScale) {
-        context.scale(ifdefor(target.xScale, 1), ifdefor(target.yScale, 1));
+        context.scale(target.xScale || 1, target.yScale || 1);
     }
     context.drawImage(image, source.left, source.top, source.width, source.height, -target.width / 2, -target.height / 2, target.width, target.height);
     context.restore();
 }
 
-export function drawSolidTintedImage(context, image, tint, source, target) {
+export function drawSolidTintedImage(context, image, tint, source: FullRectangle, target: FullRectangle) {
     // First make a solid color in the shape of the image to tint.
     globalTintContext.save();
     globalTintContext.fillStyle = tint;
@@ -169,7 +177,14 @@ function makeTintedImage(image, tint) {
 const globalTintCanvas = createCanvas(400, 300);
 const globalTintContext = globalTintCanvas.getContext('2d');
 globalTintContext.imageSmoothingEnabled = false;
-export function drawTintedImage(context, image, tint, amount, source, target) {
+export function drawTintedImage(
+    context: CanvasRenderingContext2D,
+    image: HTMLImageElement | HTMLCanvasElement,
+    tint: string,
+    amount: number,
+    source: FullRectangle,
+    target: FullRectangle
+) {
     context.save();
     // First make a solid color in the shape of the image to tint.
     globalTintContext.save();
@@ -191,12 +206,17 @@ const globalCompositeContext = globalCompositeCanvas.getContext('2d');
 export function prepareTintedImage() {
     globalCompositeContext.clearRect(0, 0, globalCompositeCanvas.width, globalCompositeCanvas.height);
 }
-export function getTintedImage(image, tint, amount, sourceRectangle) {
+export function getTintedImage(image, tint, amount, sourceRectangle: FullRectangle) {
     drawTintedImage(globalCompositeContext, image, tint, amount, sourceRectangle, {'left': 0, 'top': 0, 'width': sourceRectangle.width, 'height': sourceRectangle.height});
     return globalCompositeCanvas;
 }
 
-export function drawSourceWithOutline(context, source, color, thickness, target) {
+export function drawSourceWithOutline(
+    context,
+    source: FullRectangle & {drawWithOutline?: Function, render: Function},
+    color, thickness,
+    target: FullRectangle
+) {
     if (source.drawWithOutline) {
         source.drawWithOutline(context, color, thickness, target);
         return;
@@ -213,7 +233,7 @@ export function drawSourceWithOutline(context, source, color, thickness, target)
     }
     source.render(context, target);
 }
-function drawSourceAsSolidTint(context, source, tint, target) {
+function drawSourceAsSolidTint(context, source: FullRectangle & { render: Function }, tint, target: FullRectangle) {
     // First make a solid color in the shape of the image to tint.
     globalTintContext.save();
     globalTintContext.fillStyle = tint;
@@ -225,7 +245,7 @@ function drawSourceAsSolidTint(context, source, tint, target) {
     drawImage(context, globalTintCanvas, tintRectangle, target);
     globalTintContext.restore();
 }
-export function drawOutlinedImage(context, image, color, thickness, source, target) {
+export function drawOutlinedImage(context, image, color, thickness, source: FullRectangle, target: FullRectangle) {
     context.save();
     const smallTarget = {...target};
     for (let dy = -1; dy <= 1; dy++) {
@@ -254,23 +274,7 @@ export function setupSource(source: Partial<Source>): Source {
     return source as Source;
 }
 
-export function drawAbilityIcon(context, icon, target) {
-    if (!icon) return;
-    // Don't scale up ability icons.
-    var width = Math.min(icon.width, target.width);
-    var hPadding = (target.width - width) / 2;
-    var height = Math.min(icon.height, target.height);
-    var vPadding = (target.height - height) / 2;
-    var drawTarget = {'left': target.left + Math.ceil(hPadding), 'top': target.top + Math.ceil(vPadding), width, height};
-    if (icon.render) {
-        icon.render(context, drawTarget);
-        return;
-    }
-    // Default icon style is: {'image': images[icon], 'left': 0, 'top': 0, 'width': 34, 'height': 34};
-    drawImage(context, icon.image, icon, drawTarget);
-}
-
-export function drawRectangleBackground(context, rectangle) {
+export function drawRectangleBackground(context: CanvasRenderingContext2D, rectangle: FullRectangle) {
     context.save();
     context.beginPath();
     context.globalAlpha = .9;
@@ -285,7 +289,7 @@ export function drawRectangleBackground(context, rectangle) {
     context.restore();
 }
 
-export function drawTitleRectangle(context, rectangle) {
+export function drawTitleRectangle(context, rectangle: FullRectangle) {
     context.save();
     context.beginPath();
     context.globalAlpha = .5;

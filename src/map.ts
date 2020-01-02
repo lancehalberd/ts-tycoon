@@ -29,13 +29,13 @@ import { updateDamageInfo } from 'app/performAttack';
 import { hidePointsPreview, previewPointsChange } from 'app/points';
 import { saveGame } from 'app/saveGame';
 import { getState } from 'app/state';
-import { isPointInRect } from 'app/utils/index';
+import { isPointInRect, isPointInShortRect } from 'app/utils/index';
 import { getMousePosition, isMouseDown, isRightMouseDown } from 'app/utils/mouse';
 import SphereVector from 'app/utils/SphereVector';
 import Vector from 'app/utils/Vector';
 import { worldCamera } from 'app/WorldCamera';
 
-import { LevelData, MapTarget, Shrine } from 'app/types';
+import { LevelData, MapTarget, ShortRectangle, Shrine } from 'app/types';
 
 export const mapLocation = new SphereVector(WORLD_RADIUS);
 
@@ -188,10 +188,10 @@ function getMapShrineHelpText(shrine: Shrine): string {
 export function getMapTarget(x: number, y: number): MapTarget {
     for (let levelKey in mapState.visibleNodes) {
         const levelData = mapState.visibleNodes[levelKey];
-        if (isPointInRect(x, y, levelData.left, levelData.top, levelData.width, levelData.height)) {
+        if (isPointInShortRect(x, y, levelData as ShortRectangle)) {
             return levelData;
         }
-        if (!editingMapState.editingMap && levelData.shrine && isPointInRect(x, y, levelData.shrine.left, levelData.shrine.top, levelData.shrine.width, levelData.shrine.height)) {
+        if (!editingMapState.editingMap && levelData.shrine && isPointInShortRect(x, y, levelData.shrine)) {
             return levelData.shrine;
         }
     }

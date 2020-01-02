@@ -213,7 +213,7 @@ export function renderBonusText(bonusMap, bonusKey, bonusSource, coreObject, loc
         const digits = Number(wildcard[1]);
         if (wildcard[0] === '%') renderedValue = percent(renderedValue, digits);
         else if ('' + parseFloat(renderedValue) == renderedValue) {
-            renderedValue = parseFloat(renderedValue).toFixed(digits);
+            renderedValue = '' + fixedDigits(parseFloat(renderedValue), digits);
         }
         return text.split(wildcard).join(renderedValue);
     }
@@ -287,10 +287,10 @@ export const bonusMap: {
     '*weaponRange': '$1× weapon range',
     // Offensive stats
     '+damage': '+$1 damage',
-    '*damage': '$3× damage',
+    '*damage': '$2× damage',
     '%damage': '%1 increased damage',
     '+weaponDamage': '+$1 damage',
-    '*weaponDamage': '$3× damage',
+    '*weaponDamage': '$2× damage',
     '%weaponDamage': '%1 increased damage',
     '+minPhysicalDamage': function (bonusSource) {
         return formatValue(bonusSource.bonuses['+minPhysicalDamage'], 1) + ' to ' + formatValue(bonusSource.bonuses['+maxPhysicalDamage'], 1) + ' increased physical damage';

@@ -36,6 +36,8 @@ export const inventoryState: InventoryState = {
 };
 
 export function equipItemProper(actor: Actor, item: Item, update) {
+    const selectedCharacter = getState().selectedCharacter;
+    const isSelectedHero = (actor === (selectedCharacter && selectedCharacter.hero));
     //console.log("equip " + item.base.slot);
     if (actor.equipment[item.base.slot]) {
         console.log("Tried to equip an item without first unequiping!");
@@ -46,8 +48,7 @@ export function equipItemProper(actor: Actor, item: Item, update) {
         return;
     }
     item.domElement.remove();
-    const gameState = getState();
-    if (actor.character === gameState.selectedCharacter) {
+    if (isSelectedHero) {
         query('.js-equipment .js-' + item.base.slot).appendChild(item.domElement);
         query('.js-equipment .js-' + item.base.slot + ' .js-placeholder').style.display = 'none';
     }
@@ -65,8 +66,8 @@ export function equipItemProper(actor: Actor, item: Item, update) {
     })
     if (update) {
         updateTags(actor.variableObject, recomputeActorTags(actor), true);
-        if (actor.character === getState().selectedCharacter) {
-            refreshStatsPanel(actor.character, query('.js-characterColumn .js-stats'));
+        if (isSelectedHero) {
+            refreshStatsPanel(selectedCharacter, query('.js-characterColumn .js-stats'));
         }
         updateAdventurerGraphics(actor);
         updateOffhandDisplay();
@@ -93,7 +94,7 @@ function unequipSlot(actor: Actor, slotKey: EquipmentSlot, update: boolean = fal
         })
         if (update) {
             updateTags(actor.variableObject, recomputeActorTags(actor), true);
-            if (getState().selectedCharacter === actor.character) {
+            if (getState().selectedCharacter.hero === actor) {
                 refreshStatsPanel(actor.character, query('.js-characterColumn .js-stats'));
                 query('.js-equipment .js-' + slotKey + ' .js-placeholder').style.display = '';
             }

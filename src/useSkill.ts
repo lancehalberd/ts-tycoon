@@ -126,9 +126,11 @@ export function isActorDying(actor: Actor): boolean {
  * @return boolean True if the skill was used.
  */
 export function shouldUseSkillOnTarget(actor: Actor, skill: Action, target: Actor): boolean {
-    if (!actor.character && target.character) return true; // Enemies always use skills on the hero, since they win if the hero dies.
+    if (actor.type !== 'hero' && target.type === 'hero') {
+        return true; // Enemies always use skills on the hero, since they win if the hero dies.
+    }
     if ((skill.base.target || 'enemies') === 'enemies') {
-        var percentHealth = target.health / target.stats.maxHealth;
+        const percentHealth = target.health / target.stats.maxHealth;
         if (// If this ability targets an enemy, don't use it if the enemy is already going to die.
             isActorDying(target)
             // Unless the enemy has low enough health that they can be culled by this skill.
@@ -779,7 +781,7 @@ reactionDefinitions.counterAttack = {
         var distance = getDistance(actor, attackStats.source);
         // Can only counter attack if the target is in range, and
         if (distance > counterAttackSkill.stats.range * 32 + 4) { // Give the range a tiny bit of lee way
-            //console.log("Attacker is too far away: " + [distance, counterAttackSkill.range]);
+            //console.log("Attacker is too far away: " + [distance, counterAttackSkill.stats.range]);
             return false;
         }
         // The chance to counter attack is reduced by a factor of the distance.

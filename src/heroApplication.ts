@@ -72,7 +72,7 @@ export function showHeroApplication(application: FixedObject) {
     applicantPreviewContext.globalAlpha = 1;
     //const jobSource = character.adventurer.job.iconSource;
     //drawImage(applicantPreviewContext, jobSource.image, jobSource, {'left': 0, 'top': 0, 'width': 32, 'height': 32});
-    character.hero.job.iconSource.render(applicantPreviewContext, {'left': 0, 'top': 0, 'width': 32, 'height': 32});
+    character.hero.job.iconSource.render(applicantPreviewContext, {x: 0, y: 0, w: 32, h: 32});
     applicantPreviewContext.globalAlpha = .6;
     applicantPreviewContext.drawImage(character.adventurer.personCanvas, character.adventurer.source.walkFrames[0] * 96, 0, 96, 64, -64, 0, 192, 128);
     drawBoardJewels(character, boardCanvas);

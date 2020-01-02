@@ -1,6 +1,6 @@
 import { getAbilityIconSource } from 'app/content/abilities';
 import { drawJewel } from 'app/drawJewel';
-import { drawAbilityIcon } from 'app/images';
+import { drawAbilityIcon } from 'app/render/drawIcons';
 import { jewelInventoryState } from 'app/jewelInventory';
 import { jewelTierLevels } from 'app/jewels';
 import { getMousePosition, isMouseOverElement } from 'app/utils/mouse';
@@ -60,7 +60,7 @@ export function drawBoardJewelsProper(context: CanvasRenderingContext2D, lightSo
         const iconSource = getAbilityIconSource(jewel.ability);
         if (mouseIsOverBoard && iconSource) {
             drawAbilityIcon(context, iconSource,
-                {'left': jewel.shape.center[0] - 10, 'top': jewel.shape.center[1] - 10, 'width': 20, 'height': 20});
+                {x: jewel.shape.center[0] - 10, y: jewel.shape.center[1] - 10, w: 20, h: 20});
         }
     }
     if (board.boardPreview) {
@@ -79,7 +79,6 @@ export function drawBoardJewelsProper(context: CanvasRenderingContext2D, lightSo
 }
 
 export function drawBoardBackground(context: CanvasRenderingContext2D, board: Board) {
-    console.log('draw board background');
     context.lineWidth = 10;
     context.lineCap = 'round';
     context.lineJoin = 'round';
@@ -100,7 +99,7 @@ export function drawBoardPreview(context: CanvasRenderingContext2D, lightSource:
     const iconSource = getAbilityIconSource(fixedJewel.ability);
     if (showIcon && iconSource) {
         drawAbilityIcon(context, iconSource,
-                {'left': fixedJewel.shape.center[0] - 10, 'top': fixedJewel.shape.center[1] - 10, 'width': 20, 'height': 20});
+                {x: fixedJewel.shape.center[0] - 10, y: fixedJewel.shape.center[1] - 10, w: 20, h: 20});
     }
     // Fixed jewel on board previews should glow to draw attention to it.
     context.save();

@@ -39,7 +39,8 @@ import { ifdefor } from 'app/utils/index';
 import { isMouseDown } from 'app/utils/mouse';
 
 import {
-    Actor, Area, AreaEntity, BonusSource, Character, Exit, GuildArea, Hero, LevelData, LevelDifficulty, MonsterData
+    Actor, Area, AreaEntity, BonusSource, Character, Exit,
+    GuildArea, Hero, LevelData, LevelDifficulty, MonsterData, Target,
 } from 'app/types';
 
 
@@ -80,9 +81,8 @@ export function startLevel(character: Character, index: string) {
 }
 
 export function enterArea(actor: Actor, {x, z, areaKey}: Exit) {
-    const character = actor.character;
-    if (areaKey === 'worldMap' && character) {
-        returnToMap(character);
+    if (areaKey === 'worldMap' && actor.type === 'hero') {
+        returnToMap(actor.character);
         return;
     }
     leaveCurrentArea(actor);
@@ -97,7 +97,8 @@ export function enterArea(actor: Actor, {x, z, areaKey}: Exit) {
         actor.actions.concat(actor.reactions).forEach(function (action) {
             action.readyAt = 0;
         });
-        if (character) {
+        if (actor.type === 'hero') {
+            const character = actor.character;
             character.context = 'guild'
             character.currentLevelKey = 'guild';
             if (character === state.selectedCharacter) {
@@ -119,7 +120,7 @@ export function enterArea(actor: Actor, {x, z, areaKey}: Exit) {
     actor.x = x;
     actor.y = 0;
     actor.z = z;
-    if (character === state.selectedCharacter) {
+    if (state.selectedCharacter && actor === state.selectedCharacter.hero) {
         area.cameraX = Math.round(Math.max(area.left, Math.min(area.width - 800, actor.x - 400)));
     }
     if (isNaN(actor.x) || isNaN(actor.z)) {
@@ -128,7 +129,9 @@ export function enterArea(actor: Actor, {x, z, areaKey}: Exit) {
     area.allies.push(actor);
     actor.allies = area.allies;
     actor.enemies = area.enemies;
-    actor.activity = null;
+    if (actor.type === 'hero') {
+        actor.activity = {type: 'none'};
+    }
 }
 export function addMonstersToArea(
     area: Area,
@@ -169,7 +172,7 @@ function checkIfActorDied(actor: Actor) {
     actor.isDead = true;
     actor.timeOfDeath = actor.time;
     // Each enemy that is a main character should gain experience when this actor dies.
-    actor.enemies.filter(enemy => enemy.character).forEach(hero => defeatedEnemy(hero as Hero, actor));
+    actor.enemies.forEach(enemy => enemy.type === 'hero' && defeatedEnemy(enemy, actor));
 }
 
 function timeStopLoop(area: Area) {
@@ -243,7 +246,7 @@ export function removeActor(actor: Actor) {
     // after they are already removed from the area, so they won't be in the list of allies already.
     if (index < 0) return;
     actor.allies.splice(index, 1);
-    if (actor.character) {
+    if (actor.type === 'hero') {
         const character = actor.character;
         const area = actor.area;
         if (area.isGuildArea) {
@@ -485,23 +488,23 @@ function runActorLoop(actor: Actor) {
             return;
         } else {
             actor.skillInUse = null;
-            if (actor.character && actor.character.paused && !isMouseDown()) {
-                actor.activity = null;
+            if (actor.type === 'hero' && actor.character.paused && !isMouseDown()) {
+                actor.activity = {type: 'none'};
             }
         }
     }
-    if (actor.activity) {
+    if (actor.type === 'hero' && actor.activity.type !== 'none') {
         switch (actor.activity.type) {
             case 'attack':
                 if (actor.activity.target.isDead) {
-                    actor.activity = null;
+                    actor.activity = {type: 'none'};
                 } else {
                     const target = actor.activity.target;
                     // If the actor is in manual mode, only do auto attacks.
                     if (actor.character && actor.character.paused) {
                         const basicAttack = getBasicAttack(actor);
                         if (!basicAttack) {
-                            actor.activity = null;
+                            actor.activity = {type: 'none'};
                             break;
                         }
                         if (!canUseSkillOnTarget(actor, basicAttack, target)) break;
@@ -518,17 +521,17 @@ function runActorLoop(actor: Actor) {
                 // console.log([actor, action, target]);
                 // console.log('valid target? ' + canUseSkillOnTarget(actor, action, target));
                 if (!canUseSkillOnTarget(actor, action, target)) {
-                    actor.activity = null;
+                    actor.activity = {type: 'none'};
                     break;
                 }
                 // console.log('in range? ' + isTargetInRangeOfSkill(actor, action, target));
                 if (!isTargetInRangeOfSkill(actor, action, target)) break;
                 prepareToUseSkillOnTarget(actor, action, target);
-                actor.activity = null;
+                actor.activity = {type: 'none'};
                 break;
         }
         return;
-    } else if (actor.character && actorShouldAutoplay(actor) && !actor.enemies.filter(enemy => enemy.targetHealth >= 0).length) {
+    } else if (actor.type === 'hero' && actorShouldAutoplay(actor) && !actor.enemies.filter(enemy => enemy.targetHealth >= 0).length) {
         const character = actor.character;
         // Code for intracting with chest/shrine at the end of level and leaving the area.
         for (const object of area.objects) {
@@ -558,10 +561,10 @@ function runActorLoop(actor: Actor) {
         }
     }
     // Manual control doesn't use the auto targeting logic.
-    if (actor.character && actor.character.paused) {
+    if (actor.type === 'hero' && actor.character.paused) {
         return;
     }
-    const targets = [];
+    const targets: Actor[] = [];
     for (const ally of actor.allies) {
         ally.priority = getDistance(actor, ally) - 1000;
         targets.push(ally);
@@ -591,14 +594,14 @@ function checkToUseSkillOnTarget(actor: Actor, target: Actor) {
     const autoplay = actorShouldAutoplay(actor);
     for(const action of ifdefor(actor.actions, [])) {
         // Only basic attacks will be used by your hero when you manually control them.
-        if (!autoplay && !action.variableObject.tags['basic'] && actor.character &&
+        if (!autoplay && !action.variableObject.tags['basic'] && actor.type === 'hero' &&
             // If the player has set this skill to auto, then it will be used automatically during manual control.
             !actor.character.autoActions[action.base.key]
         ) {
             continue;
         }
         // If the skill has been set to manual, it won't be used during autoplay.
-        if (autoplay && actor.character && actor.character.manualActions[action.base.key]) {
+        if (autoplay && actor.type === 'hero' && actor.character.manualActions[action.base.key]) {
             continue;
         }
         if (!canUseSkillOnTarget(actor, action, target)) {
@@ -618,7 +621,9 @@ function checkToUseSkillOnTarget(actor: Actor, target: Actor) {
 }
 
 export function actorShouldAutoplay(actor: Actor) {
-    if (!actor.character) return true; // Only character heroes can be manually controlled.
+    if (actor.type !== 'hero') {
+        return true; // Only character heroes can be manually controlled.
+    }
     return !actor.character.isStuckAtShrine
         && (actor.character.autoplay || (actor.character !== getState().selectedCharacter && actor.enemies.length));
 }
@@ -747,7 +752,7 @@ export function leaveCurrentArea(actor: Actor, leavingZone = false) {
     if (!actor.area) return;
     // If the are is a safe guild area, it becomes the actors 'escape exit',
     // where they will respawn next if they die.
-    if (actor.character && actor.area.isGuildArea && !actor.area.enemies.length) {
+    if (actor.type === 'hero' && actor.area.isGuildArea && !actor.area.enemies.length) {
         actor.escapeExit = {x: actor.x, z: actor.z, areaKey: actor.area.key};
     }
     var allyIndex = actor.area.allies.indexOf(actor);

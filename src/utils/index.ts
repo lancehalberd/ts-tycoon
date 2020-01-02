@@ -1,5 +1,7 @@
 import * as _ from 'lodash';
 
+import { FullRectangle, ShortRectangle } from 'app/types';
+
 /**
  * Makes a deep copy of an object. Note that this will not make deep copies of
  * objects with prototypes.
@@ -57,7 +59,11 @@ export function isPointInRect(x: number, y: number, l: number, t: number, w: num
     return !(y < t || y > (t + h) || x < l || x > (l + w));
 }
 
-export function isPointInRectObject(x: number, y: number, rectangle): boolean {
+export function isPointInShortRect(x: number, y: number, {x: l = 0, y: t = 0, w = 0, h = 0}: ShortRectangle): boolean {
+    return !(y < t || y > t + h || x < l || x > l + w);
+}
+
+export function isPointInRectObject(x: number, y: number, rectangle: FullRectangle): boolean {
     if (!rectangle || ifdefor(rectangle.top) === null || ifdefor(rectangle.left) === null
          || ifdefor(rectangle.width) === null || ifdefor(rectangle.height) === null) {
         return false;
@@ -67,7 +73,7 @@ export function isPointInRectObject(x: number, y: number, rectangle): boolean {
 }
 
 
-export function rectanglesOverlap(A, B) {
+export function rectanglesOverlap(A: FullRectangle, B: FullRectangle) {
     return !(A.bottom < B.top || A.top > B.bottom || A.right < B.left || A.left > B.right);
 }
 
@@ -92,7 +98,7 @@ export function getCollisionArea(element1: HTMLElement, element2: HTMLElement) {
     return Math.max(Math.min(B - t, b - T), 0) * Math.max(Math.min(R - l, r - L), 0);
 }
 
-export function getElementRectangle(element: HTMLElement, container = null) {
+export function getElementRectangle(element: HTMLElement, container = null): FullRectangle {
     let b = element.getBoundingClientRect();
     const rect = { left: b.left, top: b.top, width: b.width, height: b.height };
     // If container is specified, return the rectangle relative to the container's coordinates.
@@ -114,29 +120,38 @@ export function resize(element: HTMLElement, width: number, height: number, left
 export function constrain(value: number, min: number, max: number): number {
     return Math.min(max, Math.max(min, value));
 }
-export function fillRectangle(context: CanvasRenderingContext2D, rectangle) {
+export function fillRectangle(context: CanvasRenderingContext2D, rectangle: FullRectangle) {
     context.fillRect(rectangle.left, rectangle.top, rectangle.width, rectangle.height);
 }
-export function drawRectangle(context: CanvasRenderingContext2D, rectangle) {
+export function fillRect(context: CanvasRenderingContext2D, {x, y, w, h}: ShortRectangle) {
+    context.fillRect(x, y, w, h);
+}
+export function drawRectangle(context: CanvasRenderingContext2D, rectangle: FullRectangle) {
     context.rect(rectangle.left, rectangle.top, rectangle.width, rectangle.height);
 }
-export function rectangle(left, top, width, height) {
+export function rectangle(left: number, top: number, width: number, height: number): FullRectangle {
     return {left: left, top: top, width: width, height: height, right: left + width, bottom: top + height};
 }
-export function shrinkRectangle(rectangle, margin) {
+export function r(x: number, y: number, w: number, h: number): ShortRectangle {
+    return {x, y, w, h};
+}
+export function shrinkRectangle(rectangle: FullRectangle, margin: number): FullRectangle {
     return {'left': rectangle.left + margin, 'width': rectangle.width - 2 * margin,
             'top': rectangle.top + margin, 'height': rectangle.height - 2 * margin};
 }
-export function rectangleCenter(rectangle) {
+export function pad({x, y, w, h}: ShortRectangle, m: number): ShortRectangle {
+    return {x: x - m, w: w + 2 * m, y: y - m, h: h + 2 * m};
+}
+export function rectangleCenter(rectangle: FullRectangle): [number, number] {
     return [rectangle.left + rectangle.width / 2, rectangle.top + rectangle.height / 2];
 }
-export function rectangleFromPoints(A, B) {
+export function rectangleFromPoints(A: {x: number, y: number}, B: {x: number, y: number}): FullRectangle {
     var left = Math.min(A.x, B.x);
     var top = Math.min(A.y, B.y);
     return rectangle(left, top, Math.abs(A.x - B.x), Math.abs(A.y - B.y));
 }
 
-export function drawRunningAnts(context, rectangle) {
+export function drawRunningAnts(context: CanvasRenderingContext2D, rectangle: FullRectangle) {
     context.save();
     context.strokeStyle = 'black';
     var frame = Math.floor(now() / 80) % 10;
@@ -157,20 +172,20 @@ export function drawRunningAnts(context, rectangle) {
     context.restore();
 }
 
-export function objectIndexOf(object, value, defaultValue) {
-    for (var key of Object.keys(object)) {
+export function objectIndexOf(object: Object, value: any, defaultValue: string = null): string {
+    for (const key of Object.keys(object)) {
         if (object[key] === value) {
             return key;
         }
     }
-    return ifdefor(defaultValue);
+    return defaultValue;
 }
 
-export function arrMod(array, index) {
+export function arrMod<T>(array: T[], index: number): T {
     return array[(index % array.length + array.length) % array.length];
 }
 
-export function fixFloat(f) {
+export function fixFloat(f: number): number {
     return Math.round(1000000 * f) / 1000000;
 }
 
@@ -182,7 +197,7 @@ export function removeElementFromArray<T>(array: T[], element: T, throwErrorIfMi
     }
     return array.splice(index, 1)[0];
 }
-export function countInstancesOfElementInArray(array, element) {
+export function countInstancesOfElementInArray<T>(array: T[], element: T): number {
     let count = 0;
     for (const arrayElement of array) {
         if (arrayElement === element) count++;

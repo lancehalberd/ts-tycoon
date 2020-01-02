@@ -8,12 +8,12 @@ import { initializeGame } from 'app/initialize';
 import { areAllImagesLoaded } from 'app/images';
 import { updateMap } from 'app/map';
 import { handleAdventureMouseIsDown } from 'app/main';
-import { checkremovePopup } from 'app/popup';
+import { checkToRemovePopup } from 'app/popup';
 import { getState } from 'app/state';
 import { getMousePosition, isMouseDown } from 'app/utils/mouse';
 import { areAllSoundsLoaded } from 'app/utils/sounds';
 
-import { Actor } from 'app/types';
+import { Actor, Area, Character, Hero } from 'app/types';
 
 let isGameInitialized = false;
 export function update() {
@@ -71,7 +71,7 @@ export function update() {
     }
     // TODO: do we need to do this every frame?
     query('.js-inventorySlot').style.display = query('.js-inventory .js-item') ? 'none' : '';
-    checkremovePopup();
+    checkToRemovePopup();
     updateTrophyPopups();
     } catch (e) {
         console.log(e.stack);
@@ -79,7 +79,7 @@ export function update() {
     }
 }
 
-function updateAreaCamera(area, hero) {
+function updateAreaCamera(area: Area, hero: Hero) {
     // Only update the camera for the guild for the selected character, but
     // always update the camera for characters in adventure areas.
     if (hero.area === area || (area && !area.isGuildArea)) {
@@ -88,19 +88,19 @@ function updateAreaCamera(area, hero) {
     }
 }
 
-export function getTargetCameraX(actor: Actor) {
+export function getTargetCameraX(hero: Hero) {
     const [x, y] = getMousePosition(mainCanvas);
-    const area = actor.area;
-    let centerX = actor.x;
+    const area = hero.area;
+    let centerX = hero.x;
     const mouseX = Math.max(0, Math.min(800, x));
-    if (actor.activity && actor.activity.type === 'move') {
-        centerX = (centerX + actor.activity.x) / 2;
-    } else if (actor.goalTarget && !actor.goalTarget.isDead) {
-        centerX = (centerX + actor.goalTarget.x) / 2;
+    if (hero.activity.type === 'move') {
+        centerX = (centerX + hero.activity.x) / 2;
+    } else if (hero.goalTarget && !hero.goalTarget.isDead) {
+        centerX = (centerX + hero.goalTarget.x) / 2;
     }
     if (mouseX > 700) centerX = centerX + (mouseX - 700) / 2;
     else if (mouseX < 100) centerX = centerX + (mouseX - 100) / 2;
-    let target = Math.min(actor.x - 20, centerX - 400);
+    let target = Math.min(hero.x - 20, centerX - 400);
     target = Math.max(area.left || 0, target);
     if (area.width) target = Math.min(area.width - 800, target);
     // If a timestop is in effect, the caster must be in the frame.
@@ -112,10 +112,10 @@ export function getTargetCameraX(actor: Actor) {
     return Math.round(target);
 };
 
-function isCharacterPaused(character) {
+function isCharacterPaused(character: Character) {
     const hero = character.hero;
     if (!character.paused) return false;
-    if (hero.activity || hero.skillInUse) return false;
+    if (hero.activity.type !== 'none' || hero.skillInUse) return false;
     if (hero.chargeEffect) return false;
     if (!hero.area.enemies) return false;
     return true;
