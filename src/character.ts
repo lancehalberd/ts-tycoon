@@ -113,24 +113,30 @@ export function initializeActorForAdventure(actor: Actor) {
     actor.temporalShield = actor.maxTemporalShield = (stopTimeAction ? stopTimeAction.stats.duration : 0);
     updateActorDimensions(actor);
 }
+function setText(element: HTMLElement, text: string) {
+    if (!element) {
+        return;
+    }
+    element.textContent = text;
+}
 export function refreshStatsPanel(
     character = getState().selectedCharacter,
-    statsPanelElement: HTMLElement = query('.js-characterColumn .js-stats')
+    statsPanelElement: HTMLElement = query('.js-characterColumn .js-stats'),
 ) {
     const hero = character.hero;
-    statsPanelElement.querySelector('.js-playerName').textContent = hero.job.name + ' ' + hero.name;
-    statsPanelElement.querySelector('.js-playerLevel').textContent = '' + hero.level;
-    statsPanelElement.querySelector('.js-fame').textContent = character.fame.toFixed(1);
-    statsPanelElement.querySelector('.js-dexterity').textContent = hero.stats.dexterity.toFixed(0);
-    statsPanelElement.querySelector('.js-strength').textContent = hero.stats.strength.toFixed(0);
-    statsPanelElement.querySelector('.js-intelligence').textContent = hero.stats.intelligence.toFixed(0);
-    query('.js-global-divinity').textContent = abbreviate(character.divinity);
-    statsPanelElement.querySelector('.js-maxHealth').textContent = abbreviate(hero.stats.maxHealth, 0);
+    setText(statsPanelElement.querySelector('.js-playerName'), hero.job.name + ' ' + hero.name);
+    setText(statsPanelElement.querySelector('.js-playerLevel'), '' + hero.level);
+    setText(statsPanelElement.querySelector('.js-fame'), character.fame.toFixed(1));
+    setText(statsPanelElement.querySelector('.js-dexterity'), hero.stats.dexterity.toFixed(0));
+    setText(statsPanelElement.querySelector('.js-strength'), hero.stats.strength.toFixed(0));
+    setText(statsPanelElement.querySelector('.js-intelligence'), hero.stats.intelligence.toFixed(0));
+    setText(query('.js-global-divinity'), abbreviate(character.divinity));
+    setText(statsPanelElement.querySelector('.js-maxHealth'), abbreviate(hero.stats.maxHealth, 0));
     if (hero.actions.length) {
-        statsPanelElement.querySelector('.js-range').textContent = getBasicAttack(hero).stats.range.toFixed(2);
+        setText(statsPanelElement.querySelector('.js-range'), getBasicAttack(hero).stats.range.toFixed(2));
     }
-    statsPanelElement.querySelector('.js-speed').textContent = hero.stats.speed.toFixed(1);
-    statsPanelElement.querySelector('.js-healthRegen').textContent = hero.stats.healthRegen.toFixed(1);
+    setText(statsPanelElement.querySelector('.js-speed'), hero.stats.speed.toFixed(1));
+    setText(statsPanelElement.querySelector('.js-healthRegen'), hero.stats.healthRegen.toFixed(1));
     updateDamageInfo(character, statsPanelElement);
 }
 export function newCharacter(job: Job): Character {
@@ -139,13 +145,11 @@ export function newCharacter(job: Job): Character {
     const characterCanvas = createCanvas(40, 20);
     const characterContext = characterCanvas.getContext('2d');
     characterCanvas.classList.add('js-character', 'character');
+    characterCanvas.setAttribute('helptext', '$character$')
     const boardCanvas = createCanvas(jewelsCanvas.width, jewelsCanvas.height);
     const boardContext = boardCanvas.getContext('2d');
     const abilityKey = abilities[job.key] ? job.key : 'heal';
     hero.abilities.push(abilities[abilityKey]);
-    //TODO
-    // .attr('helptext', '').data('helpMethod', () => actorHelpText(hero))
-    //    .data('character', character);
     const character: Character = {
         adventurer: hero,
         context: 'guild',

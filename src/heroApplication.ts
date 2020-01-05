@@ -5,8 +5,10 @@ import { allApplications } from 'app/content/furniture';
 import { guildYardEntrance } from 'app/content/guild';
 import { characterClasses } from 'app/content/jobs';
 import { handleChildEvent, query, queryAll, tagElement } from 'app/dom';
-import { drawBoardJewels } from 'app/drawBoard';
+import { drawBoardBackground, drawBoardJewels } from 'app/drawBoard';
+import { jewelInventoryState, updateJewelUnderMouse } from 'app/jewelInventory';
 import { drawImage } from 'app/images';
+import { inventoryState } from 'app/inventory';
 import { unlockMapLevel } from 'app/map';
 import { updateRetireButtons } from 'app/main';
 import { gain, hidePointsPreview, previewPointsChange, points, spend } from 'app/points';
@@ -65,16 +67,15 @@ export function showHeroApplication(application: FixedObject) {
     for (let i = 0; i < character.adventurer.job.intelligenceBonus; i++) {
         statsElement.querySelector('.js-intelligenceGrowth').append(tagElement('div', 'statGrowthFill'));
     }
-    character.boardCanvas = boardCanvas;
-    const applicantPreviewContext = applicationElement.querySelector('.js-previewCanvas')[0].getContext("2d");
+    //character.boardCanvas = boardCanvas;
+    const applicantPreviewContext = (applicationElement.querySelector('.js-previewCanvas') as HTMLCanvasElement).getContext("2d");
     applicantPreviewContext.imageSmoothingEnabled = false;
     applicantPreviewContext.clearRect(0, 0, 64, 128);
     applicantPreviewContext.globalAlpha = 1;
-    //const jobSource = character.adventurer.job.iconSource;
-    //drawImage(applicantPreviewContext, jobSource.image, jobSource, {'left': 0, 'top': 0, 'width': 32, 'height': 32});
     character.hero.job.iconSource.render(applicantPreviewContext, {x: 0, y: 0, w: 32, h: 32});
     applicantPreviewContext.globalAlpha = .6;
     applicantPreviewContext.drawImage(character.adventurer.personCanvas, character.adventurer.source.walkFrames[0] * 96, 0, 96, 64, -64, 0, 192, 128);
+    //drawBoardBackground(boardCanvas.getContext('2d'), character.board);
     drawBoardJewels(character, boardCanvas);
     applicationElement.style.display = '';
     updateHireButtons();
@@ -142,15 +143,6 @@ seekNewApplicantButton.onmouseout = function () {
     hidePointsPreview();
 }
 
-function hireHeroHelpMethod() {
-    const state = getState();
-    if (state.characters.length >= state.guildStats.maxHeroes) return 'You do not have enough beds to hire another hero. Dismiss a hero or explore the guild for more beds.';
-    return 'Hire this hero. The more famous your guild is, the cheaper it is to hire heroes.';
-}
-
-//TODO
-//$('.js-hireApplicant').data('helpMethod', hireHeroHelpMethod);
-
 export function hireCharacter(character: Character) {
     const state = getState();
     if (state.characters.length > 0 && state.characters.length >= state.guildStats.maxHeroes) return;
@@ -169,3 +161,11 @@ export function hireCharacter(character: Character) {
 export function hideHeroApplication() {
     applicationElement.style.display = 'none';
 }
+
+
+handleChildEvent('mousemove', document.body, '.js-applicationSkillCanvas', function (targetJewelsCanvas) {
+    if (jewelInventoryState.draggedJewel || inventoryState.dragHelper || jewelInventoryState.draggingBoardJewel) {
+        return;
+    }
+    updateJewelUnderMouse(targetJewelsCanvas, displayedApplication.character);
+});

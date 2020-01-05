@@ -5,16 +5,16 @@ import { addTrophyToAltar, checkIfAltarTrophyIsAvailable, getDefaultAltarTrophie
 import { addAllUnlockedFurnitureBonuses, allApplications, allBeds,  } from 'app/content/furniture';
 import { getDefaultGuildAreas, guildYardEntrance } from 'app/content/guild';
 import { map } from 'app/content/mapData';
-import { query, queryAll } from 'app/dom';
-import { updateEnchantmentOptions } from 'app/enchanting';
-import { addToInventory } from 'app/inventory';
+import { craftingOptionsContainer, query, queryAll } from 'app/dom';
+import { getEnchantingItem, updateEnchantmentOptions } from 'app/enchanting';
+import { addToInventory, exportItem, getItemForElement, importItem } from 'app/inventory';
 import { addJewelToInventory } from 'app/jewelInventory';
 import { setMaxAnimaJewelBonus } from 'app/jewels';
 import { updateRetireButtons } from 'app/main';
 import { changedPoints } from 'app/points';
 import {
-    exportCharacter, exportItem, exportJewel,
-    importCharacter, importItem, importJewel,
+    exportCharacter, exportJewel,
+    importCharacter, importJewel,
 } from 'app/saveGame';
 import { Polygon } from 'app/utils/polygon';
 
@@ -42,7 +42,7 @@ type SavedTrophies = {[key: string]: SavedTrophy};
 
 export type SavedState = {
     jewels: SavedJewel[],
-    items: SavedItem[],
+    inventoryItems: SavedItem[],
     coins: number,
     anima: number,
     divinity: number,
@@ -78,9 +78,6 @@ export interface GameState {
     characters: Character[],
     applicants: Character[],
     jewels: Jewel[],
-    items: Item[],
-    craftingItems: Item[],
-    enchantmentItem: Item,
     guildAreas: GuildAreas,
     guildBonusSources: BonusSource[];
     altarTrophies: Trophies,
@@ -90,7 +87,7 @@ export interface GameState {
 function getDefaultSavedState(): SavedState {
     return {
         jewels: [],
-        items: [],
+        inventoryItems: [],
         coins: 0,
         anima: 0,
         divinity: 0,
@@ -124,9 +121,6 @@ function getDefaultState(): GameState {
         selectedCharacter: null,
         visibleLevels: {}, // This isn't stored, it is computed from completedLevels on load.
         jewels: [],
-        items: [],
-        craftingItems: [],
-        enchantmentItem: null,
         characters: [],
         applicants: [],
         guildAreas: {},
@@ -151,14 +145,15 @@ export const implicitGuildBonusSource = {bonuses: {
 }};
 
 export function exportState(state: GameState): SavedState {
+    const enchantmentItem = getEnchantingItem();
     return {
         ...state.savedState,
         applicants: state.applicants.map(exportCharacter),
         characters: state.characters.map(exportCharacter),
         completedLevels: {...state.savedState.completedLevels},
-        items: state.items.map(exportItem),
-        craftingItems: state.craftingItems.map(exportItem),
-        enchantmentItem: state.enchantmentItem ? exportItem(state.enchantmentItem) : null,
+        inventoryItems: [...queryAll('.js-inventory .js-item')].map(getItemForElement).map(exportItem),
+        craftingItems: [...queryAll('..js-craftingSelectOptions .js-item')].map(getItemForElement).map(exportItem),
+        enchantmentItem: enchantmentItem ? exportItem(enchantmentItem) : null,
         guildAreas: exportGuildAreas(state.guildAreas),
         jewels: state.jewels.map(exportJewel),
         selectedCharacterIndex: state.characters.indexOf(state.selectedCharacter),
@@ -260,8 +255,8 @@ export function importState(savedState: SavedState) {
         jewel.shape.setCenterPosition(jewel.canvas.width / 2, jewel.canvas.height / 2);
         addJewelToInventory(jewel.domElement);
     });
-    state.items = savedState.items.map(importItem).filter(item => item);
-    state.items.forEach(addToInventory);
+    // Import and add all inventory items to the inventory.
+    savedState.inventoryItems.map(importItem).filter(item => item).forEach(addToInventory);
     // This might happen if we changed how much each holder contains during an update.
     state.characters = savedState.characters.map(importCharacter);
     state.characters.forEach(character => {
@@ -301,13 +296,11 @@ export function importState(savedState: SavedState) {
             }
         }
         query('.js-craftingSelectOptions').style.display = ''
-        query('.js-craftingOptions').style.display = 'none';
     } else if (savedState.enchantmentItem) {
         const item = importItem(savedState.enchantmentItem);
         if (item) {
             query('.js-enchantmentSlot').appendChild(item.domElement);
             query('.js-enchantmentOptions').style.display = '';
-            query('.js-craftingOptions').style.display = 'none';
             updateEnchantmentOptions();
         }
     }

@@ -2,6 +2,7 @@ import { addBonusSourceToObject, removeBonusSourceFromObject} from 'app/bonuses'
 import { createCanvas, divider, query, tagElement } from 'app/dom';
 import { fixedDigits, percent } from 'app/utils/formatters';
 import { abilityHelpText, bonusSourceHelpText } from 'app/helpText';
+import { removeFromBoard } from 'app/jewelInventory';
 import { removePopup } from 'app/popup';
 import { points } from 'app/points';
 import { getState } from 'app/state';
@@ -9,12 +10,15 @@ import { arrayToCssRGB } from 'app/utils/colors';
 import { isPointInPoints, makeShape, Polygon, shapeDefinitions } from 'app/utils/polygon';
 
 import {
-    Ability, Character, Jewel, JewelComponents, JewelQualifierName, JewelTier, ShapeType
+    Ability, BonusSource, Character, Jewel, JewelComponents, JewelQualifierName, JewelTier, ShapeType
 } from 'app/types';
 
 export const originalJewelScale = 30;
 export const displayJewelShapeScale = 30;
 const qualifierNames: JewelQualifierName[] = ['Perfect', 'Brilliant', 'Shining', '', 'Dull'];
+
+let nextJewelId: number = 0;
+export const jewelMap: {[key: string]: Jewel} = {};
 
 export function convertShapeDataToShape(shapeData) {
     return makeShape(shapeData.p[0] * displayJewelShapeScale / originalJewelScale, shapeData.p[1] * displayJewelShapeScale / originalJewelScale, (shapeData.t % 360 + 360) % 360, shapeDefinitions[shapeData.k][0], displayJewelShapeScale);
@@ -97,7 +101,11 @@ export function makeJewelProper(tier: JewelTier, shape: Polygon, components: Jew
         }
     }
     const area = shapeDefinitions[shape.key][0].area;
-    var jewel: Partial<Jewel> = {
+    const domElement = tagElement('div', 'js-jewel jewel');
+    const canvas = createCanvas(68, 68);
+    domElement.append(canvas);
+    const jewel: Jewel = {
+        id: `jewel-${nextJewelId++}`,
         tier,
         shapeType: shape.key,
         components: savedComponents,
@@ -110,27 +118,41 @@ export function makeJewelProper(tier: JewelTier, shape: Polygon, components: Jew
         area,
         price: Math.round(10 * Math.pow(quality, 6) * (5 - qualifierIndex) * area),
         adjacentJewels: [],
-        adjacencyBonuses: {}
+        adjacencyBonuses: {},
+        bonuses: {...componentBonuses},
+        character: null,
+        canvas,
+        context: canvas.getContext("2d"),
+        domElement,
+        fixed: false,
+        helpMethod: jewelHelpText,
     };
-    var typeIndex = 0;
+    domElement.setAttribute('jewelId', jewel.id);
     jewel.shape.color = arrayToCssRGB(RGB);
-    jewel.canvas = createCanvas(68, 68);
-    jewel.context = jewel.canvas.getContext("2d");
     // Jewels can be displayed in 3 different states:
     // Drawn directly inside of the canvas for a character's jewel board.
     // Drawn on the jewel.canvas canvas while being dragged by the user.
     // Drawn on the jewel.canvas canvas while it is inside jewel.$item and
     // being displayed in grid in the jewel-inventory panel.
-    jewel.domElement = tagElement('div', 'js-jewel jewel');
-    jewel.domElement.append(jewel.canvas);
-    jewel.character = null;
-    var bonusMultiplier = jewel.quality * area * jewel.qualifierBonus;
-    jewel.bonuses = {...jewel.componentBonuses};
+    const bonusMultiplier = jewel.quality * area * jewel.qualifierBonus;
     Object.entries(jewel.bonuses).forEach(([key, value]: [string, number]) => {
         jewel.bonuses[key] = value * bonusMultiplier;
     });
-    jewel.helpMethod = jewelHelpText;
-    return jewel as Jewel;
+    jewelMap[jewel.id] = jewel;
+    return jewel;
+}
+export function getElementJewel(element: Element): Jewel {
+    if (!element) {
+        return null;
+    }
+    const jewelId = element.getAttribute('jewelId');
+    return jewelMap[jewelId];
+}
+export function destroyJewel(jewel: Jewel) {
+    removeFromBoard(jewel);
+    jewel.canvas.remove();
+    jewel.domElement.remove();
+    delete jewelMap[jewel.id];
 }
 export function clearAdjacentJewels(jewel: Jewel) {
     while (jewel.adjacentJewels.length) {
@@ -271,6 +293,7 @@ export function updateJewelBonuses(character) {
 export function makeFixedJewel(shape: Polygon, character: Character, ability: Ability): Jewel {
     shape.color = '#333333';
     return {
+        id: `jewel-${nextJewelId++}`,
         shape,
         area: 1,
         tier: 1,
@@ -278,8 +301,8 @@ export function makeFixedJewel(shape: Polygon, character: Character, ability: Ab
         components: [0, 0, 0],
         quality: 1,
         jewelType: 0,
-        'fixed': true,
-        'disabled': false,
+        fixed: true,
+        disabled: false,
         character,
         ability,
         helpMethod() {
@@ -315,7 +338,7 @@ const jewelDefinitions = [
 ];
 // Levels that jewels of each tier drop from.
 export const jewelTierLevels = [0, 1, 10, 20, 40, 60];
-export function getJewelTiewerForLevel(level): JewelTier {
+export function getJewelTiewerForLevel(level: number): JewelTier {
     if (level >= jewelTierLevels[5]) return 5;
     else if (level >= jewelTierLevels[4]) return 4;
     else if (level >= jewelTierLevels[3]) return 3;
@@ -323,8 +346,8 @@ export function getJewelTiewerForLevel(level): JewelTier {
     return 1;
 }
 
-let maxAnimaJewelBonus;
-export function setMaxAnimaJewelBonus(value) {
+let maxAnimaJewelBonus: BonusSource;
+export function setMaxAnimaJewelBonus(value: number) {
     const state = getState();
     state.savedState.maxAnimaJewelMultiplier = value;
     if (maxAnimaJewelBonus) removeBonusSourceFromObject(state.guildVariableObject, maxAnimaJewelBonus);

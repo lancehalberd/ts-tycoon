@@ -1,12 +1,15 @@
 import { items, itemsBySlotAndLevel } from 'app/content/equipment/index';
 import { checkToMakeItemUnique } from 'app/content/uniques';
-import { craftingCanvas, craftingContext, query, tag, tagElement, titleDiv, bodyDiv } from 'app/dom';
+import {
+    craftingCanvas, craftingContext, craftingOptionsContainer,
+    query, tag, tagElement, titleDiv, bodyDiv,
+} from 'app/dom';
 import { augmentItemProper } from 'app/enchanting';
 import { armorSlots } from 'app/gameConstants';
 import { bonusSourceHelpText } from 'app/helpText';
 import { drawTintedImage, images } from 'app/images';
 import {
-    addToInventory, baseItemLevelCost, makeItem, tagToDisplayName, updateItem
+    addToInventory, baseItemLevelCost, inventoryState, makeItem, tagToDisplayName, updateItem
 } from 'app/inventory';
 import { hidePointsPreview, points, previewPointsChange, spend } from 'app/points';
 import { addPopup, getPopup, removePopup } from 'app/popup';
@@ -57,6 +60,7 @@ export function initializeCraftingGrid() {
                     if (subColumn > 1) {
                         console.log(craftingSection.slots);
                         console.log(new Error("Too many items in crafting section at level " + i));
+                        debugger;
                     }
                     const x = 2 + (column + subColumn) * craftingSlotTotal;
                     const y = craftingHeaderSize + (row + subRow) * craftingSlotTotal;
@@ -119,10 +123,16 @@ export function initializeCraftingGrid() {
     }
     craftingCanvas.onmousemove = function () {
         craftingCanvasMousePosition = getMousePosition(craftingCanvas);
+        if (inventoryState.dragHelper) {
+            return;
+        }
         updateOverCraftingItem();
         checkToShowCraftingToopTip();
     };
     craftingCanvas.onmousedown = function (event) {
+        if (inventoryState.dragHelper) {
+            return;
+        }
         if (event.shiftKey && equipmentCraftingState.overCraftingItem) { //check if 'shift' key is held down
             addToInventory(makeItem(equipmentCraftingState.overCraftingItem, 1));
             return;
@@ -131,7 +141,7 @@ export function initializeCraftingGrid() {
     };
     craftingCanvas.onmouseout = function () {
         equipmentCraftingState.overCraftingItem = null;
-        if (craftingOptionsContainer.style.display !== 'none') {
+        if (craftingOptionsContainer.style.display === 'none') {
             const state = getState();
             state.savedState.craftingLevel = null;
             state.savedState.craftingTypeFilter = null;
@@ -172,13 +182,11 @@ function updateOverCraftingItem() {
     }
     equipmentCraftingState.overCraftingItem = item;
 }
-const craftingOptionsContainer:HTMLElement = document.querySelector('.js-craftingSelectOptions');
 function craftNewItems() {
-    var totalCost = getCurrentCraftingCost();
-    if (!spend('coins', totalCost)) {
+    if (!spend('coins', getCurrentCraftingCost())) {
         return;
     }
-    craftingOptionsContainer.style.display = 'block';
+    craftingOptionsContainer.style.display = '';
     craftingOptionsContainer.querySelectorAll('.js-itemSlot').forEach(element => {
         const item = craftItem();
         element.append(item.domElement);
@@ -368,7 +376,7 @@ function craftItem(): Item {
     const craftedItem = itemsFilteredByType[index];
     // This is used to determine what proportion of the crafting weight goes to which item.
     let totalCraftingWeight = 0;
-    itemsFilteredByType.forEach(function (item) {
+    itemsFilteredByType.forEach(item => {
         totalCraftingWeight += item.level * item.level * 5;
     });
     // Remove crafting weight from the crafted item and distribute it out proportionally
@@ -377,7 +385,7 @@ function craftItem(): Item {
     // again and increasing the odds of the highest level items the most.
     const distributedCraftingWeight = craftedItem.craftingWeight / 2;
     craftedItem.craftingWeight -= distributedCraftingWeight;
-    itemsFilteredByType.forEach(function (item) {
+    itemsFilteredByType.forEach(item => {
         item.craftingWeight += distributedCraftingWeight * item.level * item.level * 5 / totalCraftingWeight;
     });
     updateItemsThatWillBeCrafted();

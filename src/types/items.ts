@@ -78,6 +78,8 @@ export interface ItemData {
 
 export interface Item {
     base: ItemData,
+    // unique id for each item used to map dom element back to item (for example, for drag and drop purposes).
+    id: string,
     domElement: HTMLElement,
     itemLevel: number,
     // This won't be set until updateItem populates it.

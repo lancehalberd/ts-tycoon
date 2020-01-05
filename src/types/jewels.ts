@@ -5,6 +5,7 @@ export type JewelTier = 1 | 2 | 3 | 4 | 5;
 export type JewelComponents = [number, number, number];
 export type JewelQualifierName = 'Perfect' | 'Brilliant' | 'Shining' | '' | 'Dull';
 export interface Jewel {
+    id: string,
     adjacentJewels: Jewel[],
     adjacencyBonuses: Bonuses,
     area: number,

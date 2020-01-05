@@ -7,7 +7,7 @@ import { guildYardEntrance } from 'app/content/guild';
 import { map } from 'app/content/mapData';
 import { setUpgradingObject } from 'app/content/upgradeButton';
 import { setContext } from 'app/context';
-import { query } from 'app/dom';
+import { query, queryAll } from 'app/dom';
 import { handleSkillKeyInput } from 'app/drawSkills';
 import { handleEditMapKeyDown, isEditingAllowed } from 'app/development/editLevel';
 import { pasteCharacterToClipBoard } from 'app/development/testCharacters';
@@ -36,7 +36,7 @@ export const KEY_S = 83;
 export function addKeyCommands() {
 document.addEventListener('keydown', function(event) {
     const keycode: number = event.which;
-    console.log(keycode);
+    // console.log(keycode);
     if (handleSkillKeyInput(keycode)) return;
     if (handleEditMapKeyDown(keycode)) return;
     const state = getState();
@@ -74,15 +74,16 @@ document.addEventListener('keydown', function(event) {
             }
         }
     }
-    if ((keycode === KEY_C || keycode === KEY_I)  && state.guildStats.hasItemCrafting) {
+    if ((keycode === KEY_C || keycode === KEY_I) && (true || state.guildStats.hasItemCrafting)) {
         if (state.selectedCharacter.context === 'item') setContext('guild');
         else if (state.selectedCharacter.context !== 'adventure') setContext('item');
     }
-    if (keycode === KEY_J && true || state.guildStats.hasJewelCrafting) {
+    if (keycode === KEY_J && (true || state.guildStats.hasJewelCrafting)) {
         if (state.selectedCharacter.context === 'jewel') setContext('guild');
         else if (state.selectedCharacter.context !== 'adventure') setContext('jewel');
     }
     if (keycode === KEY_M && state.guildStats.hasMap) {
+        console.log(state.selectedCharacter.context);
         // Unlock the first areas on the map if they aren't unlocked yet.
         for (const levelKey of map.guild.unlocks) {
             state.visibleLevels[levelKey] = true;
@@ -111,9 +112,9 @@ document.addEventListener('keydown', function(event) {
             return;
         }
         if (isMouseOverElement(query('.js-inventory'))) {
-            for (const item of state.items) {
-                if (isMouseOverElement(item.domElement)) {
-                    sellItem(item);
+            for (const itemElement of queryAll('.js-inventory .js-item')) {
+                if (isMouseOverElement(itemElement)) {
+                    sellItem(getItemForElement(itemElement));
                     return false;
                 }
                 return true;

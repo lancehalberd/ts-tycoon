@@ -27,6 +27,7 @@ import { unlockMapLevel } from 'app/map';
 import { moveActor } from 'app/moveActor';
 import { appendTextPopup, applyAttackToTarget, findActionByTag, getBasicAttack, performAttackProper } from 'app/performAttack';
 import { gain } from 'app/points';
+import { updateActorHelpText } from 'app/popup';
 import { saveGame } from 'app/saveGame';
 import { getState } from 'app/state';
 import {
@@ -376,14 +377,6 @@ function updateActorAnimationFrame(actor: Actor) {
     } else {
         actor.walkFrame = 0;
     }
-}
-function updateActorHelpText(actor: Actor) {
-    //TODO
-    /*if (!$popup) return;
-    if (getCanvasPopupTarget() === actor) return $popup.html(actorHelpText(actor));
-    if (!$popupTarget) return;
-    const character = $popupTarget.data('character');
-    if (character && character.hero === actor) return $popup.html(actorHelpText(actor));*/
 }
 function processStatusEffects(target: Actor) {
     if (target.isDead ) return;

@@ -1,5 +1,5 @@
 // Utilities for dealing with different types of points: fame, divinity, coins and anima.
-import { bodyDiv, query, tag, titleDiv } from 'app/dom';
+import { bodyDiv, query, queryAll, tag, titleDiv } from 'app/dom';
 import { getState } from 'app/state';
 import { abbreviate } from 'app/utils/formatters';
 import { updateReforgeButton } from 'app/equipmentCrafting';
@@ -81,9 +81,7 @@ export function previewPointsChange(pointsType: PointsType, amount: number) {
     else balanceSpan.textContent = abbreviate(balance);
 }
 export function hidePointsPreview() {
-    // This will only hide one preview, but we only show one at a time.
-    const previewColumn = query('.pointsColumn.showChange');
-    if (previewColumn) {
+    for (const previewColumn of queryAll('.pointsColumn.showChange')) {
         previewColumn.classList.remove('showChange');
     }
 }
@@ -112,18 +110,4 @@ function capPoints() {
     gameState.savedState.coins = Math.min(gameState.savedState.coins, gameState.guildStats.maxCoins);
     gameState.savedState.anima = Math.min(gameState.savedState.anima, gameState.guildStats.maxAnima);
 }
-
-// Add dynamic help text to coins+anima indicators.
-// Todo, associate this help method with these elements another way.
-/*$('.js-coinsContainer').data('helpMethod', () =>
-    titleDiv(abbreviate(state.coins) + ' / ' + abbreviate(state.guildStats.maxCoins) + ' coins')
-        + bodyDiv('Coins are used to create brand new items.')
-        + bodyDiv('Coins are found in chests and dropped from defeated enemies.')
-);
-$('.js-animaContainer').data('helpMethod', () =>
-    titleDiv(abbreviate(state.anima) + ' / ' + abbreviate(state.guildStats.maxAnima) + ' anima')
-        + bodyDiv('Anima is used to enchant items with special powers.')
-        + bodyDiv('Anima is absorbed from defeated enemies and salvaged from gems.')
-);*/
-
 

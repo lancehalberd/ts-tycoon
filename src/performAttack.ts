@@ -31,6 +31,10 @@ export function findActionByTag(actions: Action[], tag: string): Action {
     return null;
 }
 export function updateDamageInfo(character: Character, statsPanelElement: HTMLElement, monsterLevel = 0) {
+    const damageElement =  statsPanelElement.querySelector('.js-damage');
+    if (!damageElement) {
+        return;
+    }
     const hero = character.hero;
     if (!hero || !hero.actions) return;
     let attack = getBasicAttack(hero);
@@ -126,7 +130,6 @@ export function updateDamageInfo(character: Character, statsPanelElement: HTMLEl
     } else {
         sections.push('Total Expected DPS is ' + abbreviate(expectedPhysicalDPS + expectedMagicDPS, 1));
     }
-    const damageElement =  statsPanelElement.querySelector('.js-damage');
     damageElement.textContent = abbreviate(expectedPhysicalDPS + expectedMagicDPS, 1);
     damageElement.parentElement.setAttribute('helptext', sections.join('<br/>'));
 

@@ -1,13 +1,12 @@
 import {
-    actorHelpText, makeAdventurerFromData, setActorHealth, updateAdventurer
+    makeAdventurerFromData, setActorHealth, updateAdventurer
 } from 'app/character';
 import { abilities } from 'app/content/abilities';
 import { affixesByKey } from 'app/content/enchantments';
-import { itemsByKey } from 'app/content/equipment/index';
 import { map } from 'app/content/mapData';
 import { createCanvas, jewelsCanvas, tag, tagElement } from 'app/dom';
 import { drawBoardBackground } from 'app/drawBoard';
-import { equipItemProper, updateItem } from 'app/inventory';
+import { equipItemProper, exportItem, importItem, updateItem } from 'app/inventory';
 import {
     displayJewelShapeScale, makeJewelProper, makeFixedJewel,
     originalJewelScale, updateAdjacentJewels,
@@ -148,41 +147,13 @@ function importAdventurer(heroData: SavedActor): Hero {
     }
     return hero;
 }
-export function exportItem(item: Item): SavedItem {
-    return {
-        itemKey: item.base.key,
-        itemLevel: item.itemLevel,
-        prefixes: item.prefixes.map(exportAffix),
-        suffixes: item.suffixes.map(exportAffix),
-        unique: item.unique,
-    };
-}
-export function importItem(itemData: SavedItem): Item {
-    const baseItem = itemsByKey[itemData.itemKey];
-    // This can happen if a base item was removed since they last saved the game.
-    if (!baseItem) return null;
-    const domElement = tagElement('div', 'js-item item',
-        tag('div', 'icon ' + baseItem.icon) + tag('div', 'itemLevel', '' + baseItem.level)
-    );
-    const item = {
-        base: baseItem,
-        domElement,
-        itemLevel: itemData.itemLevel,
-        unique: itemData.unique,
-        prefixes: itemData.prefixes.map(importAffix).filter(v => v),
-        suffixes: itemData.suffixes.map(importAffix).filter(v => v),
-    };
-    updateItem(item);
-    domElement.setAttribute('helptext', '-');
-    return item;
-}
-function exportAffix(affix: EquipmentAffix): SavedAffix {
+export function exportAffix(affix: EquipmentAffix): SavedAffix {
     return {
         affixKey: affix.base.key,
         bonuses: {...affix.bonuses},
     };
 }
-function importAffix(affixData: SavedAffix): EquipmentAffix {
+export function importAffix(affixData: SavedAffix): EquipmentAffix {
     const baseAffix = affixesByKey[affixData.affixKey];
     if (!baseAffix) return null;
     return {

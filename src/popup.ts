@@ -1,26 +1,50 @@
+import { actorHelpText } from 'app/character';
 import { getChoosingTrophyAltar, getTrophyPopupTarget } from 'app/content/achievements';
 import { unprojectLeftWallCoords, unprojectRightWallCoords} from 'app/content/guild';
 import { getUpgradingObject, upgradeButton } from 'app/content/upgradeButton';
-import { jewelInventoryContainer, mainCanvas, mouseContainer, tagElement } from 'app/dom';
+import {
+    jewelInventoryContainer, mainCanvas, mouseContainer, tagElement,
+    bodyDiv, query, queryAll, tag, titleDiv,
+} from 'app/dom';
 import { getGlobalHud } from 'app/drawArea';
 import { getAbilityPopupTarget } from 'app/drawSkills';
 import { equipmentCraftingState } from 'app/equipmentCrafting';
 import { GROUND_Y } from 'app/gameConstants';
+import { getItemHelpText } from 'app/helpText';
 import { drawOutlinedImage } from 'app/images';
-import { inventoryState } from 'app/inventory';
+import { getItemForElement, inventoryState } from 'app/inventory';
 import { getMapPopupTarget, mapState } from 'app/map';
-import { getElementJewel, jewelInventoryState } from 'app/jewelInventory';
+import { getElementJewel } from 'app/jewels';
+import { jewelInventoryState } from 'app/jewelInventory';
 import { getState } from 'app/state';
+import { abbreviate } from 'app/utils/formatters';
 import { ifdefor, isPointInRect, isPointInRectObject, rectangle } from 'app/utils/index';
 import { getMousePosition, isMouseOverElement } from 'app/utils/mouse';
 
-import { FullRectangle } from 'app/types';
+import { Actor, FullRectangle } from 'app/types';
 
 interface Popup {
     target: any,
     element: HTMLElement,
 }
 let popup: Popup = null;
+
+export function updateActorHelpText(actor: Actor) {
+    if (!popup || !popup.element) {
+        return;
+    }
+    if (getCanvasPopupTarget() === actor) {
+        popup.element.innerHTML = actorHelpText(actor);
+        return;
+    }
+    if (!popup.target) {
+        return;
+    }
+    if (actor === popup.target) {
+        popup.element.innerHTML = actorHelpText(actor);
+        return;
+    }
+}
 
 
 let canvasPopupTarget = null;
@@ -267,10 +291,31 @@ function isMouseOverCanvasElement(x, y, element) {
     return false;
 }
 function getHelpText(popupTarget: HTMLElement) {
-    /*if (popupTarget.data('helpMethod')) {
-        return popupTarget.data('helpMethod')(popupTarget);
-    }*/
-    return popupTarget.getAttribute('helpText');
+    const state = getState();
+    const helpText = popupTarget.getAttribute('helpText');
+    if (helpText === '$item$') {
+        return getItemHelpText(getItemForElement(popupTarget));
+    }
+    if (helpText === '$character$') {
+        return actorHelpText(getState().selectedCharacter.hero);
+    }
+    if (helpText === '$coins$') {
+        return titleDiv(abbreviate(state.savedState.coins) + ' / ' + abbreviate(state.guildStats.maxCoins) + ' coins')
+            + bodyDiv('Coins are used to create brand new items.')
+            + bodyDiv('Coins are found in chests and dropped from defeated enemies.')
+    }
+    if (helpText === '$anima$') {
+        return titleDiv(abbreviate(state.savedState.anima) + ' / ' + abbreviate(state.guildStats.maxAnima) + ' anima')
+            + bodyDiv('Anima is used to enchant items with special powers.')
+            + bodyDiv('Anima is absorbed from defeated enemies and salvaged from gems.')
+    }
+    if (helpText === '$hire$') {
+        if (state.characters.length >= state.guildStats.maxHeroes) {
+            return 'You do not have enough beds to hire another hero. Dismiss a hero or explore the guild for more beds.';
+        }
+        return 'Hire this hero. The more famous your guild is, the cheaper it is to hire heroes.';
+    }
+    return helpText;
 }
 
 mouseContainer.addEventListener('mousemove', function (event) {

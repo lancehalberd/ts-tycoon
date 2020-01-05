@@ -9,10 +9,10 @@ import { saveGame } from 'app/saveGame';
 import { getState } from 'app/state';
 import Random from 'app/utils/Random';
 
-import { Affix, AffixData} from 'app/types';
+import { Affix, AffixData, EquipmentAffix, EquipmentAffixData, Item, ItemData} from 'app/types';
 
-export function makeAffix(baseAffix: AffixData): Affix {
-    const affix: Affix = {
+export function makeAffix(baseAffix: EquipmentAffixData): EquipmentAffix {
+    const affix: EquipmentAffix = {
         base: baseAffix,
         bonuses: {}
     };
@@ -26,33 +26,33 @@ export function makeAffix(baseAffix: AffixData): Affix {
     }
     return affix;
 }
-function addPrefixToItem(item) {
-    var alreadyUsedBonusesKeys = {};
+function addPrefixToItem(item: Item) {
+    const alreadyUsedBonusesKeys = {};
     item.prefixes.forEach(function (affix) {alreadyUsedBonusesKeys[affix.base.bonusesKey] = true;});
-    var possibleAffixes = matchingAffixes(prefixes, item, alreadyUsedBonusesKeys);
+    const possibleAffixes = matchingAffixes(prefixes, item, alreadyUsedBonusesKeys);
     if (possibleAffixes.length === 0) {
         console.log('No prefixes available for this item:');
         console.log(item);
         return;
     }
-    var newAffix = makeAffix(Random.element(possibleAffixes));
+    const newAffix = makeAffix(Random.element(possibleAffixes));
     item.prefixes.push(newAffix);
 }
 function addSuffixToItem(item) {
-    var alreadyUsedBonusesKeys = {};
+    const alreadyUsedBonusesKeys = {};
     item.suffixes.forEach(function (affix) {alreadyUsedBonusesKeys[affix.base.bonusesKey] = true;});
-    var possibleAffixes = matchingAffixes(suffixes, item, alreadyUsedBonusesKeys);
+    const possibleAffixes = matchingAffixes(suffixes, item, alreadyUsedBonusesKeys);
     if (possibleAffixes.length === 0) {
         console.log('No suffixes available for this item:');
         console.log(item);
         return;
     }
-    var newAffix = makeAffix(Random.element(possibleAffixes));
+    const newAffix = makeAffix(Random.element(possibleAffixes));
     item.suffixes.push(newAffix);
 }
 function matchingAffixes(list, item, alreadyUsedBonusesKeys) {
-    var choices = [];
-    for (var level = 0; level <= item.itemLevel && level < list.length; level++) {
+    const choices = [];
+    for (let level = 0; level <= item.itemLevel && level < list.length; level++) {
         (list[level] || []).forEach(function (affix) {
             if (!alreadyUsedBonusesKeys[affix.bonusesKey] && affixMatchesItem(item.base, affix)) {
                 choices.push(affix);
@@ -61,10 +61,10 @@ function matchingAffixes(list, item, alreadyUsedBonusesKeys) {
     }
     return choices;
 }
-function affixMatchesItem(baseItem, affix) {
-    var tags = (affix.tags || []);
+function affixMatchesItem(baseItem: ItemData, affix: EquipmentAffixData) {
+    let tags = (affix.tags || []);
     tags = Array.isArray(tags) ? tags : [tags];
-    for (var tag of tags) if (tag === baseItem.key || baseItem.tags[tag]) return true;
+    for (const tag of tags) if (tag === baseItem.key || baseItem.tags[tag]) return true;
     return false;
 }
 const resetEnchantmentsButton = query('.js-resetEnchantments');
@@ -73,34 +73,37 @@ const enchantButton = query('.js-enchant');
 const imbueButton = query('.js-imbue');
 resetEnchantmentsButton.onclick = resetItem;
 resetEnchantmentsButton.addEventListener('mouseover', function () {
-    var item = getEnchantingItem();
+    const item = getEnchantingItem();
     if (item && item.prefixes.length + item.suffixes.length > 0) previewPointsChange('coins', -resetCost(item));
 });
 resetEnchantmentsButton.addEventListener('mouseout', hidePointsPreview);
 enchantButton.addEventListener('click', enchantItem);
 enchantButton.addEventListener('mouseover', function () {
-    var item = getEnchantingItem();
+    const item = getEnchantingItem();
     if (item && !item.unique && item.prefixes.length + item.suffixes.length === 0) previewPointsChange('anima', -enchantCost(item));
 });
 enchantButton.addEventListener('mouseout', hidePointsPreview);
 imbueButton.addEventListener('click', imbueItem);
 imbueButton.addEventListener('mouseover', function () {
-    var item = getEnchantingItem();
+    const item = getEnchantingItem();
     if (item && !item.unique && item.prefixes.length + item.suffixes.length === 0) previewPointsChange('anima', -imbueCost(item));
 });
 imbueButton.addEventListener('mouseout', hidePointsPreview);
 mutateButton.addEventListener('click', mutateItem);
 mutateButton.addEventListener('mouseover', function () {
-    var item = getEnchantingItem();
+    const item = getEnchantingItem();
     if (item && !item.unique && item.prefixes.length + item.suffixes.length > 0) previewPointsChange('anima', -mutateCost(item));
 });
 mutateButton.addEventListener('mouseout', hidePointsPreview);
-function getEnchantingItem() {
-    var item = getItemForElement(query('.js-enchantmentSlot .js-item'));
-    if (!item && inventoryState.dragItem) {
-        item = inventoryState.dragItem;
+export function getEnchantingItem(): Item {
+    const itemElement = query('.js-enchantmentSlot .js-item');
+    if (itemElement) {
+        return getItemForElement(itemElement);
     }
-    return item;
+    if (inventoryState.dragItem) {
+        return inventoryState.dragItem;
+    }
+    return null;
 }
 export function updateEnchantmentOptions() {
     const item = getEnchantingItem();
@@ -133,7 +136,7 @@ export function updateEnchantmentOptions() {
     if (total === 0) {
         mutateButton.setAttribute('helptext', 'This item has no enchantments to mutate.');
     } else {
-        var mutationPrice = mutateCost(item);
+        const mutationPrice = mutateCost(item);
         mutateButton.classList.toggle('disabled', anima < mutationPrice);
         mutateButton.setAttribute('helptext', 'Offer ' + points('anima', mutationPrice) + ' to randomize the magical properties of this item.');
     }
@@ -151,24 +154,24 @@ export function updateEnchantmentOptions() {
         enchantButton.setAttribute('helptext', 'This item cannot hold any more enchantments.');
     }
 }
-function resetCost(item) {
+function resetCost(item: Item) {
     return sellValue(item) * 2;
 }
-function enchantCost(item) {
+function enchantCost(item: Item) {
     if (item.prefixes.length + item.suffixes.length == 0) return sellValue(item);
     return sellValue(item) * 2;
 }
-function imbueCost(item) {
+function imbueCost(item: Item) {
     if (item.prefixes.length + item.suffixes.length == 0) return sellValue(item) * 4;
     if (item.prefixes.length + item.suffixes.length == 1) return sellValue(item) * 5;
     if (item.prefixes.length + item.suffixes.length == 2) return sellValue(item) * 6;
     return sellValue(item) * 8;
 }
-function mutateCost(item) {
+function mutateCost(item: Item) {
     return sellValue(item) * ((item.prefixes.length < 2 && item.suffixes.length < 2) ? 3 : 5);
 }
 function resetItem() {
-    var item = getEnchantingItem();
+    const item = getEnchantingItem();
     if (!item || !spend('coins', resetCost(item))) {
         return;
     }
@@ -181,7 +184,7 @@ function resetItem() {
     saveGame();
 }
 function enchantItem() {
-    var item = getEnchantingItem();
+    const item = getEnchantingItem();
     if (!item || !spend('anima', enchantCost(item))) return;
     if (item.prefixes.length + item.suffixes.length === 0) {
         enchantItemProper(item);
@@ -206,7 +209,7 @@ function enchantItemProper(item) {
     updateEnchantmentOptions();
 }
 function imbueItem() {
-    var item = getEnchantingItem();
+    const item = getEnchantingItem();
     if (!item || !spend('anima', imbueCost(item))) return;
     if (item.prefixes.length + item.suffixes.length === 0) {
         imbueItemProper(item);
@@ -220,7 +223,7 @@ function imbueItem() {
     }
     saveGame();
 }
-function imbueItemProper(item) {
+function imbueItemProper(item: Item) {
     item.prefixes = [];
     item.suffixes = [];
     addPrefixToItem(item);
@@ -235,7 +238,7 @@ function imbueItemProper(item) {
     updateItem(item);
     updateEnchantmentOptions();
 }
-export function augmentItemProper(item) {
+export function augmentItemProper(item: Item) {
     if (!item.prefixes.length && !item.suffixes.length) {
         if (Math.random() > 0.5) {
             addPrefixToItem(item);
@@ -261,7 +264,7 @@ export function augmentItemProper(item) {
     updateEnchantmentOptions();
 }
 function mutateItem() {
-    var item = getEnchantingItem();
+    const item = getEnchantingItem();
     if (!item || !spend('anima', mutateCost(item))) {
         return;
     }

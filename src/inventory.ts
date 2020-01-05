@@ -2,8 +2,12 @@ import { addBonusSourceToObject, removeBonusSourceFromObject, updateTags } from 
 import {
     addActions, recomputeActorTags, refreshStatsPanel, removeActions, updateAdventurerGraphics
 } from 'app/character';
+import { itemsByKey } from 'app/content/equipment/index';
 import { editingMapState } from 'app/development/editLevel';
-import { getElementIndex, handleChildEvent, mouseContainer, query, queryAll, tag, tagElement } from 'app/dom';
+import {
+    craftingOptionsContainer, getElementIndex, handleChildEvent,
+    mouseContainer, query, queryAll, tag, tagElement,
+} from 'app/dom';
 import { updateEnchantmentOptions } from 'app/enchanting';
 import { equipmentSlots } from 'app/gameConstants';
 import { getItemHelpText } from 'app/helpText';
@@ -14,13 +18,17 @@ import { getState } from 'app/state';
 import { properCase } from 'app/utils/formatters';
 import { collision, getCollisionArea, ifdefor } from 'app/utils/index';
 import { getMousePosition } from 'app/utils/mouse';
+import { exportAffix, importAffix } from 'app/saveGame';
 
-import { Actor, EquipmentSlot, Item, ItemData } from 'app/types';
+import { Actor, EquipmentSlot, Item, ItemData, SavedItem } from 'app/types';
 
 // Div containing items
 const inventoryElement = query('.js-inventory');
 // Slot we display in the inventory when no items are present.
 const inventorySlot = query('.js-inventorySlot');
+
+let nextItemId: number = 0;
+const itemMap: {[key: string]: Item} = {};
 
 interface InventoryState {
     dragHelper: HTMLElement,
@@ -34,6 +42,58 @@ export const inventoryState: InventoryState = {
     dragItem: null,
     dragged: false,
 };
+
+export function makeItem(base: ItemData, level: number): Item {
+    const state = getState();
+    const item: Item = {
+        base,
+        id: `item-${nextItemId++}`,
+        'prefixes': [],
+        'suffixes': [],
+        // level is used to represent the required level, itemLevel is used
+        // to calculate available enchantments and sell value.
+        'itemLevel': level,
+        'unique': false,
+        domElement: tagElement('div', 'js-item item', tag('div', 'icon ' + base.icon) + tag('div', 'itemLevel', base.level))
+    };
+    itemMap[item.id] = item;
+    updateItem(item);
+    item.domElement.setAttribute('itemId', item.id);
+    if (state && state.selectedCharacter) {
+        item.domElement.classList.toggle('equipable', canEquipItem(state.selectedCharacter.adventurer, item));
+    }
+    return item;
+}
+
+
+export function exportItem(item: Item): SavedItem {
+    return {
+        itemKey: item.base.key,
+        itemLevel: item.itemLevel,
+        prefixes: item.prefixes.map(exportAffix),
+        suffixes: item.suffixes.map(exportAffix),
+        unique: item.unique,
+    };
+}
+export function importItem(itemData: SavedItem): Item {
+    const baseItem = itemsByKey[itemData.itemKey];
+    // This can happen if a base item was removed since they last saved the game.
+    if (!baseItem) return null;
+    const domElement = tagElement('div', 'js-item item',
+        tag('div', 'icon ' + baseItem.icon) + tag('div', 'itemLevel', '' + baseItem.level)
+    );
+    const item: Item = {
+        base: baseItem,
+        id: `item-${nextItemId++}`,
+        domElement,
+        itemLevel: itemData.itemLevel,
+        unique: itemData.unique,
+        prefixes: itemData.prefixes.map(importAffix).filter(v => v),
+        suffixes: itemData.suffixes.map(importAffix).filter(v => v),
+    };
+    updateItem(item);
+    return item;
+}
 
 export function equipItemProper(actor: Actor, item: Item, update) {
     const selectedCharacter = getState().selectedCharacter;
@@ -134,46 +194,36 @@ export function sellValue(item: Item) {
 export function baseItemLevelCost(itemLevel) {
     return itemLevel * itemLevel * Math.pow(1.15, itemLevel);
 }
-export function makeItem(base: ItemData, level: number): Item {
-    const state = getState();
-    var item = {
-        base,
-        'prefixes': [],
-        'suffixes': [],
-        // level is used to represent the required level, itemLevel is used
-        // to calculate available enchantments and sell value.
-        'itemLevel': level,
-        'unique': false,
-        domElement: tagElement('div', 'js-item item', tag('div', 'icon ' + base.icon) + tag('div', 'itemLevel', base.level))
-    };
-    updateItem(item);
-    item.domElement.setAttribute('helptext', '-');
-    if (state && state.selectedCharacter) {
-        item.domElement.classList.toggle('equipable', canEquipItem(state.selectedCharacter.adventurer, item));
+export function getItemForElement(itemElement: HTMLElement): Item {
+    const id = itemElement.getAttribute('itemId');
+    if (!id) {
+        debugger;
+        throw new Error('no item id');
+    }
+    const item: Item = itemMap[id];
+    if (!item) {
+        debugger;
+        throw new Error('no item');
     }
     return item;
 }
-export function getItemForElement(itemElement: HTMLElement): Item {
-    for (const item of getState().items) {
-        if (item.domElement === itemElement) {
-            return item;
-        }
-    }
+export function getAllItems(): Item[] {
+    return [...queryAll('.js-item')].map(getItemForElement);
 }
 export function updateEquipableItems() {
     const state = getState();
-    for (const item of getState().items) {
-        item.domElement.classList.toggle('equipable', canEquipItem(state.selectedCharacter.adventurer, item));
+    for (const item of getAllItems()) {
+        item.domElement.classList.toggle('equipable', canEquipItem(state.selectedCharacter.hero, item));
     }
 }
 export function updateItem(item: Item) {
-    var levelRequirement = item.base.level;
+    let levelRequirement = item.base.level;
     item.prefixes.concat(item.suffixes).forEach(function (affix) {
         levelRequirement = Math.max(levelRequirement, affix.base.level);
     });
     item.requiredLevel = levelRequirement;
     item.domElement.classList.remove('imbued', 'enchanted', 'unique');
-    var enchantments = item.prefixes.length + item.suffixes.length;
+    const enchantments = item.prefixes.length + item.suffixes.length;
     if (item.unique) {
         item.domElement.classList.add('unique');
     } else if (enchantments > 2) {
@@ -181,6 +231,7 @@ export function updateItem(item: Item) {
     } else if (enchantments) {
         item.domElement.classList.add('enchanted');
     }
+    item.domElement.setAttribute('helptext', '$item$');
 }
 export function addToInventory(item: Item) {
     item.domElement.remove();
@@ -217,6 +268,7 @@ export function sellItem(item: Item) {
     }
     saveGame();
 }
+
 function destroyItem(item: Item) {
     if (inventoryState.dragHelper) {
         inventoryState.dragHelper.remove();
@@ -225,6 +277,7 @@ function destroyItem(item: Item) {
     }
     item.domElement.remove();
     item.domElement = null;
+    delete itemMap[item.id];
     updateEnchantmentOptions();
 }
 
@@ -254,7 +307,10 @@ handleChildEvent('mousedown', document.body, '.js-item', function (itemElement: 
         stopDrag();
         return;
     }
-    const item = getItemForElement(itemElement)
+    const item = getItemForElement(itemElement);
+    if (!item) {
+        debugger;
+    }
     if (specialClick) {
         if (item.actor) {
             unequipSlot(item.actor, item.base.slot, true);
@@ -265,7 +321,7 @@ handleChildEvent('mousedown', document.body, '.js-item', function (itemElement: 
         checkIfCraftedItemWasClaimed();
         return;
     }
-    inventoryState.dragHelper = itemElement.cloneNode() as HTMLElement;
+    inventoryState.dragHelper = itemElement.cloneNode(true) as HTMLElement;
     inventoryState.dragHelperSource = itemElement;
     inventoryState.dragItem = item;
     itemElement.style.opacity = '0.3';
@@ -274,7 +330,6 @@ handleChildEvent('mousedown', document.body, '.js-item', function (itemElement: 
 
     if (!areAnyCraftedItemsVisible()) {
         query('.js-enchantmentOptions').style.display = '';
-        query('.js-craftingOptions').style.display = 'none';
         query('.js-craftingSelectOptions').style.display = 'none';
         updateEnchantmentOptions();
     }
@@ -384,14 +439,12 @@ function applyDragResults() {
         enchantmentSlot.append(source);
         return;
     }
-    let hit = false;
     for (const slotElement of queryAll('.js-equipment .js-' + item.base.slot)) {
-        if (!collision(inventoryState.dragHelper, slotElement)) return true;
-        hit = true;
-        equipItem(getState().selectedCharacter.adventurer, item)
-        return false;
+        if (collision(inventoryState.dragHelper, slotElement)) {
+            equipItem(getState().selectedCharacter.adventurer, item);
+            return;
+        }
     }
-    if (hit) return;
     let targetElement: HTMLElement = null;
     let largestCollision = 0;
     for (const itemElement of queryAll('.js-inventory .js-item')) {
@@ -429,6 +482,8 @@ function stopInventoryDrag() {
         inventoryState.dragHelperSource.style.opacity = '1';
         inventoryState.dragHelper.remove();
         inventoryState.dragHelper = null;
+        inventoryState.dragItem = null;
+        inventoryState.dragHelperSource = null;
         updateEnchantmentOptions();
     }
     removeItemSlotDragHintClasses();
