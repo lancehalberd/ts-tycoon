@@ -455,6 +455,9 @@ function drawActionTargetCircle(targetContext) {
         else if (action.stats.area) drawTargetCircle(context, area, action.actor.x, action.actor.z, action.stats.area, .1);
         else drawTargetCircle(context, area, action.actor.x, action.actor.z, 1, .1);
         const canvasCoords = getCanvasCoords();
+        if (!canvasCoords) {
+            return;
+        }
         const targetLocation = getTargetLocation(area, canvasCoords[0], canvasCoords[1]);
         //console.log([targetLocation, targetLocation && canUseSkillOnTarget(action.actor, action, targetLocation)]);
         if (targetLocation && canUseSkillOnTarget(action.actor, action, targetLocation)) {

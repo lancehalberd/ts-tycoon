@@ -214,7 +214,6 @@ function jewelLootDrop(jewel: Jewel) {
     }
 }
 export function gainJewel(jewel: Jewel) {
-    getState().jewels.push(jewel);
     addJewelToInventory(jewel.domElement);
 }
 

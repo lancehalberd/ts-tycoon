@@ -1,5 +1,5 @@
 import { backgrounds } from 'app/content/backgrounds';
-import { fixedObject } from 'app/content/furniture';
+import { allApplications, allBeds, fixedObject } from 'app/content/furniture';
 import { createCanvas, mainContext } from 'app/dom';
 import { drawImage, drawOutlinedImage } from 'app/images';
 import { drawTextureMap } from 'app/render/drawTextureMap';
@@ -53,6 +53,10 @@ function initializeGuldArea(rawGuildArea: RawGuildArea): GuildArea {
 }
 const wallZ = 180;
 export function getDefaultGuildAreas(): GuildAreas {
+    // We need to reset these each time this function is called, otherwise we will
+    // double up on beds/applications.
+    while (allApplications.length) allApplications.pop();
+    while (allBeds.length) allBeds.pop();
     const guildAreas: GuildAreas = {};
     guildAreas.guildYard = initializeGuldArea({
         'key': 'guildYard',

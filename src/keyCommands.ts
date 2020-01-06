@@ -83,7 +83,7 @@ document.addEventListener('keydown', function(event) {
         else if (state.selectedCharacter.context !== 'adventure') setContext('jewel');
     }
     if (keycode === KEY_M && state.guildStats.hasMap) {
-        console.log(state.selectedCharacter.context);
+        // console.log(state.selectedCharacter.context);
         // Unlock the first areas on the map if they aren't unlocked yet.
         for (const levelKey of map.guild.unlocks) {
             state.visibleLevels[levelKey] = true;

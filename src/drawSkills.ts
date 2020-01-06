@@ -181,10 +181,13 @@ export function getAbilityPopupTarget(x: number, y: number) {
     for (const action of getState().selectedCharacter.adventurer.actions) {
         if (action.variableObject.tags.basic) continue;
         // toggleButton doesn't get set until the ability is drawn the first time.
-        if (isPointInShortRect(x, y, action.toggleButton && action.toggleButton.target)) {
+        if (action.toggleButton && isPointInShortRect(x, y, action.toggleButton.target)) {
             return action.toggleButton;
         }
-        if (isPointInShortRect(x, y, action.target) || isPointInShortRect(x, y, action.shortcutTarget)) {
+        if (
+            (action.target && isPointInShortRect(x, y, action.target)) ||
+            (action.shortcutTarget && isPointInShortRect(x, y, action.shortcutTarget))
+        ) {
             hoverAction = action;
             action.helpMethod = actionHelptText;
             return action;

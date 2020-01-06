@@ -4,7 +4,6 @@ import { characterClasses } from 'app/content/jobs';
 import { bodyDiv, divider, mainContext, titleDiv } from 'app/dom';
 import { TROPHY_SIZE } from 'app/gameConstants';
 import { drawImage, drawOutlinedImage, drawRectangleBackground, drawSolidTintedImage, requireImage } from 'app/images';
-import { getCanvasCoords, getTargetLocation } from 'app/main';
 import { saveGame } from 'app/saveGame';
 import { getState } from 'app/state';
 import { isPointInRectObject, rectangle } from 'app/utils/index';

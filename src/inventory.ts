@@ -57,8 +57,8 @@ export function makeItem(base: ItemData, level: number): Item {
         domElement: tagElement('div', 'js-item item', tag('div', 'icon ' + base.icon) + tag('div', 'itemLevel', base.level))
     };
     itemMap[item.id] = item;
-    updateItem(item);
     item.domElement.setAttribute('itemId', item.id);
+    updateItem(item);
     if (state && state.selectedCharacter) {
         item.domElement.classList.toggle('equipable', canEquipItem(state.selectedCharacter.adventurer, item));
     }
@@ -91,6 +91,8 @@ export function importItem(itemData: SavedItem): Item {
         prefixes: itemData.prefixes.map(importAffix).filter(v => v),
         suffixes: itemData.suffixes.map(importAffix).filter(v => v),
     };
+    itemMap[item.id] = item;
+    item.domElement.setAttribute('itemId', item.id);
     updateItem(item);
     return item;
 }

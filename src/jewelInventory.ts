@@ -874,7 +874,7 @@ function isOnBoard(shape: Polygon, board: Board): boolean {
 }
 
 function sortJewelDivs(sortFunction: (a: Jewel, b: Jewel) => number) {
-    const jewels = getState().jewels;
+    const jewels = [...queryAll('.js-jewelInventory .js-jewel')].map(getElementJewel);
     jewels.sort(sortFunction);
     jewelInventoryContainer.innerHTML = '';
     jewels.forEach(jewel => jewelInventoryContainer.appendChild(jewel.domElement));
@@ -940,8 +940,7 @@ query('.js-jewelTierLabel input').onchange = function (event) {
     const checkbox: HTMLInputElement = event.target as HTMLInputElement;
     const tier = parseInt(checkbox.getAttribute('value'), 10);
     const display = checkbox.checked;
-    const jewels = getState().jewels;
-    jewels.forEach((jewel: Jewel) => {
+    [...queryAll('.js-jewelInventory .js-jewel')].map(getElementJewel).forEach((jewel: Jewel) => {
         if (jewel.tier === tier) {
             jewel.domElement.classList.toggle('hiddenJewel', !display);
         }

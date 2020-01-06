@@ -6,7 +6,8 @@ import { Frame, ShortRectangle, Renderable } from 'app/types';
 
 const tintCompositeCanvas = createCanvas(32, 32);
 const tintCompositeContext = tintCompositeCanvas.getContext('2d');
-document.body.appendChild(tintCompositeCanvas);
+// Append canvas to body for debug purposes if you like.
+// document.body.appendChild(tintCompositeCanvas);
 // This class only works for 32x32 icon images currently. To expand this we would need
 // to increase the size of the composite canvas and then add options to configure the size.
 export default class TintIcon extends Renderable {

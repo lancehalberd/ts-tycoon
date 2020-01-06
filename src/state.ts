@@ -9,7 +9,7 @@ import { craftingOptionsContainer, query, queryAll } from 'app/dom';
 import { getEnchantingItem, updateEnchantmentOptions } from 'app/enchanting';
 import { addToInventory, exportItem, getItemForElement, importItem } from 'app/inventory';
 import { addJewelToInventory } from 'app/jewelInventory';
-import { setMaxAnimaJewelBonus } from 'app/jewels';
+import { getElementJewel, setMaxAnimaJewelBonus } from 'app/jewels';
 import { updateRetireButtons } from 'app/main';
 import { changedPoints } from 'app/points';
 import {
@@ -77,7 +77,6 @@ export interface GameState {
     visibleLevels: {[key: string]: true},
     characters: Character[],
     applicants: Character[],
-    jewels: Jewel[],
     guildAreas: GuildAreas,
     guildBonusSources: BonusSource[];
     altarTrophies: Trophies,
@@ -120,7 +119,6 @@ function getDefaultState(): GameState {
         guildStats: null,
         selectedCharacter: null,
         visibleLevels: {}, // This isn't stored, it is computed from completedLevels on load.
-        jewels: [],
         characters: [],
         applicants: [],
         guildAreas: {},
@@ -146,16 +144,20 @@ export const implicitGuildBonusSource = {bonuses: {
 
 export function exportState(state: GameState): SavedState {
     const enchantmentItem = getEnchantingItem();
+    const jewelElements = [
+        ...queryAll('.js-jewelInventory .js-jewel'),
+        ...queryAll('.js-jewelCraftingSlot .js-jewel'),
+    ];
     return {
         ...state.savedState,
         applicants: state.applicants.map(exportCharacter),
         characters: state.characters.map(exportCharacter),
         completedLevels: {...state.savedState.completedLevels},
         inventoryItems: [...queryAll('.js-inventory .js-item')].map(getItemForElement).map(exportItem),
-        craftingItems: [...queryAll('..js-craftingSelectOptions .js-item')].map(getItemForElement).map(exportItem),
+        craftingItems: [...queryAll('.js-craftingSelectOptions .js-item')].map(getItemForElement).map(exportItem),
         enchantmentItem: enchantmentItem ? exportItem(enchantmentItem) : null,
         guildAreas: exportGuildAreas(state.guildAreas),
-        jewels: state.jewels.map(exportJewel),
+        jewels: jewelElements.map(getElementJewel).map(exportJewel),
         selectedCharacterIndex: state.characters.indexOf(state.selectedCharacter),
         trophies: exportTrophies(state.altarTrophies),
     };
@@ -191,9 +193,13 @@ function exportGuildAreas(guildAreas): SavedGuildAreas {
 
 export function importState(savedState: SavedState) {
     const defaultGuildAreas = getDefaultGuildAreas();
-    //var $helperSlot = $('.js-inventory .js-inventorySlot').detach();
-    //$('.js-inventory').empty().append($helperSlot);
-    //$('.js-jewelInventory').empty();
+    // Clear all existing elements.
+    const helperSlotElement = query('.js-inventory .js-inventorySlot');
+    helperSlotElement.remove();
+    const inventoryContainer = query('.js-inventory');
+    inventoryContainer.innerHTML = '';
+    inventoryContainer.appendChild(helperSlotElement);
+    query('.js-jewelInventory').innerHTML = '';
 
     // Add default state in case new fields are present now,
     savedState = {
@@ -246,12 +252,7 @@ export function importState(savedState: SavedState) {
             state.availableBeds.push(bed);
         }
     }
-    // TODO: jewels+items currently designed to store all jewels/items, but this means equipped/crafted
-    // jewels+items get serialized twice and then the duplicates are equiped but not in the array.
-    // Might be simplest to change these arrays to only be of unequipped jewels. Alternatively, we could
-    // store the location of the jewel
-    state.jewels = savedState.jewels.map(importJewel);
-    state.jewels.forEach(jewel => {
+    savedState.jewels.map(importJewel).forEach(jewel => {
         jewel.shape.setCenterPosition(jewel.canvas.width / 2, jewel.canvas.height / 2);
         addJewelToInventory(jewel.domElement);
     });

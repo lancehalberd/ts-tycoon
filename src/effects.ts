@@ -162,7 +162,7 @@ export function explosionEffect(attackStats: AttackData, x: number, y: number, z
     const attack = attackStats.imprintedSpell || attackStats.attack;
     const color = attack.base.color || 'red';
     let alpha = attack.base.alpha || .5;
-    let animation, frames = attack.base.animation.frames || 10, endFrames = attack.base.animation.endFrames || 5;
+    let animation, frames = 10, endFrames = 5;
     if (attack.base.explosionAnimation) {
         animation = attack.base.explosionAnimation;
         frames = animation.frames.length;
@@ -240,7 +240,7 @@ export function novaEffect(attackStats: AttackData, x: number, y: number, z: num
     const attack = attackStats.imprintedSpell || attackStats.attack;
     const color = attack.base.color || 'red';
     const alpha = attack.base.alpha || 5;
-    const frames = attack.base.animation.frames || 10, endFrames = attack.base.animation.endFrames || 5;
+    const frames = 10, endFrames = 5;
     const blasts = [];
     let theta = Math.random() * 2 * Math.PI;
     if (!attack.stats.area) {
@@ -328,7 +328,7 @@ export function fieldEffect(attackStats: AttackData, followTarget: Actor) {
     const attack = attackStats.imprintedSpell || attackStats.attack;
     const color = (attack.base.color || 'red');
     const alpha = (attack.base.alpha || .5);
-    const frames = (attack.base.animation.frames || 10);
+    const frames = 10;
     if (!attack.stats.area) {
         throw new Error('Field effect called with no area set.');
     }
@@ -642,9 +642,11 @@ export function expireTimedEffects(actor: Actor) {
     }
     if (changed) recomputeDirtyStats(actor.variableObject);
 }
-export function addTimedEffect(actor: Actor, effect: BonusSource & {base?: VariableObjectBase, stats?: EffectStats} , area = 0) {
+export function addTimedEffect(actor: Actor, effect: BonusSource & {base?: VariableObjectBase, stats?: EffectStats} , area = null) {
     if (actor.isDead) return;
-    area = area || effect.stats.area;
+    if (area === null) {
+        area = effect.stats.area;
+    }
     // Copy the effect because each timed effect has a distinct expirationTime.
     // Also setting the area here to 0 allows us to call this method again for
     // allies within the area of effect without recursing infinitely.

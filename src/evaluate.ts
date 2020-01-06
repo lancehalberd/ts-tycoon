@@ -70,7 +70,8 @@ export function evaluateForDisplay(value, coreObject, localObject): string {
     }
     if (value.constructor !== Array) {
         if (value.bonuses) {
-            return bonusSourceHelpText(value, coreObject, localObject);
+            value = bonusSourceHelpText(value, coreObject, localObject);
+            return value;
         }
         return value;
     }

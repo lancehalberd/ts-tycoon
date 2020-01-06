@@ -48,11 +48,11 @@ export function percent(number: any, digits: number): string {
     if (typeof number === 'number') {
         return (100 * number).toFixed(digits) + '%';
     }
-    const float = parseFloat(this);
-    if (float == this) {
+    const float = parseFloat(number);
+    if (float == number) {
         return (100 * float).toFixed(digits) + '%';
     }
-    return this + ' x 100%';
+    return number + ' ×100%';
     // Replace any numbers with n*100 since this is a percent.
     /*return this.replace(/[+-]?\d+(\.\d+)?/, function (number) {
         console.log("found number " + number);
