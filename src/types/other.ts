@@ -32,6 +32,11 @@ export type Rectangle = FullRectangle | ShortRectangle;
 
 export interface Frame extends ShortRectangle {
     image: HTMLCanvasElement | HTMLImageElement,
+    // When a frame does not perfectly fit the size of the content, this content rectangle can be
+    // set to specify the portion of the image that is functionally part of the object in the frame.
+    // For example, a character with a long time may have the content around the character's body and
+    // exclude the tail when looking at the width/height of the character.
+    content?: ShortRectangle,
 }
 
 export interface BasicFrame {
@@ -59,6 +64,7 @@ export interface Source {
     frames: number,
     // If this is unset we will just use a prebuilt effect instead of animating.
     deathFrames?: number[],
+    idleFrames?: number[],
     walkFrames: number[],
     attackPreparationFrames: number[],
     attackRecoveryFrames: number[],

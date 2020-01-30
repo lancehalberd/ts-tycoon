@@ -21,15 +21,21 @@ import { centerShapesInRectangle } from 'app/utils/polygon';
 
 
 import { createAnimation, drawFrame, getFrame } from 'app/utils/animations';
-const slashAnimation = createAnimation('gfx2/slash.png', {x: 0, y: 0, w: 64, h: 48}, {rows: 5, frameMap: [1, 2, 3, 4, 1]});
 
 const homeSource = {'image': requireImage('gfx/nielsenIcons.png'), 'left': 32, 'top': 128, 'width': 32, 'height': 32};
 export const shrineSource = {'image': requireImage('gfx/militaryIcons.png'), 'left': 102, 'top': 125, 'width': 16, 'height': 16};
+let lastTimeRendered;
 export function render() {
     if (!isGameInitialized()) {
         return;
     }
     const state = getState();
+    // Only render if the state has actually progressed since the last render.
+    if (lastTimeRendered && lastTimeRendered >= state.time) {
+        console.log("skipping render " + lastTimeRendered);
+        return;
+    }
+    lastTimeRendered = state.time;
     if (state.selectedCharacter.context === 'jewel') {
         redrawInventoryJewels();
     }
@@ -38,11 +44,14 @@ export function render() {
     const characters = testingLevel ? [state.selectedCharacter] : state.characters;
     for (const character of characters) {
         const hero = character.hero;
-        const frame = arrMod(hero.source.walkFrames, Math.floor(Date.now() * renderfps / 1000));
+        const frame = arrMod(hero.source.walkAnimation.frames, Math.floor(Date.now() * renderfps / 1000));
         character.characterContext.clearRect(0, 0, 40, 20);
         if (state.selectedCharacter === character) {
             previewContext.clearRect(0, 0, 64, 128);
-            previewContext.drawImage(hero.personCanvas, frame * 96, 0 , 96, 64, -64, -20, 192, 128);
+            //previewContext.drawImage(hero.personCanvas, frame * 96, 0 , 96, 64, -64, -20, 192, 128);
+            //console.log(frameSource);
+            //console.log(target);
+            drawFrame(previewContext, frame, {...frame, x: 32 - frame.w / 2, y: 64 - frame.h});
             character.characterContext.globalAlpha = 1;
         } else {
             character.characterContext.globalAlpha = .5;
@@ -50,7 +59,7 @@ export function render() {
         hero.job.iconSource.render(character.characterContext, {x: 0, y: 0, w: 20, h: 20});
         //const jobSource = hero.job.iconSource;
         //drawImage(character.characterContext, jobSource.image, jobSource, {'left': 0, 'top': 0, 'width': 20, 'height': 20});
-        character.characterContext.drawImage(hero.personCanvas, frame * 96, 0 , 96, 64, -20, -18, 96, 64);
+        drawFrame(character.characterContext, frame, {x: -20, y:  -18, w: 96, h: 64});
         character.characterContext.globalAlpha = 1;
         if (state.selectedCharacter !== character) {
             if (character.isStuckAtShrine) drawImage(character.characterContext, shrineSource.image, shrineSource, rectangle(0, 0, 16, 16));
@@ -82,6 +91,7 @@ export function render() {
    // attackAnimationTest();
 }
 /*
+const slashAnimation = createAnimation('gfx2/slash.png', {x: 0, y: 0, w: 64, h: 48}, {rows: 5, frameMap: [1, 2, 3, 4, 1]});
 function attackAnimationTest() {
     time += FRAME_LENGTH;
     const frameDuration = Math.round(1000 / fps / FRAME_LENGTH);

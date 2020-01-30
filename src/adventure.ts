@@ -28,6 +28,7 @@ import { moveActor } from 'app/moveActor';
 import { appendTextPopup, applyAttackToTarget, findActionByTag, getBasicAttack, performAttackProper } from 'app/performAttack';
 import { gain } from 'app/points';
 import { updateActorHelpText } from 'app/popup';
+import { updateActorAnimationFrame, updateActorDimensions } from 'app/render/drawActor';
 import { saveGame } from 'app/saveGame';
 import { getState } from 'app/state';
 import {
@@ -40,8 +41,8 @@ import { ifdefor } from 'app/utils/index';
 import { isMouseDown } from 'app/utils/mouse';
 
 import {
-    Actor, Area, AreaEntity, BonusSource, Character, Exit,
-    GuildArea, Hero, LevelData, LevelDifficulty, MonsterData, Target,
+    Actor, Area, AreaEntity, BonusSource, Character, Exit, Frame,
+    GuildArea, Hero, LevelData, LevelDifficulty, MonsterData, MonsterSpawn, Target,
 } from 'app/types';
 
 
@@ -136,7 +137,7 @@ export function enterArea(actor: Actor, {x, z, areaKey}: Exit) {
 }
 export function addMonstersToArea(
     area: Area,
-    monsters: MonsterData[],
+    monsters: MonsterSpawn[],
     extraBonuses: BonusSource[] = [],
     specifiedRarity = 0
 ) {
@@ -342,41 +343,9 @@ export function updateArea(area: Area) {
         }
         capHealth(actor);
     });
-    everybody.forEach(updateActorDimensions);
     everybody.forEach(updateActorAnimationFrame);
+    everybody.forEach(updateActorDimensions);
     everybody.forEach(updateActorHelpText);
-}
-export function updateActorDimensions(actor: Actor) {
-    const source = actor.source;
-    const scale = (actor.stats.scale || 1);
-    actor.width = source.actualWidth * scale;
-    actor.height = source.actualHeight * scale;
-    if (isNaN(actor.width) || isNaN(actor.height)) {
-        console.log(actor.stats.scale);
-        console.log(actor.x);
-        console.log(source);
-        console.log([actor.width,actor.height]);
-        pause();
-        return false;
-    }
-    return true;
-}
-function updateActorAnimationFrame(actor: Actor) {
-    if (actor.pull || actor.stunned || actor.isDead ) {
-        actor.walkFrame = 0;
-    } else if (actor.skillInUse && actor.recoveryTime < Math.min(actor.totalRecoveryTime, .3)) { // attacking loop
-        if (actor.recoveryTime === 0) {
-            actor.attackFrame = actor.preparationTime / actor.skillInUse.totalPreparationTime * (actor.source.attackPreparationFrames.length - 1);
-        } else {
-            actor.attackFrame = actor.recoveryTime / actor.totalRecoveryTime * (actor.source.attackRecoveryFrames.length - 1);
-        }
-        actor.walkFrame = 0;
-    } else if (actor.isMoving) {
-        var walkFps = ((actor.type === 'monster' && actor.base.fpsMultiplier) || 1) * 3 * actor.stats.speed / 100;
-        actor.walkFrame = (actor.walkFrame || 0) + walkFps * FRAME_LENGTH * Math.max(MIN_SLOW, 1 - actor.slow) * (actor.skillInUse ? .25 : 1) / 1000;
-    } else {
-        actor.walkFrame = 0;
-    }
 }
 function processStatusEffects(target: Actor) {
     if (target.isDead ) return;

@@ -7,14 +7,13 @@ import { editingMapState } from 'app/development/editLevel'
 import { createCanvas, mainCanvas, mainContext } from 'app/dom';
 import { getHoverAction, getSelectedAction } from 'app/drawSkills';
 import { FRAME_LENGTH, GROUND_Y, MIN_SLOW } from 'app/gameConstants';
-import { bonusSourceHelpText } from 'app/helpText';
 import { getCanvasCoords, getTargetLocation } from 'app/main';
 import {
     drawImage, drawOutlinedImage, drawTintedImage,
-    getTintedImage, prepareTintedImage, requireImage,
+    prepareTintedImage, requireImage,
 } from 'app/images';
 import { getCanvasPopupTarget } from 'app/popup';
-import { shrineSource } from 'app/render';
+import { drawActor, drawActorEffects } from 'app/render/drawActor';
 import { getState } from 'app/state';
 import { canUseSkillOnTarget } from 'app/useSkill';
 import { arrMod, rectangle } from 'app/utils/index';
@@ -102,9 +101,6 @@ export function drawArea(area: Area) {
         ...area.treasurePopups,
         ...area.effects
     ];
-    const sortedSprites = allSprites.slice().sort(function (spriteA, spriteB) {
-        return (spriteB.z || 0) - (spriteA.z || 0);
-    });
     // Draw effects that appear underneath sprites. Do not sort these, rather, just draw them in
     // the order they are present in the arrays.
     for (const sprite of allSprites) if (sprite.drawGround) sprite.drawGround(area);
@@ -115,13 +111,16 @@ export function drawArea(area: Area) {
     if (area.wallDecorations) {
         for (const object of area.wallDecorations) object.render(area);
     }
+    const sortedSprites = allSprites.slice().sort(function (spriteA, spriteB) {
+        return (spriteB.z || 0) - (spriteA.z || 0);
+    });
     for (const sprite of sortedSprites) {
         if (sprite.render) sprite.render(area);
-        else if (sprite.targetType === 'actor') drawActor(sprite as Actor);
+        else if (sprite.targetType === 'actor') drawActor(context, sprite as Actor);
     }
     //for (var effect of ifdefor(area.effects, [])) effect.render(area);
     // Draw actor lifebar/status effects on top of effects/projectiles
-    area.allies.concat(area.enemies).forEach(drawActorEffects);
+    area.allies.concat(area.enemies).forEach(actor => drawActorEffects(context, actor));
     // Draw text popups such as damage dealt, item points gained, and so on.
     for (const textPopup of (area.textPopups || [])) {
         context.fillStyle = (textPopup.color|| "red");
@@ -159,188 +158,6 @@ function drawActorGroundEffects(actor: Actor) {
                     drawRune(context, actor, castAnimation, castFrame);
                 });
             }
-        }
-    }
-}
-function drawActor(actor: Actor) {
-    var cameraX = actor.area.cameraX;
-    var context = mainContext;
-    var source = actor.source;
-    var scale = (actor.stats.scale || 1);
-    var frame;
-    context.save();
-    if (actor.cloaked) {
-        context.globalAlpha = .2;
-    }
-    const top = Math.round(GROUND_Y - actor.height - (actor.y || 0) - (actor.z || 0) / 2);
-    const left = Math.round(actor.x - actor.width / 2 - cameraX);
-    // These values are used for determining when the mouse is hovering over the actor.
-    // We only need these when the screen is displayed, so we can set them only on draw.
-    actor.top = top;
-    actor.left = left;
-    const xCenterOnMap = left + (source.xCenter - source.xOffset) * scale;
-    const yCenterOnMap = top + (source.yCenter - source.yOffset) * scale;
-    /*if (mouseDown) {
-        console.log(actor.base.name ? actor.base.name : actor.name);
-        console.log([actor.x, actor.y]);
-        console.log(['xCenter', source.xCenter, 'actualWidth', source.actualWidth,  'width', source.width, 'xOffset', source.xOffset, 'scale', scale]);
-        console.log(['yCenter', source.yCenter, 'actualHeight', source.actualHeight,  'height', source.height, 'yOffset', source.yOffset, 'scale', scale]);
-        console.log([left, top, actor.width, actor.height]);
-        console.log([source.xCenter, source.yCenter]);
-        console.log([xCenterOnMap, yCenterOnMap]);
-    }*/
-    context.translate(xCenterOnMap, yCenterOnMap);
-    if (actor.rotation) {
-        context.rotate(actor.rotation * Math.PI/180);
-    }
-    if ((!source.flipped && actor.heading[0] < 0) || (source.flipped && actor.heading[0] > 0)) {
-        context.scale(-1, 1);
-    }
-    if (actor.isDead && !source.deathFrames) {
-        context.globalAlpha = Math.max(0, 1 - (actor.time - actor.timeOfDeath));
-    }
-    if (actor.pull || actor.stunned || (actor.isDead && !source.deathFrames)) {
-        frame = 0;
-    } else if (actor.isDead && source.deathFrames) {
-        const deathFps = 1.5 * source.deathFrames.length;
-        frame = Math.min(source.deathFrames.length - 1, Math.floor((actor.time - actor.timeOfDeath) * deathFps));
-        frame = arrMod(source.deathFrames, frame);
-    } else if (actor.skillInUse && actor.recoveryTime < Math.min(actor.totalRecoveryTime, .3)) { // attacking loop
-        if (actor.recoveryTime === 0) {
-            frame = arrMod(source.attackPreparationFrames, Math.floor(actor.attackFrame));
-        } else {
-            frame = arrMod(source.attackRecoveryFrames, Math.floor(actor.attackFrame));
-        }
-    } else if (actor.isMoving) {
-        frame = arrMod(source.walkFrames, Math.floor(actor.walkFrame));
-    } else {
-        // actor does not animate by default (unless we add an idling animation).
-        frame = 0;
-    }
-    let xFrame = frame;
-    let yFrame = 0;
-    // Some images wrap every N frames and will have framesPerRow set on the source.
-    if (source.framesPerRow) {
-        xFrame = frame % source.framesPerRow;
-        yFrame = Math.floor(frame / source.framesPerRow);
-    }
-    const frameSource = {'left': xFrame * source.width, 'top': yFrame * source.height, 'width': source.width, 'height': source.height};
-    const target = {'left': -source.xCenter * scale, 'top': -source.yCenter * scale, 'width': source.width * scale, 'height': source.height * scale};
-
-    var tints = getActorTints(actor);
-    if (tints.length) {
-        prepareTintedImage();
-        let tint = tints.pop();
-        let tintedImage = getTintedImage(actor.image, tint[0], tint[1], frameSource);
-        const tintSource = {'left': 0, 'top': 0, 'width': frameSource.width, 'height': frameSource.height};
-        for (tint of tints) {
-            tintedImage = getTintedImage(tintedImage, tint[0], tint[1], tintSource);
-        }
-        drawImage(context, tintedImage, tintSource, target);
-    } else {
-        drawImage(context, actor.image, frameSource, target);
-    }
-    /*context.globalAlpha = .5;
-    context.fillStyle = 'red';
-    context.fillRect(target.left, target.top, target.width, target.height);*/
-    context.restore();
-}
-function drawActorEffects(actor: Actor) {
-    const context = mainContext;
-    // life bar
-    if (actor.isDead) return;
-    // if (!actor.area.enemies.length) return;
-    let x = actor.left + actor.width / 2 - 32;
-    // Don't allow the main character's life bar to fall off the edges of the screen.
-    const state = getState();
-    if (actor === state.selectedCharacter.hero) {
-        x = Math.min(800 - 5 - 64, Math.max(5, x));
-    }
-    let y = actor.top - 5;
-    drawBar(context, x, y, 64, 4, 'white', (actor.stats.lifeBarColor || 'red'), actor.health / actor.stats.maxHealth);
-    if (actor.stats.bonusMaxHealth >= 1 && actor.health >= actor.stats.maxHealth - actor.stats.bonusMaxHealth) {
-        // This logic is kind of a mess but it is to make sure the % of the bar that is due to bonusMaxHealth
-        // is drawn as orange instead of red.
-        const totalWidth = 62 * actor.health / actor.stats.maxHealth;
-        const normalWidth = Math.floor(62 * (actor.stats.maxHealth - actor.stats.bonusMaxHealth) / actor.stats.maxHealth);
-        const bonusWidth = Math.min(
-            totalWidth - normalWidth,
-            Math.ceil(
-                (totalWidth - normalWidth)
-                * (actor.stats.bonusMaxHealth - (actor.health - actor.stats.maxHealth))
-                / actor.stats.bonusMaxHealth
-            )
-        );
-        mainContext.fillStyle = 'orange';
-        mainContext.fillRect(x + 1 + normalWidth, y + 1, bonusWidth, 2);
-    }
-    mainContext.save();
-    mainContext.fillStyle = 'white';
-    mainContext.globalAlpha = .7;
-    const targetSize = Math.floor(62 * Math.max(0, actor.targetHealth) / actor.stats.maxHealth);
-    mainContext.fillRect(x + 1 + targetSize, y + 1, 62 - targetSize, 2);
-    mainContext.restore();
-
-    if (actor.reflectBarrier > 0) {
-        y -= 3;
-        const width = Math.ceil(Math.min(1, actor.maxReflectBarrier / actor.stats.maxHealth) * 64);
-        drawBar(context, x, y, width, 4, 'white', 'blue', actor.reflectBarrier / actor.maxReflectBarrier);
-    }
-    if (actor.temporalShield > 0) {
-        y -= 3;
-        drawBar(context, x, y, 64, 4, 'white', '#aaa', actor.temporalShield / actor.maxTemporalShield);
-    }
-    y = actor.top - 5;
-    drawEffectIcons(actor, x, y);
-    if (!actor.isDead && actor.stunned) {
-        const target =  {'left': 0, 'top': 0, 'width': shrineSource.width, 'height': shrineSource.height}
-        for (let i = 0; i < 3; i++ ) {
-            const theta = 2 * Math.PI * (i + 3 * actor.time) / 3;
-            // var scale = (actor.stats.scale || 1);
-            target.left = actor.left + (actor.width - shrineSource.width) / 2 + Math.cos(theta) * 30;
-            target.top = actor.top - 5 + Math.sin(theta) * 10;
-            drawImage(context, shrineSource.image, shrineSource, target);
-        }
-    }
-}
-// Get array of tint effects to apply when drawing the given actor.
-function getActorTints(actor: Actor) {
-    const tints = [];
-    // TODO: Stop doing this or precompute these, tinting is bad for performance.
-    if (actor.type === 'monster' && actor.base.tint) {
-        tints.push(actor.base.tint);
-    }
-    if (actor.stats.tint) {
-        const min = (actor.stats.tintMinAlpha || .5);
-        const max = (actor.stats.tintMaxAlpha || .5);
-        const center = (min + max) / 2;
-        const radius = (max - min) / 2;
-        tints.push([actor.stats.tint, center + Math.cos(actor.time * 5) * radius]);
-    }
-    if (actor.slow > 0) tints.push(['#fff', Math.min(1, actor.slow)]);
-    return tints;
-}
-function drawEffectIcons(actor: Actor, x: number, y: number) {
-    let effectXOffset = 0;
-    let effectYOffset = 2;
-    const seenEffects = {};
-    for (const effect of actor.allEffects) {
-        const effectText = bonusSourceHelpText(effect, actor);
-        // Don't show icons for stacks of the same effect.
-        if (seenEffects[effectText]) continue;
-        seenEffects[effectText] = true;
-        const base = effect.base as {icons?: any};
-        const icons = (base && base.icons) || [];
-        if (!icons.length) continue;
-        for (const iconData of icons) {
-            const source = {'image': requireImage(iconData[0]), 'left': iconData[1], 'top': iconData[2], 'width': iconData[3], 'height': iconData[4]};
-            const xOffset = effectXOffset + iconData[5], yOffset = effectYOffset + iconData[6];
-            drawImage(mainContext, source.image, source, {'left': x + xOffset, 'top': y + yOffset, 'width': source.width, 'height': source.height});
-        }
-        effectXOffset += 16;
-        if (effectXOffset + 16 > Math.max(actor.width, 64)) {
-            effectXOffset = 0;
-            effectYOffset += 20;
         }
     }
 }
@@ -407,7 +224,7 @@ const returnToMapButton = {'source': {'image': requireImage('gfx/worldIcon.png')
         returnToMap(state.selectedCharacter);
 }};
 
-function drawBar(context, x, y, width, height, background, color, percent) {
+export function drawBar(context, x, y, width, height, background, color, percent) {
     percent = Math.max(0, Math.min(1, percent));
     if (background) {
         context.fillStyle = background;

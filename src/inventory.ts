@@ -1,8 +1,9 @@
 import { addBonusSourceToObject, removeBonusSourceFromObject, updateTags } from 'app/bonuses';
 import {
-    addActions, recomputeActorTags, refreshStatsPanel, removeActions, updateAdventurerGraphics
+    addActions, recomputeActorTags, refreshStatsPanel, removeActions
 } from 'app/character';
 import { itemsByKey } from 'app/content/equipment/index';
+import { updateHeroGraphics } from 'app/content/heroGraphics';
 import { editingMapState } from 'app/development/editLevel';
 import {
     craftingOptionsContainer, getElementIndex, handleChildEvent,
@@ -20,7 +21,7 @@ import { collision, getCollisionArea, ifdefor } from 'app/utils/index';
 import { getMousePosition } from 'app/utils/mouse';
 import { exportAffix, importAffix } from 'app/saveGame';
 
-import { Actor, EquipmentSlot, Item, ItemData, SavedItem } from 'app/types';
+import { Actor, EquipmentSlot, Hero, Item, ItemData, SavedItem } from 'app/types';
 
 // Div containing items
 const inventoryElement = query('.js-inventory');
@@ -97,7 +98,7 @@ export function importItem(itemData: SavedItem): Item {
     return item;
 }
 
-export function equipItemProper(actor: Actor, item: Item, update) {
+export function equipItemProper(actor: Hero, item: Item, update) {
     const selectedCharacter = getState().selectedCharacter;
     const isSelectedHero = (actor === (selectedCharacter && selectedCharacter.hero));
     //console.log("equip " + item.base.slot);
@@ -131,36 +132,35 @@ export function equipItemProper(actor: Actor, item: Item, update) {
         if (isSelectedHero) {
             refreshStatsPanel(selectedCharacter, query('.js-characterColumn .js-stats'));
         }
-        updateAdventurerGraphics(actor);
+        updateHeroGraphics(actor);
         updateOffhandDisplay();
         unequipRestrictedGear();
         updateEquipableItems();
     }
 }
-function unequipSlot(actor: Actor, slotKey: EquipmentSlot, update: boolean = false) {
-    //console.log(new Error("unequip " + slotKey));
-    if (actor.equipment[slotKey]) {
-        const item = actor.equipment[slotKey];
+function unequipSlot(hero: Hero, slotKey: EquipmentSlot, update: boolean = false) {
+    if (hero.equipment[slotKey]) {
+        const item = hero.equipment[slotKey];
         item.domElement.remove();
         item.actor = null;
-        actor.equipment[slotKey] = null;
-        removeActions(actor, item.base);
-        removeBonusSourceFromObject(actor.variableObject, item.base, false);
+        hero.equipment[slotKey] = null;
+        removeActions(hero, item.base);
+        removeBonusSourceFromObject(hero.variableObject, item.base, false);
         item.prefixes.forEach(function (affix) {
-            removeActions(actor, affix);
-            removeBonusSourceFromObject(actor.variableObject, affix, false);
+            removeActions(hero, affix);
+            removeBonusSourceFromObject(hero.variableObject, affix, false);
         })
         item.suffixes.forEach(function (affix) {
-            removeActions(actor, affix);
-            removeBonusSourceFromObject(actor.variableObject, affix, false);
+            removeActions(hero, affix);
+            removeBonusSourceFromObject(hero.variableObject, affix, false);
         })
         if (update) {
-            updateTags(actor.variableObject, recomputeActorTags(actor), true);
-            if (getState().selectedCharacter.hero === actor) {
-                refreshStatsPanel(actor.character, query('.js-characterColumn .js-stats'));
+            updateTags(hero.variableObject, recomputeActorTags(hero), true);
+            if (getState().selectedCharacter.hero === hero) {
+                refreshStatsPanel(hero.character, query('.js-characterColumn .js-stats'));
                 query('.js-equipment .js-' + slotKey + ' .js-placeholder').style.display = '';
             }
-            updateAdventurerGraphics(actor);
+            updateHeroGraphics(hero);
             updateOffhandDisplay();
             unequipRestrictedGear();
             updateEquipableItems();
@@ -168,11 +168,11 @@ function unequipSlot(actor: Actor, slotKey: EquipmentSlot, update: boolean = fal
     }
 }
 function unequipRestrictedGear() {
-    const actor = getState().selectedCharacter.hero;
-    for (const item of Object.values(actor.equipment)) {
+    const hero = getState().selectedCharacter.hero;
+    for (const item of Object.values(hero.equipment)) {
         if (!item) continue;
-        if (!canEquipItem(actor, item)) {
-            unequipSlot(actor, item.base.slot, true);
+        if (!canEquipItem(hero, item)) {
+            unequipSlot(hero, item.base.slot, true);
             addToInventory(item);
             // This method will get called again as a consequence of unequiping
             // the invalid item, so we don't need to do any further processing
@@ -380,8 +380,10 @@ document.addEventListener('mousemove', function (event) {
 });
 export function stopDrag() {
     applyDragResults();
-    checkIfCraftedItemWasClaimed();
+    // This needs to be run before we save(in checkIfCraftedItemWasClaimed)
+    // to prevent saving while the item is being dragged.
     stopInventoryDrag();
+    checkIfCraftedItemWasClaimed();
 }
 function checkIfCraftedItemWasClaimed() {
     const { savedState } = getState();
@@ -414,7 +416,8 @@ export function equipItem(actor, item) {
     }
     return true;
 }
-const sellItemButton = query('.js-sellItem');
+// It is important that this is the sell button on the items panel rather than the jewels panel.
+const sellItemButton = query('.js-itemPanel .js-sellItem');
 const enchantmentSlot = query('.js-enchantmentSlot');
 function applyDragResults() {
     if (!inventoryState.dragHelper) {
@@ -427,7 +430,7 @@ function applyDragResults() {
         return;
     }
     const item = inventoryState.dragItem;
-    if (sellItemButton.style.display !== 'none' && collision(inventoryState.dragHelper, sellItemButton)) {
+    if (collision(inventoryState.dragHelper, sellItemButton)) {
         sellItem(item);
         return;
     }

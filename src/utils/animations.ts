@@ -22,13 +22,18 @@ export type Animation = {
 } & ExtraAnimationProperties
 
 export function createAnimation(
-    source: string,
-    rectangle: ShortRectangle,
+    source: string | HTMLImageElement | HTMLCanvasElement,
+    rectangle: ShortRectangle & {content?: ShortRectangle},
     {x = 0, y = 0, rows = 1, cols = 1, top = 0, left = 0, duration = 8, frameMap = null}: CreateAnimationOptions = {},
     props: ExtraAnimationProperties = {},
 ): Animation {
     let frames: Frame[] = [];
-    const image = requireImage(source);
+    let image: HTMLImageElement | HTMLCanvasElement;
+    if (typeof source === 'string') {
+        image = requireImage(source);
+    } else {
+        image = source;
+    }
     for (let row = 0; row < rows; row++) {
         for (let col = 0; col < cols; col++) {
             frames[row * cols + col] = {

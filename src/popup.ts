@@ -82,7 +82,7 @@ export function addPopup(target: any, content: string): Popup {
     };
     popup.element.className = 'toolTip js-toolTip';
     popup.element.innerHTML = content;
-    document.body.appendChild(popup.element);
+    mouseContainer.appendChild(popup.element);
     updateToolTip();
     return popup;
 }
@@ -92,7 +92,7 @@ export function updateToolTip() {
         return;
     }
     const box:DOMRect = popup.element.getBoundingClientRect();
-    const [x, y] = getMousePosition();
+    const [x, y] = getMousePosition(mouseContainer);
     var top = y + 10;
     if (top + box.height >= 600) {
         top = Math.max(10, y - 10 - box.height);

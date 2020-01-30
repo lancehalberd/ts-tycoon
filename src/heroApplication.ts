@@ -14,6 +14,7 @@ import { updateRetireButtons } from 'app/main';
 import { gain, hidePointsPreview, previewPointsChange, points, spend } from 'app/points';
 import { saveGame } from 'app/saveGame';
 import { getState } from 'app/state';
+import { drawFrame } from 'app/utils/animations';
 import Random from 'app/utils/Random';
 
 import { Character, FixedObject, JobKey } from 'app/types';
@@ -74,7 +75,8 @@ export function showHeroApplication(application: FixedObject) {
     applicantPreviewContext.globalAlpha = 1;
     character.hero.job.iconSource.render(applicantPreviewContext, {x: 0, y: 0, w: 32, h: 32});
     applicantPreviewContext.globalAlpha = .6;
-    applicantPreviewContext.drawImage(character.adventurer.personCanvas, character.adventurer.source.walkFrames[0] * 96, 0, 96, 64, -64, 0, 192, 128);
+    const frame = character.hero.source.idleAnimation.frames[0];
+    drawFrame(applicantPreviewContext, frame, {x: 40 - frame.w, y: 20, w: frame.w * 2, h: frame.h * 2});
     //drawBoardBackground(boardCanvas.getContext('2d'), character.board);
     drawBoardJewels(character, boardCanvas);
     applicationElement.style.display = '';

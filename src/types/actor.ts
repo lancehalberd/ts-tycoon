@@ -1,5 +1,5 @@
 import {
-    ActiveEffect, ActorStats, Affix, Area, AreaEntity, AreaObject,
+    ActiveEffect, ActorStats, Affix, Animation, Area, AreaEntity, AreaObject,
     BonusSource, Exit,
     Job, JobKey, Level, LocationTarget, Monster,
     SavedEquipment, Source, Target,
@@ -28,22 +28,22 @@ export type ActorActivity = {
     target: LocationTarget | AreaObject,
 }
 
-/*export interface ActorSource {
-    width: number,
-    height: number,
-    yCenter: number, // Measured from the top of the source
-    yOffset: number, // Measured from the top of the source
-    actualHeight: number,
-    xOffset: number,
-    actualWidth: number,
-    attackY: number, // Measured from the bottom of the source
-    walkFrames: number[],
-    attackPreparationFrames: number[],
-    attackRecoveryFrames: number[],
-};*/
-export interface ActorSource extends Source {
-
-}
+export interface ActorSource {
+    // Animations that can be set for an actor
+    // All other animations will default to this if not defined.
+    walkAnimation: Animation,
+    idleAnimation: Animation,
+    deathAnimation: Animation,
+    hurtAnimation: Animation,
+    attackPreparationAnimation: Animation,
+    attackRecoveryAnimation: Animation,
+    // Set this for characters with animations facing left instead of right,
+    // which we assume by default.
+    flipped?: boolean,
+    // Set this to specify where projectiles are created relative to this source,
+    // measured in pixels from the bottom of the frame content.
+    attackY?: number,
+};
 
 export interface BaseActor extends AreaEntity {
     targetType: 'actor',
@@ -131,7 +131,8 @@ export interface BaseActor extends AreaEntity {
     totalRecoveryTime?: number,
     preparationTime?: number,
     recoveryTime?: number,
-    walkFrame?: number,
+    idleFrame: number,
+    walkFrame: number,
     attackFrame?: number,
     isMoving?: boolean,
     skillTarget?: Target,

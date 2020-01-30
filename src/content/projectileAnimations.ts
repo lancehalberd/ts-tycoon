@@ -19,7 +19,7 @@ export function initializeProjectileAnimations() {
     context.imageSmoothingEnabled = false;
     // Draw the healing attacks for the wand
     prepareTintedImage();
-    var tintedRow = getTintedImage(images['gfx/effects/projectiles.png'], 'green', .5, {'left':96, 'top':32, 'width': 96, 'height': 32});
+    var tintedRow = getTintedImage(images['gfx/effects/projectiles.png'], 'green', .5, {x: 96, y: 32, w: 96, h: 32});
     context.drawImage(tintedRow, 0, 0, 96, 32, 0, 0, 96, 32);
     context.save();
     context.translate(32 + 10, 10);
@@ -30,7 +30,7 @@ export function initializeProjectileAnimations() {
     context.save();
     // Draw the regular attacks for the wand.
     prepareTintedImage();
-    tintedRow = getTintedImage(images['gfx/effects/projectiles.png'], 'orange', .5, {'left':96, 'top':32, 'width': 96, 'height': 32});
+    tintedRow = getTintedImage(images['gfx/effects/projectiles.png'], 'orange', .5, {x: 96, y: 32, w: 96, h: 32});
     context.drawImage(tintedRow, 0, 0, 96, 32, 0, 32, 96, 32);
     context.translate(32 + 10, 32 + 10);
     context.rotate(Math.PI / 8);

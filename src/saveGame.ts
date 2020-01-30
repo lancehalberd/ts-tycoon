@@ -97,6 +97,7 @@ export function importCharacter(characterData: SavedCharacter) {
         gameSpeed: characterData.gameSpeed,
         loopSkip: characterData.loopSkip,
     };
+    character.characterContext.imageSmoothingEnabled = false;
     if (isNaN(character.divinity) || typeof(character.divinity) !== "number") {
         character.divinity = 0;
     }

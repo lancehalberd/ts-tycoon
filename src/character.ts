@@ -1,5 +1,4 @@
 import * as _ from 'lodash';
-import { updateActorDimensions } from 'app/adventure';
 import { updateAdventureButtons } from 'app/adventureButtons';
 import {
     addBonusSourceToObject, addVariableChildToObject,
@@ -9,10 +8,10 @@ import {
 } from 'app/bonuses';
 import { abilities } from 'app/content/abilities';
 import { updateTrophy } from 'app/content/achievements';
+import { updateHeroGraphics } from 'app/content/heroGraphics';
 import { characterClasses } from 'app/content/jobs';
 import { updateSkillConfirmationButtons } from 'app/content/levels';
 import { map } from 'app/content/mapData';
-import { setupActorSource } from 'app/content/monsters';
 import { showContext } from 'app/context';
 import {
     bodyDiv, createCanvas, jewelsCanvas, query, tag,
@@ -33,8 +32,10 @@ import { smallJewelLoot } from 'app/loot';
 import { centerMapOnLevel } from 'app/map';
 import { findActionByTag, getBasicAttack, updateDamageInfo } from 'app/performAttack';
 import { gain } from 'app/points';
+import { updateActorDimensions } from 'app/render/drawActor';
 import { getState } from 'app/state';
 import { getTargetCameraX } from 'app/update';
+import { createAnimation } from 'app/utils/animations';
 import { abbreviate } from 'app/utils/formatters';
 import { ifdefor, rectangle, removeElementFromArray } from 'app/utils/index';
 import { centerShapesInRectangle, Polygon } from 'app/utils/polygon';
@@ -144,6 +145,7 @@ export function newCharacter(job: Job): Character {
     setActorHealth(hero, hero.stats.maxHealth);
     const characterCanvas = createCanvas(40, 20);
     const characterContext = characterCanvas.getContext('2d');
+    characterContext.imageSmoothingEnabled = false;
     characterCanvas.classList.add('js-character', 'character');
     characterCanvas.setAttribute('helptext', '$character$')
     const boardCanvas = createCanvas(jewelsCanvas.width, jewelsCanvas.height);
@@ -205,6 +207,7 @@ export function makeAdventurerFromData({
     const personCanvas = createCanvas(personFrames * 96, 64);
     const personContext = personCanvas.getContext("2d");
     personContext.imageSmoothingEnabled = false;
+    const heroFrame = {x: 0, y: 0, w: 64, h: 48, content: {x: 22, y: 16, w: 12, h: 32}};
     const hero: Hero = {
         targetType: 'actor',
         type: 'hero',
@@ -217,19 +220,52 @@ export function makeAdventurerFromData({
         height: 0,
         equipment: {},
         job: characterClasses[jobKey],
-        source: setupActorSource({
-            width: 96,
-            height: 64,
+        source: {
+            /*width: 64,
+            height: 48,
             yCenter: 44, // Measured from the top of the source
-            yOffset: 14, // Measured from the top of the source
-            actualHeight: 45,
-            xOffset: 39,
-            actualWidth: 18,
-            attackY: 19, // Measured from the bottom of the source
-            walkFrames: [0, 1, 0, 2],
-            attackPreparationFrames: [0, 3, 4],
-            attackRecoveryFrames: [4, 3]
-        }),
+            // I think this is the distance from the top of the frame to the top of the head
+            yOffset: 16, // Measured from the top of the source
+            // I think this is the distance from the bottom to the top of the head.
+            actualHeight: 32,
+            // I think this is the distance from the left side of the frame to the back.
+            xOffset: 22,
+            actualWidth: 12,
+            attackY: 18, // Measured from the bottom of the source
+            idleFrames: [0, 1],
+            deathFrames: [16],
+            walkFrames: [2, 3, 4, 5],
+            attackPreparationFrames: [6, 7, 8, 9],
+            attackRecoveryFrames: [11, 11]*/
+            walkAnimation: createAnimation(
+                personCanvas, heroFrame,
+                {cols: 17, frameMap: [2, 3, 4, 5]},
+            ),
+            idleAnimation: createAnimation(
+                personCanvas, heroFrame,
+                {cols: 17, frameMap: [0, 1]},
+            ),
+            hurtAnimation: createAnimation(
+                personCanvas, heroFrame,
+                {cols: 17, frameMap: [14]},
+            ),
+            deathAnimation: createAnimation(
+                personCanvas, heroFrame,
+                {cols: 17, frameMap: [16]},
+            ),
+            attackPreparationAnimation: createAnimation(
+                personCanvas, heroFrame,
+                {cols: 17, frameMap: [6, 7, 8, 9]},
+            ),
+            attackRecoveryAnimation: createAnimation(
+                personCanvas, heroFrame,
+                {cols: 17, frameMap: [11, 11]},
+            ),
+            // Measured up from the bottom of the frame content.
+            attackY: 18,
+        },
+        idleFrame: 0,
+        walkFrame: 0,
         unlockedAbilities: {},
         abilities: [],
         minions: [],
@@ -387,7 +423,7 @@ export function updateAdventurer(adventurer: Hero) {
         '+weaponless:critChance': .01
     };
     adventurer.variableObject.tags = recomputeActorTags(adventurer);
-    updateAdventurerGraphics(adventurer);
+    updateHeroGraphics(adventurer);
     addActions(adventurer, abilities.basicAttack);
     adventurer.abilities.forEach(function (ability) {
         addActions(adventurer, ability);
@@ -424,54 +460,7 @@ export function updateAdventurer(adventurer: Hero) {
     recomputeDirtyStats(adventurer.variableObject);
     //console.log(adventurer);
 }
-export function updateAdventurerGraphics(adventurer) {
-    var sectionWidth = personFrames * 96;
-    var hat = adventurer.equipment.head;
-    var hideHair = hat ? ifdefor(hat.base.hideHair, false) : false;
-    adventurer.personContext.clearRect(0, 0, sectionWidth, 64);
-    var skinColorYOffset = adventurer.skinColorOffset;
-    var hairYOffset = adventurer.hairOffset;
-    for (var frame = 0; frame < personFrames; frame++) {
-        // Draw the person legs then body then hair then under garment then leg gear then body gear.
-        adventurer.personContext.drawImage(images['gfx/personSprite.png'], frame * 96 + 64, skinColorYOffset * 64 , 32, 64, frame * 96 + 32, 0, 32, 64); //legs
-        adventurer.personContext.drawImage(images['gfx/personSprite.png'], frame * 96, skinColorYOffset * 64 , 32, 64, frame * 96 + 32, 0, 32, 64); //body
-        if (!hideHair) {
-            adventurer.personContext.drawImage(images['gfx/hair.png'], frame * 96, hairYOffset * 64, 32, 64, frame * 96 + 32, 0, 32, 64); //hair
-        }
-        // To avoid drawing 'naked' characters, draw an undergarment (black dress?) if they
-        // don't have both a pants and a shirt on.
-        if ((!adventurer.equipment.body || !adventurer.equipment.body.base.source)
-                || (!adventurer.equipment.legs || !adventurer.equipment.legs.base.source)) {
-            adventurer.personContext.drawImage(images['gfx/equipment.png'], frame * 96, 8 * 64 , 32, 64, frame * 96 + 32, 0, 32, 64); //undergarment
-        }
-        // leg + body gear
-        for (var subX of [64, 0]) {
-            equipmentSlots.forEach(function (type) {
-                var equipment = adventurer.equipment[type];
-                if (!equipment || !equipment.base.source) return;
-                var source = equipment.base.source;
-                if (source.xOffset !== subX) return;
-                adventurer.personContext.drawImage(images['gfx/equipment.png'], frame * 96 + source.xOffset, source.yOffset, 32, 64, frame * 96 + 32, 0, 32, 64);
-            });
-        }
-        // Draw the weapon under the arm
-        var weapon = adventurer.equipment.weapon;
-        if (weapon && weapon.base.source) {
-            var source = weapon.base.source;
-            adventurer.personContext.drawImage(images['gfx/weapons.png'], frame * 96, source.yOffset, 96, 64, frame * 96, 0, 96, 64);
-        }
-        // Draw the person arm then arm gear
-        adventurer.personContext.drawImage(images['gfx/personSprite.png'], frame * 96 + 32, skinColorYOffset * 64 , 32, 64, frame * 96 + 32, 0, 32, 64); // arm
-        //arm gear
-        equipmentSlots.forEach(function (type) {
-            var equipment = adventurer.equipment[type];
-            if (!equipment || !equipment.base.source) return;
-            var source = equipment.base.source;
-            if (source.xOffset !== 32) return; // don't draw this if it isn't arm gear
-            adventurer.personContext.drawImage(images['gfx/equipment.png'], frame * 96 + source.xOffset, source.yOffset, 32, 64, frame * 96 + 32, 0, 32, 64);
-        });
-    }
-}
+
 export function recomputeActorTags(actor: Actor): Tags {
     const tags = {'actor': true};
     if (actor.equipment) {

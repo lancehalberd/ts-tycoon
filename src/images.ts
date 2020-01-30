@@ -206,8 +206,12 @@ const globalCompositeContext = globalCompositeCanvas.getContext('2d');
 export function prepareTintedImage() {
     globalCompositeContext.clearRect(0, 0, globalCompositeCanvas.width, globalCompositeCanvas.height);
 }
-export function getTintedImage(image, tint, amount, sourceRectangle: FullRectangle) {
-    drawTintedImage(globalCompositeContext, image, tint, amount, sourceRectangle, {'left': 0, 'top': 0, 'width': sourceRectangle.width, 'height': sourceRectangle.height});
+export function getTintedImage(image, tint, amount, {x, y, w, h}: ShortRectangle) {
+    drawTintedImage(
+        globalCompositeContext, image, tint, amount,
+        {left: x, top: y, width: w, height: h},
+        {left: 0, top: 0, width: w, height: h}
+    );
     return globalCompositeCanvas;
 }
 

@@ -20,18 +20,11 @@ import { centerShapesInRectangle, isPointInPoints } from 'app/utils/polygon';
 import Random from 'app/utils/Random';
 import {
     Actor, Area, Board, BoardData, BonusSource, Character, Hero, JewelComponents,
-    Level, LevelData, LevelDifficulty, LevelObject, Range, ShapeData, ShapeType,
+    Level, LevelData, LevelDifficulty, LevelObject, MonsterSpawn, Range, ShapeData, ShapeType,
 } from 'app/types';
 
 export const closedChestSource = {image: requireImage('gfx/chest-closed.png'), source: rectangle(0, 0, 32, 32)};
 export const openChestSource = {image: requireImage('gfx/chest-open.png'), source: rectangle(0, 0, 32, 32)};
-interface MonsterSpawn {
-    key: string,
-    level: number,
-    location: [number, number, number],
-    bonusSources?: BonusSource[],
-    rarity?: number,
-}
 export function instantiateLevel(
     levelData: LevelData,
     levelDifficulty: LevelDifficulty = 'normal',
@@ -134,7 +127,7 @@ export function instantiateLevel(
         const eventMonsters = eventsLeft.shift().slice();
         area.isBossArea = !eventsLeft.length;
         const numberOfMonsters = Random.range(minMonstersPerArea, maxMonstersPerArea);
-        const areaMonsters = [];
+        const areaMonsters: MonsterSpawn[] = [];
         // Add random monsters to the beginning of the area to fill it up the desired amount.
         while (areaMonsters.length < numberOfMonsters - eventMonsters.length) {
             const monster: MonsterSpawn = {

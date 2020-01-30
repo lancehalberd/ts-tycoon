@@ -8,11 +8,12 @@ import { makeAffix } from 'app/enchanting';
 import { equipmentSlots } from 'app/gameConstants';
 import { requireImage, setupSource } from 'app/images';
 import { makeItem } from 'app/inventory';
+import { createAnimation } from 'app/utils/animations';
 import { ifdefor } from 'app/utils/index';
 import Random from 'app/utils/Random';
 
 import {
-    Ability, Actor, ActorStats, Affix, AffixData,
+    Ability, Actor, ActorSource, ActorStats, Affix, AffixData, Animation,
     Bonuses, BonusSource, Equipment, EquipmentSlot,
     Monster, MonsterData, Source,
 } from 'app/types';
@@ -125,9 +126,11 @@ export function makeMonster(
         source: baseMonster.source,
         stationary: baseMonster.stationary,
         noBasicAttack: baseMonster.noBasicAttack,
-        baseY: baseMonster.source.y || 0,
+        baseY: 0, // baseMonster.source.y || 0,
         allEffects: [],
         minionBonusSources: [],
+        idleFrame: 0,
+        walkFrame: 0,
         // This will get set in updateMonster.
         // It can change if the monsters gains/loses affixes.
         image: null,
@@ -192,14 +195,16 @@ export function updateMonster(monster: Monster) {
     addBonusSourceToObject(variableObject, {'bonuses': getMonsterBonuses(monster)}, false);
     addBonusSourceToObject(variableObject, coreStatBonusSource, false);
     var enchantments = monster.prefixes.length + monster.suffixes.length;
-    if (monster.base.source.image.normal) monster.image = monster.base.source.image.normal;
-    else monster.image = monster.base.source.image;
+    //if (monster.base.source.walkAnimation.frames[0].image.normal) monster.image = monster.base.source.walkAnimation.frames[0].image.normal;
+    //else monster.image = monster.base.source.walkAnimation.frames[0].image;
+    // Storing image on actors prevents us from being able to use different images for different animations.
+    monster.image = monster.base.source.walkAnimation.frames[0].image;
     if (enchantments > 2) {
         addBonusSourceToObject(variableObject, imbuedMonsterBonuses, false);
     } else if (enchantments) {
         addBonusSourceToObject(variableObject, enchantedMonsterBonuses, false);
     }
-    for (const ability of [...(monster.extraSkills, []), ...(monster.base.abilities || [])]) {
+    for (const ability of [...(monster.extraSkills || []), ...(monster.base.abilities || [])]) {
         addBonusSourceToObject(variableObject, ability, false);
         addActions(monster, ability);
     }
@@ -287,17 +292,19 @@ function getMonsterBonuses(monster: Monster): Bonuses {
         '+anima': Random.range(1, Math.floor((growth + 1) * Math.pow(1.15, growth + 1)))
     };
 }
-export function setupActorSource(source: Partial<Source>): Source {
-    if (!source.walkFrames) {
-        source.walkFrames = [];
-        for (let i = 0; i < source.frames; i++) {
-            source.walkFrames[i] = i;
-        }
-    }
-    source.attackPreparationFrames = source.attackPreparationFrames || source.walkFrames;
-    // If attack recovery frames aren't specified, just play the prep frames backwards.
-    source.attackRecoveryFrames = source.attackRecoveryFrames || source.attackPreparationFrames.slice().reverse();
-    return setupSource(source);
+export function setupActorSource(source: Partial<ActorSource> & {walkAnimation: Animation}): ActorSource {
+    const attackPreparationAnimation = source.attackPreparationAnimation || source.walkAnimation;
+    return {
+        ...source,
+        idleAnimation: source.idleAnimation || source.walkAnimation,
+        hurtAnimation: source.hurtAnimation || source.idleAnimation || source.walkAnimation,
+        deathAnimation: source.deathAnimation || source.hurtAnimation || source.idleAnimation || source.walkAnimation,
+        attackPreparationAnimation,
+        attackRecoveryAnimation: source.attackRecoveryAnimation || {
+            ...attackPreparationAnimation,
+            frames: attackPreparationAnimation.frames.slice().reverse(),
+        },
+    };
 }
 function createEquippedActorSource(
     baseImage: HTMLImageElement | HTMLCanvasElement,
@@ -357,7 +364,134 @@ function createEquippedActorSource(
     return actorCanvas;
 }
 export function initializeMonsters() {
-    const caterpillarSource = setupActorSource({'image': requireImage('gfx/caterpillar.png'), 'width': 48, 'height': 64, 'actualHeight': 24, 'yOffset': 40, frames: 4});
+    const caterpillarSource = setupActorSource({
+        walkAnimation: createAnimation(
+            requireImage('gfx/caterpillar.png'), {x: 0, y: 0, w: 48, h: 64, content: {x: 0, y: 40, w: 64, h: 24}},
+            {cols: 4},
+        )
+    });
+    const gnomeSource = setupActorSource({
+        walkAnimation: createAnimation(
+            requireImage('gfx/gnome.png'), {x: 0, y: 0, w: 32, h: 64, content: {x: 0, y: 26, w: 32, h: 38}},
+            {cols: 4},
+        ),
+        flipped: true
+    });
+    const skeletonSource = setupActorSource({
+        walkAnimation: createAnimation(
+            requireImage('gfx/skeletonSmall.png'), {x: 0, y: 0, w: 48, h: 64, content: {x: 0, y: 26, w: 32, h: 38}},
+            {cols: 7},
+        )
+    });
+    const butterflySource = setupActorSource({
+        walkAnimation: createAnimation(
+            requireImage('gfx/yellowButterfly.png'), {x: 0, y: 0, w: 64, h: 64, content: {x: 0, y: 0, w: 48, h: 64}},
+            {cols: 7, rows: 2, frameMap: [1, 2, 3, 4, 5, 6, 4, 2, 0]},
+        ),
+        attackPreparationAnimation: createAnimation(
+            requireImage('gfx/yellowButterfly.png'), {x: 0, y: 0, w: 64, h: 64, content: {x: 0, y: 0, w: 48, h: 64}},
+            {cols: 7, rows: 2, frameMap: [7, 10, 11]},
+        ),
+        deathAnimation: createAnimation(
+            requireImage('gfx/yellowButterfly.png'), {x: 0, y: 0, w: 64, h: 64, content: {x: 0, y: 0, w: 48, h: 64}},
+            {cols: 7, rows: 2, frameMap: [7, 8, 9, 9]},
+        )
+    });
+    const monarchSource = setupActorSource({
+        walkAnimation: createAnimation(
+            requireImage('gfx/monarchButterfly.png'), {x: 0, y: 0, w: 64, h: 64, content: {x: 0, y: 0, w: 48, h: 64}},
+            {cols: 7, rows: 2, frameMap: [1, 2, 3, 4, 5, 6, 4, 2, 0]},
+        ),
+        attackPreparationAnimation: createAnimation(
+            requireImage('gfx/monarchButterfly.png'), {x: 0, y: 0, w: 64, h: 64, content: {x: 0, y: 0, w: 48, h: 64}},
+            {cols: 7, rows: 2, frameMap: [7, 10, 11]},
+        ),
+        deathAnimation: createAnimation(
+            requireImage('gfx/monarchButterfly.png'), {x: 0, y: 0, w: 64, h: 64, content: {x: 0, y: 0, w: 48, h: 64}},
+            {cols: 7, rows: 2, frameMap: [7, 8, 9, 9]},
+        ),
+    });
+    const turtleSource = setupActorSource({
+        walkAnimation: createAnimation(
+            requireImage('gfx/turtle.png'), {x: 0, y: 0, w: 64, h: 64},
+            {cols: 5, rows: 2, frameMap: [0, 1, 2, 3]},
+        ),
+        attackPreparationAnimation: createAnimation(
+            requireImage('gfx/turtle.png'), {x: 0, y: 0, w: 64, h: 64},
+            {cols: 5, rows: 2, frameMap: [5, 6]},
+        ),
+        deathAnimation: createAnimation(
+            requireImage('gfx/turtle.png'), {x: 0, y: 0, w: 64, h: 64},
+            {cols: 5, rows: 2, frameMap: [5, 7, 8, 9]},
+        ),
+    });
+    const skeletonGiantSource = setupActorSource({
+        walkAnimation: createAnimation(
+            requireImage('gfx/skeletonGiant.png'), {x: 0, y: 0, w: 48, h: 64},
+            {cols: 7},
+        ),
+    });
+    const dragonSource = setupActorSource({
+        walkAnimation: createAnimation(
+            requireImage('gfx/dragon.png'), {x: 0, y: 0, w: 64, h: 64, content: {x: 0, y: 0, w: 48, h: 64}},
+            {cols: 7, rows: 2, frameMap: [0, 1, 2, 3]},
+        ),
+        attackPreparationAnimation: createAnimation(
+            requireImage('gfx/dragon.png'), {x: 0, y: 0, w: 64, h: 64, content: {x: 0, y: 0, w: 48, h: 64}},
+            {cols: 7, rows: 2, frameMap: [4, 5, 6]},
+        ),
+        deathAnimation: createAnimation(
+            requireImage('gfx/dragon.png'), {x: 0, y: 0, w: 64, h: 64, content: {x: 0, y: 0, w: 48, h: 64}},
+            {cols: 7, rows: 2, frameMap: [7, 8, 9]},
+        ),
+    });
+    // Missing y: 30 to make this monster "flying" maybe set it on the actor itself?
+    /*const batSource = setupActorSource({
+        walkAnimation: createAnimation(
+            requireImage('gfx/bat.png'), {x: 0, y: 0, w: 32, h: 32},
+            {cols: 5},
+        ),
+        flipped: true,
+    });*/
+    const batImage = requireImage('gfx2/enemies/batsheet.png');
+    const batRectangle = {x: 0, y: 0, w: 36, h: 36, content: {x: 12, y: 0, w: 12, h: 36}};
+    const batSource = setupActorSource({
+        idleAnimation: createAnimation(batImage, batRectangle, {cols: 7, frameMap: [0]}),
+        walkAnimation: createAnimation(batImage, batRectangle, {cols: 7, frameMap: [0, 1, 2, 1]}),
+        attackPreparationAnimation: createAnimation(batImage, batRectangle, {cols: 7, frameMap: [3, 4]}),
+        attackRecoveryAnimation: createAnimation(batImage, batRectangle, {cols: 7, frameMap: [5]}),
+        deathAnimation: createAnimation(batImage, batRectangle, {cols: 7, frameMap: [6]}),
+        flipped: true,
+    });
+    const spiderSource = setupActorSource({
+        walkAnimation: createAnimation(
+            requireImage('gfx/spider.png'), {x: 0, y: 0, w: 48, h: 48, content: {x: 0, y: 10, w: 48, h: 38}},
+            {cols: 10, rows: 2, frameMap: [4, 5, 6, 7, 8, 9]},
+        ),
+        attackPreparationAnimation: createAnimation(
+            requireImage('gfx/spider.png'), {x: 0, y: 0, w: 48, h: 48, content: {x: 0, y: 10, w: 48, h: 38}},
+            {cols: 10, rows: 2, frameMap: [0, 1, 2, 3]},
+        ),
+        deathAnimation: createAnimation(
+            requireImage('gfx/spider.png'), {x: 0, y: 0, w: 48, h: 48, content: {x: 0, y: 10, w: 48, h: 38}},
+            {cols: 10, rows: 2, frameMap: [10, 11, 12, 13]},
+        ),
+    });
+    const wolfSource = setupActorSource({
+        walkAnimation: createAnimation(
+            requireImage('gfx/wolf.png'), {x: 0, y: 0, w: 64, h: 32},
+            {cols: 7, rows: 2, frameMap:[0, 1, 2, 3]},
+        ),
+        attackPreparationAnimation: createAnimation(
+            requireImage('gfx/wolf.png'), {x: 0, y: 0, w: 64, h: 32},
+            {cols: 7, rows: 2, frameMap: [6, 4, 5, 0]},
+        ),
+        deathAnimation: createAnimation(
+            requireImage('gfx/wolf.png'), {x: 0, y: 0, w: 64, h: 32},
+            {cols: 7, rows: 2, frameMap: [0, 7, 8, 9]},
+        ),
+    });
+    /*    {'image': requireImage('gfx/caterpillar.png'), 'width': 48, 'height': 64, 'actualHeight': 24, 'yOffset': 40, frames: 4});
     const gnomeSource = setupActorSource({'image': requireImage('gfx/gnome.png'), 'width': 32, 'height': 64, 'actualHeight': 38, 'yOffset': 26, 'flipped': true, frames: 4});
     const skeletonSource = setupActorSource({'image': requireImage('gfx/skeletonSmall.png'), 'width': 48, 'height': 64, 'actualHeight': 38, 'yOffset': 26, frames: 7});
     const butterflySource = setupActorSource({'image': requireImage('gfx/yellowButterfly.png'), 'width': 64, 'actualWidth': 48, 'height': 64,
@@ -374,6 +508,7 @@ export function initializeMonsters() {
             framesPerRow: 5, walkFrames: [0, 1, 2, 3], 'attackPreparationFrames': [5, 6], deathFrames: [5, 7, 8, 9]};
     const monarchSource = setupActorSource({'image': requireImage('gfx/monarchButterfly.png'), 'width': 64, 'actualWidth': 48, 'height': 64,
             framesPerRow: 7, walkFrames: [1, 2, 3, 4, 5, 6, 4, 2, 0], 'attackPreparationFrames': [7, 10, 11], deathFrames: [7, 8, 9, 9]});
+    */
     const skeletonRow = 0;
     const goblinRow = 1;
     const vampireRow = 2;
@@ -383,26 +518,23 @@ export function initializeMonsters() {
     const skeletonWarriorCanvas = createEquippedActorSource(requireImage('gfx/monsterPeople.png'), skeletonRow, {'weapon': makeItem(itemsByKey.hatchet, 1), 'head': makeItem(itemsByKey.irongreathelm, 1)});
     const goblinWithHeavyArmorCanvas = createEquippedActorSource(requireImage('gfx/monsterPeople.png'), goblinRow, {'body': makeItem(itemsByKey.platedcoat, 1), 'legs': makeItem(itemsByKey.copperskirt, 1), 'head': makeItem(itemsByKey.copperhelmet, 1), 'feet': makeItem(itemsByKey.coppersabatons, 1)});
     const goblinTatteredShortsCanvas = createEquippedActorSource(requireImage('gfx/monsterPeople.png'), goblinRow, {'legs': makeItem(itemsByKey.leatherkilt, 1)});
-    const humanoidMonsterBaseSource: Partial<Source> ={
-        'width': 96,
-        'height': 64,
-        'yCenter': 44, // Measured from the top of the source
-        'yOffset': 14, // Measured from the top of the source
-        'actualHeight': 50,
-        'xOffset': 39,
-        'actualWidth': 18,
-        'attackY': 19, // Measured from the bottom of the source
-        'walkFrames': [0, 1, 0, 2],
-        'attackPreparationFrames': [0, 3, 4],
-        'attackRecoveryFrames': [4, 3]
-    };
+    // Y center was original set to 44, but it will be 39 based on this (content.y + content.h / 2).
+    const humanoidFrame = {x: 0, y: 0, w: 96, h: 64, content: {x: 39, y: 14, w: 18, h: 50}};
+    function makeHumanoidSource(image: HTMLCanvasElement | HTMLImageElement) {
+        return setupActorSource({
+            walkAnimation: createAnimation(image, humanoidFrame, {cols: 5, frameMap: [0, 1, 0, 2]}),
+            attackPreparationAnimation: createAnimation(image, humanoidFrame, {cols: 5, frameMap: [0, 3, 4]}),
+            attackRecoveryAnimation: createAnimation(image, humanoidFrame, {cols: 5, frameMap: [4, 3]}),
+            attackY: 19,
+        });
+    }
 
-    const skeletonWithHatSource = setupActorSource({...humanoidMonsterBaseSource, image: skeletonWithHatCanvas});
-    const skeletonWithHelmetSource = setupActorSource({...humanoidMonsterBaseSource, image: skeletonWithHelmetCanvas});
-    const skeletonWarriorSource = setupActorSource({...humanoidMonsterBaseSource, image: skeletonWarriorCanvas});
-    const skeletonNakedSource = setupActorSource({...humanoidMonsterBaseSource, image: skeletonNakedCanvas});
-    const goblinWithHeavyArmorSource = setupActorSource({...humanoidMonsterBaseSource, image: goblinWithHeavyArmorCanvas});
-    const goblinTatteredShortsSource = setupActorSource({...humanoidMonsterBaseSource, image: goblinTatteredShortsCanvas});
+    const skeletonWithHatSource = makeHumanoidSource(skeletonWithHatCanvas);
+    const skeletonWithHelmetSource = makeHumanoidSource(skeletonWithHelmetCanvas);
+    const skeletonWarriorSource = makeHumanoidSource(skeletonWarriorCanvas);
+    const skeletonNakedSource = makeHumanoidSource(skeletonNakedCanvas);
+    const goblinWithHeavyArmorSource = makeHumanoidSource(goblinWithHeavyArmorCanvas);
+    const goblinTatteredShortsSource = makeHumanoidSource(goblinTatteredShortsCanvas);
 
     addMonster('dummy', {
         'name': 'Dummy', 'source': caterpillarSource,

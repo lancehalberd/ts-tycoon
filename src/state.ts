@@ -81,6 +81,7 @@ export interface GameState {
     guildBonusSources: BonusSource[];
     altarTrophies: Trophies,
     availableBeds: FixedObject[],
+    time: number,
 }
 
 function getDefaultSavedState(): SavedState {
@@ -125,6 +126,7 @@ function getDefaultState(): GameState {
         guildBonusSources: [],
         altarTrophies: getDefaultAltarTrophies(),
         availableBeds: [],
+        time: 0,
     };
 }
 

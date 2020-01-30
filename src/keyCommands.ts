@@ -115,9 +115,8 @@ document.addEventListener('keydown', function(event) {
             for (const itemElement of queryAll('.js-inventory .js-item')) {
                 if (isMouseOverElement(itemElement)) {
                     sellItem(getItemForElement(itemElement));
-                    return false;
+                    return;
                 }
-                return true;
             }
         }
     }

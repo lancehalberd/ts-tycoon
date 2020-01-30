@@ -14,3 +14,4 @@ export * from 'app/types/other';
 export { default as JobAchievement } from 'app/content/JobAchievement';
 export { default as TintIcon } from 'app/content/TintIcon';
 export { JobIcon } from 'app/content/jobs';
+export { Animation } from 'app/utils/animations';

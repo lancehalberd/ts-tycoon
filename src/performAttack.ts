@@ -10,6 +10,7 @@ import {
     novaEffect, projectile, songEffect,
 } from 'app/effects';
 import { MAX_Z } from 'app/gameConstants';
+import { getActorAnimationFrame } from 'app/render/drawActor';
 import { canUseReaction, getXDirection, useReaction } from 'app/useSkill';
 import { toHex } from 'app/utils/colors';
 import { abbreviate, fixedDigits, percent } from 'app/utils/formatters';
@@ -394,19 +395,17 @@ export function performAttackProper(attackStats: AttackData, target: Target) {
         applyAttackToTarget(attackStats, target);
     }
 }
-export function getAttackY(target: Target) {
+export function getAttackY(target: Target): number {
     // This could actually be a location for abilities targeting locations. Just use 0, which is the height of the floor.
     if (target.targetType !== 'actor')  {
         return 0;
     }
-    // Y value of projectiles can either be set on the source for the actor, or it will use the set yCenter or half the height.
-    const height = target.source.height || 64;
-    const y = target.stats.scale * ifdefor(target.source.attackY, height - ifdefor(target.source.yCenter, height / 2));
-    if (isNaN(y)) {
-        console.log(target, height);
-        debugger;
+    // Y value of projectiles can either be set on the source for the actor, or it will use half the content height.
+    if (target.source.attackY !== null && target.source.attackY !== undefined) {
+        return target.stats.scale * target.source.attackY;
     }
-    return y;
+    const frame = getActorAnimationFrame(target);
+    return target.stats.scale * (frame.content ? frame.content.h / 2 : frame.h / 2);
 }
 export function applyAttackToTarget(attackStats: AttackData, actorOrLocation: Target = null): boolean {
     const attack = attackStats.attack;
