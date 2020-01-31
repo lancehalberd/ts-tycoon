@@ -46,7 +46,7 @@ export function getActorAnimationFrame(actor: Actor): Frame {
         return arrMod(source.deathAnimation.frames, frameIndex);
     }
     if (actor.skillInUse && actor.recoveryTime < Math.min(actor.totalRecoveryTime, .3)) { // attacking loop
-        if (actor.recoveryTime === 0) {
+        if (actor.recoveryTime === 0 && actor.preparationTime < actor.skillInUse.totalPreparationTime) {
             return arrMod(source.attackPreparationAnimation.frames, Math.floor(actor.attackFrame));
         }
         return arrMod(source.attackRecoveryAnimation.frames, Math.floor(actor.attackFrame));
@@ -62,8 +62,8 @@ export function updateActorAnimationFrame(actor: Actor) {
         actor.walkFrame = 0;
         actor.idleFrame = 0;
     } else if (actor.skillInUse && actor.recoveryTime < Math.min(actor.totalRecoveryTime, .3)) { // attacking loop
-        if (actor.recoveryTime === 0) {
-            actor.attackFrame = actor.preparationTime / actor.skillInUse.totalPreparationTime * (actor.source.attackPreparationAnimation.frames.length - 1);
+        if (actor.recoveryTime === 0 && actor.preparationTime < actor.skillInUse.totalPreparationTime) {
+            actor.attackFrame = actor.preparationTime / actor.skillInUse.totalPreparationTime * (actor.source.attackPreparationAnimation.frames.length);
         } else {
             actor.attackFrame = actor.recoveryTime / actor.totalRecoveryTime * (actor.source.attackRecoveryAnimation.frames.length - 1);
         }
@@ -145,7 +145,7 @@ export function drawActorEffects(context: CanvasRenderingContext2D, actor: Actor
     if (actor === state.selectedCharacter.hero) {
         x = Math.min(800 - 5 - 64, Math.max(5, x));
     }
-    let y = actor.top - 5;
+    let y = actor.top - 10;
     drawBar(context, x, y, 64, 4, 'white', (actor.stats.lifeBarColor || 'red'), actor.health / actor.stats.maxHealth);
     if (actor.stats.bonusMaxHealth >= 1 && actor.health >= actor.stats.maxHealth - actor.stats.bonusMaxHealth) {
         // This logic is kind of a mess but it is to make sure the % of the bar that is due to bonusMaxHealth

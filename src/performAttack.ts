@@ -132,7 +132,7 @@ export function updateDamageInfo(character: Character, statsPanelElement: HTMLEl
         sections.push('Total Expected DPS is ' + abbreviate(expectedPhysicalDPS + expectedMagicDPS, 1));
     }
     damageElement.textContent = abbreviate(expectedPhysicalDPS + expectedMagicDPS, 1);
-    damageElement.parentElement.setAttribute('helptext', sections.join('<br/>'));
+    damageElement.parentElement.setAttribute('helpText', sections.join('<br/>'));
 
     attack = getBasicAttack(dummy);
 
@@ -156,7 +156,7 @@ export function updateDamageInfo(character: Character, statsPanelElement: HTMLEl
     sections.push('');
     sections.push(percent(physicalProtection, 1) + ' combined reduction');
     sections.push(attack.stats.maxPhysicalDamage.toFixed(1) + ' damage reduced to ' + physical.toFixed(1) );
-    protectionElement.parentElement.setAttribute('helptext', sections.join('<br/>'));
+    protectionElement.parentElement.setAttribute('helpText', sections.join('<br/>'));
 
     const resistanceElement =  statsPanelElement.querySelector('.js-resistance');
     magic = attack.stats.maxMagicDamage;
@@ -175,7 +175,7 @@ export function updateDamageInfo(character: Character, statsPanelElement: HTMLEl
     sections.push('');
     sections.push(percent(magicResistance, 1) + ' combined reduction');
     sections.push(attack.stats.maxMagicDamage.toFixed(1) + ' damage reduced to ' + magic.toFixed(1));
-    resistanceElement.parentElement.setAttribute('helptext', sections.join('<br/>'));
+    resistanceElement.parentElement.setAttribute('helpText', sections.join('<br/>'));
 
 
     // tie breaker is given to hitting, so for this calculation use 1 less evasion.
@@ -191,7 +191,7 @@ export function updateDamageInfo(character: Character, statsPanelElement: HTMLEl
     }
     const evasionElement =  statsPanelElement.querySelector('.js-evasion');
     evasionElement.textContent = percent(1 - hitPercent, 1);
-    evasionElement.parentElement.setAttribute('helptext', hero.stats.evasion + ' Evasion<br/><br/>' + percent(1 - hitPercent, 1) + ' estimated chance to evade attacks.');
+    evasionElement.parentElement.setAttribute('helpText', hero.stats.evasion + ' Evasion<br/><br/>' + percent(1 - hitPercent, 1) + ' estimated chance to evade attacks.');
 }
 
 export function createAttackStats(attacker: Actor, attack: Action, target: Target): AttackData {

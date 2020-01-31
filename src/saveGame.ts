@@ -62,7 +62,7 @@ export function exportCharacter(character: Character): SavedCharacter {
 }
 export function importCharacter(characterData: SavedCharacter) {
     const characterCanvas = createCanvas(40, 20);
-    characterCanvas.setAttribute('helptext', '');
+    characterCanvas.setAttribute('helpText', '$character$');
     characterCanvas.classList.add('js-character', 'character');
     const boardCanvas = createCanvas(jewelsCanvas.width, jewelsCanvas.height);
     const hero = importAdventurer(characterData.hero);

@@ -333,7 +333,7 @@ export function updateReforgeButton() {
     query('.js-reforge').classList.toggle('disabled', savedState.coins < getReforgeCost());
     const text = ['Offer ' + points('coins', Math.floor(getCurrentCraftingCost() / 5)) + ' to try again.', '',
         'You can type \'r\' as a shortcut for clicking this button.'].join('<br/>');
-    query('.js-reforge').setAttribute('helptext', text);
+    query('.js-reforge').setAttribute('helpText', text);
 }
 export function updateItemsThatWillBeCrafted() {
     const { savedState } = getState();

@@ -66,11 +66,6 @@ export function update() {
     if (context === 'item') {
         updateCraftingCanvas();
     }
-    if (state.selectedCharacter.hero.area) {
-        refreshStatsPanel(state.selectedCharacter, query('.js-characterColumn .js-stats'))
-    }
-    // TODO: do we need to do this every frame?
-    query('.js-inventorySlot').style.display = query('.js-inventory .js-item') ? 'none' : '';
     checkToRemovePopup();
     updateTrophyPopups();
     } catch (e) {

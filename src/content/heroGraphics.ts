@@ -1,15 +1,30 @@
-import { requireImage } from 'app/images';
+import { drawComplexCompositeTintedFrame, drawCompositeTintedFrame, requireImage } from 'app/images';
+import Random from 'app/utils/Random';
 
-import { Hero } from 'app/types';
+import { Hero, TintedFrame } from 'app/types';
 
 const frameWidth = 64;
 const frameHeight = 48;
 const frameCount = 17;
+const characterRectangle = {x: 0, y: 0, w: 1088, h: 48};
 const totalWidth = frameCount * frameWidth;
 const totalHeight = frameHeight;
+const paleSkin = '#FAE7D0';
+const pinkSkin = '#FFCC99';
+const midSkin = '#DFC183';
+const brownSkin = '#AA724B';
+const darkSkin = '#573719';
+const skinTone = Random.element([paleSkin, pinkSkin, midSkin, brownSkin, darkSkin]);
 const bandanaSheet = requireImage('gfx2/character/c1bandanasheet.png');
 const beltSheet = requireImage('gfx2/character/c1beltsheet.png');
-const bodySheet = requireImage('gfx2/character/c1bodysheet.png');
+const bodyLines = crect('gfx2/character/c1bodysheetline2.png');
+const bodyColors = [
+    crect('gfx2/character/c1bodysheetskincolor.png', skinTone),
+    crect('gfx2/character/c1bodysheetscarfcolor.png', 'yellow'),
+    crect('gfx2/character/c1bodysheetshirtcolor.png', 'blue'),
+    crect('gfx2/character/c1bodysheetshoecolor.png', 'white'),
+    crect('gfx2/character/c1bodysheetshortscolor.png', 'orange'),
+];
 const bootsSheet = requireImage('gfx2/character/c1bootssheet.png');
 const bowSheet = requireImage('gfx2/character/c1bowsheet.png');
 const earsSheet = requireImage('gfx2/character/c1ears.png');
@@ -18,22 +33,27 @@ const gloveSheet = requireImage('gfx2/character/c1glovesheet.png');
 const hairSheet = requireImage('gfx2/character/c1hairsheet.png');
 const hatHairSheet = requireImage('gfx2/character/c1hathairsheet.png');
 const witchHatSheet = requireImage('gfx2/character/c1witchhat.png');
-const headSheet = requireImage('gfx2/character/c1headsheet.png');
+const headColor = crect('gfx2/character/c1headsheetcolor2.png', skinTone);
+const headLines = crect('gfx2/character/c1headsheetline2.png');
 const jacketSheet = requireImage('gfx2/character/c1jacketsheet.png');
 const shieldSheet = requireImage('gfx2/character/c1shieldsheet.png');
 const staffSheet = requireImage('gfx2/character/c1staffsheet.png');
 const swordSheet = requireImage('gfx2/character/c1swordsheet.png');
 const throwSheet = requireImage('gfx2/character/c1throwsheet.png');
 const wandSheet = requireImage('gfx2/character/c1wandsheet.png');
+
+function crect(source: string, color: string = '0'): TintedFrame {
+    return {image: requireImage(source), color, ...characterRectangle};
+}
 export function updateHeroGraphics(hero: Hero) {
     hero.personCanvas.width = totalWidth;
     hero.personCanvas.height = totalHeight;
     hero.personContext.clearRect(0, 0, totalWidth, totalHeight);
     const context = hero.personContext;
     // BASE BODY
-    context.drawImage(bodySheet, 0, 0, totalWidth, totalHeight);
+    drawComplexCompositeTintedFrame(context, bodyColors, bodyLines, characterRectangle);
     // BASE HEAD
-    context.drawImage(headSheet, 0, 0, totalWidth, totalHeight);
+    drawCompositeTintedFrame(context, headColor, headLines, characterRectangle);
     // RACE DECORATION
     context.drawImage(earsSheet, 0, 0, totalWidth, totalHeight);
     // HAIR

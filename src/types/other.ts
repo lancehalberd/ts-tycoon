@@ -28,15 +28,22 @@ export interface ShortRectangle {
     w: number,
     h: number,
 }
-export type Rectangle = FullRectangle | ShortRectangle;
-
-export interface Frame extends ShortRectangle {
-    image: HTMLCanvasElement | HTMLImageElement,
+export interface FrameRectangle extends ShortRectangle {
     // When a frame does not perfectly fit the size of the content, this content rectangle can be
     // set to specify the portion of the image that is functionally part of the object in the frame.
     // For example, a character with a long time may have the content around the character's body and
     // exclude the tail when looking at the width/height of the character.
     content?: ShortRectangle,
+}
+export type Rectangle = FullRectangle | ShortRectangle;
+
+export interface Frame extends FrameRectangle {
+    image: HTMLCanvasElement | HTMLImageElement,
+}
+
+export interface TintedFrame extends Frame {
+    color: string,
+    image: HTMLCanvasElement | HTMLImageElement,
 }
 
 export interface BasicFrame {

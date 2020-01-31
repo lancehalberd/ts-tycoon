@@ -233,7 +233,7 @@ export function updateItem(item: Item) {
     } else if (enchantments) {
         item.domElement.classList.add('enchanted');
     }
-    item.domElement.setAttribute('helptext', '$item$');
+    item.domElement.setAttribute('helpText', '$item$');
 }
 export function addToInventory(item: Item) {
     item.domElement.remove();

@@ -98,7 +98,7 @@ export function getDefaultGuildAreas(): GuildAreas {
             fixedObject('bed', [890, 0, 140], {'scale': 2, 'xScale': -1})
         ],
         'monsters': [
-            {key: 'goblin', level: 1, location: [600, 0, 40]},
+            {key: 'gremlin', level: 1, location: [600, 0, 40]},
             {key: 'skeleton', level: 1, location: [880, 0, 0]},
         ],
         'leftWall': 'oldGuild',

@@ -619,10 +619,10 @@ function updateJewelCraftingOptions() {
         jewelCraftingButton.innerHTML = 'Fuse Jewels';
         jewelCraftingButton.style.display = 'inline';
         if (getFusedShape(jewelA, jewelB)) {
-            jewelCraftingButton.setAttribute('helptext', 'Click to fuse these jewels together');
+            jewelCraftingButton.setAttribute('helpText', 'Click to fuse these jewels together');
             jewelCraftingButton.classList.remove('disabled');
         } else {
-            jewelCraftingButton.setAttribute('helptext', 'These jewels cannot be fused.')
+            jewelCraftingButton.setAttribute('helpText', 'These jewels cannot be fused.')
             jewelCraftingButton.classList.add('disabled');
         }
         return;
@@ -630,20 +630,20 @@ function updateJewelCraftingOptions() {
     const jewel = jewelA || jewelB;
     if (jewel.shapeType === 'triangle' || jewel.shapeType === 'diamond') {
         jewelDeformationButton.innerHTML = 'Expand Jewel';
-        jewelDeformationButton.setAttribute('helptext', 'Click to expand the shape of this jewel.');
+        jewelDeformationButton.setAttribute('helpText', 'Click to expand the shape of this jewel.');
         jewelDeformationButton.style.display = 'inline';
     } else if (jewel.shapeType === 'rhombus' || jewel.shapeType === 'square') {
         jewelDeformationButton.innerHTML = 'Compress Jewel';
-        jewelDeformationButton.setAttribute('helptext', 'Click to compress the shape of this jewel.');
+        jewelDeformationButton.setAttribute('helpText', 'Click to compress the shape of this jewel.');
         jewelDeformationButton.style.display = 'inline';
     }
     jewelCraftingButton.innerHTML = 'Split Jewel';
     jewelCraftingButton.style.display = 'inline';
     if (jewel.shapeType == 'triangle' || jewel.shapeType == 'rhombus') {
-        jewelCraftingButton.setAttribute('helptext', 'This jewel cannot be split.');
+        jewelCraftingButton.setAttribute('helpText', 'This jewel cannot be split.');
         jewelCraftingButton.classList.add('disabled');
     } else {
-        jewelCraftingButton.setAttribute('helptext', 'Click to split this jewel into smaller jewels');
+        jewelCraftingButton.setAttribute('helpText', 'Click to split this jewel into smaller jewels');
         jewelCraftingButton.classList.remove('disabled');
     }
 }

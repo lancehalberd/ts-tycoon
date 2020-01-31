@@ -272,9 +272,9 @@ export const map = {
         'enemySkills': ["minorIntelligence"],
         'monsters': ["gnome","bat"],
         'events': [
-            ["gnome"],
+            ["gnome", "gremlin"],
             ["gnome","bat"],
-            ["gnome","bat","bat"],
+            ["gnome","bat","gremlin"],
             ["giantSkeleton"]
         ]
     },
@@ -941,9 +941,9 @@ export const map = {
         'enemySkills': ["minorDexterity"],
         'monsters': ["spider"],
         'events': [
-            ["caterpillar","spider","spider"],
+            ["caterpillar","spider","spider", "gremlin"],
             ["spider","spider","spider"],
-            ["caterpillar","caterpillar","spider"],
+            ["gremlin","caterpillar","caterpillar","spider"],
             ["butterfly"]
         ]
     },
@@ -1182,9 +1182,9 @@ export const map = {
         'enemySkills': ["minorStrength"],
         'monsters': ["skeleton"],
         'events': [
-            ["skeleton"],
+            ["skeleton", "gremlin"],
             ["skeleton","caterpillar"],
-            ["caterpillar","skeleton"],
+            ["gremlin", "caterpillar","skeleton"],
             ["dragon"]
         ]
     },

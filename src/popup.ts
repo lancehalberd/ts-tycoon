@@ -301,19 +301,22 @@ function getHelpText(popupTarget: HTMLElement) {
     }
     if (helpText === '$coins$') {
         return titleDiv(abbreviate(state.savedState.coins) + ' / ' + abbreviate(state.guildStats.maxCoins) + ' coins')
-            + bodyDiv('Coins are used to create brand new items.')
-            + bodyDiv('Coins are found in chests and dropped from defeated enemies.')
+            + bodyDiv('Use Coins to create items.')
+            + bodyDiv('Find more Coins from chests and defeated enemies.')
     }
     if (helpText === '$anima$') {
         return titleDiv(abbreviate(state.savedState.anima) + ' / ' + abbreviate(state.guildStats.maxAnima) + ' anima')
-            + bodyDiv('Anima is used to enchant items with special powers.')
-            + bodyDiv('Anima is absorbed from defeated enemies and salvaged from gems.')
+            + bodyDiv('Use Anima to enchant items with special powers.')
+            + bodyDiv('Absorb Anima from defeated enemies or salvage it from jewels.')
     }
     if (helpText === '$hire$') {
         if (state.characters.length >= state.guildStats.maxHeroes) {
-            return 'You do not have enough beds to hire another hero. Dismiss a hero or explore the guild for more beds.';
+            return 'You need an empty bed to hire a new hero. Dismiss a hero or search the guild for more beds.';
         }
         return 'Hire this hero. The more famous your guild is, the cheaper it is to hire heroes.';
+    }
+    if (!helpText) {
+        debugger;
     }
     return helpText;
 }

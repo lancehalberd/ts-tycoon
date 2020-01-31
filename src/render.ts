@@ -40,18 +40,18 @@ export function render() {
         redrawInventoryJewels();
     }
     const { editingLevel, testingLevel } = editingMapState;
-    const renderfps = 5;
+    const renderfps = 2;
     const characters = testingLevel ? [state.selectedCharacter] : state.characters;
     for (const character of characters) {
         const hero = character.hero;
-        const frame = arrMod(hero.source.walkAnimation.frames, Math.floor(Date.now() * renderfps / 1000));
+        const frame = arrMod(hero.source.idleAnimation.frames, Math.floor(Date.now() * renderfps / 1000));
         character.characterContext.clearRect(0, 0, 40, 20);
         if (state.selectedCharacter === character) {
             previewContext.clearRect(0, 0, 64, 128);
             //previewContext.drawImage(hero.personCanvas, frame * 96, 0 , 96, 64, -64, -20, 192, 128);
             //console.log(frameSource);
             //console.log(target);
-            drawFrame(previewContext, frame, {...frame, x: 32 - frame.w / 2, y: 64 - frame.h});
+            drawFrame(previewContext, frame, {x: 32 - frame.w, y: 96 - frame.h * 2, w: frame.w * 2, h: frame.h * 2});
             character.characterContext.globalAlpha = 1;
         } else {
             character.characterContext.globalAlpha = .5;

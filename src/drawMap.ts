@@ -249,8 +249,8 @@ export function drawMap(): void {
             context.restore();
         }
         if (state.selectedCharacter.currentLevelKey === levelKey) {
-            const frame = state.selectedCharacter.hero.source.walkAnimation.frames[1];
-            drawFrame(context, frame, {...frame, x: levelData.x + 25 - frame.w / 2, y: levelData.y - 40});
+            const frame = state.selectedCharacter.hero.source.idleAnimation.frames[0];
+            drawFrame(context, frame, {x: levelData.x + 25 - frame.w, y: levelData.y - 64, w: frame.w * 2, h: frame.h * 2});
         }
 
         const times = state.selectedCharacter.levelTimes[levelKey] || {};

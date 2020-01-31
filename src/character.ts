@@ -147,7 +147,7 @@ export function newCharacter(job: Job): Character {
     const characterContext = characterCanvas.getContext('2d');
     characterContext.imageSmoothingEnabled = false;
     characterCanvas.classList.add('js-character', 'character');
-    characterCanvas.setAttribute('helptext', '$character$')
+    characterCanvas.setAttribute('helpText', '$character$')
     const boardCanvas = createCanvas(jewelsCanvas.width, jewelsCanvas.height);
     const boardContext = boardCanvas.getContext('2d');
     const abilityKey = abilities[job.key] ? job.key : 'heal';
@@ -619,7 +619,8 @@ export function setSelectedCharacter(character: Character) {
     updateSkillConfirmationButtons();
     updateEquipableItems();
     //character.$characterCanvas.after($('.js-divinityPoints'));
-    query('.js-charactersBox').appendChild(character.characterCanvas);
+    query('.js-charactersBox .js-divinityPoints').after(character.characterCanvas)
+    //query('.js-charactersBox').appendChild();
     showContext(character.context);
     // Immediately show the desired camera position so the camera doesn't have to
     // catch up on showing the area (the camera isn't updated when the character isn't selected).

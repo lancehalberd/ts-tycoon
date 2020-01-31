@@ -113,7 +113,7 @@ export function updateEnchantmentOptions() {
     removePopup();
     if (!item) {
         for (const element of queryAll('.js-resetEnchantments,.js-enchant,.js-imbue,.js-augment,.js-mutate')) {
-            element.setAttribute('helptext', 'Drag an item to the alter to enchant it.');
+            element.setAttribute('helpText', 'Drag an item to the alter to enchant it.');
         }
         return;
     }
@@ -123,35 +123,35 @@ export function updateEnchantmentOptions() {
     const { anima, coins} = getState().savedState;
     if (total > 0) {
         resetEnchantmentsButton.classList.toggle('disabled', coins < resetCost(item))
-        resetEnchantmentsButton.setAttribute('helptext', 'Offer ' + points('coins', resetCost(item)) + ' to remove all enchantments from an item.<br/>This will allow you to enchant it again differently.');
+        resetEnchantmentsButton.setAttribute('helpText', 'Offer ' + points('coins', resetCost(item)) + ' to remove all enchantments from an item.<br/>This will allow you to enchant it again differently.');
     } else {
-        resetEnchantmentsButton.setAttribute('helptext', 'This item has no enchantments to remove.');
+        resetEnchantmentsButton.setAttribute('helpText', 'This item has no enchantments to remove.');
     }
     if (item.unique) {
         for (const element of queryAll('.js-enchant,.js-imbue,.js-mutate')) {
-            element.setAttribute('helptext', 'This item is unique and cannot be further enchanted.');
+            element.setAttribute('helpText', 'This item is unique and cannot be further enchanted.');
         }
         return;
     }
     if (total === 0) {
-        mutateButton.setAttribute('helptext', 'This item has no enchantments to mutate.');
+        mutateButton.setAttribute('helpText', 'This item has no enchantments to mutate.');
     } else {
         const mutationPrice = mutateCost(item);
         mutateButton.classList.toggle('disabled', anima < mutationPrice);
-        mutateButton.setAttribute('helptext', 'Offer ' + points('anima', mutationPrice) + ' to randomize the magical properties of this item.');
+        mutateButton.setAttribute('helpText', 'Offer ' + points('anima', mutationPrice) + ' to randomize the magical properties of this item.');
     }
     if (total < 2) {
         enchantButton.classList.toggle('disabled', anima < enchantCost(item));
-        enchantButton.setAttribute('helptext', 'Offer ' + points('anima', enchantCost(item)) + ' to add up to two magical properties to this item');
+        enchantButton.setAttribute('helpText', 'Offer ' + points('anima', enchantCost(item)) + ' to add up to two magical properties to this item');
     } else {
-        enchantButton.setAttribute('helptext', 'This item already has at least two magical properties.');
+        enchantButton.setAttribute('helpText', 'This item already has at least two magical properties.');
     }
     if (total < 4) {
         imbueButton.classList.toggle('disabled', anima < imbueCost(item));
-        imbueButton.setAttribute('helptext', 'Offer ' + points('anima', imbueCost(item)) + ' to add up to four magical properties to this item');
+        imbueButton.setAttribute('helpText', 'Offer ' + points('anima', imbueCost(item)) + ' to add up to four magical properties to this item');
     } else {
-        imbueButton.setAttribute('helptext', 'This item cannot hold any more enchantments.');
-        enchantButton.setAttribute('helptext', 'This item cannot hold any more enchantments.');
+        imbueButton.setAttribute('helpText', 'This item cannot hold any more enchantments.');
+        enchantButton.setAttribute('helpText', 'This item cannot hold any more enchantments.');
     }
 }
 function resetCost(item: Item) {

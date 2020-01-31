@@ -1,7 +1,8 @@
 import { enterArea } from 'app/adventure';
 import { hideAreaMenu } from 'app/areaMenu';
+import { refreshStatsPanel } from 'app/character';
 import { guildYardEntrance } from 'app/content/guild';
-import { jewelsCanvas, queryAll, toggleElements } from 'app/dom';
+import { jewelsCanvas, query, queryAll, toggleElements } from 'app/dom';
 import { drawBoardJewels } from 'app/drawBoard';
 import { stopDrag } from 'app/inventory';
 import { jewelInventoryState, stopJewelDrag } from 'app/jewelInventory';
@@ -12,10 +13,13 @@ import { getState} from 'app/state';
 export function setContext(context) {
     const state = getState();
     if (state.selectedCharacter.context === 'item') {
+        refreshStatsPanel(state.selectedCharacter, query('.js-characterColumn .js-stats'));
+        query('.js-inventorySlot').style.display = query('.js-inventory .js-item') ? 'none' : '';
         stopDrag();
         removePopup();
     }
     if (state.selectedCharacter.context === 'jewel') {
+        refreshStatsPanel(state.selectedCharacter, query('.js-characterColumn .js-stats'));
         stopJewelDrag();
         removePopup();
     }

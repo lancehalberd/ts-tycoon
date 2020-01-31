@@ -160,8 +160,8 @@ handleChildEvent('click', document.body, '.js-retire', function (retireButton) {
 });
 
 handleChildEvent('click', query('.js-charactersBox'), '.js-character', function (characterElement: HTMLElement) {
-    const characterIndex = getElementIndex(characterElement);
-    console.log(characterIndex, characterElement);
+    // Subtract 1 because the first element is the divinity indicator.
+    const characterIndex = getElementIndex(characterElement) - 1;
     setSelectedCharacter(getState().characters[characterIndex]);
 });
 
