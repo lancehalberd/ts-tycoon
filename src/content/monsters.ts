@@ -315,9 +315,19 @@ function createMonsterSource(image: HTMLImageElement | HTMLCanvasElement, rectan
         attackRecoveryAnimation: createAnimation(image, rectangle, {cols: 7, frameMap: [5]}),
         deathAnimation: hurtAnimation,
         hurtAnimation,
-        flipped: true,
     };
 }
+function createTintedImage(image: HTMLImageElement | HTMLCanvasElement, rectangle: FrameRectangle, color: string) {
+    const canvas = createCanvas(rectangle.w, rectangle.h);
+    const context = canvas.getContext('2d');
+    drawCompositeTintedFrame(context,
+        {...rectangle, image, color, y: rectangle.h},
+        {...rectangle, image},
+        {...rectangle, x: 0, y: 0}
+    );
+    return canvas;
+}
+const gremlinSheet = requireImage('gfx2/enemies/gremlinsheet.png');
 export function initializeMonsters() {
     const caterpillarSource = setupActorSource({
         walkAnimation: createAnimation(
@@ -397,11 +407,12 @@ export function initializeMonsters() {
     // Missing y: 30 to make this monster "flying" maybe set it on the actor itself?
     const batRectangle = {x: 0, y: 0, w: 36, h: 36, content: {x: 12, y: 0, w: 12, h: 36}};
     const batSource = createMonsterSource(requireImage('gfx2/enemies/batsheet.png'), batRectangle);
-    const skeletonRectangle = {x: 0, y: 0, w: 36, h: 36, content: {x: 18, y: 0, w: 12, h: 36}};
+    const skeletonRectangle = {x: 0, y: 0, w: 36, h: 36, content: {x: 6, y: 0, w: 12, h: 36}};
     const skeletonSource = createMonsterSource(requireImage('gfx2/enemies/skeletonunarmedsheet.png'), skeletonRectangle);
     const skeletonSwordSource = createMonsterSource(requireImage('gfx2/enemies/skeletonswordsheet.png'), skeletonRectangle);
-    const gremlinRectangle = {x: 0, y: 0, w: 36, h: 36, content: {x: 15, y: 20, w: 21, h: 16}};
-    const gremlinSource = createMonsterSource(requireImage('gfx2/enemies/gremlinsheet.png'), gremlinRectangle);
+    const gremlinRectangle = {x: 0, y: 0, w: 36, h: 36, content: {x: 0, y: 20, w: 21, h: 16}};
+    const gremlinImage = createTintedImage(gremlinSheet, {x: 0, y: 0, w: 252, h: 36}, 'orange');
+    const gremlinSource = createMonsterSource(gremlinImage, gremlinRectangle);
     const spiderSource = setupActorSource({
         walkAnimation: createAnimation(
             requireImage('gfx/spider.png'), {x: 0, y: 0, w: 48, h: 48, content: {x: 0, y: 10, w: 48, h: 38}},

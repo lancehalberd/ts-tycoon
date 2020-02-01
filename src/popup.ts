@@ -1,4 +1,5 @@
 import { actorHelpText } from 'app/character';
+import { abilities } from 'app/content/abilities';
 import { getChoosingTrophyAltar, getTrophyPopupTarget } from 'app/content/achievements';
 import { unprojectLeftWallCoords, unprojectRightWallCoords} from 'app/content/guild';
 import { getUpgradingObject, upgradeButton } from 'app/content/upgradeButton';
@@ -10,7 +11,7 @@ import { getGlobalHud } from 'app/drawArea';
 import { getAbilityPopupTarget } from 'app/drawSkills';
 import { equipmentCraftingState } from 'app/equipmentCrafting';
 import { GROUND_Y } from 'app/gameConstants';
-import { getItemHelpText } from 'app/helpText';
+import { abilityHelpText, getItemHelpText } from 'app/helpText';
 import { drawOutlinedImage } from 'app/images';
 import { getItemForElement, inventoryState } from 'app/inventory';
 import { getMapPopupTarget, mapState } from 'app/map';
@@ -314,6 +315,15 @@ function getHelpText(popupTarget: HTMLElement) {
             return 'You need an empty bed to hire a new hero. Dismiss a hero or search the guild for more beds.';
         }
         return 'Hire this hero. The more famous your guild is, the cheaper it is to hire heroes.';
+    }
+    if (helpText.indexOf('$ability$') === 0) {
+        const abilityKey = helpText.split('$ability$')[1];
+        const ability = abilities[abilityKey];
+        if (!ability) {
+            console.log("Invalid ability key", abilityKey);
+            debugger;
+        }
+        return abilityHelpText(ability, state.selectedCharacter.adventurer);
     }
     if (!helpText) {
         debugger;

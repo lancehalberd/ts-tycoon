@@ -8,7 +8,8 @@ import { initializeGame } from 'app/initialize';
 import { areAllImagesLoaded } from 'app/images';
 import { updateMap } from 'app/map';
 import { handleAdventureMouseIsDown } from 'app/main';
-import { checkToRemovePopup } from 'app/popup';
+import { checkToRemovePopup, updateActorHelpText } from 'app/popup';
+import { updateActorDimensions } from 'app/render/drawActor';
 import { getState } from 'app/state';
 import { getMousePosition, isMouseDown } from 'app/utils/mouse';
 import { areAllSoundsLoaded } from 'app/utils/sounds';
@@ -50,6 +51,11 @@ export function update() {
                     activeGuildAreaHash[character.hero.area.key] = true;
                 }
             }
+        }
+        if (character.context === 'guild' || character.context === 'adventure') {
+            const everybody = hero.area.allies.concat(hero.area.enemies);
+            everybody.forEach(updateActorDimensions);
+            everybody.forEach(updateActorHelpText);
         }
     }
     for (let guildAreaKey in activeGuildAreaHash) {

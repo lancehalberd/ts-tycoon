@@ -90,17 +90,12 @@ export function initializeLevelEditing() {
         const newSkill = levelSkillSelect.value;
         if (!newSkill) {
             editingMapState.editingLevel.skill = null;
+            levelSkillSelect.setAttribute('helpText', 'No skill selected');
         } else {
             editingMapState.editingLevel.skill = newSkill;
+            levelSkillSelect.setAttribute('helpText', `$ability$${newSkill}`);
         }
     }
-    levelSkillSelect.setAttribute('helpText', '-');
-    // TODO: find another way to store help method on an element
-    /*levelSkillSelect.data('helpMethod', function ($element) {
-        var value = $element.val();
-        if (!value) return 'No skill selected';
-        return abilityHelpText(abilities[value], state.selectedCharacter.adventurer);
-    });*/
     enemySkillSelect.onchange = function () {
         const newSkill = enemySkillSelect.value;
         editingMapState.editingLevel.enemySkills.push(newSkill);
@@ -208,7 +203,7 @@ function updateEventMonsters() {
     eventsContainer.innerText = '';
     editingMapState.editingLevel.events = editingMapState.editingLevel.events || [];
     for (const event of editingMapState.editingLevel.events) {
-        const monsterSelectClone = monsterSelect.cloneNode();
+        const monsterSelectClone = monsterSelect.cloneNode(true);
         const eventElement = tagElement('li', 'js-levelEvent');
         eventElement.appendChild(tagElement('span', 'js-eventMonsters'));
         for (const monsterKey of event) {
@@ -254,7 +249,7 @@ export function startEditingLevel(level) {
     editingMapState.editingLevelInstance.cameraX = 0;
     state.selectedCharacter.adventurer.isDead = false;
     state.selectedCharacter.adventurer.timeOfDeath = undefined;
-    query('.js-editingControls').style.display = '';
+    toggleElements(queryAll('.js-editingControls'), true);
     levelSelect.selectedIndex = editingLevel.level - 1;
     const selectedBackgroundOption = query('.js-levelBackgroundSelect option[value="' + editingLevel.background + '"]') as HTMLOptionElement;
     selectedBackgroundOption.selected = true;
@@ -262,13 +257,13 @@ export function startEditingLevel(level) {
     toggleElements(queryAll('.js-levelSkillSelect option'), true);
     characterSelect.innerHTML = '';
     for (const characterData of testCharacters) {
-        const job = characterClasses[characterData.adventurer.jobKey];
-        const label = ['Lv',characterData.adventurer.level, job.name, characterData.adventurer.name].join(' ');
+        const job = characterClasses[characterData.hero.jobKey];
+        const label = ['Lv',characterData.hero.level, job.name, characterData.hero.name].join(' ');
         characterSelect.appendChild(optionElement('', label, JSON.stringify(characterData)))
     }
     characterSelect.appendChild(optionElement('', '--Characters from Save--', null));
     for (const character of state.characters) {
-        const label = ['Lv',character.adventurer.level, character.adventurer.job.name, character.adventurer.name].join(' ');
+        const label = ['Lv',character.hero.level, character.hero.job.name, character.hero.name].join(' ');
         characterSelect.appendChild(optionElement('', label, JSON.stringify(exportCharacter(character))));
     }
     // Hide skills already used by other levels.
@@ -280,7 +275,10 @@ export function startEditingLevel(level) {
     }
     // Hide class skills, they cannot be granted by levels.
     for (let classSkill in characterClasses) {
-        query('.js-levelSkillSelect option[value="' + classSkill + '"]').style.display = 'none';
+        const classSkllOption = query('.js-levelSkillSelect option[value="' + classSkill + '"]');
+        if (classSkllOption) {
+            classSkllOption.style.display = 'none';
+        }
     }
     if (editingLevel.skill) {
         const currentLevelSkillOption
@@ -299,7 +297,7 @@ export function startEditingLevel(level) {
 }
 function stopEditingLevel() {
     nameInput.blur();
-    query('.js-editingControls').style.display = 'none';
+    toggleElements(queryAll('.js-editingControls'), false);
     editingMapState.selectedMapNodes = [editingMapState.editingLevel];
     updateLevelDescription();
     editingMapState.editingLevel = editingMapState.editingLevelInstance = undefined;
@@ -308,7 +306,7 @@ function stopEditingLevel() {
 }
 
 function startTestingLevel(character: Character) {
-    query('.js-editingControls').style.display = 'none';
+    toggleElements(queryAll('.js-editingControls'), false);
     const state = getState();
     state.lastSelectedCharacter = state.selectedCharacter;
     setSelectedCharacter(character);
@@ -317,7 +315,7 @@ function startTestingLevel(character: Character) {
     updateEditingState();
 }
 export function stopTestingLevel() {
-    query('.js-editingControls').style.display = '';
+    toggleElements(queryAll('.js-editingControls'), true);
     const state = getState();
     state.selectedCharacter = state.lastSelectedCharacter;
     editingMapState.testingLevel = false;

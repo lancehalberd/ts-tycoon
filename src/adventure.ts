@@ -25,10 +25,9 @@ import { animaLootDrop, coinsLootDrop } from 'app/loot';
 import { setActorInteractionTarget } from 'app/main';
 import { unlockMapLevel } from 'app/map';
 import { moveActor } from 'app/moveActor';
+import { updateActorAnimationFrame } from 'app/render/drawActor';
 import { appendTextPopup, applyAttackToTarget, findActionByTag, getBasicAttack, performAttackProper } from 'app/performAttack';
 import { gain } from 'app/points';
-import { updateActorHelpText } from 'app/popup';
-import { updateActorAnimationFrame, updateActorDimensions } from 'app/render/drawActor';
 import { saveGame } from 'app/saveGame';
 import { getState } from 'app/state';
 import {
@@ -198,8 +197,7 @@ function timeStopLoop(area: Area) {
     runActorLoop(actor);
     moveActor(actor);
     capHealth(actor);
-    // Update position info.
-    area.allies.concat(area.enemies).forEach(updateActorDimensions);
+    updateActorAnimationFrame(actor);
     return true;
 }
 export function actorCanOverHeal(actor: Actor) {
@@ -281,7 +279,9 @@ export function updateArea(area: Area) {
     if (area.isGuildArea && !getState().savedState.unlockedGuildAreas[area.key] && !area.enemies.length && area.allies.some(actor => !actor.isDead)) {
         unlockGuildArea(area as GuildArea);
     }
-    if (timeStopLoop(area)) return;
+    if (timeStopLoop(area)) {
+        return;
+    }
     const delta = FRAME_LENGTH / 1000;
     let everybody = area.allies.concat(area.enemies);
     // Advance subjective time of area and each actor.
@@ -344,8 +344,6 @@ export function updateArea(area: Area) {
         capHealth(actor);
     });
     everybody.forEach(updateActorAnimationFrame);
-    everybody.forEach(updateActorDimensions);
-    everybody.forEach(updateActorHelpText);
 }
 function processStatusEffects(target: Actor) {
     if (target.isDead ) return;
