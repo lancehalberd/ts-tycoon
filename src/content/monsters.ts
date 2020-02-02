@@ -4,6 +4,7 @@ import { abilities, leapAndAct } from 'app/content/abilities';
 import { itemsByKey } from 'app/content/equipment/index';
 import { map } from 'app/content/mapData';
 import { createCanvas } from 'app/dom';
+import { ParticleEffect } from 'app/effects';
 import { makeAffix } from 'app/enchanting';
 import { equipmentSlots } from 'app/gameConstants';
 import { drawCompositeTintedFrame, requireImage } from 'app/images';
@@ -239,10 +240,7 @@ export function updateMonster(monster: Monster) {
 }
 
 export const monsters:{[key:string]: MonsterData} = {};
-function addMonster(key: string, data, parent: MonsterData = null) {
-    data.key = key;
-    data.variableObjectType = 'actor';
-
+function addMonster(key: string, data: Partial<MonsterData> & {name: string}, parent: MonsterData = null) {
     if (parent) {
         for (let property in parent) {
             switch (property) {
@@ -257,7 +255,13 @@ function addMonster(key: string, data, parent: MonsterData = null) {
             }
         }
     }
-    monsters[key] = data;
+    monsters[key] = {
+        source: null,
+        abilities: [],
+        ...data,
+        variableObjectType: 'actor',
+        key,
+    };
 }
 function getMonsterBonuses(monster: Monster): Bonuses {
     const growth = monster.level - 1;
@@ -292,7 +296,7 @@ function getMonsterBonuses(monster: Monster): Bonuses {
         '+anima': Random.range(1, Math.floor((growth + 1) * Math.pow(1.15, growth + 1)))
     };
 }
-export function setupActorSource(source: Partial<ActorSource> & {walkAnimation: Animation}): ActorSource {
+function completeMonsterSource(source: Partial<ActorSource> & {walkAnimation: Animation}): ActorSource {
     const attackPreparationAnimation = source.attackPreparationAnimation || source.walkAnimation;
     return {
         ...source,
@@ -327,22 +331,41 @@ function createTintedImage(image: HTMLImageElement | HTMLCanvasElement, rectangl
     );
     return canvas;
 }
+const frameRectangle = {x: 0, y: 0, w: 36, h: 36};
 const gremlinSheet = requireImage('gfx2/enemies/gremlinsheet.png');
+const skeletonSheet = requireImage('gfx2/enemies/skeletonunarmedsheet.png');
+const skeletonDeathSheet = requireImage('gfx2/enemies/skeletondeathsheet.png');
+let plainSkeletonDeathParts: Animation[];
+function addSkeletonExplosion(skeleton: Monster) {
+    for (let i = 0; i < plainSkeletonDeathParts.length; i++) {
+        const animation = plainSkeletonDeathParts[i];
+        const vx = -3 + i + Math.random() / 2;
+        skeleton.area.effects.push(new ParticleEffect({
+            animation,
+            scale: skeleton.stats.scale || 1,
+            x: skeleton.left,
+            y: skeleton.top,
+            vx,
+            vy: -10 + Math.abs(vx),
+        }));
+    }
+}
+
 export function initializeMonsters() {
-    const caterpillarSource = setupActorSource({
+    const caterpillarSource = completeMonsterSource({
         walkAnimation: createAnimation(
             requireImage('gfx/caterpillar.png'), {x: 0, y: 0, w: 48, h: 64, content: {x: 0, y: 40, w: 64, h: 24}},
             {cols: 4},
         )
     });
-    const gnomeSource = setupActorSource({
+    const gnomeSource = completeMonsterSource({
         walkAnimation: createAnimation(
             requireImage('gfx/gnome.png'), {x: 0, y: 0, w: 32, h: 64, content: {x: 0, y: 26, w: 32, h: 38}},
             {cols: 4},
         ),
         flipped: true
     });
-    const butterflySource = setupActorSource({
+    const butterflySource = completeMonsterSource({
         walkAnimation: createAnimation(
             requireImage('gfx/yellowButterfly.png'), {x: 0, y: 0, w: 64, h: 64, content: {x: 0, y: 0, w: 48, h: 64}},
             {cols: 7, rows: 2, frameMap: [1, 2, 3, 4, 5, 6, 4, 2, 0]},
@@ -356,7 +379,7 @@ export function initializeMonsters() {
             {cols: 7, rows: 2, frameMap: [7, 8, 9, 9]},
         )
     });
-    const monarchSource = setupActorSource({
+    const monarchSource = completeMonsterSource({
         walkAnimation: createAnimation(
             requireImage('gfx/monarchButterfly.png'), {x: 0, y: 0, w: 64, h: 64, content: {x: 0, y: 0, w: 48, h: 64}},
             {cols: 7, rows: 2, frameMap: [1, 2, 3, 4, 5, 6, 4, 2, 0]},
@@ -370,7 +393,7 @@ export function initializeMonsters() {
             {cols: 7, rows: 2, frameMap: [7, 8, 9, 9]},
         ),
     });
-    const turtleSource = setupActorSource({
+    const turtleSource = completeMonsterSource({
         walkAnimation: createAnimation(
             requireImage('gfx/turtle.png'), {x: 0, y: 0, w: 64, h: 64},
             {cols: 5, rows: 2, frameMap: [0, 1, 2, 3]},
@@ -384,13 +407,13 @@ export function initializeMonsters() {
             {cols: 5, rows: 2, frameMap: [5, 7, 8, 9]},
         ),
     });
-    const skeletonGiantSource = setupActorSource({
+    const skeletonGiantSource = completeMonsterSource({
         walkAnimation: createAnimation(
             requireImage('gfx/skeletonGiant.png'), {x: 0, y: 0, w: 48, h: 64},
             {cols: 7},
         ),
     });
-    const dragonSource = setupActorSource({
+    const dragonSource = completeMonsterSource({
         walkAnimation: createAnimation(
             requireImage('gfx/dragon.png'), {x: 0, y: 0, w: 64, h: 64, content: {x: 0, y: 0, w: 48, h: 64}},
             {cols: 7, rows: 2, frameMap: [0, 1, 2, 3]},
@@ -408,12 +431,25 @@ export function initializeMonsters() {
     const batRectangle = {x: 0, y: 0, w: 36, h: 36, content: {x: 12, y: 0, w: 12, h: 36}};
     const batSource = createMonsterSource(requireImage('gfx2/enemies/batsheet.png'), batRectangle);
     const skeletonRectangle = {x: 0, y: 0, w: 36, h: 36, content: {x: 6, y: 0, w: 12, h: 36}};
-    const skeletonSource = createMonsterSource(requireImage('gfx2/enemies/skeletonunarmedsheet.png'), skeletonRectangle);
+    const plainSkeletonSheet = createTintedImage(skeletonSheet, {x: 0, y: 0, w: 252, h: 36}, 'white');
+    const skeletonSource = createMonsterSource(plainSkeletonSheet, skeletonRectangle);
+    const plainSkeletonDeathSheet = createTintedImage(skeletonDeathSheet, {x: 0, y: 0, w: 252, h: 36}, 'white');
+    // TODO: Add content rectangles to these so we can make them spin at some point.
+    plainSkeletonDeathParts = [
+        createAnimation(plainSkeletonDeathSheet, {...frameRectangle}, {x: 0, cols: 1}),
+        createAnimation(plainSkeletonDeathSheet, {...frameRectangle}, {x: 1, cols: 1}),
+        createAnimation(plainSkeletonDeathSheet, {...frameRectangle}, {x: 2, cols: 1}),
+        createAnimation(plainSkeletonDeathSheet, {...frameRectangle}, {x: 3, cols: 1}),
+        createAnimation(plainSkeletonDeathSheet, {...frameRectangle}, {x: 4, cols: 1}),
+        createAnimation(plainSkeletonDeathSheet, {...frameRectangle}, {x: 5, cols: 1}),
+        createAnimation(plainSkeletonDeathSheet, {...frameRectangle}, {x: 6, cols: 1}),
+    ];
+
     const skeletonSwordSource = createMonsterSource(requireImage('gfx2/enemies/skeletonswordsheet.png'), skeletonRectangle);
     const gremlinRectangle = {x: 0, y: 0, w: 36, h: 36, content: {x: 0, y: 20, w: 21, h: 16}};
-    const gremlinImage = createTintedImage(gremlinSheet, {x: 0, y: 0, w: 252, h: 36}, 'orange');
-    const gremlinSource = createMonsterSource(gremlinImage, gremlinRectangle);
-    const spiderSource = setupActorSource({
+    const orangeGremlinSheet = createTintedImage(gremlinSheet, {x: 0, y: 0, w: 252, h: 36}, 'orange');
+    const gremlinSource = createMonsterSource(orangeGremlinSheet, gremlinRectangle);
+    const spiderSource = completeMonsterSource({
         walkAnimation: createAnimation(
             requireImage('gfx/spider.png'), {x: 0, y: 0, w: 48, h: 48, content: {x: 0, y: 10, w: 48, h: 38}},
             {cols: 10, rows: 2, frameMap: [4, 5, 6, 7, 8, 9]},
@@ -427,7 +463,7 @@ export function initializeMonsters() {
             {cols: 10, rows: 2, frameMap: [10, 11, 12, 13]},
         ),
     });
-    const wolfSource = setupActorSource({
+    const wolfSource = completeMonsterSource({
         walkAnimation: createAnimation(
             requireImage('gfx/wolf.png'), {x: 0, y: 0, w: 64, h: 32},
             {cols: 7, rows: 2, frameMap:[0, 1, 2, 3]},
@@ -478,7 +514,8 @@ export function initializeMonsters() {
         'abilities': [abilities.majorDexterity, abilities.majorStrength, abilities.majorIntelligence,
                       abilities.howl, abilities.howl, abilities.attackSong, abilities.defenseSong, abilities.sicem, abilities.howlSingAttack]
     }, monsters.alphaWolf);
-    addMonster('snowWolf', {'name': 'Snow Wolf', 'tint': ['white', 1],
+    // Should be tinted white.
+    addMonster('snowWolf', {'name': 'Snow Wolf',
             abilities: [leapAndAct('freeze'), abilities.freeze, abilities.minorIntelligence, abilities.sage]}, monsters.wolf);
     addMonster('frostBite', {name: 'Frost Bite', abilities: [abilities.secondWind, abilities.wizard]}, monsters.snowWolf);
     addMonster('giantSpider', {
@@ -562,28 +599,32 @@ export function initializeMonsters() {
         'implicitBonuses': {'+weaponRange': -.5, '+accuracy': 2, '*attackSpeed': 2, '*weaponMagicDamage': 0,
                             '*evasion': 1.3, '*magicBlock': 0.1, '*magicResist': 0.1,
                             '*speed': 1.5},
-        'abilities': [abilities.sideStep]
+        'abilities': [abilities.sideStep],
+        onDeath: addSkeletonExplosion,
     });
     addMonster('skeletalBuccaneer', {'name': 'Skeletal Buccaneer', 'source': skeletonSource,
         // Deflect to counter ranged champions.
         'implicitBonuses': {'+weaponRange': -.5, '*minPhysicalDamage': .4, '*maxPhysicalDamage': .4, '+accuracy': 2, '*attackSpeed': 2, '*weaponMagicDamage': 0,
                             '*block': 0, '+armor': 2, '*magicBlock': 0.1, '*magicResist': 0.1,
                             '*speed': 1, 'scale': 1.5},
-        'abilities': [abilities.deflect, abilities.deflectDamage, abilities.sage, abilities.majorDexterity]
+        'abilities': [abilities.deflect, abilities.deflectDamage, abilities.sage, abilities.majorDexterity],
+        onDeath: addSkeletonExplosion,
     });
     addMonster('undeadPaladin', {'name': 'Undead Paladin', 'source': skeletonSource,
         // Deflect to counter ranged champions.
         'implicitBonuses': {'*minPhysicalDamage': .4, '*maxPhysicalDamage': .4, '+accuracy': 2, '*attackSpeed': 2,
                             '*block': 1.5, '+armor': 2, '*magicBlock': 1.5, '*magicResist': 0.1,
                             '*speed': 1, '*scale': 1.5},
-        'abilities': [abilities.reflect, abilities.majorIntelligence, abilities.aegis, abilities.heal]
+        'abilities': [abilities.reflect, abilities.majorIntelligence, abilities.aegis, abilities.heal],
+        onDeath: addSkeletonExplosion,
     });
     addMonster('undeadWarrior', {'name': 'Undead Warrior', 'source': skeletonSwordSource,
         // Fast to counter ranged heroes, low range+damage + fast attacks to be weak to armored heroes.
         'implicitBonuses': {'+weaponRange': -.5, '*minPhysicalDamage': .4, '*maxPhysicalDamage': .4, '+accuracy': 2, '*attackSpeed': 2, '*weaponMagicDamage': 0,
                             '*block': 0, '+armor': 2, '*magicBlock': 0.1, '*magicResist': 0.1,
                             '*speed': 1.5},
-        'abilities': [abilities.blinkStrike, abilities.soulStrike, abilities.majorStrength, abilities.vitality]
+        'abilities': [abilities.blinkStrike, abilities.soulStrike, abilities.majorStrength, abilities.vitality],
+        onDeath: addSkeletonExplosion,
     });
     //console.log(JSON.stringify(makeMonster('skeleton', 1)));
     addMonster('butterfly', {'name': 'Butterfly', 'source': butterflySource, 'fpsMultiplier': 4,

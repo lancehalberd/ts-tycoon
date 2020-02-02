@@ -554,7 +554,7 @@ export function applyAttackToTarget(attackStats: AttackData, actorOrLocation: Ta
     attackStats.deflected = false;
     attackStats.dodged = false;
     attackStats.stopped = false;
-    for (const reaction of (target.reactions, [])) {
+    for (const reaction of (target.reactions || [])) {
         if (canUseReaction(target, reaction, attackStats)) {
             useReaction(target, reaction, attackStats)
             break;

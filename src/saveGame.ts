@@ -134,7 +134,7 @@ function exportHero(hero: Hero): SavedActor {
 function importAdventurer(heroData: SavedActor): Hero {
     const hero = makeAdventurerFromData(heroData);
     /*if (window.location.search.substr(1) === 'test') {
-        for (const ability of (window.testAbilities, [])) {
+        for (const ability of (window.testAbilities || [])) {
             adventurer.abilities.push(ability);
         }
     }*/

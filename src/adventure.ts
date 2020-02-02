@@ -172,6 +172,10 @@ function checkIfActorDied(actor: Actor) {
     // The actor has actually died, mark them as such and begin their death animation and drop spoils.
     actor.isDead = true;
     actor.timeOfDeath = actor.time;
+    // Call on death effects for monsters that have them.
+    if (actor.type === 'monster' && actor.base.onDeath) {
+        actor.base.onDeath(actor);
+    }
     // Each enemy that is a main character should gain experience when this actor dies.
     actor.enemies.forEach(enemy => enemy.type === 'hero' && defeatedEnemy(enemy, actor));
 }

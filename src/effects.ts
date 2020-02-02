@@ -6,16 +6,17 @@ import { addBonusSourceToObject, recomputeDirtyStats, removeBonusSourceFromObjec
 import { effectAnimations } from 'app/content/effectAnimations';
 import { mainContext } from 'app/dom';
 import { drawGroundCircle, drawOnGround } from 'app/drawArea';
-import { GROUND_Y, MAX_Z, MIN_Z } from 'app/gameConstants';
+import { FRAME_LENGTH, GROUND_Y, MAX_Z, MIN_Z } from 'app/gameConstants';
 import { drawImage, drawTintedImage } from 'app/images';
 import { applyAttackToTarget, getAttackY } from 'app/performAttack';
 import { isActorDying } from 'app/useSkill';
+import { drawFrame, getFrame } from 'app/utils/animations';
 import { rectangle } from 'app/utils/index';
 import Random from 'app/utils/Random';
 import { playSound } from 'app/utils/sounds';
 
 import {
-    ActiveEffect, Actor, ActorEffect, Area, AreaEntity, AttackData,
+    ActiveEffect, Actor, ActorEffect, Animation, Area, AreaEntity, AttackData,
     BonusSource, Color, Effect, EffectStats, EffectVariableObject, Projectile,
     TimedActorEffect, Target, VariableObjectBase,
 } from 'app/types';
@@ -688,5 +689,41 @@ function removeEffectFromActor(actor: Actor, effect: ActorEffect, triggerComputa
         // targets, then the song is removed and tries to remove the effect from the actor since it still has
         // them listed as effected.
         //debugger;
+    }
+}
+
+export class ParticleEffect implements ActiveEffect {
+    animation: Animation;
+    scale: number;
+    x: number;
+    y: number;
+    r: number = 0;
+    vx: number = 0;
+    vy: number = 0;
+    vr: number = 0;
+    ax: number = 0;
+    ay: number = 1;
+    ar: number = 0;
+    time: number = 0;
+    ttl: number = 1000;
+    done: boolean = false;
+    constructor(props : Partial<ParticleEffect>) {
+        Object.assign(this, props);
+    }
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.r += this.vr;
+        this.vx += this.ax;
+        this.vy += this.ay;
+        this.vr += this.ar;
+        this.time += FRAME_LENGTH;
+        if (this.time >= this.ttl) {
+            this.done = true;
+        }
+    }
+    render(area: Area) {
+        const frame = getFrame(this.animation, this.time);
+        drawFrame(mainContext, frame, {x: this.x, y: this.y, w: frame.w * this.scale, h: frame.h * this.scale});
     }
 }

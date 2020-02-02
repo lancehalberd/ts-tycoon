@@ -196,9 +196,9 @@ export function drawActorEffects(context: CanvasRenderingContext2D, actor: Actor
 function getActorTints(actor: Actor) {
     const tints = [];
     // TODO: Stop doing this or precompute these, tinting is bad for performance.
-    if (actor.type === 'monster' && actor.base.tint) {
+    /*if (actor.type === 'monster' && actor.base.tint) {
         tints.push(actor.base.tint);
-    }
+    }*/
     if (actor.stats.tint) {
         const min = (actor.stats.tintMinAlpha || .5);
         const max = (actor.stats.tintMaxAlpha || .5);

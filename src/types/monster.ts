@@ -1,10 +1,17 @@
-import { Ability, ActorSource, BaseActor, BonusSource } from 'app/types';
+import { Ability, ActorSource, BaseActor, Bonuses, BonusSource } from 'app/types';
 
 export interface MonsterData {
+    key: string,
+    name: string,
     variableObjectType: 'actor',
     abilities: Ability[],
     source: ActorSource,
-    [key:string]: any,
+    fpsMultiplier?: number,
+    noBasicAttack?: boolean,
+    stationary?: boolean,
+    tags?: string[],
+    implicitBonuses?: Bonuses,
+    onDeath?: Function,
 }
 
 export interface MonsterSpawn {

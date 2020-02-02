@@ -169,7 +169,7 @@ export function drawMap(): void {
     const { visibleNodes } = mapState;
     for (let levelKey in visibleNodes) {
         const levelData = visibleNodes[levelKey];
-        for (const nextLevelKey of (levelData.unlocks, [])) {
+        for (const nextLevelKey of (levelData.unlocks || [])) {
             if ((editingMap || (state.visibleLevels[levelKey] && state.visibleLevels[nextLevelKey])) && (visibleNodes[levelKey] && visibleNodes[nextLevelKey])) {
                 const nextLevelData: LevelData = map[nextLevelKey];
                 context.beginPath();

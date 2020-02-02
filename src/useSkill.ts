@@ -70,6 +70,7 @@ export function canUseSkillOnTarget(actor: Actor, skill: Action, target: Target)
  * @param object target      The target to attack for active abilities.
  */
 export function canUseReaction(actor: Actor, reaction: Action, attackStats: AttackData): boolean {
+    //console.log('Can use reaction', actor, reaction, attackStats);
     if (!actor) throw new Error('No actor was passed to canUseReaction');
     if (!reaction) throw new Error('No reaction was passed to canUseReaction');
     if (!attackStats) throw new Error('No attackStats was passed to canUseReaction');

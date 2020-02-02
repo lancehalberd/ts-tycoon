@@ -92,7 +92,7 @@ export interface ActiveEffect {
     hitTargets?: Actor[],
     finish?: Function,
     attackStats?: AttackData,
-    currentFrame: number,
+    currentFrame?: number,
     done: boolean,
     render?: (area: Area) => void,
     drawGround?: (area: Area) => void,
