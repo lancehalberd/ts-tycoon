@@ -355,6 +355,7 @@ function addSkeletonExplosion(skeleton: Monster) {
     const scale = skeleton.stats.scale || 1;
     const frame = getActorAnimationFrame(skeleton);
     const content = frame.content || {...frame, x: 0, y: 0};
+    // Remember skelet.left is the left edge of the content box for the skeleton.
     const left = skeleton.heading[0] < 0 ?
         skeleton.left - (frame.w - content.x - content.w) * scale :
         skeleton.left - content.x * scale;
@@ -366,6 +367,13 @@ function addSkeletonExplosion(skeleton: Monster) {
         const partContent = partFrame.content || {...partFrame, x: 0, y: 0};
         // The skeleton death sprite currently has the opposite orientation of the skeleton.
         const flipped = !(skeleton.heading[0] < 0);
+        // Logging for rendering issues.
+        /*if (i === 0) {
+            console.log('skeleton.left', skeleton.left);
+            console.log({left, flipped, scale});
+            console.log(partFrame);
+            console.log('x', left + ((flipped ? partFrame.w - partContent.x - partContent.w : partContent.x ) + partContent.w / 2) * scale);
+        }*/
         skeleton.area.effects.push(new ParticleEffect({
             animation,
             scale,
@@ -373,7 +381,7 @@ function addSkeletonExplosion(skeleton: Monster) {
             // where content.x is the distance from the left side of the frame to the content rectangle.
             // For flipped graphics, this needs to be the right side of the frame to the right side of the rectangle
             // which is frame.w - (content.x + content.w).
-            x: left + ((flipped ? partContent.x : partFrame.w - partContent.x - partContent.w ) + partContent.w / 2) * scale,
+            x: left + ((flipped ? partFrame.w - partContent.x - partContent.w : partContent.x ) + partContent.w / 2) * scale,
             y: top + (partContent.y + partContent.h / 2) * scale,
             vx,
             vy: -10 + Math.abs(vx),

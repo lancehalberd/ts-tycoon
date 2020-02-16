@@ -725,12 +725,15 @@ export class ParticleEffect implements ActiveEffect {
     }
     render(area: Area) {
         const frame = getFrame(this.animation, this.time);
+        // Draw a red dot at the actual coordinates, can be useful for debugging rendering errors.
+        // mainContext.fillStyle = 'red';
+        // mainContext.fillRect(this.x - 1, this.y - 1, 2, 2);
         if (this.r || this.vr || this.flipped) {
             mainContext.save();
             const content = frame.content || {...frame, x: 0, y: 0};
             mainContext.translate(
-                (this.x + content.x + content.w / 2) | 0,
-                (this.y + content.y + content.h / 2) | 0
+                this.x | 0,
+                this.y | 0
             );
             mainContext.rotate(this.r);
             mainContext.scale(this.scale * (this.flipped ? -1 : 1), this.scale);
