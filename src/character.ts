@@ -8,7 +8,7 @@ import {
 } from 'app/bonuses';
 import { abilities } from 'app/content/abilities';
 import { updateTrophy } from 'app/content/achievements';
-import { updateHeroGraphics } from 'app/content/heroGraphics';
+import { createHeroColors, updateHeroGraphics } from 'app/content/heroGraphics';
 import { characterClasses } from 'app/content/jobs';
 import { updateSkillConfirmationButtons } from 'app/content/levels';
 import { map } from 'app/content/mapData';
@@ -21,7 +21,7 @@ import { CRAFTED_NORMAL } from 'app/equipmentCrafting';
 import { drawBoardBackground } from 'app/drawBoard';
 import { bonusSourceHelpText } from 'app/helpText';
 import { equipmentSlots } from 'app/gameConstants';
-import { images } from 'app/images';
+import { images, requireImage } from 'app/images';
 import {
     equipItemProper, makeItem,
     updateEquipableItems, updateOffhandDisplay,
@@ -43,12 +43,10 @@ import Random from 'app/utils/Random';
 
 import {
     Ability, Action, ActionStats, Actor, ActorStats,
-    Board, BoardData, Character,
-    Effect, Equipment, EquipmentData, Hero,
+    Board, BoardData, Bonuses, BonusSource, Character,
+    Effect, Equipment, EquipmentData, Hero, HeroColors, Item,
     Job, Monster, Tags, VariableObject
 } from 'app/types';
-import { Bonuses, BonusSource } from 'app/types/bonuses';
-import { Item } from 'app/types/items';
 
 export const personFrames = 5;
 const clothes = [1, 3];
@@ -197,12 +195,14 @@ export function newCharacter(job: Job): Character {
     jewelInventoryState.overJewel = null;
     return character;
 }
+const heroShadow = createAnimation(
+    requireImage('gfx2/character/c1shadow.png'), {x: 0, y: 0, w: 64, h: 48, content: {x: 17, y: 44, w: 20, h: 4}},
+);
 export function makeAdventurerFromData({
         jobKey,
         level,
         name,
-        hairOffset,
-        skinColorOffset = Random.range(0, 2),
+        colors,
 }): Hero {
     const personCanvas = createCanvas(personFrames * 96, 64);
     const personContext = personCanvas.getContext("2d");
@@ -255,12 +255,13 @@ export function makeAdventurerFromData({
             ),
             attackPreparationAnimation: createAnimation(
                 personCanvas, heroFrame,
-                {cols: 17, frameMap: [6, 7, 8, 9]},
+                {cols: 17, frameMap: [6, 7, 8]},
             ),
             attackRecoveryAnimation: createAnimation(
                 personCanvas, heroFrame,
-                {cols: 17, frameMap: [11, 11]},
+                {cols: 17, frameMap: [9, 9]},
             ),
+            shadowAnimation: heroShadow,
             // Measured up from the bottom of the frame content.
             attackY: 18,
         },
@@ -270,8 +271,7 @@ export function makeAdventurerFromData({
         abilities: [],
         minions: [],
         name,
-        hairOffset: hairOffset % 6,
-        skinColorOffset: ifdefor(skinColorOffset) % 3,
+        colors,
         level,
         image: personCanvas,
         personCanvas,
@@ -294,8 +294,7 @@ export function makeAdventurerFromJob(job: Job, level: number, equipment: Equipm
         jobKey: job.key,
         level,
         name: Random.element(names),
-        hairOffset: Random.range(0, 6),
-        skinColorOffset: Random.range(0, 2),
+        colors: createHeroColors(job.key),
     });
     const state = getState();
     for (const item of Object.values(equipment)) {
@@ -385,36 +384,43 @@ export function removeActions(actor: Actor, source: Ability) {
     }
 }
 
-export function updateAdventurer(adventurer: Hero) {
+export function setHeroColors(hero, colors: HeroColors) {
+    hero.colors = colors;
+    updateHeroGraphics(hero);
+}
+window['setHeroColors'] = setHeroColors;
+
+export function updateAdventurer(hero: Hero) {
     // Clear the character's bonuses and graphics.
-    adventurer.variableObject = createVariableObject({variableObjectType: 'actor'});
-    adventurer.stats = adventurer.variableObject.stats as ActorStats;
-    adventurer.actions = [];
-    adventurer.reactions = [];
-    adventurer.onHitEffects = [];
-    adventurer.onCritEffects = [];
-    adventurer.onMissEffects = [];
-    adventurer.allEffects = [];
-    adventurer.minionBonusSources = [];
-    const levelCoefficient = Math.pow(1.05, adventurer.level);
-    const adventurerBonuses: Bonuses = {
-        '+level': adventurer.level,
-        '+maxHealth': 50 + 20 * (adventurer.level + adventurer.job.dexterityBonus + adventurer.job.strengthBonus + adventurer.job.intelligenceBonus),
-        '+tenacity': 4 + 2 * adventurer.level / 100,
+    hero.colors = hero.colors || createHeroColors(hero.job.key);
+    hero.variableObject = createVariableObject({variableObjectType: 'actor'});
+    hero.stats = hero.variableObject.stats as ActorStats;
+    hero.actions = [];
+    hero.reactions = [];
+    hero.onHitEffects = [];
+    hero.onCritEffects = [];
+    hero.onMissEffects = [];
+    hero.allEffects = [];
+    hero.minionBonusSources = [];
+    const levelCoefficient = Math.pow(1.05, hero.level);
+    const heroBonuses: Bonuses = {
+        '+level': hero.level,
+        '+maxHealth': 50 + 20 * (hero.level + hero.job.dexterityBonus + hero.job.strengthBonus + hero.job.intelligenceBonus),
+        '+tenacity': 4 + 2 * hero.level / 100,
         '+levelCoefficient': levelCoefficient,
-        '+accuracy': 4 + 2 * adventurer.level,
-        '+evasion': adventurer.level,
-        '+block': adventurer.level,
-        '+magicBlock': adventurer.level / 2,
-        '+dexterity': adventurer.level * adventurer.job.dexterityBonus,
-        '+strength': adventurer.level * adventurer.job.strengthBonus,
-        '+intelligence': adventurer.level * adventurer.job.intelligenceBonus,
+        '+accuracy': 4 + 2 * hero.level,
+        '+evasion': hero.level,
+        '+block': hero.level,
+        '+magicBlock': hero.level / 2,
+        '+dexterity': hero.level * hero.job.dexterityBonus,
+        '+strength': hero.level * hero.job.strengthBonus,
+        '+intelligence': hero.level * hero.job.intelligenceBonus,
         '+critDamage': .5,
         '+critAccuracy': .5,
         '+speed': 250,
-        '+weaponless:accuracy': 1 + 2 * adventurer.level,
-        '+weaponless:minPhysicalDamage': 1 + adventurer.level,
-        '+weaponless:maxPhysicalDamage': 2 + adventurer.level,
+        '+weaponless:accuracy': 1 + 2 * hero.level,
+        '+weaponless:minPhysicalDamage': 1 + hero.level,
+        '+weaponless:maxPhysicalDamage': 2 + hero.level,
         '+weaponless:weaponRange': .5,
         // You are weaponless if you have no weapon equipped.
         '+weaponless:attackSpeed': .5,
@@ -422,43 +428,43 @@ export function updateAdventurer(adventurer: Hero) {
         '+unarmed:attackSpeed': .5,
         '+weaponless:critChance': .01
     };
-    adventurer.variableObject.tags = recomputeActorTags(adventurer);
-    updateHeroGraphics(adventurer);
-    addActions(adventurer, abilities.basicAttack);
-    adventurer.abilities.forEach(function (ability) {
-        addActions(adventurer, ability);
+    hero.variableObject.tags = recomputeActorTags(hero);
+    updateHeroGraphics(hero);
+    addActions(hero, abilities.basicAttack);
+    hero.abilities.forEach(function (ability) {
+        addActions(hero, ability);
         if (ability.bonuses) {
-            addBonusSourceToObject(adventurer.variableObject, ability);
+            addBonusSourceToObject(hero.variableObject, ability);
         }
     });
-    if (adventurer.character) {
-        updateJewelBonuses(adventurer.character);
-        addBonusSourceToObject(adventurer.variableObject, adventurer.character.jewelBonuses);
+    if (hero.character) {
+        updateJewelBonuses(hero.character);
+        addBonusSourceToObject(hero.variableObject, hero.character.jewelBonuses);
     }
-    // Add the adventurer's current equipment to bonuses and graphics
+    // Add the hero's current equipment to bonuses and graphics
     equipmentSlots.forEach(function (type) {
-        const equipment = adventurer.equipment[type];
+        const equipment = hero.equipment[type];
         if (!equipment) {
             return;
         }
-        addActions(adventurer, equipment.base);
-        addBonusSourceToObject(adventurer.variableObject, equipment.base);
+        addActions(hero, equipment.base);
+        addBonusSourceToObject(hero.variableObject, equipment.base);
         equipment.prefixes.forEach(function (affix) {
-            addActions(adventurer, affix);
-            addBonusSourceToObject(adventurer.variableObject, affix);
+            addActions(hero, affix);
+            addBonusSourceToObject(hero.variableObject, affix);
         });
         equipment.suffixes.forEach(function (affix) {
-            addActions(adventurer, affix);
-            addBonusSourceToObject(adventurer.variableObject, affix);
+            addActions(hero, affix);
+            addBonusSourceToObject(hero.variableObject, affix);
         });
     });
-    addBonusSourceToObject(adventurer.variableObject, {'bonuses': adventurerBonuses});
-    addBonusSourceToObject(adventurer.variableObject, coreStatBonusSource);
+    addBonusSourceToObject(hero.variableObject, {'bonuses': heroBonuses});
+    addBonusSourceToObject(hero.variableObject, coreStatBonusSource);
     for (const bonusSource of getState().guildBonusSources) {
-        addBonusSourceToObject(adventurer.variableObject, bonusSource);
+        addBonusSourceToObject(hero.variableObject, bonusSource);
     }
-    recomputeDirtyStats(adventurer.variableObject);
-    //console.log(adventurer);
+    recomputeDirtyStats(hero.variableObject);
+    //console.log(hero);
 }
 
 export function recomputeActorTags(actor: Actor): Tags {

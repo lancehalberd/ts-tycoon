@@ -510,8 +510,7 @@ function cloneActor(actor: Actor, skill: Action): Actor {
     let clone;
     if (actor.type === 'hero') {
         clone = makeAdventurerFromJob(actor.job, actor.level, {});
-        clone.hairOffset = actor.hairOffset;
-        clone.skinColorOffset = actor.skinColorOffset;
+        clone.colors = actor.colors;
         clone.equipment = actor.equipment;
         updateAdventurer(clone);
         // Add bonuses from source character's abilities/jewel board.

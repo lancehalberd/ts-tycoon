@@ -704,6 +704,7 @@ export class ParticleEffect implements ActiveEffect {
     ax: number = 0;
     ay: number = 1;
     ar: number = 0;
+    flipped: boolean = false;
     time: number = 0;
     ttl: number = 1000;
     done: boolean = false;
@@ -724,6 +725,27 @@ export class ParticleEffect implements ActiveEffect {
     }
     render(area: Area) {
         const frame = getFrame(this.animation, this.time);
-        drawFrame(mainContext, frame, {x: this.x, y: this.y, w: frame.w * this.scale, h: frame.h * this.scale});
+        if (this.r || this.vr || this.flipped) {
+            mainContext.save();
+            const content = frame.content || {...frame, x: 0, y: 0};
+            mainContext.translate(
+                (this.x + content.x + content.w / 2) | 0,
+                (this.y + content.y + content.h / 2) | 0
+            );
+            mainContext.rotate(this.r);
+            mainContext.scale(this.scale * (this.flipped ? -1 : 1), this.scale);
+            drawFrame(mainContext, frame, {
+                x: (-content.x - content.w / 2) | 0,
+                y: (-content.y - content.h / 2) | 0,
+                w: frame.w,
+                h: frame.h
+            });
+            mainContext.restore();
+        } else {
+            const content = frame.content || {...frame, x: 0, y: 0};
+            drawFrame(mainContext, frame, {
+                x: (this.x - content.x - content.w / 2) | 0,
+                y: (this.y - content.y - content.h / 2) | 0, w: frame.w * this.scale, h: frame.h * this.scale});
+        }
     }
 }

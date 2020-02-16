@@ -2,7 +2,18 @@ import { drawComplexCompositeTintedFrame, drawCompositeTintedFrame, requireImage
 import { drawFrame } from 'app/utils/animations';
 import Random from 'app/utils/Random';
 
-import { Hero, TintedFrame } from 'app/types';
+import { Hero, JobKey, TintedFrame } from 'app/types';
+
+const outfit = {
+    skinColor: '#AA724B',
+    hairColor: 'yellow',
+    earColor: '#FAE7D0',
+    bandanaColor: 'red',
+    shoeColor: 'red',
+    shortsColor: 'red',
+    shirtColor: '#888',
+    capeColor: 'green',
+};
 
 const frameWidth = 64;
 const frameHeight = 48;
@@ -16,6 +27,75 @@ const midSkin = '#DFC183';
 const brownSkin = '#AA724B';
 const darkSkin = '#573719';
 const skinTone = Random.element([paleSkin, pinkSkin, midSkin, brownSkin, darkSkin]);
+const forestCostume = {
+        bandanaColor: null,
+        shoeColor: '#81746c',
+        shortsColor: '#994539',
+        shirtColor: '#475732',
+        scarfColor: '#cdc6a5',
+};
+const sportyCostume = {
+        bandanaColor: '#d8cbc7',
+        shoeColor: '#34b233',
+        shortsColor: '#000000',
+        shirtColor: '#4aacd3',
+        scarfColor: '#f4660e',
+};
+const raspberryCostume = {
+        bandanaColor: null,
+        shoeColor: '#003049',
+        shortsColor: '#06bee1',
+        shirtColor: '#d12a98',
+        scarfColor: '#fcbf49',
+};
+const happyCostume = {
+        bandanaColor: null,
+        shoeColor: '#e2414c',
+        shortsColor: '#f76c6c',
+        shirtColor: '#d8c90e',
+        scarfColor: '#a5ca23',
+};
+const skyCostume = {
+        bandanaColor: '#c3d6f2',
+        shoeColor: '#789cce',
+        shortsColor: '#c6bcf2',
+        shirtColor: '#000092',
+        scarfColor: '#3bcbdc',
+};
+const tropicalIslandCostume = {
+        bandanaColor: null,
+        shoeColor: '#2f97c1',
+        shortsColor: '#31d1e0',
+        shirtColor: '#077c28',
+        scarfColor: '#f2ea60',
+};
+/*setHeroColors(Hero, {
+        skinColor: '#4DBBEB',
+        hairColor: 'white',
+        earColor: 'white',
+        bandanaColor: null,
+        shoeColor: '#ccc',
+        shortsColor: 'white',
+        shirtColor: 'orange',
+        scarfColor: '#FFC5F6',
+});
+
+
+setHeroColors(Hero, {
+        skinColor: '#AA724B',
+        hairColor: 'black',
+        earColor: 'white',
+        bandanaColor: null,
+        shoeColor: '#2f97c1',
+        shortsColor: '#31d1e0',
+        shirtColor: '#077c28',
+        scarfColor: '#f2ea60',
+});
+
+green: 34b233
+black: 000000
+blue: 4aacd3
+orange: f4660e*/
 const bandanaSheet = requireImage('gfx2/character/c1bandanasheet.png');
 const beltSheet = requireImage('gfx2/character/c1beltsheet.png');
 const bodyLines = crect('gfx2/character/c1bodysheet.png');
@@ -54,22 +134,44 @@ function crect(source: string, color: string = '0', row: number = 0): TintedFram
         y: characterRectangle.h * row,
     };
 }
+export function createHeroColors(jobKey: JobKey) {
+    return {
+        skinColor: pinkSkin,
+        hairColor: 'yellow',
+        earColor: paleSkin,
+        bandanaColor: 'red',
+        shoeColor: 'blue',
+        shortsColor: 'green',
+        shirtColor: '#888',
+        scarfColor: 'orange',
+    };
+}
 export function updateHeroGraphics(hero: Hero) {
     hero.personCanvas.width = totalWidth;
     hero.personCanvas.height = totalHeight;
     hero.personContext.clearRect(0, 0, totalWidth, totalHeight);
     const context = hero.personContext;
     // BASE BODY
-    drawComplexCompositeTintedFrame(context, bodyColors, bodyLines, characterRectangle);
+    drawComplexCompositeTintedFrame(context,
+        [
+            {...bodyColors[0], color: hero.colors.skinColor},
+            {...bodyColors[1], color: hero.colors.shoeColor},
+            {...bodyColors[2], color: hero.colors.shortsColor},
+            {...bodyColors[3], color: hero.colors.shirtColor},
+            {...bodyColors[4], color: hero.colors.scarfColor},
+        ], bodyLines, characterRectangle
+     );
     // BASE HEAD
-    drawCompositeTintedFrame(context, headColor, headLines, characterRectangle);
+    drawCompositeTintedFrame(context, {...headColor, color: hero.colors.skinColor}, headLines, characterRectangle);
     // RACE DECORATION
-    drawCompositeTintedFrame(context, earsColors, earsLines, characterRectangle);
+    if (hero.colors.earColor) {
+        drawCompositeTintedFrame(context, {...earsColors, color: hero.colors.earColor}, earsLines, characterRectangle);
+    }
     // HAIR
     if (hero.equipment.head) {
-        drawCompositeTintedFrame(context, hatHairColors, hatHairLines, characterRectangle);
+        drawCompositeTintedFrame(context, {...hatHairColors, color: hero.colors.hairColor}, hatHairLines, characterRectangle);
     } else {
-        drawCompositeTintedFrame(context, hairColors, hairLines, characterRectangle);
+        drawCompositeTintedFrame(context, {...hairColors, color: hero.colors.hairColor}, hairLines, characterRectangle);
     }
     // SHIELD
     if (hero.equipment.offhand &&
@@ -147,7 +249,8 @@ export function updateHeroGraphics(hero: Hero) {
     // HAT
     if (hero.equipment.head) {
         drawFrame(context, {image: witchHatSheet, ...characterRectangle}, characterRectangle);
-    } else {
+    } else if (hero.colors.bandanaColor) {
+        // This should apply the color, but it isn't a tintable graphic yet.
         drawFrame(context, {image: bandanaSheet, ...characterRectangle}, characterRectangle);
     }
 }

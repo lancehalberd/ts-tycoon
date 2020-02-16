@@ -119,8 +119,7 @@ export function importCharacter(characterData: SavedCharacter) {
 function exportHero(hero: Hero): SavedActor {
     const data = {
         equipment: {},
-        hairOffset: hero.hairOffset,
-        skinColorOffset: hero.skinColorOffset,
+        colors: hero.colors,
         jobKey: hero.job.key,
         level: hero.level,
         name: hero.name,

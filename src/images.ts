@@ -140,11 +140,14 @@ export function drawImage(
     target: FullRectangle & {xScale?: number, yScale?: number},
 ) {
     context.save();
-    context.translate(target.left + target.width / 2, target.top + target.height / 2);
+    context.translate((target.left + target.width / 2) | 0, (target.top + target.height / 2) | 0);
     if (target.xScale || target.yScale) {
         context.scale(target.xScale || 1, target.yScale || 1);
     }
-    context.drawImage(image, source.left, source.top, source.width, source.height, -target.width / 2, -target.height / 2, target.width, target.height);
+    // (x | 0) is faster than Math.floor(x)
+    context.drawImage(image,
+        source.left | 0, source.top | 0, source.width | 0, source.height | 0,
+        (-target.width / 2) | 0, (-target.height / 2) | 0, target.width | 0, target.height | 0);
     context.restore();
 }
 

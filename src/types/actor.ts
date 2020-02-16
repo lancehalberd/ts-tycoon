@@ -37,6 +37,7 @@ export interface ActorSource {
     hurtAnimation: Animation,
     attackPreparationAnimation: Animation,
     attackRecoveryAnimation: Animation,
+    shadowAnimation: Animation,
     // Set this for characters with animations facing left instead of right,
     // which we assume by default.
     flipped?: boolean,
@@ -149,8 +150,7 @@ export interface BaseActor extends AreaEntity {
 export interface Hero extends BaseActor {
     type: 'hero',
     activity: ActorActivity,
-    hairOffset: number,
-    skinColorOffset: number,
+    colors: HeroColors,
     personCanvas: HTMLCanvasElement,
     personContext: CanvasRenderingContext2D,
     character: Character,
@@ -161,9 +161,19 @@ export interface Hero extends BaseActor {
 export type Actor = Hero | Monster;
 export interface SavedActor {
     equipment: SavedEquipment,
-    hairOffset: number,
-    skinColorOffset: number,
+    colors: HeroColors,
     jobKey: JobKey,
     level: number,
     name: string,
 }
+
+export interface HeroColors {
+    skinColor: string,
+    hairColor: string,
+    earColor: string,
+    bandanaColor: string,
+    shoeColor: string,
+    shortsColor: string,
+    shirtColor: string,
+    scarfColor: string,
+};

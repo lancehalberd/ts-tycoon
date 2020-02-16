@@ -73,7 +73,8 @@ export function drawFrame(
     {image, x, y, w, h}: Frame,
     {x: tx, y: ty, w: tw, h: th}: ShortRectangle
 ) {
-    context.drawImage(image, x, y, w, h, tx, ty, tw, th);
+    // (x | 0) is faster than Math.floor(x)
+    context.drawImage(image, x | 0, y | 0, w | 0, h | 0, tx | 0, ty | 0, tw | 0, th | 0);
 }
 
 export function drawFrameCenteredInTarget(
@@ -83,6 +84,7 @@ export function drawFrameCenteredInTarget(
 ) {
     tx += Math.ceil((tw - w) / 2);
     ty += Math.ceil((th - h) / 2);
-    context.drawImage(image, x, y, w, h, tx, ty, w, h);
+    // (x | 0) is faster than Math.floor(x)
+    context.drawImage(image, x | 0, y | 0, w | 0, h | 0, tx | 0, ty | 0, w | 0, h | 0);
 }
 

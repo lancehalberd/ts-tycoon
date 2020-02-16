@@ -8,7 +8,7 @@ import {
 } from 'app/images';
 import { shrineSource } from 'app/render';
 import { getState } from 'app/state';
-import { drawFrame } from 'app/utils/animations';
+import { drawFrame, getFrame } from 'app/utils/animations';
 import { arrMod } from 'app/utils/index';
 
 import { Actor, Frame } from 'app/types';
@@ -86,11 +86,20 @@ export function drawActor(context: CanvasRenderingContext2D, actor: Actor) {
     if (actor.cloaked) {
         context.globalAlpha = .2;
     }
+    if (!actor.isDead) {
+        const shadowFrame = getFrame(source.shadowAnimation, actor.time);
+        const shadowTarget = {
+            x: actor.x - actor.area.cameraX - (shadowFrame.content.x + shadowFrame.content.w / 2) * scale,
+            y: GROUND_Y - (actor.y || 0) - (actor.z || 0) / 2 - (shadowFrame.content.y + shadowFrame.content.h - 1) * scale,
+            w: shadowFrame.w * scale, h: shadowFrame.h * scale
+        };
+        drawFrame(context, shadowFrame, shadowTarget);
+    }
     // This is easy to calculate because the x position of an actor is defined as the x coordinate of their content center.
     const xCenter = Math.round(actor.x - actor.area.cameraX);
     // Top is the top of the actor content, and height is the height of the content, so the center of the actor content
     // is a simple calculation.
-    const yCenter = actor.top + actor.height / 2;
+    const yCenter = Math.round(actor.top + actor.height / 2);
     /*if (mouseDown) {
         console.log(actor.base.name ? actor.base.name : actor.name);
         console.log([actor.x, actor.y]);
@@ -101,6 +110,7 @@ export function drawActor(context: CanvasRenderingContext2D, actor: Actor) {
         console.log([xCenterOnMap, yCenterOnMap]);
     }*/
     context.translate(xCenter, yCenter);
+
     if (actor.rotation) {
         context.rotate(actor.rotation * Math.PI/180);
     }
