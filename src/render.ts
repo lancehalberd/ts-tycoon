@@ -18,6 +18,7 @@ import { redrawInventoryJewels } from 'app/jewelInventory';
 import { getState } from 'app/state';
 import { arrMod, ifdefor, rectangle } from 'app/utils/index';
 import { centerShapesInRectangle } from 'app/utils/polygon';
+import { isPlayingTrack, playTrack } from 'app/utils/sounds';
 
 
 import { createAnimation, drawFrame, getFrame } from 'app/utils/animations';
@@ -34,6 +35,9 @@ export function render() {
     if (lastTimeRendered && lastTimeRendered >= state.time) {
         console.log("skipping render " + lastTimeRendered);
         return;
+    }
+    if (!isPlayingTrack()) {
+        playTrack('map', 0);
     }
     lastTimeRendered = state.time;
     if (state.selectedCharacter.context === 'jewel') {

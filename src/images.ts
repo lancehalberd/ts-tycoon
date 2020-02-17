@@ -191,7 +191,7 @@ export function drawSolidTintedImage(context, image, tint, source: FullRectangle
     globalTintContext.save();
     globalTintContext.fillStyle = tint;
     globalTintContext.clearRect(0, 0, source.width, source.height);
-    var tintRectangle = {'left': 0, 'top': 0, 'width': source.width, 'height': source.height};
+    var tintRectangle = {'left': 0, 'top': 0, 'width': source.width | 0, 'height': source.height | 0};
     drawImage(globalTintContext, image, source, tintRectangle)
     globalTintContext.globalCompositeOperation = "source-in";
     globalTintContext.fillRect(0, 0, source.width, source.height);
@@ -200,15 +200,15 @@ export function drawSolidTintedImage(context, image, tint, source: FullRectangle
 }
 
 function makeTintedImage(image, tint) {
-    var tintCanvas = createCanvas(image.width, image.height);
-    var tintContext = tintCanvas.getContext('2d');
+    const tintCanvas = createCanvas(image.width, image.height);
+    const tintContext = tintCanvas.getContext('2d');
     tintContext.clearRect(0, 0, image.width, image.height);
     tintContext.fillStyle = tint;
     tintContext.fillRect(0,0, image.width, image.height);
     tintContext.globalCompositeOperation = "destination-atop";
     tintContext.drawImage(image, 0, 0, image.width, image.height, 0, 0, image.width, image.height);
-    var resultCanvas = createCanvas(image.width, image.height);
-    var resultContext = resultCanvas.getContext('2d');
+    const resultCanvas = createCanvas(image.width, image.height);
+    const resultContext = resultCanvas.getContext('2d');
     resultContext.drawImage(image, 0, 0, image.width, image.height, 0, 0, image.width, image.height);
     resultContext.globalAlpha = 0.3;
     resultContext.drawImage(tintCanvas, 0, 0, image.width, image.height, 0, 0, image.width, image.height);

@@ -1,128 +1,290 @@
 import { ifdefor } from 'app/utils/index';
 import { getState } from 'app/state';
+import {Howl/*, Howler*/} from 'howler';
 
-type ExtendedAudio = HTMLAudioElement & {
-    [key: string]: any
-};
 
+/* globals setTimeout, Set, Map */
 const sounds = new Map();
-let numberOfSoundsLeftToLoad = 0;
-let soundsMuted = false;
+window['sounds'] = sounds;
 
-export function requireSound(fullSource:string):ExtendedAudio | {play: Function} {
-    let source, offset, volume, customDuration;
-    [source, offset, volume] = fullSource.split('+');
-    if (offset) [offset, customDuration] = offset.split(':');
-
-    if (sounds.has(source)) return sounds.get(source);
-    var newSound:ExtendedAudio = new Audio(source);
-    newSound.instances = new Set();
-    newSound.offset = offset || 0;
-    newSound.customDuration = customDuration || 0;
-    newSound.defaultVolume = volume || 1;
-    sounds.set(source, newSound);
-    /*numberOfSoundsLeftToLoad++;
-    console.log('loading: ' + source);
-    newSound.oncanplaythrough = () => {
-        numberOfSoundsLeftToLoad--;
-        console.log('loaded: ' + source);
-    };*/
+export function requireSound(key, callback = null) {
+    let source, offset, volume, duration, limit, repeatFrom, nextTrack, type = 'default';
+    if (typeof key === 'string') {
+        [source, offset, volume] = key.split('+');
+        key = source;
+    } else {
+        offset = key.offset;
+        volume = key.volume;
+        limit = key.limit;
+        source = key.source;
+        repeatFrom = key.repeatFrom;
+        nextTrack = key.nextTrack;
+        type = key.type || type;
+        key = key.key || source;
+    }
+    if (sounds.has(key)) return sounds.get(key);
+    if (offset) [offset, duration] = String(offset).split(':').map(Number);
+    let newSound: any = {};
+    if (type === 'bgm') {
+        const howlerProperties: any = {
+            src: [source],
+            loop: true,
+            volume: volume / 50,
+            // Stop the track when it finishes fading out.
+            onfade: function () {
+                //console.log('finished fade', newSound.props.src, newSound.shouldPlay, this.volume());
+                // console.log(id, 'fadein', currentTrackSource, key, this.volume());
+                // Documentation says this only runs when fade completes,
+                // but it seems to run at the start and end of fades.
+                if (!newSound.shouldPlay) {
+                    //console.log('Stopping from onFade ', newSound.props.src);
+                    this.stop();
+                    // this.volume(volume / 50);
+                }
+            },
+            onplay: function () {
+                trackIsPlaying = true;
+            },
+            onload: function () {
+                if (callback) {
+                    callback(newSound);
+                }
+            },
+        };
+        if (repeatFrom) {
+            howlerProperties.onend = function() {
+                // console.log('onend', repeatFrom, currentTrackSource, key);
+                // Only repeat the track on end if it matches
+                // the current track source still.
+                // I don't think this was necessary but leaving it in comments in case.
+                //if (playingTracks.includes(newSound)) {
+                this.seek((repeatFrom || 0) / 1000);
+                //}
+            };
+        }
+        // A track can specify another track source to automatically transition to without crossfade.
+        if (nextTrack) {
+            howlerProperties.onend = function() {
+                playTrack(nextTrack, 0, this.mute(), false, false);
+                this.stop();
+            };
+        }
+        newSound.howl = new Howl(howlerProperties);
+        newSound.props = howlerProperties;
+        newSound.nextTrack = nextTrack;
+    } else {
+        const howlerProperties: any = {
+            src: [source],
+            loop: false,
+            volume: (volume || 1) / 50,
+            onplay: function () {
+                if (newSound.activeInstances === 0) {
+                    playingSounds.add(newSound);
+                }
+                newSound.activeInstances++;
+                //console.log('playing sound', newSound.activeInstances);
+            },
+            onend: function () {
+                newSound.activeInstances--;
+                //console.log('finished sound', newSound.activeInstances);
+                if (newSound.activeInstances === 0) {
+                    playingSounds.delete(newSound);
+                }
+            },
+            onload: function () {
+                if (callback) {
+                    callback(newSound);
+                }
+            },
+        };
+        if (offset || duration) {
+            howlerProperties.sprite = {
+                sprite: [offset, duration],
+            };
+        }
+        newSound.howl = new Howl(howlerProperties),
+        newSound.activeInstances = 0;
+        newSound.instanceLimit = limit || 5;
+        newSound.props = howlerProperties;
+    }
+    sounds.set(key, newSound);
     return newSound;
 }
 
-export function areAllSoundsLoaded() {
-    return numberOfSoundsLeftToLoad <= 0;
-}
-
-export function playSound(source, area) {
-    if (soundsMuted || getState().selectedCharacter.hero.area !== area ) return;
-    var source, offset,volume, customDuration;
-    [source, offset, volume] = source.split('+');
-    if (offset) [offset, customDuration] = offset.split(':');
-    const sound = requireSound(source);
-    // Custom sound objects just have a play and forget method on them.
-    if (!(sound instanceof Audio)) {
-        sound.play();
+const playingSounds = new Set<any>();
+export function playSound(key, muted = false) {
+    const sound = requireSound(key);
+    if (sound.activeInstances >= sound.instanceLimit) return;
+    const now = Date.now();
+    const customDelay = sound.customDelay || 40;
+    if (sound.canPlayAfter && sound.canPlayAfter > now) {
+        // Don't play the sound if more than the instance limit are queued into
+        // the future.
+        const delay = sound.canPlayAfter - now;
+        if (delay <= sound.instanceLimit * customDelay) {
+            setTimeout(() => playSound(key, muted), delay);
+        }
         return;
     }
-    if (sound.instances.size >= 5) return;
-    const newInstance = sound.cloneNode(false) as HTMLAudioElement;
-    newInstance.currentTime = (ifdefor(offset, sound.offset) || 0) / 1000;
-    newInstance.volume = Math.min(1, (ifdefor(volume, sound.defaultVolume) || 1) / 50);
-    newInstance.play().then(() => {
-        let timeoutId;
-        if (customDuration || sound.customDuration) {
-            timeoutId = setTimeout(() => {
-                sound.instances.delete(newInstance);
-                newInstance.onended = null;
-                newInstance.pause();
-            }, parseInt(customDuration || sound.customDuration));
-        }
-        sound.instances.add(newInstance);
-        newInstance.onended = () => {
-            sound.instances.delete(newInstance);
-            newInstance.onended = null;
-            clearTimeout(timeoutId);
-        }
-    });
+    sound.canPlayAfter = now + customDelay;
+    sound.howl.mute(muted);
+    sound.howl.play();
 }
 
-var previousTrack = null;
-export function playTrack(source) {
-    if (soundsMuted) return;
-    var source, offset, volume;
-    [source, offset, volume] = source.split('+');
-    if (previousTrack) {
-        previousTrack.stop();
-    }
+let playingTracks = [], trackIsPlaying = false;
+window['playingTracks'] = playingTracks;
+export function playTrack(source, timeOffset, muted = false, fadeOutOthers = true, crossFade = true) {
     const sound = requireSound(source);
-    if (!(sound instanceof Audio)) {
-        sound.play();
-        return;
+    if (!sound.howl || !sound.howl.duration()) {
+        return false;
     }
-    sound.currentTime = ifdefor(offset, sound.offset || 0) / 1000;
-    sound.volume = Math.min(1, ifdefor(volume, sound.defaultVolume || 1) / 50);
-    sound.play();
-    previousTrack = sound;
+    // Do nothing if the sound is already playing.
+    if (playingTracks.includes(sound) || sound.howl.playing()) {
+        return sound;
+    }
+    // Do nothing if the sound has transitioned to the next track.
+    // This allows treating preventing restarting the sound when the source is still the original track.
+    // This currently only supports one instance of nextTrack set per sound.
+    if (sound.nextTrack) {
+        const nextTrackSound = requireSound(sound.nextTrack);
+        if (playingTracks.includes(nextTrackSound) || nextTrackSound.howl.playing()) {
+            return nextTrackSound;
+        }
+    }
+    //console.log('playTrack', playingTracks, source, sound);
+    trackIsPlaying = false;
+    if (fadeOutOthers) {
+        if (crossFade) fadeOutPlayingTracks();
+        else stopTrack();
+    }
+
+    const volume = sound.props.volume;
+    let offset = (timeOffset / 1000);
+    if (sound.howl.duration()) {
+        offset = offset % sound.howl.duration();
+    }
+    // console.log(timeOffset, sound.howl.duration(), offset);
+    sound.howl.seek(offset);
+    sound.howl.play();
+    sound.shouldPlay = true;
+    // console.log({volume});
+    // console.log('fade in new track', sound);
+    //console.log('Fade in ' + sound.props.src);
+    if (crossFade) sound.howl.fade(0, volume, 1000);
+    else sound.howl.volume(volume);
+    sound.howl.mute(muted);
+    playingTracks.push(sound);
+    return sound;
 }
 
-[
-    // Original sounds using bfxr
-    'sounds/bfxr/strum.wav+0+10', 'sounds/bfxr/freeze.wav+0+10',
-    // See credits.html for: Pack: Melee Attack by Unfa.
-    'sounds/unfa/melee1.flac+200+10', 'sounds/unfa/melee2.flac', 'sounds/unfa/melee3.flac',
-    // See credits.html for: Negative Magic Spell by Iwan Gabovitch.
-    'sounds/fireball.flac',
-    // See credits.html for: Pack: Sword Sounds by 32cheeseman32.
-    'sounds/cheeseman/arrow.wav+0+50', 'sounds/cheeseman/sword.wav', 'sounds/cheeseman/arrowHit.wav+300:100',
-    // See credits.html for: Laser Fire by dklon.
-    'sounds/laser.wav',
-    // See credits.html for: mobbrobb.
-    'music/mobbrobb/map.mp3+0+.5',
-].forEach(requireSound);
+function fadeOutPlayingTracks(currentTracks = []) {
+    const keepPlayingTracks = [];
+    for (const trackToFadeOut of playingTracks) {
+        if (currentTracks.includes(trackToFadeOut)) {
+            keepPlayingTracks.push(trackToFadeOut);
+            continue;
+        }
+        trackToFadeOut.shouldPlay = false;
+        if (trackToFadeOut.howl.volume()) {
+            //console.log('Fade out ' + trackToFadeOut.props.src, trackToFadeOut.howl.volume());
+            trackToFadeOut.howl.fade(trackToFadeOut.howl.volume(), 0, 1000);
+        } else {
+            //console.log('Fade directly stop ' + trackToFadeOut.props.src, trackToFadeOut.howl.volume());
+            trackToFadeOut.howl.stop();
+        }
+    }
+    playingTracks = keepPlayingTracks;
+    window['playingTracks'] = playingTracks;
+}
 
-export const attackSounds = {
-    unarmed: 'sounds/unfa/melee1.flac',
-    fist: 'sounds/unfa/melee1.flac',
-    staff: 'sounds/unfa/melee1.flac',
-    bow: 'sounds/cheeseman/arrow.wav',
-    throwing: 'sounds/cheeseman/arrow.wav',
-    axe: 'sounds/cheeseman/sword.wav',
-    polearm: 'sounds/cheeseman/sword.wav',
-    dagger: 'sounds/cheeseman/sword.wav',
-    sword: 'sounds/cheeseman/sword.wav',
-    greatsword: 'sounds/cheeseman/sword.wav',
-    wand: 'wand',
-};
+export function playTrackCombination(tracks, timeOffset, muted = false) {
+    const currentTracks = [];
+    // If any tracks are already playing, use the timeOffset of the first
+    // track instead of the given timeOffset, in case there is drift between
+    // the bgm time in state and the actual position of the tracks.
+    for (const { source, volume } of tracks) {
+        let sound = requireSound(source);
+        if (playingTracks.includes(sound)) {
+            timeOffset = sound.howl.seek() * 1000;
+            break;
+        }
+    }
 
-export const attackHitSounds = {
-    bow: 'sounds/cheeseman/arrowHit.wav',
-    throwing: 'sounds/cheeseman/arrowHit.wav',
-};
+    //console.log(tracks.map(JSON.stringify).join(':'))
+    //console.log(playingTracks);
+    for (const {source, volume} of tracks) {
+        let sound = requireSound(source);
+        currentTracks.push(sound);
+        if (playingTracks.includes(sound)) {
+            // console.log('adjusting volume ' + source, sound.props.volume * volume);
+            sound.howl.volume(sound.props.volume * volume);
+            let offset = (timeOffset / 1000);
+            const duration = sound.howl.duration();
+            offset = offset % duration;
+            const delta = Math.abs(sound.howl.seek() - offset);
+            if (delta > 0.05 && delta < duration - 0.05) {
+                // console.log('Sound was off actual:', sound.howl.seek(), 'vs desired:', offset);
+                sound.howl.seek(offset);
+            }
+        } else {
+            // console.log('playing track ', source, volume);
+            sound = playTrack(source, timeOffset, muted, false);
+            if (sound) {
+                sound.howl.volume(sound.props.volume * volume);
+            }
+        }
+        sound.howl
+    }
+    // Make sure to fade out any tracks other than the new ones.
+    fadeOutPlayingTracks(currentTracks);
+}
 
-export const soundTrack = {
-    map: 'music/mobbrobb/map.mp3',
-};
+export function stopTrack() {
+    trackIsPlaying = false;
+    for (const playingTrack of playingTracks) {
+        // console.log('Stopping from stopTrack ', playingTrack.props.src);
+        playingTrack.howl.stop();
+    }
+    playingTracks = [];
+    window['playingTracks'] = playingTracks;
+}
+export function isPlayingTrack() {
+    return trackIsPlaying;
+}
+
+export function muteSounds() {
+    for (const sound of playingSounds) sound.howl.mute(true);
+}
+export function unmuteSounds() {
+    for (const sound of playingSounds) sound.howl.mute(false);
+}
+export function muteTrack() {
+    for (const playingTrack of playingTracks) {
+        playingTrack.howl.mute(true);
+    }
+}
+export function unmuteTrack() {
+    for (const playingTrack of playingTracks) {
+        playingTrack.howl.mute(false);
+    }
+}
+
+export function getSoundDuration(key) {
+    const sound = requireSound(key);
+    if (sound.duration) {
+        return sound.duration;
+    }
+    if (!sound.howl || !sound.howl.duration()) {
+        return false;
+    }
+    sound.duration = sound.howl.duration();
+    return sound.duration;
+}
+
+window['playSound'] = playSound;
+window['playTrack'] = playTrack;
+window['stopTrack'] = stopTrack;
+window['requireSound'] = requireSound;
 
 
 var audioContext = new AudioContext();

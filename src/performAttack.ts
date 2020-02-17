@@ -1,10 +1,11 @@
-import { getDistance } from 'app/adventure';
+import { getDistance, playAreaSound } from 'app/adventure';
 import { pause } from 'app/adventureButtons';
 import { getEndlessLevel } from 'app/areaMenu';
 import { damageActor, healActor, setActorHealth } from 'app/character';
 import { map } from 'app/content/mapData';
 import { makeMonster } from 'app/content/monsters';
 import { projectileAnimations } from 'app/content/projectileAnimations';
+import { attackHitSounds, attackSounds } from 'app/content/sounds';
 import {
     addTimedEffect, explosionEffect, fieldEffect, getProjectileVelocity,
     novaEffect, projectile, songEffect,
@@ -16,7 +17,6 @@ import { toHex } from 'app/utils/colors';
 import { abbreviate, fixedDigits, percent } from 'app/utils/formatters';
 import { ifdefor } from 'app/utils/index';
 import Random from 'app/utils/Random';
-import { attackHitSounds, attackSounds, playSound } from 'app/utils/sounds';
 
 import { Action, Actor, Area, AttackData, Character, Target, TextPopup } from 'app/types';
 
@@ -325,7 +325,7 @@ export function performAttackProper(attackStats: AttackData, target: Target) {
     const attacker = attackStats.source;
     const area = attacker.area;
     if (attackStats.sound) {
-        playSound(attackStats.sound, area);
+        playAreaSound(attackStats.sound, area);
     }
     // If the attack allows the user to teleport, teleport them to an optimal location for attacking.
     const teleport = (attackStats.attack.stats.teleport || 0) * 32;
@@ -463,7 +463,7 @@ export function applyAttackToTarget(attackStats: AttackData, actorOrLocation: Ta
                 explosionZ = attacker.z;
             }
             const explosion = explosionEffect(explodeAttackStats, explosionX, explosionY, explosionZ);
-            if (attack.base.explosionSound) playSound(attack.base.explosionSound, area);
+            if (attack.base.explosionSound) playAreaSound(attack.base.explosionSound, area);
             area.effects.push(explosion);
             // Meteor calls applyAttackToTarget with a null target so it can explode
             // anywhere. If that has happened, just return once the explosion has
@@ -581,7 +581,7 @@ export function applyAttackToTarget(attackStats: AttackData, actorOrLocation: Ta
     if (target.targetType === 'actor' && attack.variableObject.tags['basic']) {
         const attackType = (attacker.equipment.weapon && attacker.equipment.weapon.base.type) || (attacker.type === 'hero' && 'unarmed');
         const hitSound = attackHitSounds[attackType];
-        if (hitSound) playSound(hitSound, area);
+        if (hitSound) playAreaSound(hitSound, area);
     }
     makeExplosions();
     healActor(attacker, (attack.stats.healthGainOnHit || 0) * effectiveness);

@@ -1,6 +1,6 @@
 import _ from 'lodash';
 
-import { actorCanOverHeal, getDistance, removeActor } from 'app/adventure';
+import { actorCanOverHeal, getDistance, playAreaSound, removeActor } from 'app/adventure';
 import {
     addBonusSourceToObject, recomputeDirtyStats, removeBonusSourceFromObject, updateTags,
 } from 'app/bonuses';
@@ -17,7 +17,6 @@ import {
     performAttack, performAttackProper
 } from 'app/performAttack';
 import Random from 'app/utils/Random';
-import { playSound } from 'app/utils/sounds';
 
 import { Action, Actor, AttackData, BonusSource, Monster, Target, TextPopup} from 'app/types';
 
@@ -819,7 +818,7 @@ reactionDefinitions.deflect = {
         projectile.vy = -getDistance(actor, projectile.target) / 200;
         // This prevents the attack in progress from hitting the deflector.
         attackStats.deflected = true;
-        playSound('reflect', actor.area);
+        playAreaSound('reflect', actor.area);
     }
 };
 reactionDefinitions.evadeAndCounter = {

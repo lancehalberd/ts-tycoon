@@ -38,6 +38,7 @@ import {
 import { abbreviate } from 'app/utils/formatters';
 import { ifdefor } from 'app/utils/index';
 import { isMouseDown } from 'app/utils/mouse';
+import { playSound } from 'app/utils/sounds';
 
 import {
     Actor, Area, AreaEntity, BonusSource, Character, Exit, Frame,
@@ -736,6 +737,10 @@ export function getSilverTimeLimit(level: LevelData, difficulty: LevelDifficulty
     return difficultyBonusMap[difficulty] * sections * (10 + level.level);
 }
 
+export function playAreaSound(sound: any, area: Area) {
+    if (getState().selectedCharacter.hero.area !== area ) return;
+    playSound(sound);
+}
 
 function removeAdventureEffects(actor: Actor) {
     setStat(actor.variableObject, 'bonusMaxHealth', 0);

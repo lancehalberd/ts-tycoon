@@ -26,7 +26,7 @@ import { getState, implicitGuildBonusSource, initializeState } from 'app/state';
 import { removeElementFromArray } from 'app/utils/index';
 import { bindMouseListeners } from 'app/utils/mouse';
 import Random from 'app/utils/Random';
-import { playTrack, soundTrack } from 'app/utils/sounds';
+import { playTrack } from 'app/utils/sounds';
 
 import { GuildStats } from 'app/types';
 
@@ -104,5 +104,5 @@ export function initializeGame() {
     if (!state.selectedCharacter) {
         throw new Error('No selected character found');
     }
-    playTrack(soundTrack.map);
+    playTrack('map', 0);
 }

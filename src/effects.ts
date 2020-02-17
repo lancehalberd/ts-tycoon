@@ -1,6 +1,6 @@
 import _ from 'lodash';
 
-import { getDistance, getDistanceOverlap } from 'app/adventure';
+import { getDistance, getDistanceOverlap, playAreaSound } from 'app/adventure';
 import { pause } from 'app/adventureButtons';
 import { addBonusSourceToObject, recomputeDirtyStats, removeBonusSourceFromObject } from 'app/bonuses';
 import { effectAnimations } from 'app/content/effectAnimations';
@@ -13,7 +13,6 @@ import { isActorDying } from 'app/useSkill';
 import { drawFrame, getFrame } from 'app/utils/animations';
 import { rectangle } from 'app/utils/index';
 import Random from 'app/utils/Random';
-import { playSound } from 'app/utils/sounds';
 
 import {
     ActiveEffect, Actor, ActorEffect, Animation, Area, AreaEntity, AttackData,
@@ -526,7 +525,7 @@ export function projectile(
             if (!attackStats.friendly && self.target.targetType === 'actor' && self.target.reflectBarrier > 0) {
                 // Allow reflect barrier to become negative so that it can take time to restore after being hit by a much more powerful attack.
                 self.target.reflectBarrier = self.target.reflectBarrier - self.attackStats.magicDamage - self.attackStats.damage;
-                playSound('reflect', area);
+                playAreaSound('reflect', area);
                 self.hit = false;
                 var newTarget = self.attackStats.source;
                 self.attackStats.source = self.target;

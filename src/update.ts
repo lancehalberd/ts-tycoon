@@ -1,6 +1,7 @@
 import { updateArea } from 'app/adventure';
 import { refreshStatsPanel } from 'app/character';
 import { updateTrophyPopups } from 'app/content/achievements';
+import { areSoundsPreloaded, preloadSounds } from 'app/content/sounds';
 import { mainCanvas, query } from 'app/dom';
 import { updateCraftingCanvas } from 'app/equipmentCrafting';
 import { FRAME_LENGTH, GROUND_Y } from 'app/gameConstants';
@@ -12,18 +13,33 @@ import { checkToRemovePopup, updateActorHelpText } from 'app/popup';
 import { updateActorDimensions } from 'app/render/drawActor';
 import { getState } from 'app/state';
 import { getMousePosition, isMouseDown } from 'app/utils/mouse';
-import { areAllSoundsLoaded } from 'app/utils/sounds';
+import { isPlayingTrack } from 'app/utils/sounds';
 
 import { Actor, Area, Character, Hero } from 'app/types';
 
+let userInteracted = false;
+
+document.body.addEventListener('click', registerInteraction);
+function registerInteraction() {
+    userInteracted = true;
+    document.body.removeEventListener('click', registerInteraction);
+}
+
+export function areSoundsReady() {
+    return areSoundsPreloaded() && (isPlayingTrack() || userInteracted);
+}
+
 let isGameInitialized = false;
+preloadSounds();
 export function update() {
     // Initially we don't do any of the main game logic until preloading finishes
     // then we initialize the game and start running the main game loop.
     if (!isGameInitialized) {
-        if (areAllImagesLoaded() && areAllSoundsLoaded())  {
+        if (areAllImagesLoaded() && areSoundsReady())  {
             isGameInitialized = true;
             initializeGame();
+        } else if (areAllImagesLoaded() && areSoundsPreloaded()) {
+            query('.js-loading').innerText = 'Click to Play';
         }
         return;
     }
