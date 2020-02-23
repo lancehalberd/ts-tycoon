@@ -8,7 +8,7 @@ import { getUpgradeRectangle, setUpgradingObject } from 'app/content/upgradeButt
 import { setContext } from 'app/context';
 import { mainCanvas, mainContext, mouseContainer, titleDiv } from 'app/dom';
 import { bonusSourceHelpText } from 'app/helpText';
-import { GROUND_Y } from 'app/gameConstants';
+import { ADVENTURE_SCALE, GROUND_Y } from 'app/gameConstants';
 import { createNewHeroApplicant, hideHeroApplication, showHeroApplication } from 'app/heroApplication';
 import {
     drawImage,
@@ -78,29 +78,29 @@ function useDoor(actor: Actor) {
 }
 mouseContainer.addEventListener('mousedown', function (event) {
     const target = event.target as HTMLElement;
-    const [x, y] = getMousePosition(mainCanvas);
     if (!target.closest('.js-heroApplication')) hideHeroApplication();
+    const [x, y] = getMousePosition(mainCanvas, ADVENTURE_SCALE);
     if (!isPointInRectObject(x, y, trophySelectionRectangle)) setChoosingTrophyAltar(null);
     if (!isPointInRectObject(x, y, getUpgradeRectangle())) setUpgradingObject(null);
 });
 
 const coinStashTiers = [
-    {'name': 'Cracked Pot', 'bonuses': {'+maxCoins': 500}, 'upgradeCost': 500, 'source': objectSource(guildImage, [300, 150], [30, 30], {'yOffset': -6}), 'scale': 2},
-    {'name': 'Large Jar', 'bonuses': {'+maxCoins': 4000}, 'upgradeCost': 10000, 'source': objectSource(guildImage, [330, 150], [30, 30], {'yOffset': -6}), 'scale': 2},
-    {'name': 'Piggy Bank', 'bonuses': {'+maxCoins': 30000}, 'upgradeCost': 150000, 'requires': 'workshop', 'source': objectSource(guildImage, [300, 180], [30, 30], {'yOffset': -6}), 'scale': 2},
-    {'name': 'Chest', 'bonuses': {'+maxCoins': 200000}, 'upgradeCost': 1.5e6, 'requires': 'workshop', 'source': objectSource(requireImage('gfx/chest-closed.png'), [0, 0], [32, 32], {'yOffset': -6}), 'scale': 2},
-    {'name': 'Safe', 'bonuses': {'+maxCoins': 1e6}, 'upgradeCost': 10e6, 'requires': 'magicWorkshop', 'source': objectSource(guildImage, [330, 180], [30, 30], {'yOffset': -6}), 'scale': 2},
-    {'name': 'Bag of Holding', 'bonuses': {'+maxCoins': 30e6}, 'upgradeCost': 500e6, 'requires': 'magicWorkshop', 'source': objectSource(guildImage, [300, 210], [30, 30], {'yOffset': -6}), 'scale': 2},
-    {'name': 'Chest of Holding', 'bonuses': {'+maxCoins': 500e6}, 'upgradeCost': 15e9, 'requires': 'magicWorkshop', 'source': objectSource(requireImage('gfx/chest-closed.png'), [0, 0], [32, 32], {'yOffset': -6}), 'scale': 2},
-    {'name': 'Safe of Hoarding', 'bonuses': {'+maxCoins': 10e9}, 'source': objectSource(guildImage, [330, 180], [30, 30], {'yOffset': -6}), 'scale': 2},
+    {'name': 'Cracked Pot', 'bonuses': {'+maxCoins': 500}, 'upgradeCost': 500, 'source': objectSource(guildImage, [300, 150], [30, 30], {'yOffset': -6}), 'scale': 1},
+    {'name': 'Large Jar', 'bonuses': {'+maxCoins': 4000}, 'upgradeCost': 10000, 'source': objectSource(guildImage, [330, 150], [30, 30], {'yOffset': -6}), 'scale': 1},
+    {'name': 'Piggy Bank', 'bonuses': {'+maxCoins': 30000}, 'upgradeCost': 150000, 'requires': 'workshop', 'source': objectSource(guildImage, [300, 180], [30, 30], {'yOffset': -6}), 'scale': 1},
+    {'name': 'Chest', 'bonuses': {'+maxCoins': 200000}, 'upgradeCost': 1.5e6, 'requires': 'workshop', 'source': objectSource(requireImage('gfx/chest-closed.png'), [0, 0], [32, 32], {'yOffset': -6}), 'scale': 1},
+    {'name': 'Safe', 'bonuses': {'+maxCoins': 1e6}, 'upgradeCost': 10e6, 'requires': 'magicWorkshop', 'source': objectSource(guildImage, [330, 180], [30, 30], {'yOffset': -6}), 'scale': 1},
+    {'name': 'Bag of Holding', 'bonuses': {'+maxCoins': 30e6}, 'upgradeCost': 500e6, 'requires': 'magicWorkshop', 'source': objectSource(guildImage, [300, 210], [30, 30], {'yOffset': -6}), 'scale': 1},
+    {'name': 'Chest of Holding', 'bonuses': {'+maxCoins': 500e6}, 'upgradeCost': 15e9, 'requires': 'magicWorkshop', 'source': objectSource(requireImage('gfx/chest-closed.png'), [0, 0], [32, 32], {'yOffset': -6}), 'scale': 1},
+    {'name': 'Safe of Hoarding', 'bonuses': {'+maxCoins': 10e9}, 'source': objectSource(guildImage, [330, 180], [30, 30], {'yOffset': -6}), 'scale': 1},
 ];
 
 const animaOrbTiers = [
-    {'name': 'Cracked Anima Orb', 'bonuses': {'+maxAnima': 100}, 'upgradeCost': {'coins': 1000, 'anima': 50}, 'source': objectSource(guildImage, [240, 150], [30, 30], {'yOffset': -6}), 'scale': 2},
-    {'name': '"Fixed" Anima Orb', 'bonuses': {'+maxAnima': 2500}, 'upgradeCost': {'coins': 10000, 'anima': 5000}, 'source': objectSource(guildImage, [240, 150], [30, 30], {'yOffset': -6}), 'scale': 2},
-    {'name': 'Restored Anima Orb', 'bonuses': {'+maxAnima': 50000}, 'upgradeCost': {'coins': 10e6, 'anima': 250000}, 'requires': 'workshop', 'source': objectSource(guildImage, [270, 150], [30, 30], {'yOffset': -6}), 'scale': 2},
-    {'name': 'Enchanted Anima Orb', 'bonuses': {'+maxAnima': 5e6}, 'upgradeCost': {'coins': 10e9, 'anima': 50e6}, 'requires': 'magicWorkshop', 'source': objectSource(guildImage, [270, 150], [30, 30], {'yOffset': -6}), 'scale': 2},
-    {'name': 'Perfected Anima Orb', 'bonuses': {'+maxAnima': 500e6}, 'requires': 'magicWorkshop', 'source': objectSource(guildImage, [270, 150], [30, 30], {'yOffset': -6}), 'scale': 2},
+    {'name': 'Cracked Anima Orb', 'bonuses': {'+maxAnima': 100}, 'upgradeCost': {'coins': 1000, 'anima': 50}, 'source': objectSource(guildImage, [240, 150], [30, 30], {'yOffset': -6}), 'scale': 1},
+    {'name': '"Fixed" Anima Orb', 'bonuses': {'+maxAnima': 2500}, 'upgradeCost': {'coins': 10000, 'anima': 5000}, 'source': objectSource(guildImage, [240, 150], [30, 30], {'yOffset': -6}), 'scale': 1},
+    {'name': 'Restored Anima Orb', 'bonuses': {'+maxAnima': 50000}, 'upgradeCost': {'coins': 10e6, 'anima': 250000}, 'requires': 'workshop', 'source': objectSource(guildImage, [270, 150], [30, 30], {'yOffset': -6}), 'scale': 1},
+    {'name': 'Enchanted Anima Orb', 'bonuses': {'+maxAnima': 5e6}, 'upgradeCost': {'coins': 10e9, 'anima': 50e6}, 'requires': 'magicWorkshop', 'source': objectSource(guildImage, [270, 150], [30, 30], {'yOffset': -6}), 'scale': 1},
+    {'name': 'Perfected Anima Orb', 'bonuses': {'+maxAnima': 500e6}, 'requires': 'magicWorkshop', 'source': objectSource(guildImage, [270, 150], [30, 30], {'yOffset': -6}), 'scale': 1},
 ];
 
 const areaObjects: {[key: string]: FixedObjectData} = {
@@ -211,14 +211,14 @@ const areaObjects: {[key: string]: FixedObjectData} = {
         },
         getTrophyRectangle() {
             return {'left': this.target.left + (this.target.width - this.trophy.width) / 2,
-                    'top': this.target.top - this.trophy.height + 10, 'width': this.trophy.width, 'height': this.trophy.height};
+                    'top': this.target.top - this.trophy.height + 4, 'width': this.trophy.width, 'height': this.trophy.height};
         },
         render(area) {
             // Make this altar flash if it is open and there is an unused trophy available to place on it.
             this.flashColor = (!this.trophy && getIsAltarTrophyAvailable()) ? 'white' : null;
             drawFixedObject.call(this, area);
             if (this.trophy) {
-                if (getCanvasPopupTarget() === this) drawSourceWithOutline(mainContext, this.trophy, '#fff', 2, this.getTrophyRectangle());
+                if (getCanvasPopupTarget() === this) drawSourceWithOutline(mainContext, this.trophy, '#fff', 1, this.getTrophyRectangle());
                 else this.trophy.render(mainContext, this.getTrophyRectangle());
             }
         },
@@ -249,7 +249,7 @@ const areaObjects: {[key: string]: FixedObjectData} = {
     'heroApplication': {
         targetType: 'object',
         'name': 'Application',
-        'source': {'width': 40, 'height': 60, 'depth': 0},
+        'source': {left: 0, top: 0, width: 20, height: 30, depth: 0},
         action(actor) {
             const application = this as FixedObject;
             showHeroApplication(application);
@@ -260,7 +260,7 @@ const areaObjects: {[key: string]: FixedObjectData} = {
             application.target.top = GROUND_Y - application.y - application.height - application.z / 2;
             if (getCanvasPopupTarget() === this) {
                 mainContext.fillStyle = 'white';
-                fillRectangle(mainContext, shrinkRectangle(application.target, -2));
+                fillRectangle(mainContext, shrinkRectangle(application.target, -1));
             }
             mainContext.fillStyle = '#fc8';
             fillRectangle(mainContext, application.target);
@@ -273,9 +273,8 @@ const areaObjects: {[key: string]: FixedObjectData} = {
                 mainContext.globalAlpha = 0.6;
                 character.hero.job.iconSource.render(
                     mainContext,
-                    {x: application.target.left + 4, y: application.target.top + 14, w: 32, h: 32}
+                    {x: application.target.left + 2, y: application.target.top + 5, w: 16, h: 16}
                 );
-                //drawImage(mainContext, jobSource.image, jobSource, {'left': application.target.left + 4, 'top': application.target.top + 14, 'width': 32, 'height': 32});
             mainContext.restore();
         }
     },
@@ -322,27 +321,39 @@ const areaObjects: {[key: string]: FixedObjectData} = {
     },
     'woodBridge': {
         targetType: 'object',
-        'source': objectSource(requireImage('gfx/bridge2E.png'), [0, 0], [360, 160, 0], {yOffset: -60}), 'action': useDoor},
+        'source': objectSource(requireImage('gfx2/areas/bridge.png'), [5, 99], [27, 34, 0], {yOffset: -11}), 'action': useDoor},
     'stoneBridge': {
         targetType: 'object',
-        'source': objectSource(requireImage('gfx/bridgeE.png'), [0, 0], [240, 120, 0], {yOffset: -45}), 'action': useDoor},
+        'source': objectSource(requireImage('gfx2/areas/bridge.png'), [5, 99], [27, 34, 0], {yOffset: -11}), 'action': useDoor},
 }
 
 function drawFixedObject(area: Area) {
-    var imageSource = this.source;
-    if (this.lastScale !== this.scale) {
-        this.width = (imageSource.actualWidth || imageSource.width) * this.scale;
-        this.height = (imageSource.actualHeight || imageSource.height) * this.scale;
-        this.target.width = imageSource.width * this.scale;
-        this.target.height = imageSource.height * this.scale;
-        this.lastScale = this.scale;
+    const object:FixedObject = this;
+    var imageSource = object.source;
+    if (object.lastScale !== object.scale) {
+        object.width = (imageSource.actualWidth || imageSource.width) * object.scale;
+        object.height = (imageSource.actualHeight || imageSource.height) * object.scale;
+        object.target.width = imageSource.width * object.scale;
+        object.target.height = imageSource.height * object.scale;
+        object.lastScale = object.scale;
     }
     // Calculate the left/top values from x/y/z coords, which drawImage will use.
-    this.target.left = this.x - this.target.width / 2 - area.cameraX + imageSource.xOffset * this.scale;
-    this.target.top = GROUND_Y - this.y - this.target.height - this.z / 2 - imageSource.yOffset * this.scale;
-    if (getCanvasPopupTarget() === this) drawOutlinedImage(mainContext, imageSource.image, '#fff', 2, imageSource, this.target);
-    else if (this.flashColor) drawTintedImage(mainContext, imageSource.image, this.flashColor, .5 + .2 * Math.sin(Date.now() / 150), imageSource, this.target);
-    else drawImage(mainContext, imageSource.image, imageSource, this.target);
+    object.target.left = object.x - object.target.width / 2 - area.cameraX + imageSource.xOffset * object.scale;
+    object.target.top = GROUND_Y - object.y - object.target.height - object.z / 2 - imageSource.yOffset * object.scale;
+    mainContext.save();
+    if (object.xScale) {
+        mainContext.translate(object.target.left + object.target.width / 2, 0);
+        mainContext.scale(-1, 1);
+        mainContext.translate(-object.target.left - object.target.width / 2, 0);
+    }
+    if (getCanvasPopupTarget() === object) drawOutlinedImage(mainContext, imageSource.image, '#fff', 1, imageSource, object.target);
+    else if (object.flashColor) {
+        drawTintedImage(mainContext, imageSource.image, object.flashColor, .5 + .2 * Math.sin(Date.now() / 150),
+            {x: imageSource.left, y: imageSource.top, w: imageSource.width, h: imageSource.height},
+            {x: object.target.left, y: object.target.top, w: object.target.width, h: object.target.height}
+        );
+    } else drawImage(mainContext, imageSource.image, imageSource, object.target);
+    mainContext.restore();
 }
 function isGuildObjectEnabled() {
     if (!this.area) debugger;

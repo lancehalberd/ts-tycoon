@@ -3,7 +3,7 @@ import { drawBar } from 'app/drawArea';
 import { FRAME_LENGTH, GROUND_Y, MIN_SLOW } from 'app/gameConstants';
 import { bonusSourceHelpText } from 'app/helpText';
 import {
-    drawImage, drawOutlinedImage, drawTintedImage,
+    drawImage, drawOutlinedImage,
     getTintedImage, prepareTintedImage, requireImage,
 } from 'app/images';
 import { shrineSource } from 'app/render';
@@ -70,7 +70,7 @@ export function updateActorAnimationFrame(actor: Actor) {
         actor.walkFrame = 0;
         actor.idleFrame = 0;
     } else if (actor.isMoving) {
-        var walkFps = ((actor.type === 'monster' && actor.base.fpsMultiplier) || 1) * 3 * actor.stats.speed / 100;
+        var walkFps = ((actor.type === 'monster' && actor.base.fpsMultiplier) || 1) * actor.stats.speed / 10;
         actor.walkFrame += walkFps * FRAME_LENGTH * Math.max(MIN_SLOW, 1 - actor.slow) * (actor.skillInUse ? .25 : 1) / 1000;
         actor.idleFrame = 0;
     } else {
@@ -78,8 +78,7 @@ export function updateActorAnimationFrame(actor: Actor) {
         actor.idleFrame += 1 / 40;
     }
 }
-
-export function drawActor(context: CanvasRenderingContext2D, actor: Actor) {
+export function drawActorShadow(context: CanvasRenderingContext2D, actor: Actor) {
     const source = actor.source;
     const scale = (actor.stats.scale || 1);
     context.save();
@@ -89,11 +88,21 @@ export function drawActor(context: CanvasRenderingContext2D, actor: Actor) {
     if (!actor.isDead) {
         const shadowFrame = getFrame(source.shadowAnimation, actor.time);
         const shadowTarget = {
-            x: actor.x - actor.area.cameraX - (shadowFrame.content.x + shadowFrame.content.w / 2) * scale,
-            y: GROUND_Y - (actor.y || 0) - (actor.z || 0) / 2 - (shadowFrame.content.y + shadowFrame.content.h - 1) * scale,
+            x: Math.round(actor.x - actor.area.cameraX - (shadowFrame.content.x + shadowFrame.content.w / 2) * scale),
+            y: Math.round(GROUND_Y - (actor.y || 0) - (actor.z || 0) / 2 - (shadowFrame.content.y + shadowFrame.content.h / 2) * scale),
             w: shadowFrame.w * scale, h: shadowFrame.h * scale
         };
         drawFrame(context, shadowFrame, shadowTarget);
+    }
+    context.restore();
+}
+
+export function drawActor(context: CanvasRenderingContext2D, actor: Actor) {
+    const source = actor.source;
+    const scale = (actor.stats.scale || 1);
+    context.save();
+    if (actor.cloaked) {
+        context.globalAlpha = .2;
     }
     // This is easy to calculate because the x position of an actor is defined as the x coordinate of their content center.
     const xCenter = Math.round(actor.x - actor.area.cameraX);
@@ -148,20 +157,21 @@ export function drawActor(context: CanvasRenderingContext2D, actor: Actor) {
 export function drawActorEffects(context: CanvasRenderingContext2D, actor: Actor) {
     // life bar
     if (actor.isDead) return;
+    const barWidth = 32;
     // if (!actor.area.enemies.length) return;
-    let x = actor.left + actor.width / 2 - 32;
+    let x = actor.left + actor.width / 2 - barWidth / 2;
     // Don't allow the main character's life bar to fall off the edges of the screen.
     const state = getState();
     if (actor === state.selectedCharacter.hero) {
-        x = Math.min(800 - 5 - 64, Math.max(5, x));
+        x = Math.min(320 - 5 - barWidth, Math.max(5, x));
     }
-    let y = actor.top - 30;
-    drawBar(context, x, y, 64, 4, 'white', (actor.stats.lifeBarColor || 'red'), actor.health / actor.stats.maxHealth);
+    let y = actor.top - 10;
+    drawBar(context, x, y, barWidth, 3, 'white', (actor.stats.lifeBarColor || 'red'), actor.health / actor.stats.maxHealth);
     if (actor.stats.bonusMaxHealth >= 1 && actor.health >= actor.stats.maxHealth - actor.stats.bonusMaxHealth) {
         // This logic is kind of a mess but it is to make sure the % of the bar that is due to bonusMaxHealth
         // is drawn as orange instead of red.
-        const totalWidth = 62 * actor.health / actor.stats.maxHealth;
-        const normalWidth = Math.floor(62 * (actor.stats.maxHealth - actor.stats.bonusMaxHealth) / actor.stats.maxHealth);
+        const totalWidth = (barWidth - 2) * actor.health / actor.stats.maxHealth;
+        const normalWidth = Math.floor((barWidth - 2) * (actor.stats.maxHealth - actor.stats.bonusMaxHealth) / actor.stats.maxHealth);
         const bonusWidth = Math.min(
             totalWidth - normalWidth,
             Math.ceil(
@@ -171,23 +181,23 @@ export function drawActorEffects(context: CanvasRenderingContext2D, actor: Actor
             )
         );
         context.fillStyle = 'orange';
-        context.fillRect(x + 1 + normalWidth, y + 1, bonusWidth, 2);
+        context.fillRect(x + 1 + normalWidth, y + 1, bonusWidth, 1);
     }
     context.save();
     context.fillStyle = 'white';
     context.globalAlpha = .7;
-    const targetSize = Math.floor(62 * Math.max(0, actor.targetHealth) / actor.stats.maxHealth);
-    context.fillRect(x + 1 + targetSize, y + 1, 62 - targetSize, 2);
+    const targetSize = Math.floor((barWidth - 2) * Math.max(0, actor.targetHealth) / actor.stats.maxHealth);
+    context.fillRect(x + 1 + targetSize, y + 1, (barWidth - 2) - targetSize, 1);
     context.restore();
 
     if (actor.reflectBarrier > 0) {
-        y -= 3;
-        const width = Math.ceil(Math.min(1, actor.maxReflectBarrier / actor.stats.maxHealth) * 64);
-        drawBar(context, x, y, width, 4, 'white', 'blue', actor.reflectBarrier / actor.maxReflectBarrier);
+        y -= 2;
+        const width = Math.ceil(Math.min(1, actor.maxReflectBarrier / actor.stats.maxHealth) * barWidth);
+        drawBar(context, x, y, width, 3, 'white', 'blue', actor.reflectBarrier / actor.maxReflectBarrier);
     }
     if (actor.temporalShield > 0) {
-        y -= 3;
-        drawBar(context, x, y, 64, 4, 'white', '#aaa', actor.temporalShield / actor.maxTemporalShield);
+        y -= 2;
+        drawBar(context, x, y, barWidth, 3, 'white', '#aaa', actor.temporalShield / actor.maxTemporalShield);
     }
     y = actor.top - 5;
     drawEffectIcons(context, actor, x, y);

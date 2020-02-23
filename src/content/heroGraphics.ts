@@ -138,7 +138,7 @@ export function createHeroColors(jobKey: JobKey) {
     return {
         skinColor: pinkSkin,
         hairColor: 'yellow',
-        earColor: paleSkin,
+        earColor: pinkSkin,
         bandanaColor: 'red',
         shoeColor: 'blue',
         shortsColor: 'green',

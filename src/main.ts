@@ -8,7 +8,7 @@ import {
     query, queryAll, toggleElements,
 } from 'app/dom';
 import { getSelectedAction, setSelectedAction } from 'app/drawSkills';
-import { GROUND_Y } from 'app/gameConstants';
+import { ADVENTURE_SCALE, GROUND_Y } from 'app/gameConstants';
 import { handleMapMouseDown } from 'app/map';
 import { checkToShowMainCanvasToolTip, getCanvasPopupTarget } from 'app/popup'
 import { saveGame } from 'app/saveGame';
@@ -24,14 +24,14 @@ export function getCanvasCoords() {
     return canvasCoords;
 }
 mainCanvas.addEventListener('mousemove', function () {
-    const [x, y] = getMousePosition(mainCanvas);
+    const [x, y] = getMousePosition(mainCanvas, ADVENTURE_SCALE);
     canvasCoords = [x, y];
     checkToShowMainCanvasToolTip(x, y);
 });
 let clickedToMove = false;
 
 mainCanvas.onmousedown = function (event) {
-    const [x, y] = getMousePosition(mainCanvas);
+    const [x, y] = getMousePosition(mainCanvas, ADVENTURE_SCALE);
     canvasCoords = [x, y];
     switch (getState().selectedCharacter.context) {
         case 'adventure':

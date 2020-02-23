@@ -35,14 +35,27 @@ export function drawBoardJewels(character: Character, canvas: HTMLCanvasElement)
         drawShapesPath(context, board.spaces, true, false);
         context.globalAlpha = 1;
     }
-    drawBoardJewelsProper(context, getMousePosition(canvas), board, isMouseOverElement(canvas));
+    const mousePosition = getMousePosition(canvas);
+    const gradient = context.createRadialGradient(
+        mousePosition[0], mousePosition[1], 5,
+        mousePosition[0], mousePosition[1], 60
+    );
+    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+    gradient.addColorStop(0.8, 'rgba(255, 255, 255, 0.2)');
+    gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+    // Set the fill style and draw a rectangle
+    context.fillStyle = gradient;
+    drawShapesPath(context, board.spaces, true, false);
+
+    drawBoardJewelsProper(context, mousePosition, board, isMouseOverElement(canvas));
 }
 export function drawBoardJewelsProper(context: CanvasRenderingContext2D, lightSource: Point, board: Board, mouseIsOverBoard = false) {
     //const focusedJewelIsOnBoard = false;
     const fixedJewels = board.fixed;
     for (let i = 0; i < board.jewels.length; i++) {
         const jewel = board.jewels[i];
-        drawJewel(context, jewel.shape, lightSource);
+        drawJewel(context, jewel.shape, lightSource, null, 0.3, true);
         //focusedJewelIsOnBoard = focusedJewelIsOnBoard || jewelInventoryState.draggedJewel == jewel || jewelInventoryState.overJewel == jewel;
     }
     for (let i = 0; i < fixedJewels.length; i++) {
@@ -79,12 +92,12 @@ export function drawBoardJewelsProper(context: CanvasRenderingContext2D, lightSo
 }
 
 export function drawBoardBackground(context: CanvasRenderingContext2D, board: Board) {
-    context.lineWidth = 10;
+    /*context.lineWidth = 10;
     context.lineCap = 'round';
     context.lineJoin = 'round';
     context.fillStyle = '#DDDDEE';
     context.strokeStyle = '#DDDDEE';
-    drawShapesPath(context, board.spaces, true, true);
+    drawShapesPath(context, board.spaces, true, true);*/
     // This 1 pixel edge keeps gaps from appearing between sections
     context.lineWidth = 1;
     context.fillStyle = '#666655';

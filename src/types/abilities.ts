@@ -1,7 +1,7 @@
 import { JobIcon } from 'app/content/jobs';
 import { Bonuses } from 'app/types/bonuses';
 import {
-    ActionStats, Actor, ArrayFrame, Area, BonusSource,
+    ActionStats, Actor, Animation, ArrayFrame, Area, BonusSource,
     Character, Color, EffectVariableObject,
     Frame, Rectangle, ShortRectangle, Target, TintIcon,
     VariableObject, VariableObjectBase,
@@ -61,10 +61,10 @@ export interface ActionData {
     rangedOnly?: boolean,
     // Projectiles
     gravity?: number,
-    animation?: any,
-    explosionAnimation?: any,
+    animation?: Animation,
+    explosionAnimation?: Animation,
     explosionSound?: string,
-    blastAnimation?: any,
+    blastAnimation?: Animation | Animation[],
     afterImages?: number,
     // For monster minion skills
     monsterKey?: string,
@@ -152,7 +152,7 @@ export interface Ability {
 export interface AttackData {
     // How far the attack has traveled (used on projectiles).
     distance: number,
-    animation?: any,
+    animation?: Animation,
     sound?: any,
     size?: number,
     gravity: number,

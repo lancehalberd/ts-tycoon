@@ -4,6 +4,7 @@ import { Frame, ShortRectangle } from 'app/types';
 
 interface CreateAnimationOptions {
     x?: number, y?: number,
+    xSpace?: number,
     rows?: number, cols?: number,
     top?: number, left?: number,
     duration?: number,
@@ -24,7 +25,7 @@ export type Animation = {
 export function createAnimation(
     source: string | HTMLImageElement | HTMLCanvasElement,
     rectangle: ShortRectangle & {content?: ShortRectangle},
-    {x = 0, y = 0, rows = 1, cols = 1, top = 0, left = 0, duration = 8, frameMap = null}: CreateAnimationOptions = {},
+    {x = 0, y = 0, rows = 1, cols = 1, xSpace = 0, top = 0, left = 0, duration = 8, frameMap = null}: CreateAnimationOptions = {},
     props: ExtraAnimationProperties = {},
 ): Animation {
     let frames: Frame[] = [];
@@ -38,7 +39,7 @@ export function createAnimation(
         for (let col = 0; col < cols; col++) {
             frames[row * cols + col] = {
                 ...rectangle,
-                x: left + rectangle.w * (x + col),
+                x: left + (rectangle.w + xSpace) * (x + col),
                 y: top + rectangle.h * (y + row),
                 image
             };

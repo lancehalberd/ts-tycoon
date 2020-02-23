@@ -22,7 +22,7 @@ import {
     tagElement,
     titleDiv,
 } from 'app/dom';
-import { MAX_LEVEL, WORLD_RADIUS } from 'app/gameConstants';
+import { ADVENTURE_SCALE, MAX_LEVEL, WORLD_RADIUS } from 'app/gameConstants';
 import { abilityHelpText } from 'app/helpText'
 import { updateAdjacentJewels, updateJewelBonuses } from 'app/jewels';
 import { updateDamageInfo } from 'app/performAttack';
@@ -211,19 +211,19 @@ export function handleMapMouseDown(x: number, y: number, event) {
     if (event.which != 1) return; // Handle only left click.
     if (!editingMapState.editingMap && newMapTarget) {
         const state = getState();
-        if (mapState.currentMapTarget.targetType === 'shrine') {
+        if (newMapTarget.targetType === 'shrine') {
             // Show them the area menu if they click on the shrine from a different area.
-            state.selectedCharacter.selectedLevelKey = mapState.currentMapTarget.level.levelKey;
+            state.selectedCharacter.selectedLevelKey = newMapTarget.level.levelKey;
             showAreaMenu();
             mapState.currentMapTarget = null;
             mainCanvas.classList.toggle('clickable', false);
             return;
-        } else if (mapState.currentMapTarget.levelKey === 'guild') {
+        } else if (newMapTarget.levelKey === 'guild') {
             mapState.currentMapTarget = null;
             setContext('guild');
             return;
-        } else if (mapState.currentMapTarget.levelKey) {
-            state.selectedCharacter.selectedLevelKey = mapState.currentMapTarget.levelKey;
+        } else if (newMapTarget.levelKey) {
+            state.selectedCharacter.selectedLevelKey = newMapTarget.levelKey;
             showAreaMenu();
             mapState.currentMapTarget = null;
             mainCanvas.classList.toggle('clickable', false);
@@ -238,7 +238,7 @@ export function handleMapMouseDown(x: number, y: number, event) {
     console.log('click');
 });*/
 document.addEventListener('mouseup', function (event) {
-    const [x, y] = getMousePosition(mainCanvas);
+    const [x, y] = getMousePosition(mainCanvas, ADVENTURE_SCALE);
     mapState.mapDragX = mapState.mapDragY = null;
     if (editingMapState.editingMap) {
         handleEditMapMouseUp(x, y, event);
@@ -252,7 +252,7 @@ document.addEventListener('mousemove', function (event) {
     if (!isMouseDown() && !isRightMouseDown()) return;
     if (getState().selectedCharacter.context !== 'map') return;
     mapState.draggedMap = true;
-    const [x, y] = getMousePosition(mouseContainer);
+    const [x, y] = getMousePosition(mouseContainer, ADVENTURE_SCALE);
     if (editingMapState.editingMap) {
         handleEditMapMouseMove(x, y, event);
     } else if (mapState.mapDragX !== null && mapState.mapDragY !== null) {

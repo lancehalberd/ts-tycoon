@@ -84,7 +84,7 @@ export const coreStatBonusSource: BonusSource = {'bonuses': {
     '+minMagicDamage': '{minWeaponMagicDamage}',
     '+maxMagicDamage': '{maxWeaponMagicDamage}',
     // All sprites are drawn at half size at the moment.
-    '+scale': 2,
+    '+scale': 1,
     '$lifeBarColor': 'red'
 }};
 
@@ -207,7 +207,7 @@ export function makeAdventurerFromData({
     const personCanvas = createCanvas(personFrames * 96, 64);
     const personContext = personCanvas.getContext("2d");
     personContext.imageSmoothingEnabled = false;
-    const heroFrame = {x: 0, y: 0, w: 64, h: 48, content: {x: 22, y: 16, w: 12, h: 32}};
+    const heroFrame = {x: 0, y: 0, w: 64, h: 48, content: {x: 20, y: 16, w: 16, h: 31}};
     const hero: Hero = {
         targetType: 'actor',
         type: 'hero',
@@ -417,7 +417,7 @@ export function updateAdventurer(hero: Hero) {
         '+intelligence': hero.level * hero.job.intelligenceBonus,
         '+critDamage': .5,
         '+critAccuracy': .5,
-        '+speed': 250,
+        '+speed': 80,
         '+weaponless:accuracy': 1 + 2 * hero.level,
         '+weaponless:minPhysicalDamage': 1 + hero.level,
         '+weaponless:maxPhysicalDamage': 2 + hero.level,

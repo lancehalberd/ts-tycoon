@@ -10,7 +10,7 @@ import {
     addTimedEffect, explosionEffect, fieldEffect, getProjectileVelocity,
     novaEffect, projectile, songEffect,
 } from 'app/effects';
-import { MAX_Z } from 'app/gameConstants';
+import { MAX_Z, RANGE_UNIT } from 'app/gameConstants';
 import { getActorAnimationFrame } from 'app/render/drawActor';
 import { canUseReaction, getXDirection, useReaction } from 'app/useSkill';
 import { toHex } from 'app/utils/colors';
@@ -221,18 +221,16 @@ export function createAttackStats(attacker: Actor, attack: Action, target: Targe
         sound = attackSounds[attackType];
     }
     if (!animation && attacker.equipment.weapon) {
-        animation = attacker.equipment.weapon.base.animation;
+        const animationType = attacker.equipment.weapon.base.animation;
+        if (!projectileAnimations[animationType]) {
+            pause();
+            throw new Error('Missing animation for ' + animationType);
+        }
+        sound = attackSounds[animationType] || sound;
+        animation = projectileAnimations[animationType];
     }
-    if (typeof(animation) === 'string' && !projectileAnimations[animation]) {
-        pause();
-        throw new Error('Missing animation for ' + animation);
-    }
-    if (typeof(animation) === 'string') {
-        sound = attackSounds[animation] || sound;
-        animation = projectileAnimations[animation];
-    }
-    const gravity = attack.base.gravity ||
-        (attacker.equipment.weapon && attacker.equipment.weapon.base.gravity) || 0.8;
+    const gravity = ifdefor(attack.base.gravity,
+        ifdefor(attacker.equipment.weapon && attacker.equipment.weapon.base.gravity, 0.8));
     return {
         distance: 0,
         animation,
@@ -270,18 +268,16 @@ function createSpellImprintedAttackStats(attacker: Actor, attack: Action, spell:
     var animation = attack.base.animation;
     var sound = attack.base.sound;
     if (!animation && attacker.equipment.weapon) {
-        animation = attacker.equipment.weapon.base.animation;
+        const animationType = attacker.equipment.weapon.base.animation;
+        if (!projectileAnimations[animationType]) {
+            pause();
+            throw new Error('Missing animation for ' + animationType);
+        }
+        sound = attackSounds[animationType] || sound;
+        animation = projectileAnimations[animationType];
     }
-    if (typeof(animation) === 'string' && !projectileAnimations[animation]) {
-        pause();
-        throw new Error('Missing animation for ' + animation);
-    }
-    if (typeof(animation) === 'string') {
-        sound = attackSounds[animation] || sound;
-        animation = projectileAnimations[animation];
-    }
-    const gravity = attack.base.gravity ||
-        (attacker.equipment.weapon && attacker.equipment.weapon.base.gravity) || 0.8;
+    const gravity = ifdefor(attack.base.gravity,
+        ifdefor(attacker.equipment.weapon && attacker.equipment.weapon.base.gravity, 0.8));
     return {
         distance: 0,
         animation,
@@ -328,14 +324,14 @@ export function performAttackProper(attackStats: AttackData, target: Target) {
         playAreaSound(attackStats.sound, area);
     }
     // If the attack allows the user to teleport, teleport them to an optimal location for attacking.
-    const teleport = (attackStats.attack.stats.teleport || 0) * 32;
+    const teleport = (attackStats.attack.stats.teleport || 0) * RANGE_UNIT;
     if (teleport) {
         // It is easier for me to understand this code if I break it up into facing right and facing left cases.
         if (attacker.heading[0] > 0) {
             // Teleport to the location furthest from enemies that leaves the enemy within range to attack.
-            attacker.x = Math.max(attacker.x - teleport, Math.min(attacker.x + teleport, target.x - attackStats.attack.stats.range * 32 - attacker.width / 2 - target.width / 2));
+            attacker.x = Math.max(attacker.x - teleport, Math.min(attacker.x + teleport, target.x - attackStats.attack.stats.range * RANGE_UNIT - attacker.width / 2 - target.width / 2));
         } else {
-            attacker.x = Math.min(attacker.x + teleport, Math.max(attacker.x - teleport, target.x + target.width / 2 + attacker.width / 2 + attackStats.attack.stats.range * 32));
+            attacker.x = Math.min(attacker.x + teleport, Math.max(attacker.x - teleport, target.x + target.width / 2 + attacker.width / 2 + attackStats.attack.stats.range * RANGE_UNIT));
         }
     }
     if (attackStats.attack.variableObject.tags['song']) {
@@ -437,7 +433,7 @@ export function applyAttackToTarget(attackStats: AttackData, actorOrLocation: Ta
                 continue;
             }
             const distance = getDistance(attacker, cleaveTarget);
-            if (distance > (attack.stats.range + (attack.stats.cleaveRange || 0)) * 32) continue;
+            if (distance > (attack.stats.range + (attack.stats.cleaveRange || 0)) * RANGE_UNIT) continue;
             applyAttackToTarget(cleaveAttackStats, cleaveTarget);
         }
     }
@@ -488,7 +484,7 @@ export function applyAttackToTarget(attackStats: AttackData, actorOrLocation: Ta
         appendTextPopup(area, hitText);
         return false;
     }
-    const multiplier = attack.stats.rangeDamage ? (1 + attack.stats.rangeDamage * distance / 32) : 1;
+    const multiplier = attack.stats.rangeDamage ? (1 + attack.stats.rangeDamage * distance / RANGE_UNIT) : 1;
     if (attackStats.isCritical) {
         hitText.fontSize = 30;
     }
@@ -512,8 +508,8 @@ export function applyAttackToTarget(attackStats: AttackData, actorOrLocation: Ta
     attackStats.evaded = false;
     if (!attack.stats.alwaysHits) {
         const evasionRoll = (target.stats.maxEvasion ? 1 : Math.random()) * target.stats.evasion;
-        // Projectiles have up to 50% reduced accuracy at a distance of 320 pixels.
-        const effectiveAccuracy = attackStats.accuracy * Math.max(.5, 1 - (attackStats.distance || 0) / 640);
+        // Projectiles have up to 50% reduced accuracy at a distance of 10 * RANGE_UNIT pixels.
+        const effectiveAccuracy = attackStats.accuracy * Math.max(.5, 1 - (attackStats.distance || 0) / (20 * RANGE_UNIT));
         // if(attacker.character) console.log([attackStats.distance, attackStats.accuracy, effectiveAccuracy, evasionRoll]);
         if (effectiveAccuracy - evasionRoll < 0) {
             hitText.value = 'miss';
@@ -639,15 +635,15 @@ export function applyAttackToTarget(attackStats: AttackData, actorOrLocation: Ta
         // Some attacks pull the target towards the attacker
         const direction = (target.x < attacker.x) ? -1 : 1;
         if (Math.random() < (attack.stats.knockbackChance || 0)) {
-            const targetX = target.x + direction * 32 * (attack.stats.knockbackDistance || 1);
+            const targetX = target.x + direction * RANGE_UNIT * (attack.stats.knockbackDistance || 1);
             target.pull = {'x': targetX, z: target.z, time: target.time + .3, 'damage': 0};
             target.rotation = direction * ifdefor(attack.stats.knockbackRotation, 45);
         }
         if (attack.stats.pullsTarget) {
-            target.stunned =  Math.max((target.stunned || 0), target.time + .3 + distance / 32 * (attack.stats.dragStun || 0) * effectiveness);
+            target.stunned =  Math.max((target.stunned || 0), target.time + .3 + distance / RANGE_UNIT * (attack.stats.dragStun || 0) * effectiveness);
             const targetX = (attacker.x > target.x) ? (attacker.x - target.width) : (attacker.x + attacker.width);
             const targetZ = (attacker.z > target.z) ? (attacker.z - target.width) : (attacker.z + attacker.width);
-            target.pull = {sourceAttackStats: attackStats, x: targetX, z: targetZ, 'time': target.time + .3, 'damage': Math.floor(distance / 32 * damage * (attack.stats.dragDamage || 0) * effectiveness)};
+            target.pull = {sourceAttackStats: attackStats, x: targetX, z: targetZ, 'time': target.time + .3, 'damage': Math.floor(distance / RANGE_UNIT * damage * (attack.stats.dragDamage || 0) * effectiveness)};
             attacker.pull = {'x': attacker.x, z: attacker.z, 'time': attacker.time + .3, 'damage': 0};
             target.rotation = direction * ifdefor(attack.stats.knockbackRotation, -45);
             hitText.value += ' hooked!';

@@ -15,7 +15,7 @@ import { getState } from 'app/state';
 import { fillRectangle, isPointInRectObject, rectangle, shrinkRectangle } from 'app/utils/index';
 
 let upgradingObject = null;
-const upgradeRectangle = rectangle(250, 150, 300, 180);
+const upgradeRectangle = rectangle(90, 45, 140, 90);
 
 export function getUpgradeRectangle() {
     return upgradeRectangle;
@@ -31,7 +31,7 @@ export const upgradeButton = {
         const canUpgrade = canAffordCost(currentTier.upgradeCost);
         mainContext.textAlign = 'center'
         mainContext.textBaseline = 'middle';
-        setFontSize(mainContext, 18);
+        setFontSize(mainContext, 10);
         mainContext.strokeStyle = canUpgrade ? 'white' : '#AAA';
         mainContext.lineWidth = 2;
         mainContext.fillStyle = canUpgrade ? '#6C6' : '#CCC';
@@ -77,18 +77,18 @@ export function drawUpgradeBox() {
     drawRectangleBackground(mainContext, upgradeRectangle);
     const currentTier = upgradingObject.getCurrentTier();
     const nextTier = upgradingObject.getNextTier();
-    drawImage(mainContext, currentTier.source.image, currentTier.source, {'left': upgradeRectangle.left + 10, 'top': upgradeRectangle.top + 6, 'width': 60, 'height': 60});
-    drawImage(mainContext, nextTier.source.image, nextTier.source, {'left': upgradeRectangle.left + 10, 'top': upgradeRectangle.top + 105, 'width': 60, 'height': 60});
+    drawImage(mainContext, currentTier.source.image, currentTier.source, {'left': upgradeRectangle.left + 5, 'top': upgradeRectangle.top + 2, 'width': 20, 'height': 20});
+    drawImage(mainContext, nextTier.source.image, nextTier.source, {'left': upgradeRectangle.left + 5, 'top': upgradeRectangle.top + 35, 'width': 20, 'height': 20});
     mainContext.textAlign = 'left'
     mainContext.textBaseline = 'middle';
     mainContext.fillStyle = 'white';
-    setFontSize(mainContext, 18);
-    mainContext.fillText(currentTier.name, upgradeRectangle.left + 80, upgradeRectangle.top + 25);
-    mainContext.fillText(nextTier.name, upgradeRectangle.left + 80, upgradeRectangle.top + 125);
+    setFontSize(mainContext, 10);
+    mainContext.fillText(currentTier.name, upgradeRectangle.left + 30, upgradeRectangle.top + 10);
+    mainContext.fillText(nextTier.name, upgradeRectangle.left + 30, upgradeRectangle.top + 70);
     mainContext.fillStyle = toolTipColor;
     const state = getState();
-    mainContext.fillText(bonusSourceHelpText(currentTier, state.selectedCharacter.adventurer).replace(/<br ?\/?>/g, "\n"), upgradeRectangle.left + 80, upgradeRectangle.top + 45);
-    mainContext.fillText(bonusSourceHelpText(nextTier, state.selectedCharacter.adventurer).replace(/<br ?\/?>/g, "\n"), upgradeRectangle.left + 80, upgradeRectangle.top + 145);
+    mainContext.fillText(bonusSourceHelpText(currentTier, state.selectedCharacter.adventurer).replace(/<br ?\/?>/g, "\n"), upgradeRectangle.left + 30, upgradeRectangle.top + 20);
+    mainContext.fillText(bonusSourceHelpText(nextTier, state.selectedCharacter.adventurer).replace(/<br ?\/?>/g, "\n"), upgradeRectangle.left + 30, upgradeRectangle.top + 80);
 }
 
 function setFontSize(context, size) {

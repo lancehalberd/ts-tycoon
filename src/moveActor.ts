@@ -2,7 +2,7 @@ import {
     actorShouldAutoplay, getAllInRange, getDistance, getDistanceBetweenPointsSquared,
     getDistanceOverlap, limitZ,
 } from 'app/adventure';
-import { FRAME_LENGTH, MAX_Z, MIN_SLOW } from 'app/gameConstants';
+import { FRAME_LENGTH, MAX_Z, MIN_SLOW, RANGE_UNIT } from 'app/gameConstants';
 import { setActorAttackTarget, setActorInteractionTarget } from 'app/main';
 import { applyAttackToTarget, createAttackStats, getBasicAttack } from 'app/performAttack';
 import { isMouseDown } from 'app/utils/mouse';
@@ -163,15 +163,18 @@ export function moveActor(actor: Actor) {
         // Set the max distance to back away to to 10, otherwise they will back out of the range
         // of many activated abilities like fireball and meteor.
         if (
-            distanceToTarget < (Math.min(skillRange - 1.5, 10)) * 32 ||
+            distanceToTarget < (Math.min(skillRange - 1.5, 10)) * RANGE_UNIT ||
             (goalTarget.targetType === 'actor' && goalTarget.targetHealth < 0)
         ) {
             // Actors backing away from their targets will eventually corner themselves in the edge of the room.
             // This looks bad, so make them stop backing up within 130 pixels of the edge of the area.
             if ((actor.heading[0] > 0 && actor.x > 130) || (actor.heading[0] < 0 && actor.x < actor.area.width - 130)) {
-                speedBonus *= -.1;
+                // You back up more slowly when your skill is on cooldown. This allows you to back
+                // up quickly from enemies you aren't currently attacking.
+                if (skill.readyAt > actor.time) speedBonus *= -0.1;
+                else speedBonus *= -0.5;
             } else speedBonus *= 0;
-        } else if (distanceToTarget <= skillRange * 32) {
+        } else if (distanceToTarget <= skillRange * RANGE_UNIT) {
             speedBonus = 0;
         }
     }
@@ -191,10 +194,16 @@ export function moveActor(actor: Actor) {
         }
         // Actor is not allowed to leave the path.
         actor.z = limitZ(actor.z, actor.width / 2);
-        if (area.leftWall) actor.x = Math.max((area.left || 0) + 25 + actor.width / 2 + actor.z / 6, actor.x);
-        else actor.x = Math.max((area.left || 0) + actor.width / 2, actor.x);
-        if (area.rightWall) actor.x = Math.min(area.width - 25 - actor.width / 2 - actor.z / 6, actor.x);
-        else actor.x = Math.min(area.width - actor.width / 2, actor.x);
+        if (area.leftWall) {
+            actor.x = Math.max((area.left || 0) + 16 + actor.width / 2 + actor.z / 4, actor.x);
+        } else {
+            actor.x = Math.max((area.left || 0) + actor.width / 2, actor.x);
+        }
+        if (area.rightWall) {
+            actor.x = Math.min(area.width - 16 - actor.width / 2 - actor.z / 4, actor.x);
+        } else {
+            actor.x = Math.min(area.width - actor.width / 2, actor.x);
+        }
         let collision = false;
         // Ignore ally collision during charge effects.
         if (!actor.chargeEffect) {

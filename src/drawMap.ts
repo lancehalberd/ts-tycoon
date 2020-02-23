@@ -14,14 +14,14 @@ import { drawTextureMap } from 'app/render/drawTextureMap';
 import { getState } from 'app/state';
 import { drawFrame } from 'app/utils/animations';
 import { abbreviate } from 'app/utils/formatters';
-import { pad, r, rectangle, shrinkRectangle } from 'app/utils/index';
+import { fillRect, pad, r, rectangle, shrinkRectangle } from 'app/utils/index';
 import Vector from 'app/utils/Vector';
 import { worldCamera } from 'app/WorldCamera';
 
 import { Frame, LevelData, ShortRectangle } from 'app/types';
 
 const lineColors = ['#0ff', '#08f', '#00f', '#80f', '#f0f', '#f08', '#f00','#f80','#ff0','#8f0','#0f0', '#0f8'];
-const mapTexture = requireImage('gfx/squareMap.bmp');
+const mapTexture = requireImage('gfx/squareMap.png');
 
 const checkSource: Frame = {image: requireImage('gfx/militaryIcons.png'), x: 68, y: 90, w: 16, h: 16};
 const bronzeSource: Frame = {...checkSource, x: 102, y: 40};
@@ -33,7 +33,7 @@ export function drawMap(): void {
     context.fillStyle = '#fea';
     context.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
     const visibleRectangle = rectangle(MAP_LEFT - 20, MAP_TOP - 20, MAP_WIDTH + 40, MAP_HEIGHT + 50);
-    worldCamera.position = mapLocation.position.normalize(WORLD_RADIUS * 2);
+    worldCamera.position = mapLocation.position.normalize(WORLD_RADIUS + 5);
     worldCamera.forward = worldCamera.position.normalize(-1);
     worldCamera.fixRightAndUp();
     worldCamera.updateRotationMatrix();
@@ -83,6 +83,7 @@ export function drawMap(): void {
             }
         }
     }
+    context.lineWidth = 1;
     for (let i = 0; i < renderedLines.length - 1; i++) {
         let lastPoint;
         const line = renderedLines[i];
@@ -137,13 +138,13 @@ export function drawMap(): void {
         }
         if (new Vector(levelData.coords).dotProduct(worldCamera.forward) <= 0) {
             const projectedPoint = worldCamera.projectPoint(levelData.coords);
-            levelData.x = projectedPoint[0] - 20 - MAP_LEFT;
-            levelData.y = projectedPoint[1] - 20 - MAP_TOP;
+            levelData.x = Math.round(projectedPoint[0] - 10 - MAP_LEFT);
+            levelData.y = Math.round(projectedPoint[1] - 10 - MAP_TOP);
             mapState.visibleNodes[levelKey] = levelData;
             const skill = abilities[levelData.skill];
             if (skill) {
                 levelData.shrine = {
-                    ...r(levelData.x - 20, levelData.y - 20, 40, 40),
+                    ...r(levelData.x - 10, levelData.y - 10, 20, 20),
                     targetType: 'shrine',
                     level: levelData,
                 };
@@ -152,7 +153,7 @@ export function drawMap(): void {
             // Put nodes on the reverse of the sphere
             levelData.x = levelData.y = 4000;
         }
-        levelData.w = levelData.h = 40;
+        levelData.w = levelData.h = 24;
     }
     mapState.movedMap = false;
     // Draw lines connecting connected nodes.
@@ -201,7 +202,7 @@ export function drawMap(): void {
         context.save();
         context.translate(levelData.x + levelData.w / 2, levelData.y + levelData.h / 2);
         context.scale(1, .5);
-        context.arc(0, 0, 22, 0, 2 * Math.PI);
+        context.arc(0, 0, 12, 0, 2 * Math.PI);
         context.fill();
         context.restore();
     }
@@ -212,18 +213,18 @@ export function drawMap(): void {
             const source = closedChestSource;
             drawImage(context, source.image, source.source, rectangle(levelData.x + levelData.w / 2 - 16, levelData.y + levelData.h / 2 - 18, 32, 32));
             context.fillStyle = new Vector(levelData.coords).dotProduct(worldCamera.forward) >= 0 ? 'red' : 'black';
-            context.fillRect(levelData.x - 30, levelData.y + 19, 100, 15);
+            context.fillRect(levelData.x - 15, levelData.y + 9, 50, 10);
             context.fillStyle = 'white';
-            context.font = '10px sans-serif';
+            context.font = '8px sans-serif';
             context.textAlign = 'center'
             context.textBaseline = 'middle';
             //context.fillText(levelData.coords.map(function (number) { return number.toFixed(0);}).join(', '), levelData.x + 20, levelData.y + 45);
-            context.fillText((levelData.level || '') + ' ' + levelData.name, levelData.x + 20, levelData.y + 27);
+            context.fillText((levelData.level || '') + ' ' + levelData.name, levelData.x + 10, levelData.y + 17);
             if (levelData.skill) {
                 context.fillStyle = new Vector(levelData.coords).dotProduct(worldCamera.forward) >= 0 ? 'red' : 'black';
-                context.fillRect(levelData.x - 30, levelData.y + 34, 100, 15);
+                context.fillRect(levelData.x - 15, levelData.y + 24, 50, 8);
                 context.fillStyle = 'white';
-                context.fillText(levelData.skill, levelData.x + 20, levelData.y + 41);
+                context.fillText(levelData.skill, levelData.x + 10, levelData.y + 31);
             }
             var skill = abilities[levelData.skill];
             // For some reason this was: getAbilityIconSource(skill, shrineSource)
@@ -245,44 +246,51 @@ export function drawMap(): void {
             drawAbilityIcon(context, getAbilityIconSource(skill), levelData.shrine);
             // If the character has learned the ability for this level, draw a check mark on the shrine.
             context.globalAlpha = 1;
-            if (skillLearned) drawFrame(context, checkSource, pad(levelData.shrine, -8));
+            if (skillLearned) drawFrame(context, checkSource, pad(levelData.shrine, -4));
             context.restore();
         }
         if (state.selectedCharacter.currentLevelKey === levelKey) {
             const frame = state.selectedCharacter.hero.source.idleAnimation.frames[0];
-            drawFrame(context, frame, {x: levelData.x + 25 - frame.w, y: levelData.y - 64, w: frame.w * 2, h: frame.h * 2});
+            drawFrame(context, frame, {...frame, x: levelData.x + 12 - frame.w / 2, y: levelData.y - 40});
         }
 
         const times = state.selectedCharacter.levelTimes[levelKey] || {};
         var source = (times['easy'] && times['normal'] && times['hard']) ? openChestSource : closedChestSource;
-        drawImage(context, source.image, source.source, rectangle(levelData.x + levelData.w / 2 - 16, levelData.y + levelData.h / 2 - 18, 32, 32));
+        drawImage(context, source.image, source.source, rectangle(levelData.x + levelData.w / 2 - 8, levelData.y + levelData.h / 2 - 14, 16, 16));
 
-        context.save();
-        context.fillStyle = 'black';
-        context.globalAlpha = .3;
-        context.fillRect(levelData.x + 9, levelData.y + 19, 22, 15);
-        context.restore();
+        // This shadow makes the level number show up better against the chest graphic
+        if (levelData.level) {
+            context.save();
+                context.fillStyle = 'black';
+                context.globalAlpha = 0.4;
+                context.fillRect(levelData.x + levelData.w / 2 - 6, levelData.y + levelData.h / 2 - 6, 12, 8);
+            context.restore();
 
-        context.fillStyle = '#fff';
-        context.font = 'bold 16px sans-serif';
-        context.textAlign = 'center'
-        context.textBaseline = 'middle';
-        context.fillText('' + (levelData.level || ''), levelData.x + 20, levelData.y + 26);
+            context.fillStyle = '#fff';
+            context.font = 'bold 10px sans-serif';
+            context.textAlign = 'center'
+            context.textBaseline = 'middle';
+            context.fillText('' + (levelData.level || ''), levelData.x + levelData.w / 2, levelData.y + levelData.h / 2 - 2);
+        }
         const divinityScore = (state.selectedCharacter.divinityScores[levelKey] || 0);
         if (divinityScore > 0) {
-            context.fillStyle = 'black';
-            context.fillRect(levelData.x, levelData.y + 34, 40, 15);
+            const divinityRect = r(levelData.x, levelData.y + 16, levelData.w, 8);
+            const cx = divinityRect.x + divinityRect.w / 2;
+            const cy = divinityRect.y + divinityRect.h / 2;
+            fillRect(context, divinityRect, 'black');
             context.fillStyle = 'white';
-            context.font = '10px sans-serif';
-            context.textAlign = 'center'
-            context.fillText(abbreviate(divinityScore), levelData.x + 20, levelData.y + 42);
+            context.font = '8px sans-serif';
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            // Move this 4 to the right as the medal obscures the left side of the box.
+            context.fillText(abbreviate(divinityScore), cx + 3, cy);
             let source = bronzeSource;
             if (divinityScore >= Math.round(difficultyBonusMap.hard * 1.2 * baseDivinity(levelData.level))) {
                 source = goldSource;
             } else if (divinityScore >= Math.round(baseDivinity(levelData.level))) {
                 source = silverSource;
             }
-            drawFrame(context, source, {x: levelData.x - 10, y: levelData.y + 34, w: 16, h: 16});
+            drawFrame(context, source, {x: divinityRect.x - 5, y: cy - 8, w: 16, h: 16});
         }
     }
     const { arrowTargetLeft, arrowTargetTop, clickedMapNode } = editingMapState;
@@ -293,7 +301,7 @@ export function drawMap(): void {
     ) {
         //if (clickedMapNode.x === arrowTargetX && clickedMapNode.y === arrowTargetY) return;
         context.save();
-        context.lineWidth = 5;
+        context.lineWidth = 2;
         context.strokeStyle = '#0f0';
         drawMapArrow(context, clickedMapNode, {x: arrowTargetLeft, y: arrowTargetTop, w: 0, h: 0});
         context.restore();

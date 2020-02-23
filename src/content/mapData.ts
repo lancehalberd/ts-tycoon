@@ -1,3 +1,6 @@
+import { WORLD_RADIUS } from 'app/gameConstants';
+import Vector from 'app/utils/Vector';
+
 import { LevelData } from 'app/types';
 
 export const map = {
@@ -2289,5 +2292,8 @@ export const map = {
     }
 };
 Object.entries(map).forEach(([levelKey, levelData]: [string, any]) => {
+    // This puts all the levels on the surface of the planet, in case I change the planet
+    // radius.
+    levelData.coords = new Vector(levelData.coords).normalize(WORLD_RADIUS).getArrayValue();
     levelData.levelKey = levelKey;
 });

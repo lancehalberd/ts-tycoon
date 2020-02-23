@@ -276,7 +276,7 @@ export function importState(savedState: SavedState) {
             state.savedState.completedLevels[levelKey] = true;
         }
         const bed = state.availableBeds[state.characters.length - 1];
-        if (bed) enterArea(character.hero, {'areaKey': bed.area.key, 'x': (bed.x > 400) ? bed.x - 80 : bed.x + 80, 'z': bed.z});
+        if (bed) enterArea(character.hero, {'areaKey': bed.area.key, 'x': (bed.x > 160) ? bed.x - 30 : bed.x + 40, 'z': bed.z});
         else enterArea(character.hero, guildYardEntrance);
         query('.js-charactersBox').appendChild(character.characterCanvas);
     });

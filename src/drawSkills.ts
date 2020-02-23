@@ -20,6 +20,10 @@ function createScaledFrame(r, frame, scale = 1) {
     // We want to scale the frame Nx its normal thickness, but we get bad smoothing if we do
     // this as we stretch pieces, so we stretch the edges at 1x scale, then draw the whole thing scaled
     // up at the very end.
+    // Will need to use these if I ever want to make frames smaller than 16x16.
+    // Below this size, the corners on the opposite edge overlap the other corners.
+    //const cornerHSize = Math.min(12, r.width / scale / 2);
+    //const cornerVSize = Math.min(12, r.height / scale / 2);
     const smallCanvas = createCanvas(r.width / scale, r.height / scale);
     const smallContext = smallCanvas.getContext('2d');
     smallContext.imageSmoothingEnabled = false;
@@ -35,13 +39,13 @@ function createScaledFrame(r, frame, scale = 1) {
         drawImage(smallContext, frame, rectangle(12, 0, 16, 12),
             rectangle(12, 0, r.width / scale - 24, 12));
         drawImage(smallContext, frame, rectangle(12, 28, 16, 12),
-            rectangle(12, r.height / scale - 12, r.width / 2 - 24, 12));
+            rectangle(12, r.height / scale - 12, r.width / scale - 24, 12));
     }
     if (r.height > 24 * scale) {
         drawImage(smallContext, frame, rectangle(0, 12, 12, 16),
-            rectangle(0, 12, 12, r.height / 2 - 24));
+            rectangle(0, 12, 12, r.height / scale - 24));
         drawImage(smallContext, frame, rectangle(28, 12, 12, 16),
-            rectangle(r.width / 2 - 12, 12, 12, r.height / 2 - 24));
+            rectangle(r.width / scale - 12, 12, 12, r.height / scale - 24));
     }
     drawImage(context, smallCanvas, rectangle(0, 0, r.width / scale, r.height / scale), r);
     return canvas;
@@ -51,18 +55,18 @@ export function drawSkills(hero: Hero) {
     context.font = "10px Arial";
     context.textBaseline = 'middle';
     context.textAlign = 'center';
-    const frameSize = 10;
-    const size = 40;
-    const tinySize = 20;
-    const totalSize = size + 2 * frameSize;
-    if (!goldFrame) goldFrame = createScaledFrame(rectangle(0, 0, totalSize, totalSize), requireImage('gfx/goldFrame.png'), 2);
-    if (!silverFrame) silverFrame = createScaledFrame(rectangle(0, 0, totalSize, totalSize), requireImage('gfx/silverFrame.png'), 2);
+    const frameSize = 4;
+    const interiorSize = 16;
+    const tinySize = 16;
+    const totalSize = interiorSize + frameSize;
+    if (!goldFrame) goldFrame = createScaledFrame(rectangle(0, 0, totalSize, totalSize), requireImage('gfx/goldFrame.png'), 1);
+    if (!silverFrame) silverFrame = createScaledFrame(rectangle(0, 0, totalSize, totalSize), requireImage('gfx/silverFrame.png'), 1);
     if (!tinyGoldFrame) tinyGoldFrame = createScaledFrame(rectangle(0, 0, tinySize, tinySize), requireImage('gfx/goldFrame.png'));
     if (!tinySilverFrame) tinySilverFrame = createScaledFrame(rectangle(0, 0, tinySize, tinySize), requireImage('gfx/silverFrame.png'));
-    const margin = 20;
-    const padding = 2;
-    const top = mainCanvas.height - 30 - margin - totalSize; // 30 is the height of the minimap.
-    let left = 60 + margin; // 60 pixels to make room for the return to map button.
+    const margin = 5;
+    const padding = 8;
+    const top = mainCanvas.height - margin - totalSize; // 30 is the height of the minimap.
+    let left = 30 + margin; // 60 pixels to make room for the return to map button.
     actionShortcuts = {};
     const keysLeft = actionKeyCodes.slice();
     for (const action of hero.actions) {

@@ -1,29 +1,34 @@
 import { returnToMap } from 'app/adventure';
-import { backgrounds } from 'app/content/backgrounds';
+import { areaTypes } from 'app/content/areaTypes';
 import { effectAnimations } from 'app/content/effectAnimations';
 import { drawLeftWall, drawRightWall } from 'app/content/guild'
 import { upgradeButton } from 'app/content/upgradeButton';
 import { editingMapState } from 'app/development/editLevel'
 import { createCanvas, mainCanvas, mainContext } from 'app/dom';
 import { getHoverAction, getSelectedAction } from 'app/drawSkills';
-import { FRAME_LENGTH, GROUND_Y, MIN_SLOW } from 'app/gameConstants';
+import {
+    ADVENTURE_HEIGHT, BACKGROUND_HEIGHT, FIELD_HEIGHT,
+    FRAME_LENGTH, GROUND_Y, MIN_SLOW, RANGE_UNIT
+} from 'app/gameConstants';
 import { getCanvasCoords, getTargetLocation } from 'app/main';
 import {
     drawImage, drawOutlinedImage, drawTintedImage,
     prepareTintedImage, requireImage,
 } from 'app/images';
 import { getCanvasPopupTarget } from 'app/popup';
-import { drawActor, drawActorEffects } from 'app/render/drawActor';
+import { drawActor, drawActorEffects, drawActorShadow } from 'app/render/drawActor';
 import { getState } from 'app/state';
 import { canUseSkillOnTarget } from 'app/useSkill';
-import { arrMod, rectangle } from 'app/utils/index';
+import { drawFrame } from 'app/utils/animations';
+import { arrMod, rectangle, toR } from 'app/utils/index';
 
-import { Actor, ActorEffect, Area } from 'app/types';
+import { Actor, ActorEffect, Animation, Area, AreaType } from 'app/types';
 
 export const bufferCanvas: HTMLCanvasElement = createCanvas(mainCanvas.width, mainCanvas.height);
 export const bufferContext = bufferCanvas.getContext('2d');
 bufferContext.imageSmoothingEnabled = false;
-const tileWidth = 120;
+const tileWidth = 60;
+// document.body.append(bufferCanvas);
 
 export function getGlobalHud() {
     return [
@@ -38,56 +43,22 @@ export function drawHud() {
     }
 }
 
-function drawAnimation(context: CanvasRenderingContext2D, animation, target) {
-    const frame = Math.floor(Date.now() * 20 / 1000) % animation.frames.length;
-    const frameData = animation.frames[frame];
-    drawImage(context, animation.image, rectangle(frameData[0], frameData[1], frameData[2], frameData[3]), target);
-}
-
 export function drawOnGround(render: (context: CanvasRenderingContext2D) => void) {
-    const context = bufferContext;
-    context.clearRect(0,0, bufferCanvas.width, bufferCanvas.height);
-    render(context);
-    drawImage(mainContext, bufferCanvas, rectangle(0, 300, bufferCanvas.width, 180), rectangle(0, 300, bufferCanvas.width, 180));
+    bufferContext.clearRect(0, 0, bufferCanvas.width, bufferCanvas.height);
+    render(bufferContext);
+    drawImage(mainContext, bufferCanvas,
+        rectangle(0, BACKGROUND_HEIGHT, bufferCanvas.width, FIELD_HEIGHT),
+        rectangle(0, BACKGROUND_HEIGHT, bufferCanvas.width, FIELD_HEIGHT)
+    );
 }
 
 export function drawArea(area: Area) {
     const context = mainContext;
     const cameraX = area.cameraX;
     context.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
-    context.save();
-    let firstPattern = true;
-    for (let xOffsetKey in area.backgroundPatterns) {
-        const xOffset = parseInt(xOffsetKey);
-        const backgroundKey = area.backgroundPatterns[xOffset];
-        const background = backgrounds[backgroundKey] || backgrounds.field;
-        const fullDrawingWidth = Math.ceil(mainCanvas.width / tileWidth) * tileWidth + tileWidth;
-        for (const section of background) {
-            const source = section.source;
-            const {
-                parallax = 1,
-                spacing = 1,
-                velocity = 0,
-                alpha = 1,
-            } = section;
-            const y = source.y * 2;
-            const height = source.height * 2;
-            const width = source.width * 2;
-            context.globalAlpha = alpha;
-            for (let i = 0; i <= fullDrawingWidth; i += tileWidth * spacing) {
-                const x = Math.round((fullDrawingWidth + (i - (cameraX - area.time * velocity) * parallax) % fullDrawingWidth) % fullDrawingWidth - tileWidth);
-                const realX = area.cameraX + x;
-                if (!firstPattern && realX + tileWidth < xOffset) continue;
-                context.drawImage(source.image, source.x, source.y, source.width, source.height,
-                                      x, y, width, height);
-                if (x !== Math.round(x) || y !== Math.round(y) || width != Math.round(width) || height != Math.round(height)) {
-                    console.log(JSON.stringify([[source.x, x], [source.y, y], width, height]));
-                }
-            }
-        }
-        firstPattern = false;
-    }
-    context.restore();
+    const backgroundKey = area.backgroundPatterns[0];
+    const areaType: AreaType = areaTypes[backgroundKey] || areaTypes.field;
+    areaType.drawFloor(context, area);
     const allSprites: ({
         targetType?: string,
         z?: number,
@@ -104,10 +75,14 @@ export function drawArea(area: Area) {
     // Draw effects that appear underneath sprites. Do not sort these, rather, just draw them in
     // the order they are present in the arrays.
     for (const sprite of allSprites) if (sprite.drawGround) sprite.drawGround(area);
-    for (const actor of area.allies.concat(area.enemies)) drawActorGroundEffects(actor);
+    for (const actor of area.allies.concat(area.enemies)) {
+        drawActorShadow(context, actor);
+        drawActorGroundEffects(actor);
+    }
     drawActionTargetCircle(context);
-    if (area.leftWall) drawLeftWall(area);
-    if (area.rightWall) drawRightWall(area);
+    areaType.drawBackground(context, area);
+    if (area.leftWall) drawLeftWall(context, area);
+    if (area.rightWall) drawRightWall(context, area);
     if (area.wallDecorations) {
         for (const object of area.wallDecorations) object.render(area);
     }
@@ -131,12 +106,12 @@ export function drawArea(area: Area) {
     }
     if (area.areas) drawMinimap(area);
 }
-function drawRune(context: CanvasRenderingContext2D, actor: Actor, animation, frame) {
-    const size = [Math.max(actor.width, 128), Math.max(actor.width / 2, 64)];
+function drawRune(context: CanvasRenderingContext2D, actor: Actor, animation: Animation, frameIndex: number) {
     context.save();
     context.translate((actor.x - actor.area.cameraX), GROUND_Y - actor.z / 2);
-    frame = animation.frames[frame];
-    context.drawImage(animation.image, frame[0], frame[1], frame[2], frame[3], -size[0] / 2, -size[1] / 2, size[0], size[1]);
+    const frame = animation.frames[frameIndex];
+    const size = [frame.w, frame.h];
+    drawFrame(context, frame, {x: -size[0] / 2, y: -size[1] / 2, w: size[0], h: size[1]});
     context.restore();
 }
 function drawActorGroundEffects(actor: Actor) {
@@ -203,22 +178,26 @@ function drawMinimap(area: Area) {
     });
 }
 
-function drawMapButton() {
-    this.flashColor = getState().selectedCharacter.hero.levelInstance.completed ? 'white' : null;
-    drawHudElement.call(this);
-}
-function drawHudElement() {
-    if (getCanvasPopupTarget() === this) drawOutlinedImage(mainContext, this.source.image, '#fff', 2, this.source, this);
-    else if (this.flashColor) drawTintedImage(mainContext, this.source.image, this.flashColor, .5 + .2 * Math.sin(Date.now() / 150), this.source, this);
-    else drawImage(mainContext, this.source.image, this.source, this);
+function drawHudElement(element) {
+    if (getCanvasPopupTarget() === element) {
+        drawOutlinedImage(mainContext, element.source.image, '#fff', 1, element.source, element);
+    } else if (element.flashColor) {
+        drawTintedImage(mainContext, element.source.image, element.flashColor, .5 + .2 * Math.sin(Date.now() / 150),
+            toR(element.source), toR(element)
+        );
+    } else drawImage(mainContext, element.source.image, element.source, element);
 }
 
-const returnToMapButton = {'source': {'image': requireImage('gfx/worldIcon.png'), 'top': 0, 'left': 0, 'width': 72, 'height': 72},
+const returnToMapButton = {
+    source: {'image': requireImage('gfx/worldIcon.png'), left: 0, top: 0, width: 72, height: 72},
     isVisible() {
         return getState().selectedCharacter.context === 'adventure';
     },
-    render: drawMapButton,
-    'top': 500, 'left': 20, 'width': 54, 'height': 54, 'helpText': 'Return to Map', onClick() {
+    render() {
+        this.flashColor = getState().selectedCharacter.hero.levelInstance.completed ? 'white' : null;
+        drawHudElement(this);
+    },
+    top: ADVENTURE_HEIGHT - 25, left: 8, width: 18, height: 18, 'helpText': 'Return to Map', onClick() {
         const state = getState();
         state.selectedCharacter.replay = false;
         returnToMap(state.selectedCharacter);
@@ -246,13 +225,13 @@ export function drawGroundCircle(context, area: Area, x, z, radius) {
     context.restore();
 }
 function drawTargetCircle(context, area: Area, x, z, radius, alpha) {
-    drawGroundCircle(context, area, x, z, radius * 32);
+    drawGroundCircle(context, area, x, z, radius * RANGE_UNIT);
     context.save();
     context.globalAlpha = alpha;
     context.fillStyle = '#0FF';
     context.fill();
     context.globalAlpha = 1;
-    context.lineWidth = 5;
+    context.lineWidth = 2;
     context.strokeStyle = '#0FF';
     context.stroke();
     context.restore();

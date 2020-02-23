@@ -94,7 +94,7 @@ const initialImagesToLoad = [
     'gfx/496RpgIcons/spellRevive.png',
     'gfx/496RpgIcons/spellStorm.png',
     'gfx/496RpgIcons/target.png',
-    'gfx/squareMap.bmp', // http://topps.diku.dk/torbenm/maps.msp
+    'gfx/squareMap.png', // http://topps.diku.dk/torbenm/maps.msp
     'gfx/chest-closed.png', 'gfx/chest-open.png', // http://opengameart.org/content/treasure-chests
     'gfx/bat.png', // http://opengameart.org/content/bat-32x32
     'gfx/militaryIcons.png', // http://opengameart.org/content/140-military-icons-set-fixed
@@ -111,9 +111,6 @@ for (const initialImageToLoad of initialImagesToLoad) {
     requireImage(initialImageToLoad);
 }
 
-export function staticAnimation(image, frame) {
-    return {image, frames: [frame]};
-}
 export function makeFrames(length, size, origin = [0, 0], padding = 0, frameRepeat = 1, columns = 0) {
     columns = columns || length;
     var frames = [];
@@ -176,26 +173,26 @@ export function drawComplexCompositeTintedFrame(context, tintedFrames: TintedFra
 export function drawSolidTintedFrame(context, frame: TintedFrame, target: ShortRectangle) {
     // First make a solid color in the shape of the image to tint.
     globalTintContext.save();
-    globalTintContext.fillStyle = frame.color;
-    globalTintContext.clearRect(0, 0, frame.w, frame.h);
-    const tintRectangle = {...frame, x: 0, y: 0};
-    drawFrame(globalTintContext, frame, tintRectangle);
-    globalTintContext.globalCompositeOperation = "source-in";
-    globalTintContext.fillRect(0, 0, frame.w, frame.h);
-    drawFrame(context, {...tintRectangle, image: globalTintCanvas}, target);
+        globalTintContext.fillStyle = frame.color;
+        globalTintContext.clearRect(0, 0, frame.w, frame.h);
+        const tintRectangle = {...frame, x: 0, y: 0};
+        drawFrame(globalTintContext, frame, tintRectangle);
+        globalTintContext.globalCompositeOperation = "source-in";
+        globalTintContext.fillRect(0, 0, frame.w, frame.h);
+        drawFrame(context, {...tintRectangle, image: globalTintCanvas}, target);
     globalTintContext.restore();
 }
 
 export function drawSolidTintedImage(context, image, tint, source: FullRectangle, target: FullRectangle) {
     // First make a solid color in the shape of the image to tint.
     globalTintContext.save();
-    globalTintContext.fillStyle = tint;
-    globalTintContext.clearRect(0, 0, source.width, source.height);
-    var tintRectangle = {'left': 0, 'top': 0, 'width': source.width | 0, 'height': source.height | 0};
-    drawImage(globalTintContext, image, source, tintRectangle)
-    globalTintContext.globalCompositeOperation = "source-in";
-    globalTintContext.fillRect(0, 0, source.width, source.height);
-    drawImage(context, globalTintCanvas, tintRectangle, target);
+        globalTintContext.fillStyle = tint;
+        globalTintContext.clearRect(0, 0, source.width, source.height);
+        var tintRectangle = {'left': 0, 'top': 0, 'width': source.width | 0, 'height': source.height | 0};
+        drawImage(globalTintContext, image, source, tintRectangle)
+        globalTintContext.globalCompositeOperation = "source-in";
+        globalTintContext.fillRect(0, 0, source.width, source.height);
+        drawImage(context, globalTintCanvas, tintRectangle, target);
     globalTintContext.restore();
 }
 
@@ -224,23 +221,23 @@ export function drawTintedImage(
     image: HTMLImageElement | HTMLCanvasElement,
     tint: string,
     amount: number,
-    source: FullRectangle,
-    target: FullRectangle
+    source: ShortRectangle,
+    target: ShortRectangle
 ) {
-    context.save();
     // First make a solid color in the shape of the image to tint.
     globalTintContext.save();
-    globalTintContext.fillStyle = tint;
-    globalTintContext.clearRect(0, 0, source.width, source.height);
-    globalTintContext.drawImage(image, source.left, source.top, source.width, source.height, 0, 0, source.width, source.height);
-    globalTintContext.globalCompositeOperation = "source-in";
-    globalTintContext.fillRect(0, 0, source.width, source.height);
+        globalTintContext.fillStyle = tint;
+        globalTintContext.clearRect(0, 0, source.w, source.h);
+        globalTintContext.drawImage(image, source.x, source.y, source.w, source.h, 0, 0, source.w, source.h);
+        globalTintContext.globalCompositeOperation = "source-in";
+        globalTintContext.fillRect(0, 0, source.w, source.h);
     globalTintContext.restore();
-    // Next draw the untinted image to the target.
-    context.drawImage(image, source.left, source.top, source.width, source.height, target.left, target.top, target.width, target.height);
-    // Finally draw the tint color on top of the target with the desired opacity.
-    context.globalAlpha *= amount; // This needs to be multiplicative since we might be drawing a partially transparent image already.
-    context.drawImage(globalTintCanvas, 0, 0, source.width, source.height, target.left, target.top, target.width, target.height);
+    context.save();
+        // Next draw the untinted image to the target.
+        context.drawImage(image, source.x, source.y, source.w, source.h, target.x, target.y, target.w, target.h);
+        // Finally draw the tint color on top of the target with the desired opacity.
+        context.globalAlpha *= amount; // This needs to be multiplicative since we might be drawing a partially transparent image already.
+        context.drawImage(globalTintCanvas, 0, 0, source.w, source.h, target.x, target.y, target.w, target.h);
     context.restore();
 }
 const globalCompositeCanvas = createCanvas(150, 150);
@@ -248,11 +245,11 @@ const globalCompositeContext = globalCompositeCanvas.getContext('2d');
 export function prepareTintedImage() {
     globalCompositeContext.clearRect(0, 0, globalCompositeCanvas.width, globalCompositeCanvas.height);
 }
-export function getTintedImage(image, tint, amount, {x, y, w, h}: ShortRectangle) {
+export function getTintedImage(image, tint, amount, r: ShortRectangle) {
     drawTintedImage(
         globalCompositeContext, image, tint, amount,
-        {left: x, top: y, width: w, height: h},
-        {left: 0, top: 0, width: w, height: h}
+        r,
+        {...r, x: 0, y: 0}
     );
     return globalCompositeCanvas;
 }
@@ -267,7 +264,6 @@ export function drawSourceWithOutline(
         source.drawWithOutline(context, color, thickness, target);
         return;
     }
-    context.save();
     var smallTarget = {...target};
     for (var dy = -1; dy < 2; dy++) {
         for (var dx = -1; dx < 2; dx++) {
@@ -282,24 +278,35 @@ export function drawSourceWithOutline(
 function drawSourceAsSolidTint(context, source: FullRectangle & { render: Function }, tint, target: FullRectangle) {
     // First make a solid color in the shape of the image to tint.
     globalTintContext.save();
-    globalTintContext.fillStyle = tint;
-    globalTintContext.clearRect(0, 0, source.width, source.height);
-    var tintRectangle = {'left': 0, 'top': 0, 'width': source.width, 'height': source.height};
-    source.render(globalTintContext, tintRectangle);
-    globalTintContext.globalCompositeOperation = "source-in";
-    globalTintContext.fillRect(0, 0, source.width, source.height);
-    drawImage(context, globalTintCanvas, tintRectangle, target);
+        globalTintContext.fillStyle = tint;
+        globalTintContext.clearRect(0, 0, source.width, source.height);
+        var tintRectangle = {'left': 0, 'top': 0, 'width': source.width, 'height': source.height};
+        source.render(globalTintContext, tintRectangle);
+        globalTintContext.globalCompositeOperation = "source-in";
+        globalTintContext.fillRect(0, 0, source.width, source.height);
+        drawImage(context, globalTintCanvas, tintRectangle, target);
     globalTintContext.restore();
 }
 export function drawOutlinedImage(context, image, color, thickness, source: FullRectangle, target: FullRectangle) {
-    context.save();
+
     const smallTarget = {...target};
+        // First make a solid color in the shape of the image to tint.
+    globalTintContext.save();
+        globalTintContext.fillStyle = color;
+        globalTintContext.clearRect(0, 0, smallTarget.width, smallTarget.height);
+        var tintRectangle = {'left': 0, 'top': 0, 'width': smallTarget.width | 0, 'height': smallTarget.height | 0};
+        drawImage(globalTintContext, image, source, tintRectangle)
+        globalTintContext.globalCompositeOperation = "source-in";
+        globalTintContext.fillRect(0, 0, smallTarget.width, smallTarget.height);
+    globalTintContext.restore();
+
     for (let dy = -1; dy <= 1; dy++) {
         for (let dx = -1; dx <= 1; dx++) {
-            if (dy == 0 && dx == 0) continue;
+            if (dy == 0 || dx == 0) continue;
             smallTarget.left = target.left + dx * thickness;
             smallTarget.top = target.top + dy * thickness;
-            drawSolidTintedImage(context, image, color, source, smallTarget);
+            drawImage(context, globalTintCanvas, tintRectangle, smallTarget);
+            // drawSolidTintedImage(context, image, color, source, smallTarget);
         }
     }
     drawImage(context, image, source, target);

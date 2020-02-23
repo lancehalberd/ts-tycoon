@@ -11,15 +11,15 @@ export function isRightMouseDown(): boolean {
     return rightMouseDown;
 }
 
-export function getMousePosition(container: HTMLElement = null): Coords {
+export function getMousePosition(container: HTMLElement = null, scale = 1): Coords {
     if (container) {
         const containerRect:DOMRect = container.getBoundingClientRect();
         return [
-            (mousePosition[0] - containerRect.x),
-            (mousePosition[1] - containerRect.y),
+            (mousePosition[0] - containerRect.x) / scale,
+            (mousePosition[1] - containerRect.y) / scale,
         ];
     }
-    return mousePosition;
+    return [mousePosition[0] / scale, mousePosition[1] / scale];
 }
 
 function onMouseMove(event) {

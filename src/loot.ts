@@ -4,7 +4,7 @@ import {
     titleDiv,
 } from 'app/dom';
 import { drawJewel } from 'app/drawJewel';
-import { GROUND_Y, MAX_Z, MIN_Z } from 'app/gameConstants';
+import { ADVENTURE_SCALE, GROUND_Y, MAX_Z, MIN_Z } from 'app/gameConstants';
 import { requireImage } from 'app/images';
 import { addJewelToInventory } from 'app/jewelInventory';
 import { makeJewel } from 'app/jewels';
@@ -63,17 +63,26 @@ function coinTreasurePopup(coin: typeof coins[0], x: number, y: number, z: numbe
                 this.z = MIN_Z - (this.z - MIN_Z) * .6;
                 this.vz = -this.vz * .6;
             }
-            if (this.y > 0) this.vy -= .8;
-            else {
-                this.y = -this.y * .6;
-                this.vy = -this.vy * .6;
+            if (this.vy || this.y > 0) {
+                if (this.y > 0) this.vy -= .8;
+                else {
+                    this.y = -this.y * .6;
+                    this.vy = -this.vy * .6;
+                    // Stop bouncing when the bounce gets too low.
+                    if (this.vy < 3) {
+                        this.y = 0;
+                        this.vy = 0;
+                        this.vz = 0;
+                        this.vx = 0;
+                    }
+                }
             }
             this.t += 1;
-            this.done = this.t > 80;
+            this.done = this.t > 70;
         },
         render(area: Area) {
             if (delay > 0) return;
-             const p = 1.4 * Math.min(1, 1 - (this.t - 60) / 20);
+             const p = Math.max(0, Math.min(1, 1 - (this.t - 60) / 10));
             mainContext.drawImage(coin.image, coin.x, coin.y, coin.width, coin.height,
                 this.x - p * coin.width / 2 - area.cameraX, GROUND_Y - this.y - p * coin.height - this.z / 2, p * coin.width, p * coin.height);
         }
@@ -95,7 +104,7 @@ export function coinsLootDrop(amount: number) {
                 // break single coins into smaller drops.
                 while (coins[index].value <= total && (drops || coins[index].value < total || total < 5) && drops < 50) {
                     total -= coins[index].value;
-                    const coinPopup = coinTreasurePopup(coins[index], x, y, z, Math.random() * 10 - 5, 10, Math.random() * 10 - 5, nextDelay);
+                    const coinPopup = coinTreasurePopup(coins[index], x, y, z, Math.random() * 4 - 2, 5, Math.random() * 4 - 2, nextDelay);
                     hero.area.treasurePopups.push(coinPopup);
                     nextDelay += 5;
                     drops++;
@@ -121,7 +130,7 @@ function animaTreasurePopup(hero: Hero, coin: typeof animaDrops[0], x: number, y
             this.x += this.vx;
             this.y += this.vy;
             this.z = limitZ(this.z + this.vz);
-            if (this.y > (hero.height / 2)) this.vy = Math.max(-8, this.vy - .5);
+            if (this.y > (hero.height / 2)) this.vy = Math.max(-3, this.vy - .5);
             else this.vy++;
             if (this.x > hero.x) this.vx = Math.max(-8 + hero.heading[0], this.vx - .5);
             else this.vx = Math.min(8 + hero.heading[0], this.vx + .5);
@@ -135,7 +144,7 @@ function animaTreasurePopup(hero: Hero, coin: typeof animaDrops[0], x: number, y
             mainContext.save();
             mainContext.globalAlpha = .6 + .2 * Math.cos(this.t / 5);
             // Anima disappears over time or as it approachs the hero.
-            const p = 1.5 * Math.max(0, Math.min(1, 1 - Math.max((this.t - 60) / 20, (20 - Math.abs(this.x - hero.x)) / 20)));
+            const p = Math.max(0, Math.min(1, 1 - Math.max((this.t - 60) / 20, (20 - Math.abs(this.x - hero.x)) / 20)));
             mainContext.drawImage(coin.image, coin.x, coin.y, coin.width, coin.height,
                 this.x - p * coin.width / 2 - area.cameraX,
                 GROUND_Y - this.y - this.z / 2 - p * coin.height / 2, p * coin.width, p * coin.height);
@@ -162,7 +171,7 @@ export function animaLootDrop(amount: number) {
                     const dx = (hero.x < x) ? 1 : -1;
                     hero.area.treasurePopups.push(animaTreasurePopup(hero, animaDrops[index],
                         x, y, z,
-                        dx * (10 + Math.random() * 5), 2 + Math.random() * 4, 10 + Math.random() * 10 - 5,
+                        dx * (3 + Math.random() * 2), 1 + Math.random() * 2, -2 + Math.random() * 4,
                         nextDelay
                     ));
                     nextDelay += 5;
@@ -192,8 +201,8 @@ function jewelTreasurePopup(jewel: Jewel, x: number, y: number, z: number, vx: n
         render(area: Area) {
             if (delay > 0) return
             popupShape.setCenterPosition(this.x - area.cameraX, GROUND_Y - this.y - this.z / 2);
-            const lightSource = getMousePosition(mainCanvas);
-            drawJewel(mainContext, popupShape, lightSource, 'white');
+            const lightSource = getMousePosition(mainCanvas, ADVENTURE_SCALE);
+            drawJewel(mainContext, popupShape, lightSource, 'white', 0.3, true);
         }
     };
 }
@@ -207,8 +216,8 @@ function jewelLootDrop(jewel: Jewel) {
         addTreasurePopup(hero: Hero, x: number, y: number, z: number, delay: number) {
             const thetaRange = Math.random() * 2 * Math.PI / 3;
             const theta = (Math.PI - thetaRange) / 2;
-            const vx =  Math.cos(theta) * 2;
-            const vy = Math.sin(theta) * 2;
+            const vx =  Math.cos(theta);
+            const vy = Math.sin(theta);
             hero.area.treasurePopups.push(jewelTreasurePopup(jewel, x, y, z, vx, vy, 0, delay));
         }
     }

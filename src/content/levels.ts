@@ -8,7 +8,7 @@ import { bossMonsterBonuses, easyBonuses, hardBonuses, monsters } from 'app/cont
 import { setContext } from 'app/context';
 import { bodyDiv, divider, mainContext, queryAll, titleDiv, toggleElements } from 'app/dom';
 import { drawBoardPreview } from 'app/drawBoard';
-import { GROUND_Y, MAX_LEVEL } from 'app/gameConstants';
+import { ADVENTURE_WIDTH, GROUND_Y, MAX_LEVEL, RANGE_UNIT, MIN_Z } from 'app/gameConstants';
 import { drawImage, requireImage } from 'app/images';
 import { getJewelTiewerForLevel } from 'app/jewels';
 import { snapBoardToBoard } from 'app/jewelInventory';
@@ -102,7 +102,7 @@ export function instantiateLevel(
             key: `area${areas.size}`,
             isBossArea: false,
             left: 0,
-            width: 800,
+            width: ADVENTURE_WIDTH,
             backgroundPatterns: {0: levelData.background},
             objects: [],
             drawMinimapIcon: eventsLeft.length > 1 ? drawMinimapMonsterIcon : drawMinimapBossIcon,
@@ -117,9 +117,9 @@ export function instantiateLevel(
             textPopups: [],
         };
         if (lastArea) {
-            area.objects.push(fixedObject('woodBridge', [-60, 0, 0], {isEnabled, exit: {areaKey: lastArea.key, x: lastArea.width - 150, z: 0}}));
+            area.objects.push(fixedObject('woodBridge', [12, 0, 0], {'xScale': -1, isEnabled, exit: {areaKey: lastArea.key, x: lastArea.width - 150, z: 0}}));
         } else {
-            area.objects.push(fixedObject('stoneBridge', [-20, 0, 0], {isEnabled, exit: {areaKey: 'worldMap'}}));
+            area.objects.push(fixedObject('stoneBridge', [12, 0, 0], {'xScale': -1, isEnabled, exit: {areaKey: 'worldMap'}}));
         }
         areas.set(area.key, area);
         lastArea = area;
@@ -133,10 +133,10 @@ export function instantiateLevel(
             const monster: MonsterSpawn = {
                 key: Random.element(possibleMonsters),
                 level,
-                location: [area.width + Random.range(0, 200), 0, 40]
+                location: [area.width + Random.range(0, RANGE_UNIT * 6), 0, 20]
             };
             areaMonsters.push(monster);
-            area.width = monster.location[0] + 50;
+            area.width = monster.location[0] + RANGE_UNIT * 2;
             if (maxLoops-- < 0) debugger;
         }
         // Add the predtermined monsters towards the end of the area.
@@ -144,19 +144,19 @@ export function instantiateLevel(
             const monster: MonsterSpawn = {
                 key: eventMonsters.shift(),
                 level,
-                location: [area.width + Random.range(0, 200), 0, 40]
+                location: [area.width + Random.range(0, RANGE_UNIT * 6), 0, 20]
             };
             if (area.isBossArea) {
                 monster.bonusSources = [bossMonsterBonuses];
                 monster.rarity = 0; // Bosses cannot be enchanted or imbued.
             }
             areaMonsters.push(monster);
-            area.width = monster.location[0] + 50;
+            area.width = monster.location[0] + RANGE_UNIT * 2;
             if (maxLoops-- < 0) debugger;
         }
         addMonstersToArea(area, areaMonsters, levelBonuses);
-        area.width += 600;
-        area.objects.push(fixedObject('woodBridge', [area.width + 60, 0, 0], {isEnabled() {
+        area.width += 100;
+        area.objects.push(fixedObject('woodBridge', [area.width - 12, 0, 0], {isEnabled() {
             return !this.area.isBossArea || !this.area.enemies.length;
         }, exit: {areaKey: levelData.noTreasure ? 'worldMap' : `area${areas.size}`, x: 150, z: 0}}));
         if (maxLoops-- < 0) debugger;
@@ -201,33 +201,33 @@ export function instantiateLevel(
         // console.log(shapeTypes.join(','));
         // console.log(components.join(','));
         loot.push(jewelLoot(shapeTypes, [tier, tier], components, false));
-        chest = fixedObject('closedChest', [0, 0, 0], {isEnabled, scale: 1, loot});
+        chest = fixedObject('closedChest', [0, 0, 0], {isEnabled, scale: 0.5, loot});
         initialChestIcon = closedChestSource;
         completedChestIcon = openChestSource;
     } else {
-        chest = fixedObject('closedChest', [0, 0, 0], {isEnabled, scale: .8, loot});
+        chest = fixedObject('closedChest', [0, 0, 0], {isEnabled, scale: 0.4, loot});
         // When the area has already been completed on this difficulty, we always draw the chest mini map icon as open
         // so the player can tell at a glance that they are replaying the difficulty.
         initialChestIcon = completedChestIcon = openChestSource;
     }
     lastArea.objects.push(chest);
-    chest.x = lastArea.width + Random.range(0, 100);
-    chest.z = Random.range(-140, -160);
+    chest.x = lastArea.width + Random.range(0, RANGE_UNIT * 4);
+    chest.z = Random.range(MIN_Z + 16, MIN_Z + 32);
     lastArea.width = chest.x + 100;
     lastArea.drawMinimapIcon = function (context, completed, x, y) {
         const source = this.chestOpened ? completedChestIcon : initialChestIcon;
         drawImage(context, source.image, source.source, rectangle(x - 16, y - 18, 32, 32));
     }
     if (levelData.skill && abilities[levelData.skill]) {
-        const shrine = fixedObject('skillShrine', [lastArea.width + Random.range(0, 100), 20, 0], {isEnabled, scale: 3, helpMethod(actor) {
+        const shrine = fixedObject('skillShrine', [lastArea.width + Random.range(0, RANGE_UNIT * 4), 10, 0], {isEnabled, scale: 1, helpMethod(actor) {
             return titleDiv('Divine Shrine')
                 + bodyDiv('Offer divinity at these shrines to be blessed by the Gods with new powers.');
         }});
         lastArea.objects.push(shrine);
-        lastArea.width = shrine.x + 100;
+        lastArea.width = shrine.x + RANGE_UNIT * 4;
     }
-    lastArea.width += 250;
-    lastArea.objects.push(fixedObject('stoneBridge', [lastArea.width + 20, 0, 0], {isEnabled, exit: {areaKey: 'worldMap'}}));
+    lastArea.width += 64;
+    lastArea.objects.push(fixedObject('stoneBridge', [lastArea.width + 12, 0, 0], {isEnabled, exit: {areaKey: 'worldMap'}}));
     areas.forEach(area => {
         for (const object of area.objects)
             object.area = area;

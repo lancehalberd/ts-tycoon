@@ -3,12 +3,13 @@ import { jobIcons } from 'app/content/jobs';
 import { projectileAnimations } from 'app/content/projectileAnimations';
 import { drawOnGround } from 'app/drawArea';
 import { GROUND_Y } from 'app/gameConstants';
-import { drawTintedImage, requireImage, staticAnimation } from 'app/images';
-import { rectangle } from 'app/utils/index';
+import { drawTintedImage, requireImage } from 'app/images';
+import { r } from 'app/utils/index';
 
 import { ActionData, Effect } from 'app/types/abilities';
 import { Bonuses } from 'app/types/bonuses';
 import { Actor, ArrayFrame, Frame } from 'app/types';
+import { createAnimation } from 'app/utils/animations';
 
 const scrollIconSource = 'gfx/496RpgIcons/openScroll.png';
 const effectSourceUp: ArrayFrame = ['gfx/militaryIcons.png', 17, 23, 16, 16, 0, 0];
@@ -127,7 +128,7 @@ export const skills: {[key: string]: ActionData} = {
                               {'*damage': 3, '+cooldown': 30, '$alwaysHits': 'Never misses', '$undodgeable': 'Cannot be dodged',
                                         '+distance': 256, '$domino': 'Knocks target away possibly damaging other enemies.'}),
     'hook':  attackAction('attack',
-        {'icon': jobIcons.corsair, speed: 50, size: 50, animation: staticAnimation(requireImage('gfx/effects/hook.png'), [0, 0, 32, 32]), tags: ['ranged']},
+        {'icon': jobIcons.corsair, speed: 50, size: 50, animation: createAnimation('gfx/effects/hook.png', r(0, 0, 32, 32)), tags: ['ranged']},
         {'+cooldown': 10, '+range': 10, '+dragDamage': 0, '+dragStun': 0, '+knockbackRotation': -60, '+rangeDamage': 0, '$alwaysHits': 'Never misses', '$pullsTarget': 'Pulls target'},
         'Throw a hook to damage and pull enemies closer.'),
 
@@ -262,7 +263,7 @@ export const skills: {[key: string]: ActionData} = {
                     context.translate((actor.x - actor.area.cameraX), GROUND_Y - actor.z / 2);
                     context.scale(1, .5);
                     context.rotate(actor.time * Math.PI / 2);
-                    drawTintedImage(context, requireImage('gfx/effects/circleOfProtection.png'), '#08F', 1, rectangle(0,0,200,200), rectangle(-size / 2, -size / 2, size, size));
+                    drawTintedImage(context, requireImage('gfx/effects/circleOfProtection.png'), '#08F', 1, r(0,0,200,200), r(-size / 2, -size / 2, size, size));
                     context.restore();
                 });
             }}, {'++armor': ['{intelligence}'], '+duration': 20})},

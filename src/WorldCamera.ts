@@ -43,6 +43,7 @@ function WorldCamera(screenWidth, screenHeight){
         //logging = false;
         //console.log(rotated.getArrayValue());
         return rotated.getArrayValue();
+        //return rotated.scale(this.eye.length / rotated.getCoordinate(2)).getArrayValue();
         /*var z = rotated.getCoordinate(2);
         // points on the plane orthogonal to the direction we are facing cannot be projected
         // as lines from the camera position to these points are parallel to the lens.

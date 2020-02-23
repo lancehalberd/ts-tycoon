@@ -3,7 +3,7 @@
     overflow-x: hidden;
     overflow-y: hidden;
     white-space: nowrap;
-    height: 600px;
+    height: 540px;
     background-color: #ccc;
 }
 
@@ -96,29 +96,6 @@
     margin-top: 2px;
     margin-bottom: -2px;
 }
-.playerColumn {
-    width: 560px;
-    display: inline-block;
-    background-color: grey;
-    box-sizing: border-box;
-    height: 800px;
-    vertical-align: top;
-    padding: 5px;
-    overflow-x: hidden;
-    overflow-y: scroll;
-}
-.playerControlBar {
-    height: 30px;
-    padding: 3px;
-    box-sizing: border-box;
-    background-color: #ccc;
-}
-.controlBarEntry {
-    margin-right: 5px;
-}
-.recallButton {
-    font-size: 8px;
-}
 .playerPanel  {
     height: 270px;
     background-color: white;
@@ -126,7 +103,7 @@
 }
 .playerPanel .infoMode {
     position: relative;
-    width: 800px;
+    width: 960px;
 }
 .infoPanel {
     box-sizing: border-box;
@@ -821,8 +798,8 @@ select {
 .mainCanvasContainer {
     position: absolute;
     overflow: visible;
-    height: 600px;
-    width: 800px;
+    height: 540px;
+    width: 960px;
 }
 
 .adventureControls {

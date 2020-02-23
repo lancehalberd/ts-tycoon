@@ -4,7 +4,7 @@ import { updateTrophyPopups } from 'app/content/achievements';
 import { areSoundsPreloaded, preloadSounds } from 'app/content/sounds';
 import { mainCanvas, query } from 'app/dom';
 import { updateCraftingCanvas } from 'app/equipmentCrafting';
-import { FRAME_LENGTH, GROUND_Y } from 'app/gameConstants';
+import { ADVENTURE_SCALE, ADVENTURE_WIDTH, FRAME_LENGTH, GROUND_Y } from 'app/gameConstants';
 import { initializeGame } from 'app/initialize';
 import { areAllImagesLoaded } from 'app/images';
 import { updateMap } from 'app/map';
@@ -35,7 +35,10 @@ export function update() {
     // Initially we don't do any of the main game logic until preloading finishes
     // then we initialize the game and start running the main game loop.
     if (!isGameInitialized) {
-        if (areAllImagesLoaded() && areSoundsReady())  {
+        // This used to be areAllImagesLoaded() && areSoundsReady()
+        // but I didn't want to block the game display on clicking to play sound.play
+        // We can play sound as soon as the user interacts.if
+        if (areAllImagesLoaded() && areSoundsPreloaded())  {
             isGameInitialized = true;
             initializeGame();
         } else if (areAllImagesLoaded() && areSoundsPreloaded()) {
@@ -47,7 +50,7 @@ export function update() {
     const state = getState();
     //var characters = testingLevel ? [state.selectedCharacter] : state.characters;
     const characters = state.characters;
-    const [x, y] = getMousePosition(mainCanvas);
+    const [x, y] = getMousePosition(mainCanvas, ADVENTURE_SCALE);
     const activeGuildAreaHash = {};
     for (const character of characters) {
         const hero = character.hero;
@@ -96,35 +99,45 @@ export function update() {
     }
 }
 
+const MAX_CAMERA_SPEED = 2;
 function updateAreaCamera(area: Area, hero: Hero) {
     // Only update the camera for the guild for the selected character, but
     // always update the camera for characters in adventure areas.
     if (hero.area === area || (area && !area.isGuildArea)) {
         const targetCameraX = getTargetCameraX(hero);
-        area.cameraX = Math.round((area.cameraX * 15 + targetCameraX) / 16);
+        const newCameraX = Math.round((area.cameraX * 3 + targetCameraX) / 4);
+        if (newCameraX - area.cameraX > MAX_CAMERA_SPEED) area.cameraX += MAX_CAMERA_SPEED;
+        else if (newCameraX - area.cameraX < -MAX_CAMERA_SPEED) area.cameraX -= MAX_CAMERA_SPEED;
+        else if (area.cameraX != newCameraX) area.cameraX = newCameraX;
+        // We need this case to handle when newCameraX rounding prevents the target from being achieved.
+        else area.cameraX = targetCameraX;
     }
 }
 
 export function getTargetCameraX(hero: Hero) {
-    const [x, y] = getMousePosition(mainCanvas);
+    const [x, y] = getMousePosition(mainCanvas, ADVENTURE_SCALE);
     const area = hero.area;
+    const RIGHT = ADVENTURE_WIDTH - 30;
+    const LEFT = 30;
     let centerX = hero.x;
-    const mouseX = Math.max(0, Math.min(800, x));
+    const mouseX = Math.max(0, Math.min(ADVENTURE_WIDTH, x));
     if (hero.activity.type === 'move') {
         centerX = (centerX + hero.activity.x) / 2;
     } else if (hero.goalTarget && !hero.goalTarget.isDead) {
         centerX = (centerX + hero.goalTarget.x) / 2;
+    } else if (hero.activity.type === 'interact') {
+        centerX = (centerX + hero.activity.target.x) / 2;
     }
-    if (mouseX > 700) centerX = centerX + (mouseX - 700) / 2;
-    else if (mouseX < 100) centerX = centerX + (mouseX - 100) / 2;
-    let target = Math.min(hero.x - 20, centerX - 400);
+    if (mouseX > RIGHT) centerX = Math.max(centerX, hero.x) + (mouseX - RIGHT);
+    else if (mouseX < LEFT) centerX = Math.min(centerX, hero.x) - (LEFT - mouseX);
+    let target = Math.min(hero.x - 10, centerX - ADVENTURE_WIDTH / 2);
     target = Math.max(area.left || 0, target);
-    if (area.width) target = Math.min(area.width - 800, target);
+    if (area.width) target = Math.min(area.width - ADVENTURE_WIDTH, target);
     // If a timestop is in effect, the caster must be in the frame.
     if (area.timeStopEffect) {
         const focusTarget = area.timeStopEffect.actor;
-        target = Math.max(focusTarget.x + focusTarget.width + 64 - 800, target);
-        target = Math.min(focusTarget.x - 64, target);
+        target = Math.max(focusTarget.x + focusTarget.width + 20 - ADVENTURE_WIDTH, target);
+        target = Math.min(focusTarget.x - 20, target);
     }
     return Math.round(target);
 };

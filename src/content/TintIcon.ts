@@ -25,14 +25,12 @@ export default class TintIcon extends Renderable {
     }
 
     render(context: CanvasRenderingContext2D, target: ShortRectangle) {
-        // We can remove this once we use SimpleRectangle in drawTintedImage
-        const compositeTarget = {'left': 0, 'top': 0, 'width': 32, 'height': 32};
         // Draw the tinted section the specified color.
-        drawTintedImage(tintCompositeContext, this.frame.image, this.color, 1, compositeTarget, compositeTarget);
+        drawTintedImage(tintCompositeContext, this.frame.image, this.color, 1, this.frame, this.frame);
         // Draw the untinted section on top of the tinted section.
         drawFrame(tintCompositeContext, {...this.frame, y: this.frame.y + this.frame.h}, this.frame);
 
         // Draw the tinted image to the target location
-        drawFrameCenteredInTarget(context, {...this.frame, image: tintCompositeCanvas}, target);
+        drawFrame(context, {...this.frame, image: tintCompositeCanvas}, target);
     }
 }

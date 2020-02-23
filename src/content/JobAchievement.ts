@@ -73,7 +73,7 @@ export default class JobAchievement {
     }
     drawWithOutline(context, color, thickness, target) {
         const jobTrophyImage = characterClasses[this.jobKey].achievementImage;
-        drawOutlinedImage(context, jobTrophyImage, 'white', 2, {'left': 0, 'top': 0, 'width': 40, 'height': 40}, target);
+        drawOutlinedImage(context, jobTrophyImage, 'white', 1, {'left': 0, 'top': 0, 'width': 40, 'height': 40}, target);
         //drawSourceWithOutline(context, jobIcons[this.jobKey], color, thickness, target);
         this.render(context, target);
     }

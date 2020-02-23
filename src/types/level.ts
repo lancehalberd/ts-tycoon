@@ -1,10 +1,18 @@
-import { backgrounds } from 'app/content/backgrounds';
-import { ActiveEffect, Actor, Exit, FixedObject, FullRectangle, ShortRectangle } from 'app/types';
+import { areaTypes } from 'app/content/areaTypes';
+import {
+    ActiveEffect, Actor, Animation, Exit,
+    FixedObject, FullRectangle, ShortRectangle,
+} from 'app/types';
 
 // Things the exist in areas need at least these spatial properties.
 export interface AreaEntity {
     x: number, y: number, z: number,
     width: number, height: number,
+}
+
+export interface AreaType {
+    drawFloor: (context: CanvasRenderingContext2D, area: Area) => void;
+    drawBackground: (context: CanvasRenderingContext2D, area: Area) => void;
 }
 
 export interface LocationTarget extends AreaEntity {
@@ -28,7 +36,7 @@ export interface LevelData {
     description: string,
     level: number,
     coords: number[],
-    background: keyof typeof backgrounds,
+    background: keyof typeof areaTypes,
     unlocks: string[],
     skill: string,
     enemySkills: string[],
@@ -82,10 +90,8 @@ export interface Area {
     areas?: Map<string, Area>,
     width: number,
     wallDecorations?: any[],
-    rightWallDecorations?: any[],
-    leftWallDecorations?: any[],
-    rightWall?: string,
-    leftWall?: string,
+    rightWall?: Animation,
+    leftWall?: Animation,
     left: number,
     cameraX: number,
     time: number,

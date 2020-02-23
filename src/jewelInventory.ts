@@ -71,7 +71,7 @@ function redrawInventoryJewel(jewel: Jewel) {
     }
     //centerShapesInRectangle([jewel.shape], rectangle(0, 0, jewel.canvas.width, jewel.canvas.height));
     jewel.context.clearRect(0, 0, jewel.canvas.width, jewel.canvas.height);
-    drawJewel(jewel.context, jewel.shape, getMousePosition(jewel.canvas));
+    drawJewel(jewel.context, jewel.shape, getMousePosition(jewel.canvas), null, 0.4, true);
     if (jewelInventoryState.overVertex && (jewelInventoryState.draggedJewel == jewel || jewelInventoryState.overJewel == jewel)) {
         jewel.context.strokeStyle = 'black';
         jewel.context.lineWidth = 1;

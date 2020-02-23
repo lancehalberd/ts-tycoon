@@ -12,6 +12,7 @@ import { abilities } from 'app/content/abilities';
 import { effectAnimations } from 'app/content/effectAnimations';
 import { enchantedMonsterBonuses, imbuedMonsterBonuses, makeMonster, updateMonster } from 'app/content/monsters';
 import { addTimedEffect, animationEffect } from 'app/effects';
+import { RANGE_UNIT } from 'app/gameConstants';
 import {
     appendTextPopup, castAttackSpell, createAttackStats,
     performAttack, performAttackProper
@@ -96,9 +97,9 @@ export function isTargetInRangeOfSkill(actor: Actor, skill: Action, pointOrTarge
     const skillTags = skill.variableObject.tags;
     const isAOE = skill.stats.cleave || skillTags['nova'] || skillTags['field'] || skillTags['blast'] || skillTags['rain'];
     // Nova skills use area instead of range for checking for valid targets.
-    if (skillTags['nova']) return getDistance(actor, pointOrTarget) < skill.stats.area * 32 / 2;
-    if (skillTags['field']) return getDistance(actor, pointOrTarget) < skill.stats.area * 32 / 2;
-    return getDistance(actor, pointOrTarget) <= (skill.stats.range + (skill.stats.teleport || 0)) * 32;
+    if (skillTags['nova']) return getDistance(actor, pointOrTarget) < skill.stats.area * RANGE_UNIT / 2;
+    if (skillTags['field']) return getDistance(actor, pointOrTarget) < skill.stats.area * RANGE_UNIT / 2;
+    return getDistance(actor, pointOrTarget) <= (skill.stats.range + (skill.stats.teleport || 0)) * RANGE_UNIT;
 }
 
 export function isActorDying(actor: Actor): boolean {
@@ -327,12 +328,12 @@ function getEnemiesLikelyToBeHitIfEnemyIsTargetedBySkill(actor: Actor, skill: Ac
     for (let i = 0; i < actor.enemies.length; i++) {
         const target = actor.enemies[i];
         if (skillTags['nova'] || skillTags['field']) {
-            if (getDistance(actor, target) < skill.stats.area * 32) {
+            if (getDistance(actor, target) < skill.stats.area * RANGE_UNIT) {
                 targets.push(target);
                 continue;
             }
         } else if (skill.stats.area) {
-            if (getDistance(skillTarget, target) < skill.stats.area * 32) {
+            if (getDistance(skillTarget, target) < skill.stats.area * RANGE_UNIT) {
                 targets.push(target);
                 continue;
             }
@@ -343,7 +344,7 @@ function getEnemiesLikelyToBeHitIfEnemyIsTargetedBySkill(actor: Actor, skill: Ac
 function getActorsInRange(source: Actor, range: number, targets: Actor[]): Actor[] {
     const targetsInRange = [];
     for (const target of targets) {
-        if (target !== source && getDistance(source, target) < range * 32) {
+        if (target !== source && getDistance(source, target) < range * RANGE_UNIT) {
             targetsInRange.push(target);
         }
     }
@@ -521,9 +522,9 @@ function cloneActor(actor: Actor, skill: Action): Actor {
     } else {
         clone = makeMonster({'key': actor.base.key}, actor.level, [], 0);
     }
-    clone.x = actor.x + actor.heading[0] * 32;
-    clone.y = actor.y + actor.heading[1] * 32;
-    clone.z = actor.z + actor.heading[2] * 32;
+    clone.x = actor.x + actor.heading[0] * RANGE_UNIT;
+    clone.y = actor.y + actor.heading[1] * RANGE_UNIT;
+    clone.z = actor.z + actor.heading[2] * RANGE_UNIT;
     clone.heading = actor.heading.slice();
     initializeActorForAdventure(clone);
     clone.area = actor.area;
@@ -756,8 +757,8 @@ reactionDefinitions.criticalCounter = {
         if (counterSkill.stats.dodgeAttack) attackStats.dodged = true;
         if (counterSkill.stats.stopAttack) attackStats.stopped = true;
         if (counterSkill.stats.distance) {
-            actor.pull = {'x': actor.x + actor.heading[0] * (counterSkill.stats.distance || 64),
-                        'z': actor.z + actor.heading[2] * (counterSkill.stats.distance || 64),
+            actor.pull = {'x': actor.x + actor.heading[0] * (counterSkill.stats.distance || RANGE_UNIT * 2),
+                        'z': actor.z + actor.heading[2] * (counterSkill.stats.distance || RANGE_UNIT * 2),
                         'time': actor.time + (counterSkill.stats.moveDuration || .3), 'damage': 0};
         }
         if (counterSkill.stats.buff) {
@@ -779,12 +780,12 @@ reactionDefinitions.counterAttack = {
         }
         var distance = getDistance(actor, attackStats.source);
         // Can only counter attack if the target is in range, and
-        if (distance > counterAttackSkill.stats.range * 32 + 4) { // Give the range a tiny bit of lee way
+        if (distance > counterAttackSkill.stats.range * RANGE_UNIT + 4) { // Give the range a tiny bit of lee way
             //console.log("Attacker is too far away: " + [distance, counterAttackSkill.stats.range]);
             return false;
         }
         // The chance to counter attack is reduced by a factor of the distance.
-        if (Math.random() > Math.min(1, 128 / (distance + 64))) {
+        if (Math.random() > Math.min(1, 4 * RANGE_UNIT / (distance + 2 * RANGE_UNIT))) {
             //console.log("Failed distance roll against: " + [distance, Math.min(1, 128 / (distance + 64))]);
             return false;
         }
@@ -826,7 +827,7 @@ reactionDefinitions.evadeAndCounter = {
         if (!attackStats.evaded) return false;
         // Can only counter attack if the target is in range, and the chance to
         // counter attack is reduced by a factor of the distance.
-        return getDistance(actor, attackStats.source) <= evadeAndCounterSkill.stats.range * 32;
+        return getDistance(actor, attackStats.source) <= evadeAndCounterSkill.stats.range * RANGE_UNIT;
     },
     use: function (actor, evadeAndCounterSkill, attackStats) {
         performAttack(actor, evadeAndCounterSkill, attackStats.source);
@@ -935,7 +936,7 @@ actionDefinitions.banish = {
                 return;
             }
             var distance = getDistance(actor, enemy);
-            if (distance < 32 * banishSkill.stats.distance) {
+            if (distance < RANGE_UNIT * banishSkill.stats.distance) {
                 banishTarget(actor, enemy, banishSkill.stats.distance, (banishSkill.stats.knockbackRotation || 30));
                 // The shockwave upgrade applies the same damage to the targets hit by the shockwave.
                 if (banishSkill.stats.shockwave) {
@@ -956,9 +957,9 @@ function banishTarget(actor: Actor, target: Actor, range: number, rotation: numb
     const dz = target.z - actor.z;
     const mag = Math.sqrt(dx * dx + dz * dz);
     target.pull = {
-        'x': actor.x + actor.width / 2 + 32 * range * dx / mag,
-        'z': actor.z + actor.width / 2 + 32 * range * dz / mag,
-        'delay': target.time + getDistance(actor, target) * .02 / 32,
+        'x': actor.x + actor.width / 2 + RANGE_UNIT * range * dx / mag,
+        'z': actor.z + actor.width / 2 + RANGE_UNIT * range * dz / mag,
+        'delay': target.time + getDistance(actor, target) * .02 / RANGE_UNIT,
         'time': target.time + range * .02, 'damage': 0
     };
     target.rotation = getXDirection(actor) * rotation;
@@ -989,7 +990,7 @@ actionDefinitions.charm = {
 };
 actionDefinitions.charge = {
     shouldUse: function (actor, chargeSkill, target) {
-        return getDistance(actor, target) >= 128;
+        return getDistance(actor, target) >= 4 * RANGE_UNIT;
     },
     use: function (actor, chargeSkill, target) {
         actor.chargeEffect = {

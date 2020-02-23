@@ -19,7 +19,7 @@ import { query } from 'app/dom';
 import { drawBoardBackground } from 'app/drawBoard';
 import { expireTimedEffects } from 'app/effects';
 import { unlockItemLevel } from 'app/equipmentCrafting';
-import { FRAME_LENGTH, MIN_SLOW, MIN_Z, MAX_Z } from 'app/gameConstants';
+import { ADVENTURE_WIDTH, FRAME_LENGTH, MIN_SLOW, MIN_Z, MAX_Z, RANGE_UNIT } from 'app/gameConstants';
 import { increaseAgeOfApplications } from 'app/heroApplication';
 import { animaLootDrop, coinsLootDrop } from 'app/loot';
 import { setActorInteractionTarget } from 'app/main';
@@ -123,7 +123,7 @@ export function enterArea(actor: Actor, {x, z, areaKey}: Exit) {
     actor.y = 0;
     actor.z = z;
     if (state.selectedCharacter && actor === state.selectedCharacter.hero) {
-        area.cameraX = Math.round(Math.max(area.left, Math.min(area.width - 800, actor.x - 400)));
+        area.cameraX = Math.round(Math.max(area.left, Math.min(area.width - ADVENTURE_WIDTH, actor.x - ADVENTURE_WIDTH / 2)));
     }
     if (isNaN(actor.x) || isNaN(actor.z)) {
         debugger;
@@ -427,7 +427,7 @@ function processStatusEffects(target: Actor) {
 export function getAllInRange(x: number, range: number, targets: Actor[]) {
     const targetsInRange = [];
     for (let i = 0; i < targets.length; i++) {
-        if (Math.abs(targets[i].x - x) <= range * 32) {
+        if (Math.abs(targets[i].x - x) <= range * RANGE_UNIT) {
             targetsInRange.push(targets[i]);
         }
     }
@@ -590,6 +590,7 @@ export function actorShouldAutoplay(actor: Actor) {
         return true; // Only character heroes can be manually controlled.
     }
     return !actor.character.isStuckAtShrine
+        && actor.area && !actor.area.isGuildArea
         && (actor.character.autoplay || (actor.character !== getState().selectedCharacter && actor.enemies.length));
 }
 

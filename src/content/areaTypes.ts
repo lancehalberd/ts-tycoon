@@ -1,5 +1,15 @@
-import { requireImage } from 'app/images';
 
+import {
+    ADVENTURE_HEIGHT, ADVENTURE_WIDTH,
+    BACKGROUND_HEIGHT, BOTTOM_HUD_RECT
+} from 'app/gameConstants';
+import { requireImage } from 'app/images';
+import { createAnimation, drawFrame } from 'app/utils/animations';
+import { r, fillRect } from 'app/utils/index';
+import SRandom from 'app/utils/SRandom';
+
+import { AreaType } from 'app/types';
+/*
 interface BackgroundSource {
     image: HTMLCanvasElement | HTMLImageElement,
     x: number,
@@ -159,4 +169,79 @@ export const backgrounds = {
         {'source': bgSources.houseCurtains, 'spacing': 3},
         {'source': bgSources.houseTiles, 'spacing': 2},
     ],
+};*/
+const FLOOR_TILE_SIZE = 32;
+const BG_TILE_WIDTH = 256;
+const BG_TILE_HEIGHT = BACKGROUND_HEIGHT;
+const meadowFrames = createAnimation('gfx2/areas/meadowTiles.png', r(0, 0, 32, 32), {cols: 6}).frames;
+const meadowSky = createAnimation('gfx2/areas/meadowSky.png', r(0, 0, 320, BG_TILE_HEIGHT)).frames[0];
+const meadowBackFrontFrames = createAnimation('gfx2/areas/meadowBackFront.png',
+    r(0, 0, BG_TILE_WIDTH, 86), {cols: 2}).frames;
+const FieldRenderer: AreaType = {
+    drawFloor(context, area) {
+        let w = FLOOR_TILE_SIZE;
+        let h = FLOOR_TILE_SIZE;
+        let x = Math.floor(area.cameraX / w) * w;
+        while (x < area.cameraX + ADVENTURE_WIDTH) {
+            for (let row = 0; row < 2; row++) {
+                const frame = SRandom.seed(x + row).element(meadowFrames);
+                drawFrame(context, frame, {x: x - area.cameraX, y: BACKGROUND_HEIGHT + h * row, w, h});
+            }
+            x += w;
+        }
+        fillRect(context, BOTTOM_HUD_RECT, '#883');
+    },
+    drawBackground(context, area) {
+        drawFrame(context, meadowSky, {...meadowSky, x: 0, y: 0});
+        let w = BG_TILE_WIDTH;
+        let h = 86;
+        let x = Math.floor(area.cameraX / w) * w;
+        while (x < area.cameraX + ADVENTURE_WIDTH) {
+            const frame = SRandom.seed(x).element(meadowBackFrontFrames);
+            drawFrame(context, frame, {x: x - area.cameraX, y: 0, w, h});
+            x += w;
+        }
+    }
+};
+
+const guildFrames = createAnimation('gfx2/areas/guildTiles.png', r(0, 0, FLOOR_TILE_SIZE, FLOOR_TILE_SIZE), {cols: 1}).frames;
+const guildBackFrontFrames = createAnimation('gfx2/areas/guildBack.gif',
+    r(0, 0, 128, BG_TILE_HEIGHT), {cols: 1}).frames;
+const GuildRenderer: AreaType = {
+    drawFloor(context, area) {
+        let w = FLOOR_TILE_SIZE;
+        let h = FLOOR_TILE_SIZE;
+        let x = Math.floor(area.cameraX / w) * w;
+        while (x < area.cameraX + ADVENTURE_WIDTH) {
+            for (let row = 0; row < 2; row++) {
+                const frame = SRandom.seed(x + row).element(guildFrames);
+                drawFrame(context, frame, {x: x - area.cameraX, y: BACKGROUND_HEIGHT + h * row, w, h});
+            }
+            x += w;
+        }
+        fillRect(context, BOTTOM_HUD_RECT, '#433');
+    },
+    drawBackground(context, area) {
+        let w = 128;
+        let h = BG_TILE_HEIGHT;
+        let x = Math.floor(area.cameraX / w) * w;
+        while (x < area.cameraX + ADVENTURE_WIDTH) {
+            const frame = SRandom.seed(x).element(guildBackFrontFrames);
+            drawFrame(context, frame, {x: x - area.cameraX, y: 0, w, h});
+            x += w;
+        }
+    }
+};
+
+export const areaTypes = {
+    oldGuild: GuildRenderer,
+    guildBasement: GuildRenderer,
+    forest: FieldRenderer,
+    garden: FieldRenderer,
+    orchard: FieldRenderer,
+    field: FieldRenderer,
+    cemetery: FieldRenderer,
+    cave: FieldRenderer,
+    beach: FieldRenderer,
+    town: FieldRenderer,
 };

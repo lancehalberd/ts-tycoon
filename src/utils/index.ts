@@ -120,10 +120,16 @@ export function resize(element: HTMLElement, width: number, height: number, left
 export function constrain(value: number, min: number, max: number): number {
     return Math.min(max, Math.max(min, value));
 }
-export function fillRectangle(context: CanvasRenderingContext2D, rectangle: FullRectangle) {
+export function fillRectangle(context: CanvasRenderingContext2D, rectangle: FullRectangle, color: string = null) {
+    if (color) {
+        context.fillStyle = color;
+    }
     context.fillRect(rectangle.left, rectangle.top, rectangle.width, rectangle.height);
 }
-export function fillRect(context: CanvasRenderingContext2D, {x, y, w, h}: ShortRectangle) {
+export function fillRect(context: CanvasRenderingContext2D, {x, y, w, h}: ShortRectangle, color: string = null) {
+    if (color) {
+        context.fillStyle = color;
+    }
     context.fillRect(x, y, w, h);
 }
 export function drawRectangle(context: CanvasRenderingContext2D, rectangle: FullRectangle) {
@@ -134,6 +140,9 @@ export function rectangle(left: number, top: number, width: number, height: numb
 }
 export function r(x: number, y: number, w: number, h: number): ShortRectangle {
     return {x, y, w, h};
+}
+export function toR(r: FullRectangle) {
+    return {x: r.left, y: r.top, w: r.width, h: r.height};
 }
 export function shrinkRectangle(rectangle: FullRectangle, margin: number): FullRectangle {
     return {'left': rectangle.left + margin, 'width': rectangle.width - 2 * margin,

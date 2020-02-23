@@ -2,14 +2,14 @@ import { startLevel } from 'app/adventure';
 import { updateAdventureButtons } from 'app/adventureButtons';
 import { setSelectedCharacter } from 'app/character';
 import { abilities } from 'app/content/abilities';
-import { backgrounds } from 'app/content/backgrounds';
+import { areaTypes } from 'app/content/areaTypes';
 import { instantiateLevel } from 'app/content/levels';
 import { characterClasses } from 'app/content/jobs';
 import { map } from 'app/content/mapData';
 import { monsters } from 'app/content/monsters';
 import { testCharacters } from 'app/development/testCharacters';
 import { getElementIndex, handleChildEvent, mainCanvas, mainContext, query, queryAll, tagElement, toggleElements } from 'app/dom';
-import { MAP_LEFT, MAP_TOP, MAP_WIDTH, MAP_HEIGHT, WORLD_RADIUS } from 'app/gameConstants';
+import { ADVENTURE_SCALE, MAP_LEFT, MAP_TOP, MAP_WIDTH, MAP_HEIGHT, WORLD_RADIUS } from 'app/gameConstants';
 import { getMapTarget, mapLocation, mapState } from 'app/map';
 import { exportCharacter, importCharacter } from 'app/saveGame';
 import { getState } from 'app/state';
@@ -54,8 +54,8 @@ export function initializeLevelEditing() {
     for (let level = 1; level < 100; level++) {
         levelSelect.appendChild(optionElement('', 'Lv ' + level, level));
     }
-    for (let backgroundKey in backgrounds) {
-        backgroundSelect.appendChild(optionElement('', backgroundKey, backgroundKey));
+    for (let areaKey in areaTypes) {
+        backgroundSelect.appendChild(optionElement('', areaKey, areaKey));
     }
     levelSkillSelect.appendChild(optionElement('', 'none', ''));
     for (let skillKey in abilities) {
@@ -588,7 +588,7 @@ function deleteLevel(level) {
 }
 
 mainCanvas.addEventListener('dblclick', function (event) {
-    const [x, y] = getMousePosition(mainCanvas);
+    const [x, y] = getMousePosition(mainCanvas, ADVENTURE_SCALE);
     if (editingMapState.editingMap) {
         startEditingLevel(getMapTarget(x, y));
     }

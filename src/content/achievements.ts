@@ -138,13 +138,13 @@ export function addTrophyToAltar(altar: TrophyAltar, trophy: JobAchievement) {
     addTrophyBonuses(trophy);
 }
 
-export const trophySelectionRectangle = rectangle(195, 100, 410, 300);
+export const trophySelectionRectangle = rectangle(60, 25, 200, 150);
 export function drawTrophySelection() {
     drawRectangleBackground(mainContext, trophySelectionRectangle);
     const trophySpacing = 5;
     const checkSource = {'left': 68, 'top': 90, 'width': 16, 'height': 16};
-    let left = 10;
-    let top = 10;
+    let left = 5;
+    let top = 5;
     const { altarTrophies } = getState();
     for (let trophyKey in altarTrophies) {
         const trophy = altarTrophies[trophyKey];
@@ -152,19 +152,19 @@ export function drawTrophySelection() {
         trophy.top = trophySelectionRectangle.top + top;
         trophy.render(mainContext, trophy);
         if (trophy.areaKey) {
-            const target = {'left': trophy.left + trophy.width - 20, 'top': trophy.top + trophy.height - 20, 'width': 16, 'height': 16};
+            const target = {'left': trophy.left + trophy.width - 5, 'top': trophy.top + trophy.height - 5, 'width': 6, 'height': 6};
             mainContext.fillStyle = 'white';
             mainContext.strokeStyle = 'black';
             mainContext.lineWidth = 2;
             mainContext.beginPath();
-            mainContext.arc(target.left + target.width / 2, target.top + target.height / 2, 10, 0, 2*Math.PI);
+            mainContext.arc(target.left + target.width / 2, target.top + target.height / 2, 4, 0, 2*Math.PI);
             mainContext.fill();
             mainContext.stroke();
             drawImage(mainContext, requireImage('gfx/militaryIcons.png'), checkSource, target);
         }
         left += TROPHY_SIZE + trophySpacing;
-        if (left + TROPHY_SIZE + trophySpacing > trophySelectionRectangle.width - 10) {
-            left = 10;
+        if (left + TROPHY_SIZE + trophySpacing > trophySelectionRectangle.width - 5) {
+            left = 5;
             top += TROPHY_SIZE + trophySpacing;
         }
     }

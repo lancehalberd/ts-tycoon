@@ -1,7 +1,6 @@
 import { actorHelpText } from 'app/character';
 import { abilities } from 'app/content/abilities';
 import { getChoosingTrophyAltar, getTrophyPopupTarget } from 'app/content/achievements';
-import { unprojectLeftWallCoords, unprojectRightWallCoords} from 'app/content/guild';
 import { getUpgradingObject, upgradeButton } from 'app/content/upgradeButton';
 import {
     jewelInventoryContainer, mainCanvas, mouseContainer, tagElement,
@@ -10,7 +9,7 @@ import {
 import { getGlobalHud } from 'app/drawArea';
 import { getAbilityPopupTarget } from 'app/drawSkills';
 import { equipmentCraftingState } from 'app/equipmentCrafting';
-import { GROUND_Y } from 'app/gameConstants';
+import { ADVENTURE_SCALE, GROUND_Y } from 'app/gameConstants';
 import { abilityHelpText, getItemHelpText } from 'app/helpText';
 import { drawOutlinedImage } from 'app/images';
 import { getItemForElement, inventoryState } from 'app/inventory';
@@ -19,7 +18,7 @@ import { getElementJewel } from 'app/jewels';
 import { jewelInventoryState } from 'app/jewelInventory';
 import { getState } from 'app/state';
 import { abbreviate } from 'app/utils/formatters';
-import { ifdefor, isPointInRect, isPointInRectObject, rectangle } from 'app/utils/index';
+import { ifdefor, isPointInRect, isPointInRectObject, isPointInShortRect, rectangle } from 'app/utils/index';
 import { getMousePosition, isMouseOverElement } from 'app/utils/mouse';
 
 import { Actor, FullRectangle } from 'app/types';
@@ -163,34 +162,6 @@ function getMainCanvasMouseTarget(x, y) {
             if (object.isOver(x, y)) return object;
         } else if (isPointInRect(x, y, left, top, targetRectangle.width, targetRectangle.height)) return object;
     }
-    if (area.cameraX + x < 60) {
-        const coords = unprojectLeftWallCoords(area, x, y);
-        // wallMouseCoords = coords;
-        for (const leftWallDecoration of (area.leftWallDecorations || [])) {
-            if (!isCanvasTargetActive(leftWallDecoration)) continue;
-            // decoration.target stores the rectangle that the decoration was drawn to on the wallCanvas before
-            // it is projected to the wall trapezoid and uses the same coordinates the unprojectRightWallCoords returns in.
-            const target = leftWallDecoration.target;
-            // console.log([coords[0], coords[1], target.left, target.top, target.width, target.height]);
-            if (isPointInRect(coords[0], coords[1], target.left, target.top, target.width, target.height)) {
-                return leftWallDecoration;
-            }
-        }
-    }
-    if (area.cameraX + x > area.width - 60) {
-        const coords = unprojectRightWallCoords(area, x, y);
-        // wallMouseCoords = coords;
-        for (const rightWallDecoration of (area.rightWallDecorations || [])) {
-            if (!isCanvasTargetActive(rightWallDecoration)) continue;
-            // decoration.target stores the rectangle that the decoration was drawn to on the wallCanvas before
-            // it is projected to the wall trapezoid and uses the same coordinates the unprojectRightWallCoords returns in.
-            const target = rightWallDecoration.target;
-            // console.log([coords[0], coords[1], target.left, target.top, target.width, target.height]);
-            if (isPointInRect(coords[0], coords[1], target.left, target.top, target.width, target.height)) {
-                return rightWallDecoration;
-            }
-        }
-    }
     return null;
 }
 window['getMainCanvasMouseTarget'] = getMainCanvasMouseTarget;
@@ -251,11 +222,13 @@ export function checkToRemovePopup() {
         removePopup();
         return;
     }
-    const [x, y] = getMousePosition(mainCanvas);
+    const [x, y] = getMousePosition(mainCanvas, ADVENTURE_SCALE);
     if (mainCanvas.style.display !== 'none') {
         const { selectedCharacter } = getState();
-        //console.log(canvasPopupTarget, x, y, isMouseOverCanvasElement(x, y, canvasPopupTarget));
-        if (canvasPopupTarget && !canvasPopupTarget.isDead && canvasPopupTarget.area === selectedCharacter.hero.area &&
+        // console.log(canvasPopupTarget, x, y, isMouseOverCanvasElement(x, y, canvasPopupTarget));
+        if (canvasPopupTarget &&
+            !canvasPopupTarget.isDead &&
+            (!canvasPopupTarget.area || canvasPopupTarget.area === selectedCharacter.hero.area) &&
             isMouseOverCanvasElement(x, y, canvasPopupTarget)) {
             return;
         }
@@ -281,7 +254,9 @@ function isMouseOverCanvasElement(x, y, element) {
         return element.isOver(x, y);
     }
     if (element.target) {
-        return isPointInRectObject(x, y, element.target);
+        // Support both short/full rectangles
+        if (element.target.w) return isPointInShortRect(x, y, element.target);
+        if (element.target.width) return isPointInRectObject(x, y, element.target);
     }
     if (element.targetType === 'actor') {
         return isPointInRectObject(x, y, element);

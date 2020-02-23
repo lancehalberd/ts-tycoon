@@ -16,8 +16,8 @@
         margin-left: auto;
         margin-right: auto;
         padding-top: 2px;
-        width: 800px;
-        min-height: 600px;
+        width: 960px;
+        min-height: 540px;
         background-color: black;
         background-repeat: repeat;
         top: 0px;
@@ -35,6 +35,15 @@
         display: inline-block;
         width: 200px;
         margin-right: 20px;
+    }
+    /* https://stackoverflow.com/questions/7615009/disable-interpolation-when-scaling-a-canvas */
+    .mainCanvas {
+        image-rendering: optimizeSpeed;             /* Older versions of FF          */
+        image-rendering: -moz-crisp-edges;          /* FF 6.0+                       */
+        image-rendering: -webkit-optimize-contrast; /* Safari                        */
+        image-rendering: -o-crisp-edges;            /* OS X & Windows Opera (12.02+) */
+        image-rendering: pixelated;                 /* Awesome future-browsers       */
+        -ms-interpolation-mode: nearest-neighbor;
     }
     </style>
     <link href="https://fonts.googleapis.com/css?family=Cormorant+SC:400,700" rel="stylesheet" />
@@ -71,7 +80,11 @@
         // -->
         <div class="js-jewelContext js-itemContext pointsBarPadding"> </div>
         <div class="js-mainCanvasContainer mainCanvasContainer js-adventureContext js-guildContext js-mapContext">
-            <canvas class="js-mainCanvas mainCanvas" width="800" height="600" style="background-color: blue;"></canvas>
+            <canvas
+                class="js-mainCanvas mainCanvas"
+                width="320" height="180"
+                style="background-color: blue; transform-origin: 0 0; transform: scale(3);"
+            ></canvas>
             <div class="js-editingControls editingControlsTop" style="display: none">
                 <select class="js-levelSelect"></select>
                 <input class="js-levelNameInput" placeholder="Level Name" />

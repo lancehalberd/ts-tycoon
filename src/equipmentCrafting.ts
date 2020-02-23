@@ -15,7 +15,7 @@ import { hidePointsPreview, points, previewPointsChange, spend } from 'app/point
 import { addPopup, getPopup, removePopup } from 'app/popup';
 import { saveGame } from 'app/saveGame';
 import { getState } from 'app/state';
-import { ifdefor } from 'app/utils/index';
+import { ifdefor, toR } from 'app/utils/index';
 import { fixedDigits } from 'app/utils/formatters';
 import { getMousePosition } from 'app/utils/mouse';
 
@@ -291,9 +291,11 @@ export function drawCraftingCanvas() {
                 context.fill();
                 const color = (savedState.craftedItems[item.key] & CRAFTED_UNIQUE) ? '#4af' : '#4c4';
                 const tint = (savedState.craftedItems[item.key] & CRAFTED_UNIQUE) ? .7 : 0;
+                const source = item.iconSource;
                 drawTintedImage(context, item.iconSource.image, color, tint,
-                            item.iconSource,
-                            {'left': item.craftingX, 'top': item.craftingY, 'width': craftingSlotSize, 'height': craftingSlotSize});
+                    toR(source),
+                    {x: item.craftingX, y: item.craftingY, w: craftingSlotSize, h: craftingSlotSize}
+                );
                 //context.drawImage(item.iconSource.image, item.iconSource.left, item.iconSource.top, item.iconSource.width, item.iconSource.height,
                  //               item.craftingX, item.craftingY, craftingSlotSize, craftingSlotSize);
             } else {

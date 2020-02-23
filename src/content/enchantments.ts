@@ -289,10 +289,10 @@ addSuffix(32, 'Avoidance', [...armorSlots, 'Travelers Cloak'], {'+evasion': [22,
 addSuffix(42, 'Illusion', [...armorSlots, 'Travelers Cloak'], {'+evasion': [32, 44]});
 addSuffix(52, 'Vanishing', [...armorSlots, 'Travelers Cloak'], {'+evasion': [46, 60]});
 
-addSuffix(1, 'Speed', 'feet', {'+speed': [10, 20]});
-addSuffix(20, 'Velocity', 'feet', {'+speed': [25, 40]});
-addSuffix(40, 'Acceleration', 'feet', {'+speed': [50, 70]});
-addSuffix(60, 'Flight', 'feet', {'+speed': [80, 100]});
+addSuffix(1, 'Speed', 'feet', {'+speed': [5, 10]});
+addSuffix(20, 'Velocity', 'feet', {'+speed': [15, 20]});
+addSuffix(40, 'Acceleration', 'feet', {'+speed': [25, 35]});
+addSuffix(60, 'Flight', 'feet', {'+speed': [40, 50]});
 
 addSuffix(20, 'Collision', 'arms', {'+fist:weaponPhysicalDamage': [30, 50]});
 addSuffix(40, 'Shock', 'arms', {'+fist:weaponPhysicalDamage': [50, 90]});

@@ -6,12 +6,12 @@ import { addBonusSourceToObject, recomputeDirtyStats, removeBonusSourceFromObjec
 import { effectAnimations } from 'app/content/effectAnimations';
 import { mainContext } from 'app/dom';
 import { drawGroundCircle, drawOnGround } from 'app/drawArea';
-import { FRAME_LENGTH, GROUND_Y, MAX_Z, MIN_Z } from 'app/gameConstants';
+import { FRAME_LENGTH, GROUND_Y, MAX_Z, MIN_Z, RANGE_UNIT } from 'app/gameConstants';
 import { drawImage, drawTintedImage } from 'app/images';
 import { applyAttackToTarget, getAttackY } from 'app/performAttack';
 import { isActorDying } from 'app/useSkill';
 import { drawFrame, getFrame } from 'app/utils/animations';
-import { rectangle } from 'app/utils/index';
+import { r } from 'app/utils/index';
 import Random from 'app/utils/Random';
 
 import {
@@ -27,7 +27,7 @@ export function songEffect(attackStats: AttackData) {
     if (!attackStats.attack.stats.area) {
         throw new Error('Song effect called with no area set.');
     }
-    const radius = attackStats.attack.stats.area * (attackStats.effectiveness || 1) * 32;
+    const radius = attackStats.attack.stats.area * (attackStats.effectiveness || 1) * RANGE_UNIT;
     const endTime = attackStats.source.time + attackStats.attack.stats.duration;
     const followTarget = attackStats.source;
     const height =  attackStats.attack.base.height || 60;
@@ -120,7 +120,7 @@ export function songEffect(attackStats: AttackData) {
 // Used to play an animation that has no other effects, for example, the sparkles for the heal spell.
 // Set target to a character to have an effect follow them, or to a static target to display in place.
 export function animationEffect(
-    animation, target: Target, {scale = [1, 1], loop = false, frameSpeed = 1, tintColor = null, tintValue = null}
+    animation: Animation, target: Target, {scale = [1, 1], loop = false, frameSpeed = 1, tintColor = null, tintValue = null}
 ): ActiveEffect {
     return {
         target,
@@ -144,14 +144,13 @@ export function animationEffect(
             mainContext.translate((this.x - area.cameraX), GROUND_Y - this.y - this.z / 2 - target.height / 2);
             mainContext.fillStyle = 'red';
             // fillRectangle(mainContext, rectangle(-this.width / 2, -this.height / 2, this.width, this.height));
-            var frame = animation.frames[Math.floor(this.currentFrame) % animation.frames.length];
-            var sourceRectangle = rectangle(frame[0], frame[1], frame[2], frame[3]);
-            var targetRectangle = rectangle(-this.width / 2, -this.height / 2, this.width, this.height);
+            const frame = animation.frames[Math.floor(this.currentFrame) % animation.frames.length];
+            const targetRectangle = r(-this.width / 2, -this.height / 2, this.width, this.height);
             if (tintColor) {
-                drawTintedImage(mainContext, animation.image, tintColor, tintValue || .5,
-                    sourceRectangle, targetRectangle);
+                drawTintedImage(mainContext, frame.image, tintColor, tintValue || .5,
+                    frame, targetRectangle);
             } else {
-                drawImage(mainContext, animation.image, sourceRectangle, targetRectangle);
+                drawFrame(mainContext, frame, targetRectangle);
             }
             mainContext.restore();
         }
@@ -172,7 +171,7 @@ export function explosionEffect(attackStats: AttackData, x: number, y: number, z
     if (!attack.stats.area) {
         throw new Error('Explosion effect called with no area set.');
     }
-    const radius = attack.stats.area * (attackStats.effectiveness || 1) * 32;
+    const radius = attack.stats.area * (attackStats.effectiveness || 1) * RANGE_UNIT;
     let height = radius * 2;
     if (attack.base.height) {
         height = attack.base.height;
@@ -218,8 +217,7 @@ export function explosionEffect(attackStats: AttackData, x: number, y: number, z
                     ? animation.frames[Math.min(frames - 1, self.currentFrame)]
                     : animation.endFrames[Math.min(endFrames - 1, self.currentFrame - frames)];
                 currentRadius = currentRadius * (animation.scale || 1)
-                mainContext.drawImage(animation.image, frame[0], frame[1], frame[2], frame[3],
-                                               -currentRadius, -currentRadius, currentRadius * 2, currentRadius * 2);
+                drawFrame(mainContext, frame, {x: -currentRadius, y: -currentRadius, w: currentRadius * 2, h: currentRadius * 2})
             } else {
                 mainContext.beginPath();
                 mainContext.scale(1, height / (2 * radius));
@@ -246,7 +244,7 @@ export function novaEffect(attackStats: AttackData, x: number, y: number, z: num
     if (!attack.stats.area) {
         throw new Error('Explosion effect called with no area set.');
     }
-    const radius = attack.stats.area * (attackStats.effectiveness || 1) * 32;
+    const radius = attack.stats.area * (attackStats.effectiveness || 1) * RANGE_UNIT;
     const self: ActiveEffect = {
         'hitTargets': [], attackStats, x, y, z, 'width': 0, 'height': 0, 'currentFrame': 0, 'done': false,
         update(area) {
@@ -261,7 +259,7 @@ export function novaEffect(attackStats: AttackData, x: number, y: number, z: num
                 const animation = _.sample(attack.base.blastAnimation);
                 const scale = 1.5 * attack.stats.area / 5;
                 const width = scale * animation.frames[0][2];
-                if (currentRadius > 32 + width / 4 && blasts.length < 15) {
+                if (currentRadius > RANGE_UNIT + width / 4 && blasts.length < 15) {
                     const blastZ = self.z + Math.sin(theta) * (currentRadius - width / 4);
                     if (blastZ > MIN_Z && blastZ < MAX_Z) {
                         const blast = animationEffect(animation,
@@ -332,7 +330,7 @@ export function fieldEffect(attackStats: AttackData, followTarget: Actor) {
     if (!attack.stats.area) {
         throw new Error('Field effect called with no area set.');
     }
-    const radius = attack.stats.area * (attackStats.effectiveness || 1) * 32;
+    const radius = attack.stats.area * (attackStats.effectiveness || 1) * RANGE_UNIT;
     const height = (attack.base.height || radius * 2);
     const endTime = attackStats.source.time + attack.stats.duration;
     let nextHit = attackStats.source.time + 1 / attack.stats.hitsPerSecond;
@@ -427,9 +425,8 @@ function afterImage({attackStats, x, y, z, vx, vy, vz, color, size, t}: Projecti
             }
             const animation = attackStats.animation;
             if (animation) {
-                const frame = animation.frames[Math.floor((animation.fps || 10) * t * 20 / 1000) % animation.frames.length];
-                mainContext.drawImage(animation.image, frame[0], frame[1], frame[2], frame[3],
-                                   -size / 2, -size / 2, size, size);
+                const frame = getFrame(animation, t * FRAME_LENGTH);
+                drawFrame(mainContext, frame, {x: -size / 2 ,y: -size / 2, w: size, h: size});
             } else {
                 mainContext.fillStyle = '' + color || '#000';
                 mainContext.fillRect(-size / 2, -size / 2, size, size);
@@ -557,7 +554,7 @@ export function projectile(
                         var index = Math.floor(Math.random() * targets.length);
                         var newTarget = targets[index];
                         if (newTarget.health <= 0 || newTarget === self.target || newTarget.cloaked
-                            || getDistance(self.target, newTarget) > self.attackStats.attack.stats.range * 32
+                            || getDistance(self.target, newTarget) > self.attackStats.attack.stats.range * RANGE_UNIT
                         ) {
                             targets.splice(index--, 1);
                             continue;
@@ -591,10 +588,9 @@ export function projectile(
                 mainContext.rotate(-Math.atan2(self.vy, self.vx));
             }
             if (self.attackStats.animation) {
-                var animation = self.attackStats.animation;
-                var frame = animation.frames[Math.floor((animation.fps || 10) * self.t * 20 / 1000) % animation.frames.length];
-                mainContext.drawImage(animation.image, frame[0], frame[1], frame[2], frame[3],
-                                   -size / 2, -size / 2, size, size);
+                const animation = self.attackStats.animation;
+                const frame = getFrame(animation, self.t * FRAME_LENGTH);
+                drawFrame(mainContext, frame, r(-size / 2, -size / 2, size, size));
             } else {
                 mainContext.fillStyle = '' + color || '#000';
                 mainContext.fillRect(-size / 2, -size / 2, size, size);
@@ -608,11 +604,12 @@ export function projectile(
 
 export function getProjectileVelocity(attackStats: AttackData, x: number, y: number, z: number, target: Target) {
     const scale = (target.targetType === 'actor' && target.stats.scale) || 1;
-    const ty = (target.y || 0) + (target.height || 128) * 3 / 4;
+    const ty = (target.y || 0) + (target.targetType === 'location' ? 0 : target.height || 32) * 3 / 4;
     const v = [target.x - x, ty - y, target.z - z];
     let distance = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
     const speed = Math.min(attackStats.speed, distance / 5);
     const frameEstimate = distance / speed;
+    //console.log({x, y, z}, target, {ty, v, distance, speed, frameEstimate, gravity: attackStats.gravity});
     // Over a period of N frames, the projectile will fall roughly N^2 / 2, update target velocity accordingly
     v[1] += attackStats.gravity * frameEstimate * frameEstimate / 2;
     distance = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
@@ -626,6 +623,7 @@ export function getProjectileVelocity(attackStats: AttackData, x: number, y: num
         console.log(v);
         debugger;
     }
+    // console.log([v[0] * speed / distance, v[1] * speed / distance, v[2] * speed / distance]);
     return [v[0] * speed / distance, v[1] * speed / distance, v[2] * speed / distance];
 }
 
@@ -662,7 +660,7 @@ export function addTimedEffect(actor: Actor, effect: BonusSource & {base?: Varia
     if (area) {
         actor.allies.forEach(function (ally) {
             if (ally === actor) return;
-            if (getDistance(actor, ally) < area * 32) addTimedEffect(ally, effect, 0);
+            if (getDistance(actor, ally) < area * RANGE_UNIT) addTimedEffect(ally, effect, 0);
         });
     }
     const count = actor.allEffects.filter(currentEffect => currentEffect.base === timedEffect.base).length;

@@ -19,7 +19,17 @@ export interface FixedObjectData {
         image: HTMLImageElement | HTMLCanvasElement,
         left: number, top: number,
         width: number, height: number, depth: number
-    } | {actualWidth?: number, actualHeight?: number, width: number, height: number, depth: number},
+    } | {
+        actualWidth?: number,
+        actualHeight?: number,
+        // These 5 properties are just added to make TS happy.
+        xOffset?: number,
+        yOffset?: number,
+        left: number, top: number,
+        image?: HTMLImageElement | HTMLCanvasElement,
+        // I can't remember at the moment why there are two definitions for source.
+        width: number, height: number, depth: number
+    },
     action?: (hero: Hero) => void,
     getActiveBonusSources?: () => BonusSource[],
     level?: number,
@@ -81,6 +91,9 @@ export interface FixedObject extends FixedObjectData {
     done?: boolean,
     // Whether the automatic controller has considered interacting with this object yet.
     considered?: boolean,
+    lastScale?: number,
+    // Color to make this object flash (white for furniture you can level up).
+    flashColor?: string,
 }
 
 export interface RawGuildArea extends Partial<GuildArea>{

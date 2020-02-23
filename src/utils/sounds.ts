@@ -127,8 +127,12 @@ export function playSound(key, muted = false) {
         return;
     }
     sound.canPlayAfter = now + customDelay;
-    sound.howl.mute(muted);
-    sound.howl.play();
+    if (sound.howl) {
+        sound.howl.mute(muted);
+        sound.howl.play();
+    } else if (sound.play && !muted) {
+        sound.play();
+    }
 }
 
 let playingTracks = [], trackIsPlaying = false;
