@@ -95,7 +95,7 @@ document.addEventListener('keydown', function(event) {
                 setContext('guild');
             }
         } else if (state.selectedCharacter.context !== 'adventure') {
-            openWorldMap(state.selectedCharacter.adventurer);
+            openWorldMap();
         }
     }
     if (keycode == KEY_R && !inventoryState.dragHelper && !(event.metaKey || event.ctrlKey)) { // 'r' without ctrl/cmd while not dragging an item.

@@ -16,6 +16,7 @@ import { drawImage, requireImage } from 'app/images';
 import { isGameInitialized } from 'app/initialize';
 import { redrawInventoryJewels } from 'app/jewelInventory';
 import { getState } from 'app/state';
+import { renderChooseBlessing } from 'app/ui/chooseBlessing';
 import { arrMod, ifdefor, rectangle } from 'app/utils/index';
 import { centerShapesInRectangle } from 'app/utils/polygon';
 import { isPlayingTrack, playTrack } from 'app/utils/sounds';
@@ -66,7 +67,7 @@ export function render() {
         drawFrame(character.characterContext, frame, {x: -20, y:  -18, w: 96, h: 64});
         character.characterContext.globalAlpha = 1;
         if (state.selectedCharacter !== character) {
-            if (character.isStuckAtShrine) drawImage(character.characterContext, shrineSource.image, shrineSource, rectangle(0, 0, 16, 16));
+            if (character.activeShrine) drawImage(character.characterContext, shrineSource.image, shrineSource, rectangle(0, 0, 16, 16));
             else if (!character.adventurer.area) drawImage(character.characterContext, homeSource.image, homeSource, rectangle(0, 0, 16, 16));
         }
     }
@@ -80,8 +81,13 @@ export function render() {
                 drawBoardBackground(mainContext, board);
                 drawBoardJewelsProper(mainContext, [0, 0], board);
             }
-        } else drawArea(state.selectedCharacter.hero.area);
+        } else {
+            drawArea(state.selectedCharacter.hero.area);
+        }
         drawSkills(state.selectedCharacter.hero);
+    }
+    if (state.selectedCharacter.context === 'adventure' && state.selectedCharacter.activeShrine) {
+        renderChooseBlessing();
     }
     if (state.selectedCharacter.context === 'map') drawMap();
     if (state.selectedCharacter.context === 'item') drawCraftingCanvas();

@@ -99,7 +99,7 @@ export function updateDamageInfo(character: Character, statsPanelElement: HTMLEl
             monsterLevel = level ? level.level : hero.stats.level;
         }
     }
-    const dummy = makeMonster('dummy', monsterLevel, [], 0);
+    const dummy = makeMonster(hero.area, 'dummy', monsterLevel, [], 0);
     let hitPercent: number;
     // tie breaker is given to hitting, so for this calculation use 1 less evasion.
     let evasion = dummy.stats.evasion;

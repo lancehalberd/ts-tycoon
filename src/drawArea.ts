@@ -16,7 +16,7 @@ import {
     prepareTintedImage, requireImage,
 } from 'app/images';
 import { getCanvasPopupTarget } from 'app/popup';
-import { drawActor, drawActorEffects, drawActorShadow } from 'app/render/drawActor';
+import { drawActorEffects, drawActorShadow } from 'app/render/drawActor';
 import { getState } from 'app/state';
 import { canUseSkillOnTarget } from 'app/useSkill';
 import { drawFrame } from 'app/utils/animations';
@@ -39,14 +39,14 @@ export function getGlobalHud() {
 export function drawHud() {
     for (const element of getGlobalHud()) {
         if (element.isVisible && !element.isVisible()) continue;
-        element.render();
+        element.render(mainContext, element);
     }
 }
 
-export function drawOnGround(render: (context: CanvasRenderingContext2D) => void) {
+export function drawOnGround(context: CanvasRenderingContext2D, render: (context: CanvasRenderingContext2D) => void) {
     bufferContext.clearRect(0, 0, bufferCanvas.width, bufferCanvas.height);
     render(bufferContext);
-    drawImage(mainContext, bufferCanvas,
+    drawImage(context, bufferCanvas,
         rectangle(0, BACKGROUND_HEIGHT, bufferCanvas.width, FIELD_HEIGHT),
         rectangle(0, BACKGROUND_HEIGHT, bufferCanvas.width, FIELD_HEIGHT)
     );
@@ -84,16 +84,17 @@ export function drawArea(area: Area) {
     if (area.leftWall) drawLeftWall(context, area);
     if (area.rightWall) drawRightWall(context, area);
     if (area.wallDecorations) {
-        for (const object of area.wallDecorations) object.render(area);
+        for (const object of area.wallDecorations) object.render(context, object);
     }
     const sortedSprites = allSprites.slice().sort(function (spriteA, spriteB) {
         return (spriteB.z || 0) - (spriteA.z || 0);
     });
     for (const sprite of sortedSprites) {
-        if (sprite.render) sprite.render(area);
-        else if (sprite.targetType === 'actor') drawActor(context, sprite as Actor);
+        if (sprite.render) {
+            sprite.render(context, sprite);
+        }
     }
-    //for (var effect of ifdefor(area.effects, [])) effect.render(area);
+    //for (var effect of ifdefor(area.effects, [])) effect.render(context, effect);
     // Draw actor lifebar/status effects on top of effects/projectiles
     area.allies.concat(area.enemies).forEach(actor => drawActorEffects(context, actor));
     // Draw text popups such as damage dealt, item points gained, and so on.
@@ -129,7 +130,7 @@ function drawActorGroundEffects(actor: Actor) {
             const castAnimation = effectAnimations.cast;
             const castFrame = Math.floor(actor.preparationTime / actor.skillInUse.totalPreparationTime * castAnimation.frames.length);
             if (castFrame < castAnimation.frames.length) {
-                drawOnGround((context) => {
+                drawOnGround(mainContext, (context) => {
                     drawRune(context, actor, castAnimation, castFrame);
                 });
             }
@@ -178,7 +179,7 @@ function drawMinimap(area: Area) {
     });
 }
 
-function drawHudElement(element) {
+function drawHudElement(context, element) {
     if (getCanvasPopupTarget() === element) {
         drawOutlinedImage(mainContext, element.source.image, '#fff', 1, element.source, element);
     } else if (element.flashColor) {
@@ -193,9 +194,9 @@ const returnToMapButton = {
     isVisible() {
         return getState().selectedCharacter.context === 'adventure';
     },
-    render() {
-        this.flashColor = getState().selectedCharacter.hero.levelInstance.completed ? 'white' : null;
-        drawHudElement(this);
+    render(context, element) {
+        element.flashColor = getState().selectedCharacter.hero.levelInstance.completed ? 'white' : null;
+        drawHudElement(context, element);
     },
     top: ADVENTURE_HEIGHT - 25, left: 8, width: 18, height: 18, 'helpText': 'Return to Map', onClick() {
         const state = getState();
@@ -245,7 +246,7 @@ function drawActionTargetCircle(targetContext) {
         action = hero.activity.type === 'action' ? hero.activity.action : null;
     }
     if (!action) return;
-    drawOnGround(context => {
+    drawOnGround(targetContext, context => {
         var area = editingMapState.editingLevelInstance || action.actor.area;
         if (action.stats.range) drawTargetCircle(context, area, action.actor.x, action.actor.z, action.stats.range + 1, .1);
         else if (action.stats.area) drawTargetCircle(context, area, action.actor.x, action.actor.z, action.stats.area, .1);

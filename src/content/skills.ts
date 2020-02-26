@@ -1,6 +1,7 @@
 import { effectAnimations } from 'app/content/effectAnimations';
 import { jobIcons } from 'app/content/jobs';
 import { projectileAnimations } from 'app/content/projectileAnimations';
+import { mainContext } from 'app/dom';
 import { drawOnGround } from 'app/drawArea';
 import { GROUND_Y } from 'app/gameConstants';
 import { drawTintedImage, requireImage } from 'app/images';
@@ -257,7 +258,7 @@ export const skills: {[key: string]: ActionData} = {
                 //const animation = effectAnimations.blueRune;
                 const size = Math.max(actor.width, 128);
                 //const frame = animation.frames[frame];
-                drawOnGround(context => {
+                drawOnGround(mainContext, context => {
                     context.save();
                     context.globalAlpha = .8 + .2 * Math.cos(3 * actor.time * Math.PI);
                     context.translate((actor.x - actor.area.cameraX), GROUND_Y - actor.z / 2);

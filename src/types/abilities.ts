@@ -1,7 +1,7 @@
 import { JobIcon } from 'app/content/jobs';
 import { Bonuses } from 'app/types/bonuses';
 import {
-    ActionStats, Actor, Animation, ArrayFrame, Area, BonusSource,
+    ActionStats, Actor, Animation, AreaEntity, ArrayFrame, Area, BonusSource,
     Character, Color, EffectVariableObject,
     Frame, Rectangle, ShortRectangle, Target, TintIcon,
     VariableObject, VariableObjectBase,
@@ -80,22 +80,18 @@ export interface Effect {
     drawGround?: (actor: Actor) => void,
 }
 
-export interface ActiveEffect {
-    update: (area: Area) => void,
+export interface ActiveEffect extends AreaEntity {
+    area: Area,
+    update: (effect: ActiveEffect) => void,
     // Some effects are bound to a target.
-    x?: number,
-    y?: number,
-    z?: number,
-    width?: number,
-    height?: number,
     target?: Target,
     hitTargets?: Actor[],
     finish?: Function,
     attackStats?: AttackData,
     currentFrame?: number,
     done: boolean,
-    render?: (area: Area) => void,
-    drawGround?: (area: Area) => void,
+    render?: (context: CanvasRenderingContext2D, effect: ActiveEffect) => void,
+    drawGround?: (context: CanvasRenderingContext2D, effect: ActiveEffect) => void,
 }
 export interface TimedActorEffect {
     base: VariableObjectBase,
@@ -107,28 +103,29 @@ export interface TimedActorEffect {
 // Add expirationTime to EffectVariableObject so TS let's us attempt to read it.
 export type ActorEffect = TimedActorEffect | (EffectVariableObject & {expirationTime?: number});
 export interface Projectile {
-        distance: number,
-        x: number,
-        y: number,
-        z: number,
-        vx: number,
-        vy: number,
-        vz: number,
-        size: number,
-        t: number,
-        done: boolean,
-        delay: number,
-        width: number,
-        height: number,
-        color: Color,
-        totalHits: number,
-        hit: boolean,
-        target: Target,
-        attackStats: AttackData,
-        hitTargets: Actor[],
-        stickToTarget: (target: Target) => void,
-        update: (area: Area) => void,
-        render: (area: Area) => void,
+    area: Area,
+    distance: number,
+    x: number,
+    y: number,
+    z: number,
+    vx: number,
+    vy: number,
+    vz: number,
+    size: number,
+    t: number,
+    done: boolean,
+    delay: number,
+    width: number,
+    height: number,
+    color: Color,
+    totalHits: number,
+    hit: boolean,
+    target: Target,
+    attackStats: AttackData,
+    hitTargets: Actor[],
+    stickToTarget: (projectile: Projectile, target: Target) => void,
+    update: (projectile: Projectile) => void,
+    render: (context: CanvasRenderingContext2D, projectile: Projectile) => void,
 }
 
 interface TriggerEffect {

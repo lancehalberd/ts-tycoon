@@ -10,7 +10,7 @@ import { abilities } from 'app/content/abilities';
 import { updateTrophy } from 'app/content/achievements';
 import { createHeroColors, updateHeroGraphics } from 'app/content/heroGraphics';
 import { characterClasses } from 'app/content/jobs';
-import { updateSkillConfirmationButtons } from 'app/content/levels';
+import { updateSkillConfirmationButtons } from 'app/ui/chooseBlessing';
 import { map } from 'app/content/mapData';
 import { showContext } from 'app/context';
 import {
@@ -32,7 +32,7 @@ import { smallJewelLoot } from 'app/loot';
 import { centerMapOnLevel } from 'app/map';
 import { findActionByTag, getBasicAttack, updateDamageInfo } from 'app/performAttack';
 import { gain } from 'app/points';
-import { updateActorDimensions } from 'app/render/drawActor';
+import { drawActor, updateActorDimensions } from 'app/render/drawActor';
 import { getState } from 'app/state';
 import { getTargetCameraX } from 'app/update';
 import { createAnimation } from 'app/utils/animations';
@@ -209,6 +209,7 @@ export function makeAdventurerFromData({
     personContext.imageSmoothingEnabled = false;
     const heroFrame = {x: 0, y: 0, w: 64, h: 48, content: {x: 20, y: 16, w: 16, h: 31}};
     const hero: Hero = {
+        area: null,
         targetType: 'actor',
         type: 'hero',
         activity: {type: 'none'},
@@ -281,6 +282,7 @@ export function makeAdventurerFromData({
         percentTargetHealth: 1,
         helpMethod: actorHelpText,
         heading: [1, 0, 0], // Character moves left to right by default.
+        render: drawActor,
     };
     hero.variableObject = createVariableObject({'variableObjectType': 'actor'});
     hero.stats = hero.variableObject.stats as ActorStats;

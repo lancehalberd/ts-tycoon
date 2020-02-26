@@ -58,7 +58,7 @@ export function moveActor(actor: Actor) {
             case 'interact':
                 if (getDistanceOverlap(actor, activity.target) <= 5) {
                     if (activity.target.targetType !== 'location' && activity.target.action) {
-                        activity.target.action(actor);
+                        activity.target.action(activity.target, actor);
                     }
                     actor.activity = {type: 'none'};
                     break;
@@ -99,6 +99,7 @@ export function moveActor(actor: Actor) {
         let pointPosition: LocationTarget = actor.owner.enemies.length
             ? {
                 targetType: 'location',
+                area: actor.area,
                 x: actor.owner.x + actor.owner.heading[0] * 300,
                 y: 0,
                 z: Math.max(-180, Math.min(180, actor.owner.z + actor.owner.heading[2] * 100)),
@@ -106,6 +107,7 @@ export function moveActor(actor: Actor) {
                 height: 0,
             } : {
                 targetType: 'location',
+                area: actor.area,
                 x: actor.owner.x - actor.owner.heading[2] * 200,
                 y: 0,
                 z: actor.owner.z > 0 ? actor.owner.z - 150 : actor.owner.z + 150,

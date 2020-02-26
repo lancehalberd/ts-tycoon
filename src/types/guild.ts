@@ -1,4 +1,4 @@
-import { Area, BonusSource, Character, Hero, JobAchievement } from 'app/types';
+import { Area, AreaObject, BonusSource, Character, Hero, JobAchievement, ShortRectangle } from 'app/types';
 
 export interface Exit {
     // The area to enter when using this exit.
@@ -10,6 +10,11 @@ export interface Exit {
 
 export interface FixedObjectData {
     targetType: 'object',
+    update?: (object: AreaObject) => void,
+    render?: (context: CanvasRenderingContext2D, object: AreaObject) => void,
+    // This will be used instead of getMouseTarget if defined.
+    isOver?: (x: number, y: number) => boolean
+    getMouseTarget?: (object: FixedObject) => ShortRectangle,
     name?: string,
     source: {
         actualWidth: number,
@@ -30,15 +35,12 @@ export interface FixedObjectData {
         // I can't remember at the moment why there are two definitions for source.
         width: number, height: number, depth: number
     },
-    action?: (hero: Hero) => void,
+    action?: (object: AreaObject, hero: Hero) => void,
     getActiveBonusSources?: () => BonusSource[],
     level?: number,
     getCurrentTier?: () => any,
     getNextTier?: () => any,
-    update?: Function,
-    render?: Function,
     helpMethod?: Function,
-    isOver?: (x: number, y: number) => boolean
     isEnabled?: () => boolean,
     onMouseOut?: Function,
     width?: number, height?: number, depth?: number,
@@ -57,6 +59,7 @@ export interface SavedTrophy {
 }
 
 export interface FixedObject extends FixedObjectData {
+    render: (context: CanvasRenderingContext2D, object: FixedObject) => void,
     fixed: true,
     base: any,
     key: string,
@@ -74,7 +77,6 @@ export interface FixedObject extends FixedObjectData {
     // The level for the object, if it can be upgraded.
     level?: number,
     isEnabled: () => boolean,
-    render: Function,
     helpMethod: Function,
     target: {
         left: number,
@@ -83,7 +85,7 @@ export interface FixedObject extends FixedObjectData {
         height: number,
     },
     loot?: any,
-    area?: any,
+    area: Area,
 
     // This is used for applications to track the character for the application.
     character?: Character,

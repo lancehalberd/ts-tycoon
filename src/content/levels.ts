@@ -1,7 +1,6 @@
 import { addMonstersToArea, messageCharacter } from 'app/adventure';
 import { readBoardFromData, totalCostForNextLevel } from 'app/character';
 import { abilities } from 'app/content/abilities';
-import { basicTemplateBoards, complexTemplateBoards } from 'app/content/boards';
 import { fixedObject } from 'app/content/furniture';
 import { map } from 'app/content/mapData';
 import { bossMonsterBonuses, easyBonuses, hardBonuses, monsters } from 'app/content/monsters';
@@ -11,16 +10,18 @@ import { drawBoardPreview } from 'app/drawBoard';
 import { ADVENTURE_WIDTH, GROUND_Y, MAX_LEVEL, RANGE_UNIT, MIN_Z } from 'app/gameConstants';
 import { drawImage, requireImage } from 'app/images';
 import { getJewelTiewerForLevel } from 'app/jewels';
-import { snapBoardToBoard } from 'app/jewelInventory';
 import { coinsLoot, jewelLoot } from 'app/loot';
 import { getState } from 'app/state';
+import { showChooseBlessing} from 'app/ui/chooseBlessing';
 import { abbreviate } from 'app/utils/formatters';
 import { getThetaDistance, rectangle, removeElementFromArray } from 'app/utils/index';
 import { centerShapesInRectangle, isPointInPoints } from 'app/utils/polygon';
 import Random from 'app/utils/Random';
+
+
 import {
-    Actor, Area, Board, BoardData, BonusSource, Character, Hero, JewelComponents,
-    Level, LevelData, LevelDifficulty, LevelObject, MonsterSpawn, Range, ShapeData, ShapeType,
+    Actor, Area, Board, BoardData, BonusSource, Character, FixedObject, Hero, JewelComponents,
+    Level, LevelData, LevelDifficulty, MonsterSpawn, Range, ShapeData, ShapeType,
 } from 'app/types';
 
 export const closedChestSource = {image: requireImage('gfx/chest-closed.png'), source: rectangle(0, 0, 32, 32)};
@@ -227,7 +228,7 @@ export function instantiateLevel(
         lastArea.width = shrine.x + RANGE_UNIT * 4;
     }
     lastArea.width += 64;
-    lastArea.objects.push(fixedObject('stoneBridge', [lastArea.width + 12, 0, 0], {isEnabled, exit: {areaKey: 'worldMap'}}));
+    lastArea.objects.push(fixedObject('stoneBridge', [lastArea.width - 12, 0, 0], {isEnabled, exit: {areaKey: 'worldMap'}}));
     areas.forEach(area => {
         for (const object of area.objects)
             object.area = area;
@@ -258,193 +259,3 @@ var drawLetter = (context, letter, x, y) => {
     context.textAlign = 'center'
     context.fillText(letter, x, y + 7);
 };
-
-export function activateShrine(hero: Hero) {
-    const character = hero.character;
-    // Don't activate the shrine a second time.
-    if (character.isStuckAtShrine) return;
-    const area = hero.area;
-    const level: LevelData = map[character.currentLevelKey];
-    if (character.adventurer.level >= MAX_LEVEL) {
-        messageCharacter(character, character.adventurer.name + ' is already max level');
-        return;
-    }
-    if (character.adventurer.unlockedAbilities[level.skill]) {
-        messageCharacter(character, 'Ability already learned');
-        return;
-    }
-    const divinityNeeded = totalCostForNextLevel(character, level) - character.divinity;
-    if (divinityNeeded > 0) {
-        messageCharacter(character, 'Still need ' + abbreviate(divinityNeeded) + ' Divinity');
-        return;
-    }
-    // TBD: Make this number depend on the game state so it can be improved over time.
-    const boardOptions = 2;
-    for (let i = 0; i < boardOptions; i++) {
-        const boardData = getBoardDataForLevel(level);
-        const boardPreview = readBoardFromData(boardData, character, abilities[level.skill]);
-        const boardPreviewSprite = adventureBoardPreview(boardPreview, character);
-        boardPreviewSprite.x = this.x - (boardOptions * 150 - 150) / 2 + 150 * i;
-        boardPreviewSprite.y = 250;
-        area.objects.push(boardPreviewSprite);
-    }
-    const blessingText = objectText('Choose Your Blessing');
-    blessingText.x = this.x;
-    blessingText.y = 330;
-    area.objects.push(blessingText);
-    character.isStuckAtShrine = true;
-}
-export function finishShrine(character: Character) {
-    const objects = character.hero.area.objects;
-    for (let i = 0; i < objects.length; i++) {
-        const object = objects[i];
-        if (object.type === 'button' || object.type === 'text') {
-            objects.splice(i--, 1);
-        } else if (object.type === 'fixedObject' && object.key === 'skillShrine') {
-            object.done = true;
-        }
-    }
-    character.isStuckAtShrine = false;
-}
-
-/*function iconButton(iconSource, width, height, onClick, helpText) {
-    const self = {
-        'x': 0,
-        'y': 0,
-        left: 0,
-        top: 0,
-        'type': 'button',
-        'solid': false,
-        width,
-        height,
-        update(area) {
-            self.left = Math.round(self.x - area.cameraX - self.width / 2);
-            self.top = Math.round(GROUND_Y - self.y - self.height / 2);
-        },
-        onClick,
-        render(area) {
-            drawImage(mainContext, iconSource.image, iconSource, self);
-        },
-        helpMethod() {
-            return helpText || '';
-        }
-    };
-    return self;
-}*/
-
-function objectText(text): LevelObject {
-    return {
-        targetType: 'object',
-        x: 0,
-        y: 0,
-        z: 0,
-        width: 0,
-        height: 0,
-        'type': 'text',
-        'solid': false,
-        isOver(x, y) {return false;},
-        update(area) {},
-        render(area) {
-            mainContext.fillStyle = 'white';
-            mainContext.textBaseline = "middle";
-            mainContext.textAlign = 'center'
-            mainContext.font = "30px sans-serif";
-            mainContext.fillText(text, this.x - area.cameraX, GROUND_Y - this.y);
-        }
-    };
-}
-
-function adventureBoardPreview(boardPreview: Board, character: Character): LevelObject & any {
-    return {
-        targetType: 'object',
-        x: 0,
-        y: 0,
-        z: 0,
-        solid: false,
-        type: 'button',
-        width: 150,
-        height: 150,
-        boardPreview,
-        update(area) {
-        },
-        isOver(x, y) {
-            for (const shape of this.boardPreview.fixed.map(j => j.shape).concat(this.boardPreview.spaces)) {
-                if (isPointInPoints([x, y], shape.points)) {
-                    return true;
-                }
-            }
-            return false;
-        },
-        onClick(character: Character) {
-            centerShapesInRectangle(this.boardPreview.fixed.map(j => j.shape).concat(this.boardPreview.spaces), rectangle(0, 0, character.boardCanvas.width, character.boardCanvas.height));
-            snapBoardToBoard(this.boardPreview, character.board);
-            character.board.boardPreview = this.boardPreview;
-            // This will show the confirm skill button if this character is selected.
-            updateSkillConfirmationButtons();
-            setContext('jewel');
-        },
-        render(area: Area) {
-            // Remove the preview from the character if we draw it to the adventure screen since they both use the same coordinate variables
-            // and displaying it in the adventure screen will mess up the display of it on the character's board. I think this will be okay
-            // since they can't look at both screens at once.
-            character.board.boardPreview = null;
-            updateSkillConfirmationButtons();
-            centerShapesInRectangle(this.boardPreview.fixed.map(j => j.shape).concat(this.boardPreview.spaces), rectangle(this.x - area.cameraX - 5, GROUND_Y - this.y -5, 10, 10));
-            drawBoardPreview(mainContext, [0, 0], this.boardPreview, true);
-        },
-        helpMethod() {
-            return titleDiv('Divine Blessing')
-                + bodyDiv("Click on this Jewel Board Augmentation to preview adding it to this hero's Jewel Board." + divider + "Confirm the Augmentation to learn the ability and Level Up.");
-        }
-    };
-}
-
-export function updateSkillConfirmationButtons() {
-    toggleElements(queryAll('.js-augmentConfirmationButtons'), !!getState().selectedCharacter.board.boardPreview);
-}
-
-function getBoardDataForLevel(level: LevelData): BoardData {
-    let safety = 0;
-    const levelDegrees = 180 * Math.atan2(level.coords[1], level.coords[0]) / Math.PI;
-    // 30 degrees = red leyline, 150 degrees = blue leyline, 270 degrees = green leyline.
-    const minLeylineDistance = Math.min(getThetaDistance(30, levelDegrees), getThetaDistance(150, levelDegrees), getThetaDistance(270, levelDegrees));
-    // Use basic templates (triangle based) for levels close to primary leylines and complex templates (square based) for levels close to intermediate leylines.
-    const templates = ((minLeylineDistance <= 30) ? basicTemplateBoards : complexTemplateBoards).slice();
-    // Each shape is worth roughly the number of triangles in it.
-    const shapeValues = {'triangle': 1, 'rhombus': 1, 'diamond': 2, 'square': 2, 'trapezoid': 3, 'hexagon': 6};
-    // Starts at 2 and gets as high as 7 by level 99.
-    const totalValue =  Math.ceil(1 + Math.sqrt(level.level / 3));
-    let chosenTemplate = Random.element(templates);
-    removeElementFromArray(templates, chosenTemplate, true);
-    while (templates.length && chosenTemplate.size <= totalValue && safety++ < 100) {
-        chosenTemplate = Random.element(templates);
-        removeElementFromArray(templates, chosenTemplate, true);
-    }
-    if (safety >= 100) console.log("failed first loop");
-    if (chosenTemplate.size <= totalValue) {
-        throw new Error('No template found for a board of size ' + totalValue);
-    }
-    let currentSize = chosenTemplate.size;
-    let shapesToKeep = chosenTemplate.shapes.slice();
-    let removedShapes: ShapeData[] = [];
-    // This loop randomly adds and removes shapes until we get to the right value. Since some shapes are worth 2 points, and others worth 1,
-    // it may overshoot, but eventually it will hit the target.
-    while (currentSize !== totalValue && safety++ < 100) {
-        if (currentSize > totalValue) {
-            // Get rid of a shape to keep if the board is too large.
-            //removedShapes = removedShapes.concat(shapesToKeep.splice(Math.floor(Math.random() * shapesToKeep.length), 1));
-            removedShapes.push(Random.removeElement(shapesToKeep));
-            currentSize -= shapeValues[removedShapes[removedShapes.length - 1].k]
-        } else {
-            // Add a shape back in if the board is too small.
-            //shapesToKeep = shapesToKeep.concat(removedShapes.splice(Math.floor(Math.random() * removedShapes.length), 1));
-            shapesToKeep.push(Random.removeElement(removedShapes));
-            currentSize += shapeValues[shapesToKeep[shapesToKeep.length - 1].k]
-        }
-    }
-    if (safety >= 100) console.log("failed second loop");
-    // Select one of the removed shapes to be the fixed jewel for the board.
-    const fixedShape = Random.element(removedShapes);
-    return {'fixed':[fixedShape], 'spaces': shapesToKeep};
-}
-

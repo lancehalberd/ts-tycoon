@@ -64,7 +64,7 @@
             }
         }, 200);
     </script>
-    <div class="js-gameContent gameContent" style="display: none">
+    <div class="js-gameContent gameContent" style="display: none" oncontextmenu="return false;">
         <!-- <div>
             <div>
                 Frames per second:
@@ -91,6 +91,20 @@
                 <select class="js-levelBackgroundSelect"></select>
                 <select class="js-levelSkillSelect levelSkillSelect"></select>
                 <textarea class="js-levelDescriptionInput levelDescriptionInput" rows="8" cols="40" placeholder="Level Description"></textarea>
+            </div>
+            <div class="js-adventureContext js-chooseBlessing chooseBlessing" style="display: none;">
+                <div class="chooseBlessingBox">
+                    <div>
+                        <div class="chooseBlessingTitle">
+                            <div>Choose Blessing</div>
+                        </div>
+                        <div class="js-chooseBlessingOptions chooseBlessingOptions">
+                            <canvas style="background-color: red;" width="100" height="100"></canvas>
+                            <canvas style="background-color: green;" width="120" height="80"></canvas>
+                            <canvas style="background-color: blue;" width="80" height="120"></canvas>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="js-adventureControls js-adventureContext adventureControls" style="display: none;">
                 <span class="js-autoplayButton icon autoplayButton adventureButton" helptext="Auto Explore"></span>

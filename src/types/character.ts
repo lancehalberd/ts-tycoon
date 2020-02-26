@@ -1,4 +1,4 @@
-import { Actor, Board, BonusSource, Hero, JobKey, LevelDifficulty, SavedActor, SavedBoard } from 'app/types';
+import { Actor, Board, BonusSource, FixedObject, Hero, JobKey, LevelDifficulty, SavedActor, SavedBoard } from 'app/types';
 import { JobIcon } from 'app/content/jobs';
 
 export interface Character {
@@ -22,7 +22,8 @@ export interface Character {
     // Most recent level key actually played (including currently)
     currentLevelKey: string,
     levelDifficulty?: LevelDifficulty,
-    isStuckAtShrine?: boolean,
+    activeShrine?: FixedObject,
+    boardPreviewChoices?: Board[],
 
     // Autoplay controls
     paused?: boolean, // Character will not advance when no action is chosen

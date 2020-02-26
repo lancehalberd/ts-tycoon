@@ -1496,3 +1496,36 @@ p {
     background-color: #8f8;
     border-color: #080;
 }
+
+.chooseBlessingBox {
+    position: absolute;
+    top: 50px;
+    /* Horizontally center the div inside the game area */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 960px;
+}
+.chooseBlessingTitle {
+    text-align: center;
+    font-size: 30px;
+    padding: 2px;
+    border: 1px solid white;
+    background-color: rgba(0, 0, 0, .8);
+    margin-bottom: 20px;
+}
+.chooseBlessingTitle div {
+    border: 2px solid #999;
+    background-color: rgba(150, 150, 150, .5);
+    color: #EEE;
+    padding: 2px;
+}
+.chooseBlessingOptions {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    max-width: 900px;
+}
+.chooseBlessingOptions canvas:not(:last-child) {
+    margin-right: 20px;
+}

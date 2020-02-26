@@ -9,6 +9,7 @@ import { jewelInventoryState, stopJewelDrag } from 'app/jewelInventory';
 import { hidePointsPreview } from 'app/points';
 import { removePopup, setCanvasPopupTarget } from 'app/popup';
 import { getState} from 'app/state';
+import { hideChooseBlessing, showChooseBlessing} from 'app/ui/chooseBlessing';
 
 export function setContext(context) {
     const state = getState();
@@ -36,10 +37,15 @@ export function showContext(context) {
     setCanvasPopupTarget(null);
     jewelInventoryState.overJewel = null;
     jewelInventoryState.overVertex = null;
+    const state = getState();
     if (context === 'jewel') {
-        const state = getState();
         drawBoardJewels(state.selectedCharacter, jewelsCanvas);
     }
     toggleElements(queryAll('.js-adventureContext, .js-jewelContext, .js-itemContext, .js-guildContext, .js-mapContext'), false);
     toggleElements(queryAll(`.js-${context}Context`), true);
+    if (context === 'adventure' && state.selectedCharacter.activeShrine) {
+        showChooseBlessing();
+    } else {
+        hideChooseBlessing();
+    }
 }

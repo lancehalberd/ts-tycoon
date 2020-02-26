@@ -26,24 +26,24 @@ export const upgradeButton = {
     isVisible() {
         return !!getUpgradingObject();
     },
-    render() {
+    render(context, button) {
         const currentTier = getUpgradingObject().getCurrentTier();
         const canUpgrade = canAffordCost(currentTier.upgradeCost);
-        mainContext.textAlign = 'center'
-        mainContext.textBaseline = 'middle';
-        setFontSize(mainContext, 10);
-        mainContext.strokeStyle = canUpgrade ? 'white' : '#AAA';
-        mainContext.lineWidth = 2;
-        mainContext.fillStyle = canUpgrade ? '#6C6' : '#CCC';
+        context.textAlign = 'center'
+        context.textBaseline = 'middle';
+        setFontSize(context, 10);
+        context.strokeStyle = canUpgrade ? 'white' : '#AAA';
+        context.lineWidth = 2;
+        context.fillStyle = canUpgrade ? '#6C6' : '#CCC';
         const padding = 7;
-        const metrics = mainContext.measureText('Upgrade to...');
-        this.width = metrics.width + 2 * padding;
-        this.height = 20 + 2 * padding;
-        this.left = upgradeRectangle.left + (upgradeRectangle.width - this.width) / 2;
-        this.top = upgradeRectangle.top + (upgradeRectangle.height - this.height) / 2;
-        drawTitleRectangle(mainContext, this)
-        mainContext.fillStyle = canUpgrade ? 'white' : '#AAA';
-        mainContext.fillText('Upgrade to...', this.left + this.width / 2, this.top + this.height / 2);
+        const metrics = context.measureText('Upgrade to...');
+        button.width = metrics.width + 2 * padding;
+        button.height = 20 + 2 * padding;
+        button.left = upgradeRectangle.left + (upgradeRectangle.width - button.width) / 2;
+        button.top = upgradeRectangle.top + (upgradeRectangle.height - button.height) / 2;
+        drawTitleRectangle(context, button)
+        context.fillStyle = canUpgrade ? 'white' : '#AAA';
+        context.fillText('Upgrade to...', button.left + button.width / 2, button.top + button.height / 2);
     },
     helpMethod() {
         const currentTier = upgradingObject.getCurrentTier();

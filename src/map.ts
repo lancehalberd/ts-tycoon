@@ -2,7 +2,6 @@ import { showAreaMenu } from 'app/areaMenu';
 import { addBonusSourceToObject, removeBonusSourceFromObject} from 'app/bonuses';
 import { gainLevel, totalCostForNextLevel } from 'app/character';
 import { abilities } from 'app/content/abilities';
-import { finishShrine, updateSkillConfirmationButtons } from 'app/content/levels';
 import { map } from 'app/content/mapData';
 import { monsters } from 'app/content/monsters';
 import { setContext } from 'app/context';
@@ -96,6 +95,8 @@ export const mapState : {
     mapDragY: null,
     movedMap: true,
 };
+
+window['mapState'] = mapState;
 
 export function getMapPopupTarget(x: number, y: number): MapTarget {
     let newMapTarget: MapTarget;
@@ -234,9 +235,6 @@ export function handleMapMouseDown(x: number, y: number, event) {
     mapState.mapDragX = x;
     mapState.mapDragY = y;
 }
-/*$('.js-mouseContainer').on('click', '.js-mainCanvas', function (event) {
-    console.log('click');
-});*/
 document.addEventListener('mouseup', function (event) {
     const [x, y] = getMousePosition(mainCanvas, ADVENTURE_SCALE);
     mapState.mapDragX = mapState.mapDragY = null;
@@ -262,36 +260,6 @@ document.addEventListener('mousemove', function (event) {
         mapState.mapDragX = x;
         mapState.mapDragY = y;
     }
-});
-
-handleChildEvent('click', document.body, '.js-confirmSkill', function (confirmButton) {
-    const character = getState().selectedCharacter;
-    const level = map[character.currentLevelKey];
-    const skill = character.board.boardPreview.fixed[0].ability;
-    character.divinity -= totalCostForNextLevel(character, level);
-    character.adventurer.abilities.push(skill);
-    character.adventurer.unlockedAbilities[skill.key] = true;
-    character.board.spaces = character.board.spaces.concat(character.board.boardPreview.spaces);
-    character.board.fixed = character.board.fixed.concat(character.board.boardPreview.fixed);
-    character.board.boardPreview.fixed.forEach(function (jewel) {
-        jewel.confirmed = true;
-        removeBonusSourceFromObject(character.hero.variableObject, character.jewelBonuses, false);
-        updateAdjacentJewels(jewel);
-        updateJewelBonuses(character);
-        addBonusSourceToObject(character.hero.variableObject, character.jewelBonuses, true);
-    });
-    character.board.boardPreview = null;
-    drawBoardBackground(character.boardContext, character.board);
-    gainLevel(character.adventurer);
-    updateSkillConfirmationButtons();
-    saveGame();
-    setTimeout(function () {
-        setContext('adventure');
-        finishShrine(character);
-    }, 500);
-});
-handleChildEvent('click', document.body, '.js-cancelSkill', () => {
-    setContext('adventure');
 });
 export function unlockMapLevel(levelKey: string) {
     getState().visibleLevels[levelKey] = true;

@@ -10,7 +10,7 @@ import {
 } from 'app/utils/animations';
 
 
-import { FullRectangle, Source, JobIcon, Frame, Renderable, ShortRectangle, TintedFrame } from 'app/types';
+import { FullRectangle, JobIcon, Frame, Renderable, ShortRectangle, TintedFrame } from 'app/types';
 
 function loadImage(source, callback) {
     images[source] = new Image();

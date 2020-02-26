@@ -2,7 +2,6 @@ import { enterArea, messageCharacter } from 'app/adventure';
 import { addBonusSourceToObject, removeBonusSourceFromObject } from 'app/bonuses';
 import { recomputeAllCharacterDirtyStats } from 'app/character';
 import { getIsAltarTrophyAvailable, setChoosingTrophyAltar, trophySelectionRectangle } from 'app/content/achievements';
-import { activateShrine } from 'app/content/levels';
 import { map } from 'app/content/mapData';
 import { getUpgradeRectangle, setUpgradingObject } from 'app/content/upgradeButton';
 import { setContext } from 'app/context';
@@ -21,10 +20,14 @@ import { attemptToApplyCost, canAffordCost, costHelpText, hidePointsPreview, pre
 import { getCanvasPopupTarget, removePopup } from 'app/popup';
 import { saveGame } from 'app/saveGame';
 import { getState } from 'app/state';
+import { activateShrine } from 'app/ui/chooseBlessing';
 import { fillRectangle, isPointInRectObject, rectangle, shrinkRectangle } from 'app/utils/index';
 import { getMousePosition } from 'app/utils/mouse';
 
-import { Actor, Area, BonusSource, Exit, FixedObject, FixedObjectData, GuildArea } from 'app/types';
+import {
+    Actor, Area, BonusSource, Exit, FixedObject, FixedObjectData,
+    GuildArea, Hero, TrophyAltar,
+} from 'app/types';
 
 const guildImage = requireImage('gfx/guildhall.png');
 export const allApplications: FixedObject[] = [];
@@ -59,7 +62,7 @@ function objectSource(image, coords, size, additionalProperties = {}) {
         width: size[0], height: size[1], depth: size[2] || size[0],
     };
 }
-export function openWorldMap(actor: Actor) {
+export function openWorldMap() {
     const state = getState();
     // Unlock the first areas on the map if they aren't unlocked yet.
     for (const levelKey of map.guild.unlocks) {
@@ -67,14 +70,14 @@ export function openWorldMap(actor: Actor) {
     }
     setContext('map');
 }
-function openCrafting(actor: Actor) {
+function openCrafting(object: FixedObject, actor: Actor) {
     setContext('item');
 }
-function openJewels(actor: Actor) {
+function openJewels(object: FixedObject, actor: Actor) {
     setContext('jewel');
 }
-function useDoor(actor: Actor) {
-    enterArea(actor, this.exit);
+function useDoor(object: FixedObject, actor: Actor) {
+    enterArea(actor, object.exit);
 }
 mouseContainer.addEventListener('mousedown', function (event) {
     const target = event.target as HTMLElement;
@@ -108,7 +111,7 @@ const areaObjects: {[key: string]: FixedObjectData} = {
         targetType: 'object',
         'name': 'World Map',
         'source': objectSource(guildImage, [360, 150], [60, 27, 30], {'yOffset': -6}),
-        'action': openWorldMap,
+        'action': (object: FixedObject, hero: Hero) => openWorldMap(),
         'getActiveBonusSources': () => [{'bonuses': {'$hasMap': true}}],
     },
     'crackedOrb': {
@@ -118,9 +121,9 @@ const areaObjects: {[key: string]: FixedObjectData} = {
     },
     'animaOrb': {
         targetType: 'object',
-        action() {
+        action(object: FixedObject, hero: Hero) {
             removePopup();
-            setUpgradingObject(this);
+            setUpgradingObject(object);
         },
         'level': 1, 'source': animaOrbTiers[0].source,
         getActiveBonusSources() {
@@ -133,13 +136,13 @@ const areaObjects: {[key: string]: FixedObjectData} = {
             return animaOrbTiers[this.level];
         },
         'width': 60, 'height': 60, 'depth': 60,
-        render(area) {
-            const animaOrbTier = animaOrbTiers[this.level - 1];
-            this.scale = animaOrbTier.scale || 1;
-            this.source = animaOrbTier.source;
+        render(context, object: FixedObject) {
+            const animaOrbTier = animaOrbTiers[object.level - 1];
+            object.scale = animaOrbTier.scale || 1;
+            object.source = animaOrbTier.source;
             // Make this coin stash flash if it can be upgraded.
-            this.flashColor = (animaOrbTier.upgradeCost && canAffordCost(animaOrbTier.upgradeCost)) ? 'white' : null;
-            drawFixedObject.call(this, area);
+            object.flashColor = (animaOrbTier.upgradeCost && canAffordCost(animaOrbTier.upgradeCost)) ? 'white' : null;
+            drawFixedObject(context, object);
         },
         helpMethod(object) {
             const animaOrbTier = animaOrbTiers[this.level - 1];
@@ -172,13 +175,13 @@ const areaObjects: {[key: string]: FixedObjectData} = {
             return coinStashTiers[this.level];
         },
         'width': 60, 'height': 60, 'depth': 60,
-        render(area) {
-            const coinStashTier = coinStashTiers[this.level - 1];
-            this.scale = coinStashTier.scale || 1;
-            this.source = coinStashTier.source;
+        render(context, object: FixedObject) {
+            const coinStashTier = coinStashTiers[object.level - 1];
+            object.scale = coinStashTier.scale || 1;
+            object.source = coinStashTier.source;
             // Make this coin stash flash if it can be upgraded.
-            this.flashColor = (coinStashTier.upgradeCost && canAffordCost(coinStashTier.upgradeCost)) ? 'white' : null;
-            drawFixedObject.call(this, area);
+            object.flashColor = (coinStashTier.upgradeCost && canAffordCost(coinStashTier.upgradeCost)) ? 'white' : null;
+            drawFixedObject(context, object);
         },
         helpMethod(object) {
             const coinStashTier = coinStashTiers[this.level - 1];
@@ -213,13 +216,13 @@ const areaObjects: {[key: string]: FixedObjectData} = {
             return {'left': this.target.left + (this.target.width - this.trophy.width) / 2,
                     'top': this.target.top - this.trophy.height + 4, 'width': this.trophy.width, 'height': this.trophy.height};
         },
-        render(area) {
+        render(context, object: TrophyAltar) {
             // Make this altar flash if it is open and there is an unused trophy available to place on it.
-            this.flashColor = (!this.trophy && getIsAltarTrophyAvailable()) ? 'white' : null;
-            drawFixedObject.call(this, area);
-            if (this.trophy) {
-                if (getCanvasPopupTarget() === this) drawSourceWithOutline(mainContext, this.trophy, '#fff', 1, this.getTrophyRectangle());
-                else this.trophy.render(mainContext, this.getTrophyRectangle());
+            object.flashColor = (!object.trophy && getIsAltarTrophyAvailable()) ? 'white' : null;
+            drawFixedObject(context, object);
+            if (object.trophy) {
+                if (getCanvasPopupTarget() === object) drawSourceWithOutline(mainContext, object.trophy, '#fff', 1, object.getTrophyRectangle());
+                else object.trophy.render(mainContext, object.getTrophyRectangle());
             }
         },
         isOver(x, y) {
@@ -254,9 +257,9 @@ const areaObjects: {[key: string]: FixedObjectData} = {
             const application = this as FixedObject;
             showHeroApplication(application);
         },
-        render(area) {
+        render(context, object) {
             const application = this as FixedObject;
-            application.target.left = application.x - application.width / 2 - area.cameraX;
+            application.target.left = application.x - application.width / 2 - object.area.cameraX;
             application.target.top = GROUND_Y - application.y - application.height - application.z / 2;
             if (getCanvasPopupTarget() === this) {
                 mainContext.fillStyle = 'white';
@@ -295,7 +298,7 @@ const areaObjects: {[key: string]: FixedObjectData} = {
     'closedChest': {
         targetType: 'object',
         'name': 'Treasure Chest', 'source': objectSource(requireImage('gfx/treasureChest.png'), [0, 0], [64, 64, 64], {'yOffset': -6}),
-        action(hero) {
+        action(object: FixedObject, hero: Hero) {
             // The loot array is an array of objects that can generate specific loot drops. Iterate over each one, generate a
             // drop and then give the loot to the player and display it on the screen.
             let delay = 0;
@@ -315,7 +318,7 @@ const areaObjects: {[key: string]: FixedObjectData} = {
     'openChest': {
         targetType: 'object',
         'name': 'Opened Treasure Chest', 'source': objectSource(requireImage('gfx/treasureChest.png'), [64, 0], [64, 64, 64], {'yOffset': -6}),
-        action(hero) {
+        action(object: FixedObject, hero: Hero) {
             messageCharacter(hero.character, 'Empty');
         }
     },
@@ -327,8 +330,7 @@ const areaObjects: {[key: string]: FixedObjectData} = {
         'source': objectSource(requireImage('gfx2/areas/bridge.png'), [5, 99], [27, 34, 0], {yOffset: -11}), 'action': useDoor},
 }
 
-function drawFixedObject(area: Area) {
-    const object:FixedObject = this;
+function drawFixedObject(context: CanvasRenderingContext2D, object: FixedObject) {
     var imageSource = object.source;
     if (object.lastScale !== object.scale) {
         object.width = (imageSource.actualWidth || imageSource.width) * object.scale;
@@ -338,22 +340,22 @@ function drawFixedObject(area: Area) {
         object.lastScale = object.scale;
     }
     // Calculate the left/top values from x/y/z coords, which drawImage will use.
-    object.target.left = object.x - object.target.width / 2 - area.cameraX + imageSource.xOffset * object.scale;
+    object.target.left = object.x - object.target.width / 2 - object.area.cameraX + imageSource.xOffset * object.scale;
     object.target.top = GROUND_Y - object.y - object.target.height - object.z / 2 - imageSource.yOffset * object.scale;
-    mainContext.save();
+    context.save();
     if (object.xScale) {
-        mainContext.translate(object.target.left + object.target.width / 2, 0);
-        mainContext.scale(-1, 1);
-        mainContext.translate(-object.target.left - object.target.width / 2, 0);
+        context.translate(object.target.left + object.target.width / 2, 0);
+        context.scale(-1, 1);
+        context.translate(-object.target.left - object.target.width / 2, 0);
     }
-    if (getCanvasPopupTarget() === object) drawOutlinedImage(mainContext, imageSource.image, '#fff', 1, imageSource, object.target);
+    if (getCanvasPopupTarget() === object) drawOutlinedImage(context, imageSource.image, '#fff', 1, imageSource, object.target);
     else if (object.flashColor) {
-        drawTintedImage(mainContext, imageSource.image, object.flashColor, .5 + .2 * Math.sin(Date.now() / 150),
+        drawTintedImage(context, imageSource.image, object.flashColor, .5 + .2 * Math.sin(Date.now() / 150),
             {x: imageSource.left, y: imageSource.top, w: imageSource.width, h: imageSource.height},
             {x: object.target.left, y: object.target.top, w: object.target.width, h: object.target.height}
         );
-    } else drawImage(mainContext, imageSource.image, imageSource, object.target);
-    mainContext.restore();
+    } else drawImage(context, imageSource.image, imageSource, object.target);
+    context.restore();
 }
 function isGuildObjectEnabled() {
     if (!this.area) debugger;
@@ -372,6 +374,7 @@ export function fixedObject(baseObjectKey: string, coords: number[], properties:
     const imageSource = base.source;
     const newFixedObject: FixedObject = {
         type: 'fixedObject',
+        area: null,
         depth: imageSource.depth,
         scale: 1,
         width: imageSource.actualWidth || imageSource.width,

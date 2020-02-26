@@ -145,7 +145,7 @@ export function addMonstersToArea(
     for (const monsterData of (monsters || [])) {
         const bonusSources = [...(monsterData.bonusSources || []), ...extraBonuses];
         const rarity = monsterData.rarity || specifiedRarity;
-        const newMonster = makeMonster(monsterData.key, monsterData.level, bonusSources, rarity);
+        const newMonster = makeMonster(area, monsterData.key, monsterData.level, bonusSources, rarity);
         newMonster.heading = [-1, 0, 0]; // Monsters move right to left
         newMonster.x = monsterData.location[0];
         newMonster.y = monsterData.location[1];
@@ -306,7 +306,11 @@ export function updateArea(area: Area) {
         checkIfActorDied(ally);
         expireTimedEffects(ally);
     }
-    for (const object of area.objects) if (object.update) object.update(area);
+    for (const object of area.objects) {
+        if (object.update) {
+            object.update(object);
+        }
+    }
     area.allies.forEach(runActorLoop);
     area.enemies.forEach(runActorLoop);
     // A skill may have removed an actor from one of the allies/enemies array, so remake everybody.
@@ -315,12 +319,12 @@ export function updateArea(area: Area) {
     // This may have changed if actors left the area.
     everybody = area.allies.concat(area.enemies);
     for (let i = 0; i < area.projectiles.length; i++) {
-        area.projectiles[i].update(area);
+        area.projectiles[i].update(area.projectiles[i]);
         if (area.projectiles[i].done) area.projectiles.splice(i--, 1);
     }
     for (let i = 0; i < area.effects.length; i++) {
         const effect = area.effects[i];
-        effect.update(area);
+        effect.update(effect);
         // If the effect was removed from the array already (when a song follows its owner between areas)
         // we need to decrement i to not skip the next effect.
         if (effect !== area.effects[i]) {
@@ -330,7 +334,7 @@ export function updateArea(area: Area) {
         }
     }
     for (let i = 0; i < area.treasurePopups.length; i++) {
-        area.treasurePopups[i].update(area);
+        area.treasurePopups[i].update(area.treasurePopups[i]);
         if (area.treasurePopups[i].done) area.treasurePopups.splice(i--, 1);
     }
     for (let i = 0; i < area.textPopups.length; i++) {
@@ -589,7 +593,7 @@ export function actorShouldAutoplay(actor: Actor) {
     if (actor.type !== 'hero') {
         return true; // Only character heroes can be manually controlled.
     }
-    return !actor.character.isStuckAtShrine
+    return !actor.character.activeShrine
         && actor.area && !actor.area.isGuildArea
         && (actor.character.autoplay || (actor.character !== getState().selectedCharacter && actor.enemies.length));
 }
@@ -696,7 +700,7 @@ export function returnToMap(character: Character) {
     //character.hero.levelInstance = null
     removeAdventureEffects(character.hero);
     character.hero.goalTarget = null;
-    character.isStuckAtShrine = false;
+    character.activeShrine = null;
     leaveCurrentArea(character.hero, true);
     // Can't bring minions with you to the world map.
     (character.hero.minions || []).forEach(removeActor);

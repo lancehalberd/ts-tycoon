@@ -85,6 +85,7 @@ export function handleAdventureMouseIsDown(x: number, y: number) {
         if (targetZ >= -200 || targetZ <= 200) {
             setActorDestination(hero, {
                 targetType: 'location',
+                area: hero.area,
                 x: hero.area.cameraX + x, y: 0, z: targetZ,
                 width: 0, height: 0,
             });
@@ -95,7 +96,7 @@ export function getTargetLocation(area: Area, canvasX: number, canvasY: number):
     let z = -(canvasY - GROUND_Y) * 2;
     if (z < -190 || z > 190) return null;
     z = limitZ(z);
-    return {targetType: 'location', x: area.cameraX + canvasX, y: 0, z, width:0, height: 0};
+    return {targetType: 'location', area, x: area.cameraX + canvasX, y: 0, z, width:0, height: 0};
 }
 document.addEventListener('mouseup',function (event) {
     clickedToMove = false;

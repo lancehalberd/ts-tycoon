@@ -6,17 +6,23 @@ import {
 
 // Things the exist in areas need at least these spatial properties.
 export interface AreaEntity {
+    area: Area,
     x: number, y: number, z: number,
     width: number, height: number,
+    update?: (entity: AreaEntity) => void,
 }
 
 export interface AreaType {
-    drawFloor: (context: CanvasRenderingContext2D, area: Area) => void;
-    drawBackground: (context: CanvasRenderingContext2D, area: Area) => void;
+    drawFloor: (context: CanvasRenderingContext2D, area: Area) => void,
+    drawBackground: (context: CanvasRenderingContext2D, area: Area) => void,
 }
 
 export interface LocationTarget extends AreaEntity {
     targetType: 'location',
+}
+
+export interface RenderableAreaEntity extends AreaEntity {
+    render: (context: CanvasRenderingContext2D, entity: RenderableAreaEntity) => void,
 }
 
 export type Target = LocationTarget | Actor;
@@ -62,24 +68,7 @@ export interface Level {
     areas: Map<string, Area>,
     completed?: boolean,
 }
-export type LevelObject = {
-    targetType: 'object',
-    x: number,
-    y: number,
-    z: number,
-    width: number, height: number,
-    type: 'text' | 'button',
-    solid?: boolean,
-    isOver?: (x: number, y: number) => boolean,
-    // Action performed when clicked on
-    onClick?: Function,
-    // Action performed when an actor interacts with the object.
-    action?: Function,
-    render?: Function
-    update?: Function,
-    helpMethod?: Function,
-}
-export type AreaObject = FixedObject | LevelObject;
+export type AreaObject = FixedObject;
 
 export interface Area {
     key: string,

@@ -482,12 +482,12 @@ actionDefinitions.minion = {
                 debugger;
                 return;
             }
-            newMonster = makeMonster({'key': target.base.key}, target.level, [], 0);
+            newMonster = makeMonster(actor.area, {'key': target.base.key}, target.level, [], 0);
             newMonster.x = target.x;
             newMonster.y = target.y;
             newMonster.z = target.z;
         } else {
-            newMonster = makeMonster({'key': minionSkill.base.monsterKey}, actor.level, [], 0);
+            newMonster = makeMonster(actor.area, {'key': minionSkill.base.monsterKey}, actor.level, [], 0);
             newMonster.x = actor.x + actor.heading[0] * (actor.width / 2 + 48);
             newMonster.y = actor.y + actor.heading[1] * (actor.width / 2 + 48);
             newMonster.z = actor.z + actor.heading[2] * (actor.width / 2 + 48);
@@ -520,7 +520,7 @@ function cloneActor(actor: Actor, skill: Action): Actor {
         }
         if (actor.character) addBonusSourceToObject(clone, actor.character.jewelBonuses);
     } else {
-        clone = makeMonster({'key': actor.base.key}, actor.level, [], 0);
+        clone = makeMonster(actor.area, {'key': actor.base.key}, actor.level, [], 0);
     }
     clone.x = actor.x + actor.heading[0] * RANGE_UNIT;
     clone.y = actor.y + actor.heading[1] * RANGE_UNIT;

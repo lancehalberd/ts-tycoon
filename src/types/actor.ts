@@ -1,8 +1,8 @@
 import {
-    ActiveEffect, ActorStats, Affix, Animation, Area, AreaEntity, AreaObject,
+    ActiveEffect, ActorStats, Affix, Animation, Area, RenderableAreaEntity, AreaObject,
     BonusSource, Exit,
     Job, JobKey, Level, LocationTarget, Monster,
-    SavedEquipment, Source, Target,
+    SavedEquipment, Target,
     VariableObject
 } from 'app/types';
 import { Ability, Action, ActorEffect, Effect } from 'app/types/abilities';
@@ -46,19 +46,12 @@ export interface ActorSource {
     attackY?: number,
 };
 
-export interface BaseActor extends AreaEntity {
+export interface BaseActor extends RenderableAreaEntity {
     targetType: 'actor',
     type: string,
     // Screen coordinates of the player (for mouseover purposes)
     top?: number,
     left?: number,
-    // World coordinates of the player
-    x: number,
-    y: number,
-    z: number,
-    // Set by updateActorDimensions.
-    width: number,
-    height: number,
     equipment: Equipment,
     // Set for monsters.
     source: ActorSource,
@@ -105,8 +98,6 @@ export interface BaseActor extends AreaEntity {
     // This will be set on minions.
     owner?: Actor,
     skillSource?: Action,
-    // The are the actor is currently in.
-    area?: Area,
     // The general level the character is in (composed of multiple areas).
     levelInstance?: Level,
     goalTarget?: any,

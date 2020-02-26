@@ -9,15 +9,15 @@ import { makeAffix } from 'app/enchanting';
 import { equipmentSlots } from 'app/gameConstants';
 import { drawCompositeTintedFrame, requireImage } from 'app/images';
 import { makeItem } from 'app/inventory';
-import { getActorAnimationFrame } from 'app/render/drawActor';
+import { drawActor, getActorAnimationFrame } from 'app/render/drawActor';
 import { createAnimation } from 'app/utils/animations';
 import { ifdefor } from 'app/utils/index';
 import Random from 'app/utils/Random';
 
 import {
-    Ability, Actor, ActorSource, ActorStats, Affix, AffixData, Animation,
+    Ability, Actor, ActorSource, ActorStats, Affix, AffixData, Animation, Area,
     Bonuses, BonusSource, Equipment, EquipmentSlot, FrameRectangle,
-    Monster, MonsterData, Source,
+    Monster, MonsterData,
 } from 'app/types';
 
 export const enchantedMonsterBonuses: BonusSource = { 'bonuses': {
@@ -83,6 +83,7 @@ const monsterSuffixes: AffixData[][] = [
 ];
 
 export function makeMonster(
+    area: Area,
     monsterData,
     level,
     extraSkills: (Ability | BonusSource)[],
@@ -108,6 +109,7 @@ export function makeMonster(
     }
     const monster: Monster = {
         targetType: 'actor',
+        area,
         type: 'monster',
         x: 0, y: 0, z: 0,
         width: 0, height: 0,
@@ -136,6 +138,7 @@ export function makeMonster(
         // This will get set in updateMonster.
         // It can change if the monsters gains/loses affixes.
         image: null,
+        render: drawActor,
     };
 
     const rarity = (specifiedRarity !== null)
