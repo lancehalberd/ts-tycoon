@@ -1,7 +1,7 @@
 import { areaTypes } from 'app/content/areaTypes';
 import {
-    ActiveEffect, Actor, Animation, Exit,
-    FixedObject, FullRectangle, ShortRectangle,
+    Ability, ActiveEffect, Actor, Animation, BonusSource, Exit,
+    FixedObject, FullRectangle, MonsterSpawn, ShortRectangle,
 } from 'app/types';
 
 // Things the exist in areas need at least these spatial properties.
@@ -12,7 +12,14 @@ export interface AreaEntity {
     update?: (entity: AreaEntity) => void,
 }
 
+
 export interface AreaType {
+    addObjects: (area: Area, args: {
+        monsters?: MonsterSpawn[],
+        exits?: Exit[],
+        loot?: any[],
+        ability?: Ability,
+    }) => void,
     drawFloor: (context: CanvasRenderingContext2D, area: Area) => void,
     drawBackground: (context: CanvasRenderingContext2D, area: Area) => void,
 }
@@ -53,8 +60,8 @@ export interface LevelData {
     x?: number, y?: number,
     w?: number, h?: number,
     helpMethod?: Function,
-    // Only used during testing currently.
-    noTreasure?: boolean,
+    // Only used during testing
+    testArea?: boolean,
 }
 
 export type MapTarget = LevelData | Shrine;
@@ -62,7 +69,7 @@ export type MapTarget = LevelData | Shrine;
 // instantiated level.
 export interface Level {
     base: LevelData,
-    level: number,
+    enemyLevel: number,
     levelDifficulty: LevelDifficulty,
     entrance: Exit,
     areas: Map<string, Area>,
@@ -85,6 +92,9 @@ export interface Area {
     cameraX: number,
     time: number,
     timeStopEffect?: any,
+    // Optional array of bonuses that apply to all enemies in this area.
+    enemyBonuses?: BonusSource[],
+    isShrineArea?: boolean,
 
     allies: Actor[],
     enemies: Actor[],

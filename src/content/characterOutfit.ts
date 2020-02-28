@@ -1,20 +1,9 @@
-
-// import JobKey from 'app/types';
-// import Random.element()
+import { JobKey }  from 'app/types';
+import Random from 'app/utils/Random';
 
 /*
 TODO: merge this file into bigger project
-remove JobKey definition and include import line
 */
-
-type JobKey = 'fool' |
-    'blackbelt' | 'warrior' | 'samurai' |
-    'juggler' | 'ranger' | 'sniper' |
-    'priest' | 'wizard' | 'sorcerer' |
-    'corsair' | 'assassin' | 'ninja' |
-    'dancer' | 'bard' | 'sage' |
-    'paladin' | 'darkknight' | 'enhancer' |
-    'master';
 
 interface ClothesColors {
     bandanaColor?: string,

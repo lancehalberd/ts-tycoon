@@ -309,7 +309,7 @@ const areaObjects: {[key: string]: FixedObjectData} = {
                 drop.addTreasurePopup(hero, this.x + xOffset, this.y + 64, this.z, delay += 5);
             }
             // Replace this chest with an opened chest in the same location.
-            const openedChest = fixedObject('openChest', [this.x, this.y, this.z], {isEnabled: () => true, 'scale': this.scale || 1});
+            const openedChest = fixedObject('openChest', [this.x, this.y, this.z], {'scale': this.scale || 1});
             openedChest.area = this.area;
             this.area.objects[this.area.objects.indexOf(this)] = openedChest;
             this.area.chestOpened = true;
@@ -357,17 +357,24 @@ function drawFixedObject(context: CanvasRenderingContext2D, object: FixedObject)
     } else drawImage(context, imageSource.image, imageSource, object.target);
     context.restore();
 }
-function isGuildObjectEnabled() {
-    if (!this.area) debugger;
-    return getState().savedState.unlockedGuildAreas[this.area.key] && !this.area.enemies.length;
+function isGuildObjectEnabled(object: FixedObject) {
+    if (!object.area) debugger;
+    return getState().savedState.unlockedGuildAreas[object.area.key] && !object.area.enemies.length;
 }
-function isGuildExitEnabled() {
+function isGuildExitEnabled(object: FixedObject) {
     //if (this.area.key === 'guildFoyer') debugger;
     // A door can be used if the are is unlocked.
-    if (isGuildObjectEnabled.call(this)) return true;
+    if (isGuildObjectEnabled(object)) return true;
     //if (this.area.key === 'guildFoyer') debugger;
     // It can also be used if the area it is connected to is unlocked.
-    return getState().savedState.unlockedGuildAreas[this.exit.areaKey];
+    return getState().savedState.unlockedGuildAreas[object.exit.areaKey];
+}
+export function guildObject(baseObjectKey: string, coords: number[], properties: Partial<FixedObject> = {}): FixedObject {
+    return fixedObject(baseObjectKey, coords, {
+        isEnabled: isGuildObjectEnabled,
+        ...areaObjects[baseObjectKey],
+        ...properties,
+    });
 }
 export function fixedObject(baseObjectKey: string, coords: number[], properties: Partial<FixedObject> = {}): FixedObject {
     const base = areaObjects[baseObjectKey];
@@ -379,7 +386,6 @@ export function fixedObject(baseObjectKey: string, coords: number[], properties:
         scale: 1,
         width: imageSource.actualWidth || imageSource.width,
         height: imageSource.actualHeight || imageSource.height,
-        isEnabled: isGuildObjectEnabled,
         render: drawFixedObject,
         helpMethod: fixedObjectHelpText,
         ...base,

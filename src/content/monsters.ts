@@ -727,7 +727,7 @@ if (window.location.search.substr(1) === 'test') {
     map['testLevelData'] = {
         name: "Test Area", description: "Area for testing monsters", background: "cave", unlocks: [], coords: [-443,-152,-375],
         minMonstersPerArea: 2, maxMonstersPerArea: 2,
-        noTreasure: true,
+        testArea: true,
         level: 2,
         enemySkills: [],
         monsters: ['snowWolf'],

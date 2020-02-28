@@ -168,7 +168,7 @@ window['getMainCanvasMouseTarget'] = getMainCanvasMouseTarget;
 function isCanvasTargetActive(canvasTarget) {
     if (!canvasTarget.action && !canvasTarget.onClick) return false;
     if (canvasTarget.isVisible && !canvasTarget.isVisible()) return false;
-    if (canvasTarget.isEnabled && !canvasTarget.isEnabled()) return false;
+    if (canvasTarget.isEnabled && !canvasTarget.isEnabled(canvasTarget)) return false;
     return true;
 }
 export function checkToShowJewelToolTip() {

@@ -1,14 +1,18 @@
-
+import { addMonstersToArea } from 'app/adventure';
+import { bodyDiv, titleDiv } from 'app/dom';
 import {
     ADVENTURE_HEIGHT, ADVENTURE_WIDTH,
-    BACKGROUND_HEIGHT, BOTTOM_HUD_RECT
+    BACKGROUND_HEIGHT, BOTTOM_HUD_RECT,
+    MAX_Z, MIN_Z,
+    RANGE_UNIT,
 } from 'app/gameConstants';
 import { requireImage } from 'app/images';
 import { createAnimation, drawFrame } from 'app/utils/animations';
 import { r, fillRect } from 'app/utils/index';
 import SRandom from 'app/utils/SRandom';
 
-import { AreaType } from 'app/types';
+import { fixedObject } from 'app/content/furniture';
+import { Ability, Area, AreaType, Exit, FixedObject, Hero } from 'app/types';
 /*
 interface BackgroundSource {
     image: HTMLCanvasElement | HTMLImageElement,
@@ -177,7 +181,14 @@ const meadowFrames = createAnimation('gfx2/areas/meadowTiles.png', r(0, 0, 32, 3
 const meadowSky = createAnimation('gfx2/areas/meadowSky.png', r(0, 0, 320, BG_TILE_HEIGHT)).frames[0];
 const meadowBackFrontFrames = createAnimation('gfx2/areas/meadowBackFront.png',
     r(0, 0, BG_TILE_WIDTH, 86), {cols: 2}).frames;
-const FieldRenderer: AreaType = {
+const FieldArea: AreaType = {
+    addObjects(area, {monsters, exits, loot, ability}) {
+        addMonstersToArea(area, monsters, area.enemyBonuses);
+        addChest(area, loot);
+        addShrine(area, ability);
+        // Do this last since it depends on the final dimensions of the area.
+        addBridgeExits(area, exits);
+    },
     drawFloor(context, area) {
         let w = FLOOR_TILE_SIZE;
         let h = FLOOR_TILE_SIZE;
@@ -207,7 +218,14 @@ const FieldRenderer: AreaType = {
 const guildFrames = createAnimation('gfx2/areas/guildTiles.png', r(0, 0, FLOOR_TILE_SIZE, FLOOR_TILE_SIZE), {cols: 1}).frames;
 const guildBackFrontFrames = createAnimation('gfx2/areas/guildBack.gif',
     r(0, 0, 128, BG_TILE_HEIGHT), {cols: 1}).frames;
-const GuildRenderer: AreaType = {
+const GuildArea: AreaType = {
+    addObjects(area, {monsters, exits, loot, ability}) {
+        addMonstersToArea(area, monsters, area.enemyBonuses);
+        addChest(area, loot);
+        addShrine(area, ability);
+        // Do this last since it depends on the final dimensions of the area.
+        addBridgeExits(area, exits);
+    },
     drawFloor(context, area) {
         let w = FLOOR_TILE_SIZE;
         let h = FLOOR_TILE_SIZE;
@@ -233,15 +251,57 @@ const GuildRenderer: AreaType = {
     }
 };
 
+function addBridgeExits(area: Area, exits: Exit[]) {
+    if (exits[0]) {
+        area.objects.push(fixedObject('woodBridge', [12, 0, 0], {'xScale': -1, exit: exits[0]}));
+    }
+    if (exits[1]) {
+        area.objects.push(fixedObject('woodBridge', [area.width - 12, 0, 0],
+            {isEnabled: isExitEnabled, exit: exits[1]}));
+    }
+}
+function isExitEnabled(object: FixedObject): boolean {
+    return !object.area.isBossArea || !object.area.enemies.length;
+}
+
+function addChest(area: Area, loot: any[]) {
+    if (!loot || !loot.length) {
+        return;
+    }
+    const chest = fixedObject('closedChest', [0, 0, 0], {scale: 0.5, loot});
+    area.objects.push(chest);
+    chest.x = area.width + SRandom.range(0, RANGE_UNIT * 4);
+    chest.z = SRandom.range(MIN_Z + 16, MIN_Z + 32);
+    area.width = chest.x + 100;
+}
+
+function addShrine(area: Area, ability: Ability) {
+    if (!ability) {
+        return;
+    }
+    area.isShrineArea = true;
+    const shrine = fixedObject('skillShrine',
+        [area.width + SRandom.range(0, RANGE_UNIT * 4), 10, 0],
+        {helpMethod: shrineHelpMethod}
+    );
+    area.objects.push(shrine);
+    area.width = shrine.x + RANGE_UNIT * 8;
+}
+
+function shrineHelpMethod(hero: Hero) {
+    return titleDiv('Divine Shrine')
+        + bodyDiv('Offer divinity at these shrines to be blessed by the Gods with new powers.');
+}
+
 export const areaTypes = {
-    oldGuild: GuildRenderer,
-    guildBasement: GuildRenderer,
-    forest: FieldRenderer,
-    garden: FieldRenderer,
-    orchard: FieldRenderer,
-    field: FieldRenderer,
-    cemetery: FieldRenderer,
-    cave: FieldRenderer,
-    beach: FieldRenderer,
-    town: FieldRenderer,
+    oldGuild: GuildArea,
+    guildBasement: GuildArea,
+    forest: FieldArea,
+    garden: FieldArea,
+    orchard: FieldArea,
+    field: FieldArea,
+    cemetery: FieldArea,
+    cave: FieldArea,
+    beach: FieldArea,
+    town: FieldArea,
 };

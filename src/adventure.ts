@@ -509,7 +509,7 @@ function runActorLoop(actor: Actor) {
             if (
                 object.solid === false
                 || object.x < actor.x + 100
-                || (object.isEnabled && !object.isEnabled())
+                || (object.isEnabled && !object.isEnabled(object))
             ) {
                 continue;
             }

@@ -41,7 +41,7 @@ export interface FixedObjectData {
     getCurrentTier?: () => any,
     getNextTier?: () => any,
     helpMethod?: Function,
-    isEnabled?: () => boolean,
+    isEnabled?: (object: FixedObject) => boolean,
     onMouseOut?: Function,
     width?: number, height?: number, depth?: number,
     getTrophyRectangle?: Function,
@@ -76,7 +76,7 @@ export interface FixedObject extends FixedObjectData {
     exit?: Exit,
     // The level for the object, if it can be upgraded.
     level?: number,
-    isEnabled: () => boolean,
+    isEnabled?: (object: FixedObject) => boolean,
     helpMethod: Function,
     target: {
         left: number,

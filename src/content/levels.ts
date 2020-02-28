@@ -1,6 +1,7 @@
 import { addMonstersToArea, messageCharacter } from 'app/adventure';
 import { readBoardFromData, totalCostForNextLevel } from 'app/character';
 import { abilities } from 'app/content/abilities';
+import { areaTypes } from 'app/content/areaTypes';
 import { fixedObject } from 'app/content/furniture';
 import { map } from 'app/content/mapData';
 import { bossMonsterBonuses, easyBonuses, hardBonuses, monsters } from 'app/content/monsters';
@@ -20,7 +21,8 @@ import Random from 'app/utils/Random';
 
 
 import {
-    Actor, Area, Board, BoardData, BonusSource, Character, FixedObject, Hero, JewelComponents,
+    Actor, Area, AreaType, Board, BoardData, BonusSource, Character, Exit,
+    FixedObject, Hero, JewelComponents,
     Level, LevelData, LevelDifficulty, MonsterSpawn, Range, ShapeData, ShapeType,
 } from 'app/types';
 
@@ -30,9 +32,9 @@ export function instantiateLevel(
     levelData: LevelData,
     levelDifficulty: LevelDifficulty = 'normal',
     difficultyCompleted = false,
-    level = 0
+    enemyLevel = 0
 ): Level {
-    level = level || levelData.level;
+    enemyLevel = enemyLevel || levelData.level;
     const levelDegrees = (360 + 180 * Math.atan2(levelData.coords[1], levelData.coords[0]) / Math.PI) % 360;
     const possibleMonsters = levelData.monsters.slice();
     const strengthMonsters = ['skeleton','skeletalBuccaneer','undeadPaladin','undeadWarrior', 'stealthyCaterpillar'];
@@ -53,7 +55,7 @@ export function instantiateLevel(
         }
     }
     if (!possibleMonsters.length) {
-        const desiredNumberOfMonsters = Math.min(4, Math.floor(Math.sqrt(level)));
+        const desiredNumberOfMonsters = Math.min(4, Math.floor(Math.sqrt(enemyLevel)));
         while (possibleMonsters.length < desiredNumberOfMonsters) {
             const roll = (360 + levelDegrees - 30 + Math.random() * 60) % 360;
             if (roll >= 330 || roll < 90) { // Strength
@@ -86,18 +88,24 @@ export function instantiateLevel(
         events.push([Random.element(possibleMonsters), Random.element(eventMonsters), Random.element(bossMonsters)]);
         //console.log(JSON.stringify(events));
     }
-    const minMonstersPerArea = Math.ceil(Math.min(4, 1.5 * level / events.length));
-    const maxMonstersPerArea = Math.floor(Math.min(10, 4 * level / events.length));
+    const minMonstersPerArea = Math.ceil(Math.min(4, 1.5 * enemyLevel / events.length));
+    const maxMonstersPerArea = Math.floor(Math.min(10, 4 * enemyLevel / events.length));
 
     const eventsLeft = events;
     const areas = new Map();
-    let lastArea;
+    const level: Level = {
+        base: levelData,
+        enemyLevel,
+        levelDifficulty,
+        entrance: {areaKey: 'area0', x: 120, z: 0},
+        areas,
+    }
+    let lastArea: Area;
     const levelBonuses: BonusSource[] = (levelData.enemySkills || []).map(abilityKey => abilities[abilityKey]);
     if (levelDifficulty === 'easy') levelBonuses.push(easyBonuses);
     else if (levelDifficulty === 'hard' || levelDifficulty === 'endless') levelBonuses.push(hardBonuses);
     let maxLoops = 2000;
-    // most objects are always enabled in levels.
-    const isEnabled = () => true;
+    const areaType: AreaType = areaTypes[levelData.background] || areaTypes.field;
     while (true) {
         const area: Area = {
             key: `area${areas.size}`,
@@ -114,17 +122,38 @@ export function instantiateLevel(
             cameraX: 0,
             allies: [],
             enemies: [],
+            enemyBonuses: levelBonuses,
             treasurePopups: [],
             textPopups: [],
         };
-        if (lastArea) {
-            area.objects.push(fixedObject('woodBridge', [12, 0, 0], {'xScale': -1, isEnabled, exit: {areaKey: lastArea.key, x: lastArea.width - 150, z: 0}}));
-        } else {
-            area.objects.push(fixedObject('stoneBridge', [12, 0, 0], {'xScale': -1, isEnabled, exit: {areaKey: 'worldMap'}}));
-        }
+        const isFirstArea = !lastArea;
+        const isLastArea = !eventsLeft.length;
+        const entranceDestination: Exit = isFirstArea
+            ? {areaKey: 'worldMap'}
+            : {areaKey: lastArea.key, x: lastArea.width - 36, z: 0};
+        const exitDestination: Exit = isLastArea
+            ? {areaKey: 'worldMap'}
+            : {areaKey: levelData.testArea ? 'worldMap' : `area${areas.size + 1}`, x: 36, z: 0};
+
         areas.set(area.key, area);
         lastArea = area;
-        if (!eventsLeft.length) break;
+        if (isLastArea) {
+            const loot = generateLevelLoot(level, difficultyCompleted, levelDegrees);
+            // When the area has already been completed on this difficulty, we always draw the chest mini map icon as open
+            // so the player can tell at a glance that they are replaying the difficulty.
+            const initialChestIcon = difficultyCompleted ? openChestSource : closedChestSource;
+            area.drawMinimapIcon = function (context, completed, x, y) {
+                const source = this.chestOpened ? openChestSource : initialChestIcon;
+                drawImage(context, source.image, source.source, rectangle(x - 16, y - 18, 32, 32));
+            }
+            area.width += RANGE_UNIT * 2;
+            areaType.addObjects(area, {
+                exits: [entranceDestination, exitDestination],
+                loot,
+                ability: levelData.skill && abilities[levelData.skill],
+            });
+            break;
+        }
         const eventMonsters = eventsLeft.shift().slice();
         area.isBossArea = !eventsLeft.length;
         const numberOfMonsters = Random.range(minMonstersPerArea, maxMonstersPerArea);
@@ -133,18 +162,18 @@ export function instantiateLevel(
         while (areaMonsters.length < numberOfMonsters - eventMonsters.length) {
             const monster: MonsterSpawn = {
                 key: Random.element(possibleMonsters),
-                level,
+                level: enemyLevel,
                 location: [area.width + Random.range(0, RANGE_UNIT * 6), 0, 20]
             };
             areaMonsters.push(monster);
             area.width = monster.location[0] + RANGE_UNIT * 2;
             if (maxLoops-- < 0) debugger;
         }
-        // Add the predtermined monsters towards the end of the area.
+        // Add the predetermined monsters towards the end of the area.
         while (eventMonsters.length) {
             const monster: MonsterSpawn = {
                 key: eventMonsters.shift(),
-                level,
+                level: enemyLevel,
                 location: [area.width + Random.range(0, RANGE_UNIT * 6), 0, 20]
             };
             if (area.isBossArea) {
@@ -155,22 +184,32 @@ export function instantiateLevel(
             area.width = monster.location[0] + RANGE_UNIT * 2;
             if (maxLoops-- < 0) debugger;
         }
-        addMonstersToArea(area, areaMonsters, levelBonuses);
-        area.width += 100;
-        area.objects.push(fixedObject('woodBridge', [area.width - 12, 0, 0], {isEnabled() {
-            return !this.area.isBossArea || !this.area.enemies.length;
-        }, exit: {areaKey: levelData.noTreasure ? 'worldMap' : `area${areas.size}`, x: 150, z: 0}}));
+        area.width += RANGE_UNIT * 4;
         if (maxLoops-- < 0) debugger;
+
+        areaType.addObjects(area, {
+            monsters: areaMonsters,
+            exits: [entranceDestination, exitDestination],
+        });
     };
-    // lastArea is now an empty area for adding the treasure chest + shrine.
-    lastArea.isShrineArea = true;
-    var loot = [];
+    areas.forEach(area => {
+        for (const object of area.objects)
+            object.area = area;
+    });
+    return level;
+}
+
+function generateLevelLoot(
+    level: Level,
+    difficultyCompleted: boolean,
+    levelDegrees: number,
+): any[] {
+    const loot = [];
     var pointsFactor = difficultyCompleted ? 1 : 4;
-    var maxCoinsPerNormalEnemy = Math.floor(level * Math.pow(1.15, level));
+    var maxCoinsPerNormalEnemy = Math.floor(level.enemyLevel * Math.pow(1.15, level.enemyLevel));
     // coins are granted at the end of each level, but diminished after the first completion.
     loot.push(coinsLoot([pointsFactor * maxCoinsPerNormalEnemy * 10, pointsFactor * maxCoinsPerNormalEnemy * 15]));
 
-    var chest, initialChestIcon, completedChestIcon;
     if (!difficultyCompleted) {
         // Special Loot drops are given only the first time an adventurer complets an area on a given difficulty.
         // This is the minimum distance the level is from one of the main str/dex/int leylines.
@@ -179,10 +218,10 @@ export function instantiateLevel(
         var redComponent = Math.max(0, 120 - getThetaDistance(30, levelDegrees));
         var blueComponent = Math.max(0, 120 - getThetaDistance(150, levelDegrees));
         var greenComponent = Math.max(0, 120 - getThetaDistance(270, levelDegrees));
-        var allComponent = Math.abs(levelData.coords[2]) / 60;
+        var allComponent = Math.abs(level.base.coords[2]) / 60;
         // component can be as high as 120 so if it is at least 90 we are within 30 degrees of a primary leyline
         var maxComponent = Math.max(redComponent, blueComponent, greenComponent);
-        const tier = getJewelTiewerForLevel(level);
+        const tier = getJewelTiewerForLevel(level.enemyLevel);
         var components: [Range, Range, Range] = [
             [(redComponent + allComponent) * 0.9, (redComponent + allComponent) * 1.1],
             [(greenComponent + allComponent) * 0.9, (greenComponent + allComponent) * 1.1],
@@ -191,69 +230,33 @@ export function instantiateLevel(
         let shapeTypes: ShapeType[];
         if (maxComponent < 90) {
             shapeTypes = ['rhombus']
-            if (levelDifficulty !== 'easy') shapeTypes.push('square');
-            if (levelDifficulty === 'hard') shapeTypes.push('trapezoid');
+            if (level.levelDifficulty !== 'easy') shapeTypes.push('square');
+            if (level.levelDifficulty === 'hard') shapeTypes.push('trapezoid');
         } else {
             shapeTypes = ['triangle'];
-            if (levelDifficulty !== 'easy') shapeTypes.push('diamond');
-            if (levelDifficulty === 'hard') shapeTypes.push('trapezoid');
+            if (level.levelDifficulty !== 'easy') shapeTypes.push('diamond');
+            if (level.levelDifficulty === 'hard') shapeTypes.push('trapezoid');
         }
         // console.log(tier);
         // console.log(shapeTypes.join(','));
         // console.log(components.join(','));
         loot.push(jewelLoot(shapeTypes, [tier, tier], components, false));
-        chest = fixedObject('closedChest', [0, 0, 0], {isEnabled, scale: 0.5, loot});
-        initialChestIcon = closedChestSource;
-        completedChestIcon = openChestSource;
-    } else {
-        chest = fixedObject('closedChest', [0, 0, 0], {isEnabled, scale: 0.4, loot});
-        // When the area has already been completed on this difficulty, we always draw the chest mini map icon as open
-        // so the player can tell at a glance that they are replaying the difficulty.
-        initialChestIcon = completedChestIcon = openChestSource;
     }
-    lastArea.objects.push(chest);
-    chest.x = lastArea.width + Random.range(0, RANGE_UNIT * 4);
-    chest.z = Random.range(MIN_Z + 16, MIN_Z + 32);
-    lastArea.width = chest.x + 100;
-    lastArea.drawMinimapIcon = function (context, completed, x, y) {
-        const source = this.chestOpened ? completedChestIcon : initialChestIcon;
-        drawImage(context, source.image, source.source, rectangle(x - 16, y - 18, 32, 32));
-    }
-    if (levelData.skill && abilities[levelData.skill]) {
-        const shrine = fixedObject('skillShrine', [lastArea.width + Random.range(0, RANGE_UNIT * 4), 10, 0], {isEnabled, scale: 1, helpMethod(actor) {
-            return titleDiv('Divine Shrine')
-                + bodyDiv('Offer divinity at these shrines to be blessed by the Gods with new powers.');
-        }});
-        lastArea.objects.push(shrine);
-        lastArea.width = shrine.x + RANGE_UNIT * 4;
-    }
-    lastArea.width += 64;
-    lastArea.objects.push(fixedObject('stoneBridge', [lastArea.width - 12, 0, 0], {isEnabled, exit: {areaKey: 'worldMap'}}));
-    areas.forEach(area => {
-        for (const object of area.objects)
-            object.area = area;
-    });
-    return {
-        base: levelData,
-        level,
-        levelDifficulty,
-        entrance: {areaKey: 'area0', x: 120, z: 0},
-        areas,
-    };
+    return loot;
 }
 
-var militaryIcons = requireImage('gfx/militaryIcons.png');
-var drawMinimapMonsterIcon = (context, completed, x, y) => {
-    var target = rectangle(x - 16, y - 18, 32, 32);
+const militaryIcons = requireImage('gfx/militaryIcons.png');
+function drawMinimapMonsterIcon(context, completed, x, y) {
+    const target = rectangle(x - 16, y - 18, 32, 32);
     if (completed) drawImage(context, militaryIcons, rectangle(68, 90, 16, 16), target);
     else drawImage(context, militaryIcons, rectangle(136, 23, 16, 16), target);
 };
-var drawMinimapBossIcon = (context, completed, x, y) => {
-    var target = rectangle(x - 16, y - 18, 32, 32);
+function drawMinimapBossIcon(context, completed, x, y) {
+    const target = rectangle(x - 16, y - 18, 32, 32);
     drawImage(context, militaryIcons, rectangle(119, 23, 16, 16), target);
     if (completed) drawImage(context, militaryIcons, rectangle(51, 90, 16, 16), target);
 };
-var drawLetter = (context, letter, x, y) => {
+function drawLetter(context, letter, x, y) {
     context.fillStyle = 'black';
     context.font = "20px sans-serif";
     context.textAlign = 'center'
