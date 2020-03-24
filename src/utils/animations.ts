@@ -22,6 +22,18 @@ export type Animation = {
     duration: number,
 } & ExtraAnimationProperties
 
+export function frame(
+    x: number, y: number, w: number, h: number,
+    content: ShortRectangle = null
+): ShortRectangle & {content?: ShortRectangle} {
+    return {x, y, w, h, content};
+}
+
+// Make a single frame into an animation.
+export function frameAnimation(frame: Frame): Animation {
+    return {frames: [frame], frameDuration: 1, duration: 1};
+}
+
 export function createAnimation(
     source: string | HTMLImageElement | HTMLCanvasElement,
     rectangle: ShortRectangle & {content?: ShortRectangle},

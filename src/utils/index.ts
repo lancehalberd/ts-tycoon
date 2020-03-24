@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 
-import { FullRectangle, ShortRectangle } from 'app/types';
+import { Frame, FullRectangle, ShortRectangle } from 'app/types';
 
 /**
  * Makes a deep copy of an object. Note that this will not make deep copies of

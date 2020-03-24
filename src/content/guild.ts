@@ -1,3 +1,4 @@
+import { areaWalls, AreaDoor } from 'app/content/areaTypes';
 import { allApplications, allBeds, guildObject } from 'app/content/furniture';
 import { createCanvas, mainContext } from 'app/dom';
 import { MAX_Z } from 'app/gameConstants';
@@ -5,7 +6,7 @@ import { drawImage, drawOutlinedImage, requireImage } from 'app/images';
 import { drawTextureMap } from 'app/render/drawTextureMap';
 import { getCanvasPopupTarget } from 'app/popup';
 import { createAnimation, drawFrame, getFrame } from 'app/utils/animations';
-import { rectangle } from 'app/utils/index';
+import { r, rectangle } from 'app/utils/index';
 
 import { Area, Exit, FixedObject, GuildArea, GuildAreas, RawGuildArea } from 'app/types';
 
@@ -17,7 +18,7 @@ const wallHeight = 130;
 const wallCanvas = createCanvas(wallDepth, wallHeight);
 const wallContext = wallCanvas.getContext('2d');
 
-function initializeGuldArea(rawGuildArea: RawGuildArea): GuildArea {
+function initializeGuldArea(rawGuildArea: RawGuildArea, seed: number): GuildArea {
     const guildArea: GuildArea = {
         objects: [],
         wallDecorations: [],
@@ -34,6 +35,7 @@ function initializeGuldArea(rawGuildArea: RawGuildArea): GuildArea {
         textPopups: [],
         treasurePopups: [],
         objectsByKey: {},
+        seed,
     };
     for (const object of guildArea.objects) {
         object.area = guildArea;
@@ -45,7 +47,6 @@ function initializeGuldArea(rawGuildArea: RawGuildArea): GuildArea {
     return guildArea;
 }
 const wallZ = MAX_Z;
-const guildDoor = createAnimation(requireImage('gfx2/areas/plainDoorRight.png'), {x: 0, y: 0, w: 32, h: 148});
 export function getDefaultGuildAreas(): GuildAreas {
     // We need to reset these each time this function is called, otherwise we will
     // double up on beds/applications.
@@ -56,13 +57,14 @@ export function getDefaultGuildAreas(): GuildAreas {
         'key': 'guildYard',
         'width': 340,
         'backgroundPatterns': {'0': 'forest'},
-        'wallDecorations': [],
-        objects: [
-            guildObject('stoneBridge', [12, 0, 0], {'xScale': -1, exit: {areaKey: 'worldMap', x: 0, z: 0}}),
-            guildObject('stoneBridge', [328, 0, 0], {exit: {areaKey: 'guildFoyer', x: 48, z: 0}}),
+        'wallDecorations': [
+            new AreaDoor(false, {areaKey: 'guildFoyer', x: 48, z: 0}, AreaDoor.closedDoorFrame),
+            new AreaDoor(true, {areaKey: 'worldMap', x: 0, z: 0}, AreaDoor.woodBridge),
         ],
-        //'rightWall': guildDoor,
-    });
+        objects: [],
+        'leftWall': areaWalls.river,
+        'rightWall': areaWalls.guildWall,
+    }, 1);
     guildAreas.guildFoyer = initializeGuldArea({
         'key': 'guildFoyer',
         'width': 400,
@@ -75,9 +77,11 @@ export function getDefaultGuildAreas(): GuildAreas {
             guildObject('candles', [150, 25, wallZ], {xScale: -1, scale: 1}),
             guildObject('candles', [225, 25, wallZ], {scale: 1}),
             guildObject('candles', [325, 15, wallZ], {scale: 1}),
+            new AreaDoor(true, {areaKey: 'guildYard', x: 272, z: 0}, AreaDoor.closedDoorFrame),
+            new AreaDoor(false, {areaKey: 'guildFrontHall', x: 48, z: 0}),
         ],
-        //'leftWall': guildDoor,
-        //'rightWall': guildDoor,
+        'leftWall': areaWalls.guildWall,
+        'rightWall': areaWalls.guildWall,
         'objects': [
             guildObject('mapTable', [100, 0, 0], {'scale': 1}),
             guildObject('coinStash', [150, 0, MAX_Z - 10]),
@@ -85,14 +89,12 @@ export function getDefaultGuildAreas(): GuildAreas {
             guildObject('animaOrb', [230, 0, MAX_Z - 10], {'scale': 1}),
             guildObject('trophyAltar', [290, 0, 0], {'scale': 1}),
             guildObject('bed', [340, 0, MAX_Z - 15], {'scale': 1, 'xScale': -1}),
-            guildObject('stoneBridge', [12, 0, 0], {'xScale': -1, exit: {areaKey: 'guildYard', x: 272, z: 0}}),
-            guildObject('stoneBridge', [388, 0, 0], {exit: {areaKey: 'guildFrontHall', x: 48, z: 0}}),
         ],
         'monsters': [
             {key: 'gremlin', level: 1, location: [250, 0, 40]},
             {key: 'skeleton', level: 1, location: [360, 0, 0]},
         ],
-    });
+    }, 2);
     guildAreas.guildFrontHall = initializeGuldArea({
         'key': 'guildFrontHall',
         'width': 400,
@@ -118,9 +120,9 @@ export function getDefaultGuildAreas(): GuildAreas {
             {key: 'spider', level: 3, location: [600, 0, 40]},
             {key: 'gnome', level: 3, location: [880, 0, 0]},
         ],
-        //'leftWall': guildDoor,
-    });
-
+        'leftWall': areaWalls.guildWall,
+        'rightWall': areaWalls.guildWall,
+    }, 3);
 
     guildAreas.guildGuestRoom = initializeGuldArea({
         'key': 'guildGuestRoom',
@@ -137,7 +139,9 @@ export function getDefaultGuildAreas(): GuildAreas {
             guildObject('coinStash', [60, 0, -140], {'level': 1, 'key': 'coinStashA'}),
             guildObject('coinStash', [740, 0, -140], {'level': 1, 'key': 'coinStashB'}),
         ],
-    });
+        'leftWall': areaWalls.guildWall,
+        'rightWall': areaWalls.guildWall,
+    }, 4);
 
     guildAreas.guildKitchen = initializeGuldArea({
         'key': 'guildKitchen',
@@ -155,7 +159,9 @@ export function getDefaultGuildAreas(): GuildAreas {
             {key: 'motherfly', level: 6, location: [400, 0, 40]},
             {key: 'giantSpider', level: 6, location: [880, 0, 0]},
         ],
-    });
+        'leftWall': areaWalls.guildWall,
+        'rightWall': areaWalls.guildWall,
+    }, 5);
 
     guildAreas.guildBasement = initializeGuldArea({
         'key': 'guildBasement',
@@ -174,8 +180,9 @@ export function getDefaultGuildAreas(): GuildAreas {
             {key: 'vampireBat', level: 15, location: [100, 0, -40]},
             {key: 'vampireBat', level: 15, location: [600, 0, 0]},
         ],
-        leftWall: guildDoor,
-    });
+        'leftWall': areaWalls.guildWall,
+        'rightWall': areaWalls.guildWall,
+    }, 6);
 
     guildAreas.guildVault = initializeGuldArea({
         'key': 'guildVault',
@@ -196,15 +203,16 @@ export function getDefaultGuildAreas(): GuildAreas {
             guildObject('coinStash', [120, 0, 90], {'level': 3, 'key': 'coinStashI'}),
             guildObject('coinStash', [90, 0, 0], {'level': 4, 'key': 'coinStashJ'}),
         ],
-        rightWall: guildDoor,
-    });
+        'leftWall': areaWalls.guildWall,
+        'rightWall': areaWalls.guildWall,
+    }, 7);
     return guildAreas;
 }
 //$('body').append(wallCanvas);
 export function drawRightWall(context: CanvasRenderingContext2D, guildArea: Area) {
-    if (guildArea.cameraX + 320 < guildArea.width - 32) return;
-    if (!guildArea.rightWall) return;
     const frame = getFrame(guildArea.rightWall, guildArea.time);
+    if (guildArea.cameraX + 320 < guildArea.width - frame.w) return;
+    if (!guildArea.rightWall) return;
     const target = {
         ...frame,
         x: guildArea.width - guildArea.cameraX - frame.w,
@@ -213,9 +221,9 @@ export function drawRightWall(context: CanvasRenderingContext2D, guildArea: Area
     drawFrame(context, frame, target);
 }
 export function drawLeftWall(context, guildArea) {
-    if (guildArea.cameraX > 32) return;
-    if (!guildArea.leftWall) return;
     const frame = getFrame(guildArea.leftWall, guildArea.time);
+    if (guildArea.cameraX > frame.w) return;
+    if (!guildArea.leftWall) return;
     context.save();
         context.translate(frame.w - guildArea.cameraX, 0);
         context.scale(-1, 1);

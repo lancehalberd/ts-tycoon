@@ -125,6 +125,8 @@ export function instantiateLevel(
             enemyBonuses: levelBonuses,
             treasurePopups: [],
             textPopups: [],
+            wallDecorations: [],
+            seed: areas.size + levelData.coords[0] + levelData.coords[1],
         };
         const isFirstArea = !lastArea;
         const isLastArea = !eventsLeft.length;
@@ -144,7 +146,7 @@ export function instantiateLevel(
             const initialChestIcon = difficultyCompleted ? openChestSource : closedChestSource;
             area.drawMinimapIcon = function (context, completed, x, y) {
                 const source = this.chestOpened ? openChestSource : initialChestIcon;
-                drawImage(context, source.image, source.source, rectangle(x - 16, y - 18, 32, 32));
+                drawImage(context, source.image, source.source, rectangle(x - 8, y - 8, 16, 16));
             }
             area.width += RANGE_UNIT * 2;
             areaType.addObjects(area, {
@@ -247,18 +249,18 @@ function generateLevelLoot(
 
 const militaryIcons = requireImage('gfx/militaryIcons.png');
 function drawMinimapMonsterIcon(context, completed, x, y) {
-    const target = rectangle(x - 16, y - 18, 32, 32);
+    const target = rectangle(x - 8, y - 9, 16, 16);
     if (completed) drawImage(context, militaryIcons, rectangle(68, 90, 16, 16), target);
     else drawImage(context, militaryIcons, rectangle(136, 23, 16, 16), target);
 };
 function drawMinimapBossIcon(context, completed, x, y) {
-    const target = rectangle(x - 16, y - 18, 32, 32);
+    const target = rectangle(x - 8, y - 9, 16, 16);
     drawImage(context, militaryIcons, rectangle(119, 23, 16, 16), target);
     if (completed) drawImage(context, militaryIcons, rectangle(51, 90, 16, 16), target);
 };
 function drawLetter(context, letter, x, y) {
     context.fillStyle = 'black';
-    context.font = "20px sans-serif";
+    context.font = "16px sans-serif";
     context.textAlign = 'center'
     context.fillText(letter, x, y + 7);
 };

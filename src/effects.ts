@@ -40,14 +40,14 @@ export function songEffect(attackStats: AttackData) {
         // The song's position is based on followTarget
         x: 0, y: 0, z: 0,
         // The song itself doesn't have dimensions.
-        width: 0, height: 0,
+        w: 0, h: 0,
         area: followTarget.area,
         attackStats, 'currentFrame': 0, 'done': false,
         update(effect: ActiveEffect) {
             self.currentFrame++;
             if (notes.length < 6) {
                 const note = animationEffect(effectAnimations.song,
-                    {targetType: 'location', area: self.area, x:0, y: 20, z: 0, width: 25, height: 50},
+                    {targetType: 'location', area: self.area, x:0, y: 20, z: 0, w: 25, h: 50},
                     {loop: true, frameSpeed: .5, tintColor: color, tintValue: .5}
                 );
                 self.area.effects.push(note);
@@ -62,7 +62,7 @@ export function songEffect(attackStats: AttackData) {
             const currentLocation: AreaEntity = {
                 area: self.area,
                 x: followTarget.x, y: followTarget.y, z: followTarget.z,
-                width: 0, height: 0,
+                w: 0, h: 0,
             }; // We can't just use followTarget because we need width/height to be 0.
             for (let i = 0; i < notes.length; i++) {
                 const note = notes[i];
@@ -131,26 +131,26 @@ export function animationEffect(
         area: target.area,
         target,
         x: target.x, y: target.y, z: target.z,
-        width: target.width * scale[0],
-        height: target.height * scale[1],
+        w: target.w * scale[0],
+        h: target.h * scale[1],
         currentFrame: 0, done: false,
         update(effect: ActiveEffect) {
             effect.currentFrame+=frameSpeed;
             effect.x = target.x;
             effect.y = target.y;
             effect.z = target.z - 1; //Show the effect in front of the target.
-            effect.width = target.width * scale[0];
-            effect.height = target.height * scale[1];
+            effect.w = target.w * scale[0];
+            effect.h = target.h * scale[1];
             if (!loop && effect.currentFrame >= animation.frames.length) effect.done = true;
         },
         render(context: CanvasRenderingContext2D, effect: ActiveEffect) {
             if (effect.done) return;
             context.save();
             // context.globalAlpha = alpha;
-            context.translate((effect.x - effect.area.cameraX), GROUND_Y - effect.y - effect.z / 2 - target.height / 2);
+            context.translate((effect.x - effect.area.cameraX), GROUND_Y - effect.y - effect.z / 2 - target.h / 2);
             // fillRect(context, r(-effect.width / 2, -effect.height / 2, effect.width, effect.height), 'red');
             const frame = animation.frames[Math.floor(effect.currentFrame) % animation.frames.length];
-            const targetRectangle = r(-effect.width / 2, -effect.height / 2, effect.width, effect.height);
+            const targetRectangle = r(-effect.w / 2, -effect.h / 2, effect.w, effect.h);
             if (tintColor) {
                 drawTintedImage(context, frame.image, tintColor, tintValue || .5,
                     frame, targetRectangle);
@@ -186,7 +186,7 @@ export function explosionEffect(attackStats: AttackData, x: number, y: number, z
     }
     return {
         area: attackStats.source.area,
-        hitTargets: [], attackStats, x, y, z, width: 0, height: 0, currentFrame: 0, done: false,
+        hitTargets: [], attackStats, x, y, z, w: 0, h: 0, currentFrame: 0, done: false,
         update(effect: ActiveEffect) {
             effect.currentFrame++;
             if (effect.currentFrame > frames) {
@@ -194,9 +194,9 @@ export function explosionEffect(attackStats: AttackData, x: number, y: number, z
                 return;
             }
             const currentRadius = Math.round(radius * Math.min(1, effect.currentFrame / frames));
-            effect.width = currentRadius * 2;
-            effect.height = height * currentRadius / radius;
-            effect.height = effect.width * currentRadius / radius;
+            effect.w = currentRadius * 2;
+            //effect.height = height * currentRadius / radius;
+            effect.h = effect.w * currentRadius / radius;
             // areaCoefficient is the amount of effectiveness lost at the very edge of the radius.
             // areaCoefficient = 0 means the blast is equally effective everywhere.
             // areaCoefficient = 1 means the blast has no effect at the edge.
@@ -252,7 +252,7 @@ export function novaEffect(attackStats: AttackData, x: number, y: number, z: num
     const radius = attack.stats.area * (attackStats.effectiveness || 1) * RANGE_UNIT;
     return {
         area: attackStats.source.area,
-        'hitTargets': [], attackStats, x, y, z, 'width': 0, 'height': 0, 'currentFrame': 0, 'done': false,
+        'hitTargets': [], attackStats, x, y, z, w: 0, h: 0, 'currentFrame': 0, 'done': false,
         update(effect: ActiveEffect) {
             effect.currentFrame++;
             if (effect.currentFrame > frames) {
@@ -273,7 +273,7 @@ export function novaEffect(attackStats: AttackData, x: number, y: number, z: num
                                 targetType: 'location',
                                 area: effect.area,
                                 x: effect.x + Math.cos(theta) * (currentRadius - width / 4), y: -16, z: blastZ,
-                                width: width, height: scale * animation.frames[0][3]
+                                w: width, h: scale * animation.frames[0][3]
                             }, {frameSpeed: .2});
                         effect.area.effects.push(blast);
                         blasts.push(blast);
@@ -281,8 +281,8 @@ export function novaEffect(attackStats: AttackData, x: number, y: number, z: num
                     theta += Math.PI * (Math.random() * .1 + .9) / 3;
                 }
             }
-            effect.width = currentRadius * 2;
-            effect.height = effect.width * currentRadius / radius;
+            effect.w = currentRadius * 2;
+            effect.h = effect.w * currentRadius / radius;
             // areaCoefficient is the amount of effectiveness lost at the very edge of the radius.
             // areaCoefficient = 0 means the blast is equally effective everywhere.
             // areaCoefficient = 1 means the blast has no effect at the edge.
@@ -347,7 +347,7 @@ export function fieldEffect(attackStats: AttackData, followTarget: Actor): Activ
         'x': followTarget.x,
         'y': followTarget.y,
         'z': followTarget.z,
-        'width': radius * 2, height,
+        'w': radius * 2, h: height,
         'currentFrame': 0, 'done': false,
         update(effect: ActiveEffect) {
             effect.currentFrame++;
@@ -360,11 +360,11 @@ export function fieldEffect(attackStats: AttackData, followTarget: Actor): Activ
             // current next hit time is too far in the future.
             nextHit = Math.min(followTarget.time + 1 / attack.stats.hitsPerSecond, nextHit);
             const currentRadius = Math.round(radius * Math.min(1, effect.currentFrame / frames));
-            effect.width = currentRadius * 2;
+            effect.w = currentRadius * 2;
             effect.x = followTarget.x;
             effect.y = followTarget.y;
             effect.z = followTarget.z;
-            effect.height = height * currentRadius / radius;
+            effect.h = height * currentRadius / radius;
             if (followTarget.time < nextHit) {
                 return;
             }
@@ -458,7 +458,7 @@ export function projectile(
     const projectile: Projectile = {
         area: attackStats.source.area,
         'distance': 0, x, y, z, vx, vy, vz, size, 't': 0, 'done': false, delay,
-        'width': size, 'height': size, color,
+        w: size, h: size, color,
         totalHits: 0,
         'hit': false, target, attackStats, 'hitTargets': [],
         stickToTarget(projectile: Projectile, target: Target) {
@@ -477,7 +477,7 @@ export function projectile(
             }
             // Put an absolute cap on how far a projectile can travel
             if (projectile.y < 0 || projectile.totalHits >= 5 || projectile.distance > 2000 && !stuckDelta) {
-                applyAttackToTarget(projectile.attackStats, {targetType: 'location', area: projectile.area, 'x': projectile.x, 'y': projectile.y, 'z': projectile.z, 'width': 0, 'height': 0});
+                applyAttackToTarget(projectile.attackStats, {targetType: 'location', area: projectile.area, 'x': projectile.x, 'y': projectile.y, 'z': projectile.z, w: 0, h: 0});
                 projectile.done = true;
             }
             if (projectile.done || projectile.delay-- > 0) return;
@@ -502,7 +502,7 @@ export function projectile(
                 }
             } else {
                 // normal projectiles hit when they overlap the target.
-                hit = (getDistanceOverlap(projectile, projectile.target) <= -projectile.width / 2)
+                hit = (getDistanceOverlap(projectile, projectile.target) <= -projectile.w / 4)
                     && (projectile.target.targetType === 'location' || projectile.target.health > 0);
             }
             projectile.vy -= attackStats.gravity;
@@ -612,7 +612,7 @@ export function projectile(
 
 export function getProjectileVelocity(attackStats: AttackData, x: number, y: number, z: number, target: Target) {
     const scale = (target.targetType === 'actor' && target.stats.scale) || 1;
-    const ty = (target.y || 0) + (target.targetType === 'location' ? 0 : target.height || 32) * 3 / 4;
+    const ty = (target.y || 0) + (target.targetType === 'location' ? 0 : target.h || 32) * 3 / 4;
     const v = [target.x - x, ty - y, target.z - z];
     let distance = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
     const speed = Math.min(attackStats.speed, distance / 5);
@@ -625,7 +625,7 @@ export function getProjectileVelocity(attackStats: AttackData, x: number, y: num
         console.log("invalid velocity");
         console.log([speed, attackStats.gravity]);
         console.log([x, y, z, target.x, ty, target.z]);
-        console.log([target.x, target.y, target.width, target.height]);
+        console.log([target.x, target.y, target.w, target.h]);
         console.log(target);
         console.log(distance);
         console.log(v);
@@ -706,8 +706,8 @@ export class ParticleEffect implements ActiveEffect {
     // These three properties are unused currently because this effect just uses screen coordinates
     // but active effects are always typed in adventure coords.
     z: number;
-    width: number;
-    height: number;
+    w: number;
+    h: number;
     r: number = 0;
     vx: number = 0;
     vy: number = 0;

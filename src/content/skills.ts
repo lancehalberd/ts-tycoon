@@ -1,7 +1,6 @@
 import { effectAnimations } from 'app/content/effectAnimations';
 import { jobIcons } from 'app/content/jobs';
 import { projectileAnimations } from 'app/content/projectileAnimations';
-import { mainContext } from 'app/dom';
 import { drawOnGround } from 'app/drawArea';
 import { GROUND_Y } from 'app/gameConstants';
 import { drawTintedImage, requireImage } from 'app/images';
@@ -254,18 +253,18 @@ export const skills: {[key: string]: ActionData} = {
     'revive': spellAction('revive', {'icon': 'gfx/496RpgIcons/spellRevive.png', showName: true}, {'+cooldown': 120},
             'Upon receiving a lethal blow, cast a spell that brings you back to life with {+power} health.'),
     'protect': spellAction('effect', {'icon': 'gfx/496RpgIcons/spellProtect.png', 'target': 'allies', showName: true},
-            {'+cooldown': 30, '+range': 10, '$buff': buffEffect({'icons': [effectSourceUp, effectSourceArmor], drawGround(actor: Actor) {
+            {'+cooldown': 30, '+range': 10, '$buff': buffEffect({'icons': [effectSourceUp, effectSourceArmor], drawGround(context, actor: Actor) {
                 //const animation = effectAnimations.blueRune;
-                const size = Math.max(actor.width, 128);
+                const size = Math.max(actor.w, 128);
                 //const frame = animation.frames[frame];
-                drawOnGround(mainContext, context => {
-                    context.save();
-                    context.globalAlpha = .8 + .2 * Math.cos(3 * actor.time * Math.PI);
-                    context.translate((actor.x - actor.area.cameraX), GROUND_Y - actor.z / 2);
-                    context.scale(1, .5);
-                    context.rotate(actor.time * Math.PI / 2);
-                    drawTintedImage(context, requireImage('gfx/effects/circleOfProtection.png'), '#08F', 1, r(0,0,200,200), r(-size / 2, -size / 2, size, size));
-                    context.restore();
+                drawOnGround(context, groundContext => {
+                    groundContext.save();
+                    groundContext.globalAlpha = .8 + .2 * Math.cos(3 * actor.time * Math.PI);
+                    groundContext.translate((actor.x - actor.area.cameraX), GROUND_Y - actor.z / 2);
+                    groundContext.scale(1, .5);
+                    groundContext.rotate(actor.time * Math.PI / 2);
+                    drawTintedImage(groundContext, requireImage('gfx/effects/circleOfProtection.png'), '#08F', 1, r(0,0,200,200), r(-size / 2, -size / 2, size, size));
+                    groundContext.restore();
                 });
             }}, {'++armor': ['{intelligence}'], '+duration': 20})},
                            'Create a magic barrier that grants: {$buff}'),

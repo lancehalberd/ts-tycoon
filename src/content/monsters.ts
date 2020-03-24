@@ -112,7 +112,7 @@ export function makeMonster(
         area,
         type: 'monster',
         x: 0, y: 0, z: 0,
-        width: 0, height: 0,
+        w: 0, h: 0,
         level,
         name: baseMonster.name,
         slow: 0,

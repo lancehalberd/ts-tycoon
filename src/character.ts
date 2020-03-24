@@ -217,8 +217,8 @@ export function makeAdventurerFromData({
         x: 0,
         y: 0,
         z: 0,
-        width: 0,
-        height: 0,
+        w: 0,
+        h: 0,
         equipment: {},
         job: characterClasses[jobKey],
         source: {
@@ -283,6 +283,7 @@ export function makeAdventurerFromData({
         helpMethod: actorHelpText,
         heading: [1, 0, 0], // Character moves left to right by default.
         render: drawActor,
+        consideredObjects: new Set(),
     };
     hero.variableObject = createVariableObject({'variableObjectType': 'actor'});
     hero.stats = hero.variableObject.stats as ActorStats;

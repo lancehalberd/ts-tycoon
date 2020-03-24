@@ -5,7 +5,7 @@ import { getIsAltarTrophyAvailable, setChoosingTrophyAltar, trophySelectionRecta
 import { map } from 'app/content/mapData';
 import { getUpgradeRectangle, setUpgradingObject } from 'app/content/upgradeButton';
 import { setContext } from 'app/context';
-import { mainCanvas, mainContext, mouseContainer, titleDiv } from 'app/dom';
+import { bodyDiv, mainCanvas, mainContext, mouseContainer, titleDiv } from 'app/dom';
 import { bonusSourceHelpText } from 'app/helpText';
 import { ADVENTURE_SCALE, GROUND_Y } from 'app/gameConstants';
 import { createNewHeroApplicant, hideHeroApplication, showHeroApplication } from 'app/heroApplication';
@@ -25,7 +25,7 @@ import { fillRectangle, isPointInRectObject, rectangle, shrinkRectangle } from '
 import { getMousePosition } from 'app/utils/mouse';
 
 import {
-    Actor, Area, BonusSource, Exit, FixedObject, FixedObjectData,
+    Actor, Area, AreaObject, AreaObjectTarget, BonusSource, Exit, FixedObject, FixedObjectData,
     GuildArea, Hero, TrophyAltar,
 } from 'app/types';
 
@@ -108,20 +108,17 @@ const animaOrbTiers = [
 
 const areaObjects: {[key: string]: FixedObjectData} = {
     'mapTable': {
-        targetType: 'object',
         'name': 'World Map',
         'source': objectSource(guildImage, [360, 150], [60, 27, 30], {'yOffset': -6}),
-        'action': (object: FixedObject, hero: Hero) => openWorldMap(),
+        onInteract: (object: FixedObject, hero: Hero) => openWorldMap(),
         'getActiveBonusSources': () => [{'bonuses': {'$hasMap': true}}],
     },
     'crackedOrb': {
-        targetType: 'object',
         'name': 'Cracked Anima Orb',
         'source': objectSource(guildImage, [240, 150], [30, 29, 15])
     },
     'animaOrb': {
-        targetType: 'object',
-        action(object: FixedObject, hero: Hero) {
+        onInteract(object: FixedObject, hero: Hero) {
             removePopup();
             setUpgradingObject(object);
         },
@@ -159,8 +156,7 @@ const areaObjects: {[key: string]: FixedObjectData} = {
         }
     },
     'coinStash': {
-        targetType: 'object',
-        'action':  function () {
+        onInteract:  function () {
             removePopup();
             setUpgradingObject(this);
         },
@@ -197,18 +193,16 @@ const areaObjects: {[key: string]: FixedObjectData} = {
             hidePointsPreview();
         }
     },
-    'woodenAltar': {
-        targetType: 'object',
+    woodenAltar: {
         'name': 'Shrine of Fortune',
         'source': objectSource(guildImage, [450, 150], [30, 30, 20], {'yOffset': -6}),
-        'action': openCrafting,
+        onInteract: openCrafting,
         'getActiveBonusSources': () => [{'bonuses': {'$hasItemCrafting': true}}],
     },
-    'trophyAltar': {
-        targetType: 'object',
+    trophyAltar: {
         'name': 'Trophy Altar',
         'source': objectSource(guildImage, [420, 180], [30, 30, 20], {'yOffset': -6}),
-        action(actor) {
+        onInteract(actor) {
             removePopup();
             setChoosingTrophyAltar(this);
         },
@@ -225,8 +219,9 @@ const areaObjects: {[key: string]: FixedObjectData} = {
                 else object.trophy.render(mainContext, object.getTrophyRectangle());
             }
         },
-        isOver(x, y) {
-            return isPointInRectObject(x, y, this.target) || (this.trophy && isPointInRectObject(x,y, this.getTrophyRectangle()));
+        isPointOver(object: TrophyAltar, x, y) {
+            return isPointInRectObject(x, y, object.target)
+                || (object.trophy && isPointInRectObject(x,y, object.getTrophyRectangle()));
         },
         helpMethod(object) {
             if (this.trophy) return this.trophy.helpMethod();
@@ -234,26 +229,22 @@ const areaObjects: {[key: string]: FixedObjectData} = {
         }
     },
     'candles': {
-        targetType: 'object',
         'source': objectSource(guildImage, [540, 145], [25, 40, 0])
     },
     'bed': {
-        targetType: 'object',
         'name': 'Worn Cot', 'source': objectSource(guildImage, [480, 210], [60, 24, 30], {'yOffset': -6}),
         getActiveBonusSources() {
             return [{'bonuses': {'+maxHeroes': 1}}];
         }
     },
     'jewelShrine': {
-        targetType: 'object',
-        'name': 'Shrine of Creation', 'source': objectSource(guildImage, [360, 180], [60, 60, 4], {'actualWidth': 30, 'yOffset': -6}), 'action': openJewels,
+        'name': 'Shrine of Creation', 'source': objectSource(guildImage, [360, 180], [60, 60, 4], {'actualWidth': 30, 'yOffset': -6}), onInteract: openJewels,
         'getActiveBonusSources': () => [{'bonuses': {'$hasJewelCrafting': true}}],
     },
     'heroApplication': {
-        targetType: 'object',
         'name': 'Application',
         'source': {left: 0, top: 0, width: 20, height: 30, depth: 0},
-        action(actor) {
+        onInteract(actor) {
             const application = this as FixedObject;
             showHeroApplication(application);
         },
@@ -283,22 +274,27 @@ const areaObjects: {[key: string]: FixedObjectData} = {
     },
 
     'door': {
-        targetType: 'object',
-        'source': objectSource(guildImage, [240, 94], [30, 51, 0]), 'action': useDoor, 'isEnabled': isGuildExitEnabled},
+        'source': objectSource(guildImage, [240, 94], [30, 51, 0]), onInteract: useDoor, 'isEnabled': isGuildExitEnabled},
     'upstairs': {
-        targetType: 'object',
-        'source': objectSource(guildImage, [270, 94], [30, 51, 0]), 'action': useDoor, 'isEnabled': isGuildExitEnabled},
+        'source': objectSource(guildImage, [270, 94], [30, 51, 0]), onInteract: useDoor, 'isEnabled': isGuildExitEnabled},
     'downstairs': {
-        targetType: 'object',
-        'source': objectSource(guildImage, [300, 94], [30, 51, 0]), 'action': useDoor, 'isEnabled': isGuildExitEnabled},
+        'source': objectSource(guildImage, [300, 94], [30, 51, 0]), onInteract: useDoor, 'isEnabled': isGuildExitEnabled},
 
     'skillShrine': {
-        targetType: 'object',
-        'name': 'Shrine of Divinity', 'source': objectSource(guildImage, [360, 180], [60, 60, 4], {'actualWidth': 30, 'yOffset': -6}), 'action': activateShrine},
+        'name': 'Shrine of Divinity',
+        'source': objectSource(guildImage, [360, 180], [60, 60, 4], {'actualWidth': 30, 'yOffset': -6}),
+        onInteract: activateShrine,
+        helpMethod(shrine: AreaObject, hero: Hero) {
+            return titleDiv('Divine Shrine')
+                + bodyDiv('Offer divinity at these shrines to be blessed by the Gods with new powers.');
+        },
+        shouldInteract(object: AreaObject, actor: Hero): boolean {
+            return !actor.character.skipShrines;
+        },
+    },
     'closedChest': {
-        targetType: 'object',
         'name': 'Treasure Chest', 'source': objectSource(requireImage('gfx/treasureChest.png'), [0, 0], [64, 64, 64], {'yOffset': -6}),
-        action(object: FixedObject, hero: Hero) {
+        onInteract(object: FixedObject, hero: Hero) {
             // The loot array is an array of objects that can generate specific loot drops. Iterate over each one, generate a
             // drop and then give the loot to the player and display it on the screen.
             let delay = 0;
@@ -313,21 +309,25 @@ const areaObjects: {[key: string]: FixedObjectData} = {
             openedChest.area = this.area;
             this.area.objects[this.area.objects.indexOf(this)] = openedChest;
             this.area.chestOpened = true;
+        },
+        shouldInteract(object: FixedObject, hero: Hero) {
+            return true;
         }
     },
     'openChest': {
-        targetType: 'object',
         'name': 'Opened Treasure Chest', 'source': objectSource(requireImage('gfx/treasureChest.png'), [64, 0], [64, 64, 64], {'yOffset': -6}),
-        action(object: FixedObject, hero: Hero) {
+        onInteract(object: FixedObject, hero: Hero) {
             messageCharacter(hero.character, 'Empty');
         }
     },
     'woodBridge': {
-        targetType: 'object',
-        'source': objectSource(requireImage('gfx2/areas/bridge.png'), [5, 99], [27, 34, 0], {yOffset: -11}), 'action': useDoor},
+        'source': objectSource(requireImage('gfx2/areas/bridge.png'), [5, 99], [27, 34, 0], {yOffset: -11}),
+        onInteract: useDoor
+    },
     'stoneBridge': {
-        targetType: 'object',
-        'source': objectSource(requireImage('gfx2/areas/bridge.png'), [5, 99], [27, 34, 0], {yOffset: -11}), 'action': useDoor},
+        'source': objectSource(requireImage('gfx2/areas/bridge.png'), [5, 99], [27, 34, 0], {yOffset: -11}),
+        onInteract: useDoor
+    },
 }
 
 function drawFixedObject(context: CanvasRenderingContext2D, object: FixedObject) {
@@ -376,11 +376,24 @@ export function guildObject(baseObjectKey: string, coords: number[], properties:
         ...properties,
     });
 }
+function getFixedObjectAreaTarget(this: FixedObject): AreaObjectTarget {
+    return {
+        area: this.area,
+        targetType: 'object',
+        object: this,
+        x: this.x,
+        y: this.y,
+        z: this.z,
+        w: this.width,
+        h: this.height,
+    };
+}
 export function fixedObject(baseObjectKey: string, coords: number[], properties: Partial<FixedObject> = {}): FixedObject {
     const base = areaObjects[baseObjectKey];
     const imageSource = base.source;
     const newFixedObject: FixedObject = {
         type: 'fixedObject',
+        getAreaTarget: getFixedObjectAreaTarget,
         area: null,
         depth: imageSource.depth,
         scale: 1,

@@ -2,31 +2,45 @@ type Collection<T> = {[key:string]: T} | Array<T>;
 
 const MAX_INT = 2 ** 32;
 
+// Decent pseudo random number generator based on:
+// https://en.wikipedia.org/wiki/Xorshift
+// Values seem fairly evenly distributed on [0, 1)
+function nextSeed(seed: number) {
+    let x = Math.floor(MAX_INT * seed);
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 5;
+    return (x / MAX_INT) + 0.5;
+}
+
+function numberToSeed(number: number) {
+    return nextSeed((Math.cos(number) + 1 ) / 2);
+}
+
 // Seeded random number generator.
 class SRandom {
-    _seed = Math.random();
-    // Decent pseudo random number generator based on:
-    // https://en.wikipedia.org/wiki/Xorshift
-    // Values seem fairly evenly distributed on [0, 1)
-    nextSeed(seed: number = Math.random()): number {
-        let x = Math.floor(MAX_INT * seed);
-        x ^= x << 13;
-        x ^= x >> 17;
-        x ^= x << 5;
-        return (x / MAX_INT) + 0.5;
+    _seed: number;
+
+    constructor(seed) {
+        this._seed = seed;
     }
 
-    normSeed(seed: number): number  {
-        return this.nextSeed((Math.cos(seed) + 1 ) / 2);
+    // Return an instance of SRandom with a seed based on the given value.
+    seed(value: number): SRandom {
+        return new SRandom(numberToSeed(value));
+    }
+
+    // Create a new seed based on the current seed and a given value.
+    addSeed(value: number): SRandom {
+        return this.seed(this._seed + value);
+    }
+
+    nextSeed(): SRandom {
+        return new SRandom(nextSeed(this._seed));
     }
 
     random(): number {
-        return this._seed = this.nextSeed(this._seed);
-    }
-
-    seed(value: number): SRandom {
-        this._seed = this.normSeed(value);
-        return this;
+        return nextSeed(this._seed);
     }
 
     /**
@@ -83,12 +97,14 @@ class SRandom {
      * @param {Array} array  The array of elements to shuffle
      */
     shuffle<T>(array:T[]):T[] {
+        let randomizer: SRandom = this;
         array = [...array];
         let currentIndex = array.length, temporaryValue, randomIndex;
         // While there remain elements to shuffle...
         while (0 !== currentIndex) {
           // Pick a remaining element...
-          randomIndex = Math.floor(this.random() * currentIndex);
+          randomIndex = Math.floor(randomizer.random() * currentIndex);
+          randomizer = randomizer.nextSeed();
           currentIndex -= 1;
           // And swap it with the current element.
           temporaryValue = array[currentIndex];
@@ -98,5 +114,6 @@ class SRandom {
         return array;
     }
 };
-const instance = new SRandom();
+const instance = new SRandom(0.5);
+window['SRandom'] = instance;
 export default instance;

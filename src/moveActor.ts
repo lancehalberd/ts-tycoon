@@ -57,8 +57,8 @@ export function moveActor(actor: Actor) {
                 break;
             case 'interact':
                 if (getDistanceOverlap(actor, activity.target) <= 5) {
-                    if (activity.target.targetType !== 'location' && activity.target.action) {
-                        activity.target.action(activity.target, actor);
+                    if (activity.target.object.onInteract) {
+                        activity.target.object.onInteract(activity.target.object, actor);
                     }
                     actor.activity = {type: 'none'};
                     break;
@@ -103,16 +103,16 @@ export function moveActor(actor: Actor) {
                 x: actor.owner.x + actor.owner.heading[0] * 300,
                 y: 0,
                 z: Math.max(-180, Math.min(180, actor.owner.z + actor.owner.heading[2] * 100)),
-                width: 0,
-                height: 0,
+                w: 0,
+                h: 0,
             } : {
                 targetType: 'location',
                 area: actor.area,
                 x: actor.owner.x - actor.owner.heading[2] * 200,
                 y: 0,
                 z: actor.owner.z > 0 ? actor.owner.z - 150 : actor.owner.z + 150,
-                width: 0,
-                height: 0,
+                w: 0,
+                h: 0,
             };
         const distanceToGoal = getDistance(actor, pointPosition);
         if (distanceToGoal > 20) {
@@ -195,16 +195,16 @@ export function moveActor(actor: Actor) {
             debugger;
         }
         // Actor is not allowed to leave the path.
-        actor.z = limitZ(actor.z, actor.width / 2);
+        actor.z = limitZ(actor.z, actor.w / 2);
         if (area.leftWall) {
-            actor.x = Math.max((area.left || 0) + 16 + actor.width / 2 + actor.z / 4, actor.x);
+            actor.x = Math.max((area.left || 0) + 16 + actor.w / 2 + actor.z / 4, actor.x);
         } else {
-            actor.x = Math.max((area.left || 0) + actor.width / 2, actor.x);
+            actor.x = Math.max((area.left || 0) + actor.w / 2, actor.x);
         }
         if (area.rightWall) {
-            actor.x = Math.min(area.width - 16 - actor.width / 2 - actor.z / 4, actor.x);
+            actor.x = Math.min(area.width - 16 - actor.w / 2 - actor.z / 4, actor.x);
         } else {
-            actor.x = Math.min(area.width - actor.width / 2, actor.x);
+            actor.x = Math.min(area.width - actor.w / 2, actor.x);
         }
         let collision = false;
         // Ignore ally collision during charge effects.
@@ -223,11 +223,16 @@ export function moveActor(actor: Actor) {
         }
         if (!collision) {
             for (const object of area.objects) {
-                if (object.solid === false) continue;
-                const distance = getDistanceOverlap(actor, object);
+                if (object.isSolid === false) continue;
+                if (!object.getAreaTarget) {
+                    console.log(object);
+                    debugger;
+                }
+                const objectTarget = object.getAreaTarget(object);
+                const distance = getDistanceOverlap(actor, objectTarget);
                 if (distance <= -8 &&
                     new Vector([(actor.x - currentX), (actor.z - currentZ)])
-                        .dotProduct(new Vector([object.x - currentX, object.z - currentZ])) > 0
+                        .dotProduct(new Vector([objectTarget.x - currentX, objectTarget.z - currentZ])) > 0
                 ) {
                     collision = true;
                     break;

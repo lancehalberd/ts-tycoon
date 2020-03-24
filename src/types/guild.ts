@@ -1,4 +1,7 @@
-import { Area, AreaObject, BonusSource, Character, Hero, JobAchievement, ShortRectangle } from 'app/types';
+import {
+    Area, AreaObject, AreaObjectTarget, BonusSource, Character, Hero,
+    JobAchievement, ShortRectangle,
+} from 'app/types';
 
 export interface Exit {
     // The area to enter when using this exit.
@@ -8,13 +11,7 @@ export interface Exit {
     z?: number,
 }
 
-export interface FixedObjectData {
-    targetType: 'object',
-    update?: (object: AreaObject) => void,
-    render?: (context: CanvasRenderingContext2D, object: AreaObject) => void,
-    // This will be used instead of getMouseTarget if defined.
-    isOver?: (x: number, y: number) => boolean
-    getMouseTarget?: (object: FixedObject) => ShortRectangle,
+export interface FixedObjectData extends Partial<AreaObject> {
     name?: string,
     source: {
         actualWidth: number,
@@ -35,17 +32,13 @@ export interface FixedObjectData {
         // I can't remember at the moment why there are two definitions for source.
         width: number, height: number, depth: number
     },
-    action?: (object: AreaObject, hero: Hero) => void,
     getActiveBonusSources?: () => BonusSource[],
     level?: number,
     getCurrentTier?: () => any,
     getNextTier?: () => any,
-    helpMethod?: Function,
-    isEnabled?: (object: FixedObject) => boolean,
     onMouseOut?: Function,
     width?: number, height?: number, depth?: number,
     getTrophyRectangle?: Function,
-    solid?: boolean,
 }
 export interface TrophyAltar extends FixedObject {
     trophy: JobAchievement,
@@ -58,12 +51,11 @@ export interface SavedTrophy {
     objectKey?: string,
 }
 
-export interface FixedObject extends FixedObjectData {
-    render: (context: CanvasRenderingContext2D, object: FixedObject) => void,
+export interface FixedObject extends FixedObjectData, AreaObject {
+    type: 'fixedObject',
     fixed: true,
     base: any,
     key: string,
-    type: 'fixedObject',
     scale: number,
     xScale?: number,
     yScale?: number,
@@ -76,8 +68,6 @@ export interface FixedObject extends FixedObjectData {
     exit?: Exit,
     // The level for the object, if it can be upgraded.
     level?: number,
-    isEnabled?: (object: FixedObject) => boolean,
-    helpMethod: Function,
     target: {
         left: number,
         top: number,
@@ -86,6 +76,8 @@ export interface FixedObject extends FixedObjectData {
     },
     loot?: any,
     area: Area,
+
+    getAreaTarget: (object: FixedObject) => AreaObjectTarget,
 
     // This is used for applications to track the character for the application.
     character?: Character,

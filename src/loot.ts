@@ -18,26 +18,26 @@ import { Area, Hero, Jewel, JewelComponents, JewelTier, Range, ShapeType } from 
 
 const image = requireImage('gfx/moneyIcon.png');
 export const coins = [
-    {value: 1, image, x: 0, y: 0, width: 16, height: 16},
-    {value: 5, image, x: 0, y: 32, width: 20, height: 20},
-    {value: 20, image, x: 0, y: 64, width: 24, height: 24},
-    {value: 100, image, x: 32, y: 0, width: 16, height: 16},
-    {value: 500, image, x: 32, y: 32, width: 20, height: 20},
-    {value: 2000, image, x: 32, y: 64, width: 24, height: 24},
-    {value: 10000, image, x: 64, y: 0, width: 16, height: 16},
-    {value: 50000, image, x: 64, y: 32, width: 20, height: 20},
-    {value: 200000, image, x: 64, y: 64, width: 24, height: 24},
+    {value: 1, image, x: 0, y: 0, w: 16, h: 16},
+    {value: 5, image, x: 0, y: 32, w: 20, h: 20},
+    {value: 20, image, x: 0, y: 64, w: 24, h: 24},
+    {value: 100, image, x: 32, y: 0, w: 16, h: 16},
+    {value: 500, image, x: 32, y: 32, w: 20, h: 20},
+    {value: 2000, image, x: 32, y: 64, w: 24, h: 24},
+    {value: 10000, image, x: 64, y: 0, w: 16, h: 16},
+    {value: 50000, image, x: 64, y: 32, w: 20, h: 20},
+    {value: 200000, image, x: 64, y: 64, w: 24, h: 24},
 ];
 export const animaDrops = [
-    {value: 1, image, x: 96, y: 0, width: 16, height: 16},
-    {value: 5, image, x: 96, y: 32, width: 20, height: 20},
-    {value: 20, image, x: 96, y: 64, width: 24, height: 24},
-    {value: 100, image, x: 128, y: 0, width: 16, height: 16},
-    {value: 500, image, x: 128, y: 32, width: 20, height: 20},
-    {value: 2000, image, x: 128, y: 64, width: 24, height: 24},
-    {value: 10000, image, x: 160, y: 0, width: 16, height: 16},
-    {value: 50000, image, x: 160, y: 32, width: 20, height: 20},
-    {value: 200000, image, x: 160, y: 64, width: 24, height: 24},
+    {value: 1, image, x: 96, y: 0, w: 16, h: 16},
+    {value: 5, image, x: 96, y: 32, w: 20, h: 20},
+    {value: 20, image, x: 96, y: 64, w: 24, h: 24},
+    {value: 100, image, x: 128, y: 0, w: 16, h: 16},
+    {value: 500, image, x: 128, y: 32, w: 20, h: 20},
+    {value: 2000, image, x: 128, y: 64, w: 24, h: 24},
+    {value: 10000, image, x: 160, y: 0, w: 16, h: 16},
+    {value: 50000, image, x: 160, y: 32, w: 20, h: 20},
+    {value: 200000, image, x: 160, y: 64, w: 24, h: 24},
 ];
 
 
@@ -84,8 +84,8 @@ function coinTreasurePopup(coin: typeof coins[0], area: Area, x: number, y: numb
         render() {
             if (delay > 0) return;
              const p = Math.max(0, Math.min(1, 1 - (this.t - 60) / 10));
-            mainContext.drawImage(coin.image, coin.x, coin.y, coin.width, coin.height,
-                this.x - p * coin.width / 2 - this.area.cameraX, GROUND_Y - this.y - p * coin.height - this.z / 2, p * coin.width, p * coin.height);
+            mainContext.drawImage(coin.image, coin.x, coin.y, coin.w, coin.h,
+                this.x - p * coin.w / 2 - this.area.cameraX, GROUND_Y - this.y - p * coin.h - this.z / 2, p * coin.w, p * coin.h);
         }
     };
 }
@@ -131,7 +131,7 @@ function animaTreasurePopup(hero: Hero, area: Area, coin: typeof animaDrops[0], 
             this.x += this.vx;
             this.y += this.vy;
             this.z = limitZ(this.z + this.vz);
-            if (this.y > (hero.height / 2)) this.vy = Math.max(-3, this.vy - .5);
+            if (this.y > (hero.h / 2)) this.vy = Math.max(-3, this.vy - .5);
             else this.vy++;
             if (this.x > hero.x) this.vx = Math.max(-8 + hero.heading[0], this.vx - .5);
             else this.vx = Math.min(8 + hero.heading[0], this.vx + .5);
@@ -146,9 +146,9 @@ function animaTreasurePopup(hero: Hero, area: Area, coin: typeof animaDrops[0], 
             mainContext.globalAlpha = .6 + .2 * Math.cos(this.t / 5);
             // Anima disappears over time or as it approachs the hero.
             const p = Math.max(0, Math.min(1, 1 - Math.max((this.t - 60) / 20, (20 - Math.abs(this.x - hero.x)) / 20)));
-            mainContext.drawImage(coin.image, coin.x, coin.y, coin.width, coin.height,
-                this.x - p * coin.width / 2 - this.area.cameraX,
-                GROUND_Y - this.y - this.z / 2 - p * coin.height / 2, p * coin.width, p * coin.height);
+            mainContext.drawImage(coin.image, coin.x, coin.y, coin.w, coin.h,
+                this.x - p * coin.w / 2 - this.area.cameraX,
+                GROUND_Y - this.y - this.z / 2 - p * coin.h / 2, p * coin.w, p * coin.h);
             mainContext.restore();
         }
     };

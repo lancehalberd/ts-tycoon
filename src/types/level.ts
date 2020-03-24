@@ -1,17 +1,8 @@
 import { areaTypes } from 'app/content/areaTypes';
 import {
     Ability, ActiveEffect, Actor, Animation, BonusSource, Exit,
-    FixedObject, FullRectangle, MonsterSpawn, ShortRectangle,
+    FixedObject, FullRectangle, Hero, MonsterSpawn, ShortRectangle,
 } from 'app/types';
-
-// Things the exist in areas need at least these spatial properties.
-export interface AreaEntity {
-    area: Area,
-    x: number, y: number, z: number,
-    width: number, height: number,
-    update?: (entity: AreaEntity) => void,
-}
-
 
 export interface AreaType {
     addObjects: (area: Area, args: {
@@ -22,14 +13,6 @@ export interface AreaType {
     }) => void,
     drawFloor: (context: CanvasRenderingContext2D, area: Area) => void,
     drawBackground: (context: CanvasRenderingContext2D, area: Area) => void,
-}
-
-export interface LocationTarget extends AreaEntity {
-    targetType: 'location',
-}
-
-export interface RenderableAreaEntity extends AreaEntity {
-    render: (context: CanvasRenderingContext2D, entity: RenderableAreaEntity) => void,
 }
 
 export type Target = LocationTarget | Actor;
@@ -75,7 +58,44 @@ export interface Level {
     areas: Map<string, Area>,
     completed?: boolean,
 }
-export type AreaObject = FixedObject;
+
+
+export interface AreaEntity {
+    area: Area,
+    x: number,
+    y: number,
+    z: number,
+    w: number,
+    h: number,
+}
+
+export interface AreaTarget extends AreaEntity {
+    targetType: string,
+}
+export interface AreaObjectTarget extends AreaTarget {
+    targetType: 'object',
+    object: AreaObject,
+}
+export interface LocationTarget extends AreaTarget {
+    targetType: 'location',
+}
+
+export interface AreaObject {
+    update?: (object: AreaObject) => void,
+    getAreaTarget: (object: AreaObject) => AreaObjectTarget,
+    onInteract?: (object: AreaObject, actor: Actor) => void,
+    shouldInteract?: (object: AreaObject, actor: Actor) => boolean,
+    isEnabled?: (object: AreaObject) => boolean,
+    render?: (context: CanvasRenderingContext2D, object: AreaObject) => void,
+    drawGround?: (context: CanvasRenderingContext2D, object: AreaObject) => void,
+    getMouseTarget?: (object: AreaObject) => ShortRectangle,
+    isPointOver?: (object: AreaObject, x: number, y: number) => boolean,
+
+    // This may be unset when an object has not been assigned to an area yet.
+    area?: Area,
+    isSolid?: boolean,
+    helpMethod?: (object: AreaObject, hero: Hero) => string,
+}
 
 export interface Area {
     key: string,
@@ -85,12 +105,14 @@ export interface Area {
     drawMinimapIcon?: Function,
     areas?: Map<string, Area>,
     width: number,
-    wallDecorations?: any[],
+    wallDecorations: AreaObject[],
     rightWall?: Animation,
     leftWall?: Animation,
     left: number,
     cameraX: number,
     time: number,
+    // Used for randomly generating area.
+    seed: number,
     timeStopEffect?: any,
     // Optional array of bonuses that apply to all enemies in this area.
     enemyBonuses?: BonusSource[],

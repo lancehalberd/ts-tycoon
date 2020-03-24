@@ -17,7 +17,7 @@ import { canUseSkillOnTarget } from 'app/useSkill';
 import { toolTipColor } from 'app/utils/colors';
 import { getMousePosition } from 'app/utils/mouse';
 
-import { Action, Actor, ActorActivity, Area, AreaObject, Hero, LocationTarget, Target } from 'app/types';
+import { Action, Actor, ActorActivity, Area, AreaObject, AreaObjectTarget, Hero, LocationTarget, Target } from 'app/types';
 
 let canvasCoords = null;
 export function getCanvasCoords() {
@@ -59,19 +59,19 @@ function handleAdventureClick(x: number, y: number, event) {
                 return;
             }
         }
-        if (canvasPopupTarget.onClick) {
+        if (canvasPopupTarget.getAreaTarget && canvasPopupTarget.onInteract) {
+            setActorInteractionTarget(hero, canvasPopupTarget.getAreaTarget(canvasPopupTarget));
+        } else if (canvasPopupTarget.onClick) {
             canvasPopupTarget.onClick(state.selectedCharacter, canvasPopupTarget);
         } else if (hero.enemies.indexOf(canvasPopupTarget) >= 0) {
             setActorAttackTarget(hero, canvasPopupTarget);
-        } else if (canvasPopupTarget.area) {
-            setActorInteractionTarget(hero, canvasPopupTarget);
         }
     } else if (!getUpgradingObject() && !getChoosingTrophyAltar()) {
         var targetLocation = getTargetLocation(hero.area, x, y);
         if (!targetLocation) return;
         if (selectedAction && canUseSkillOnTarget(hero, selectedAction, targetLocation)) {
             setActionTarget(hero, selectedAction, targetLocation);
-                setSelectedAction(null);
+            setSelectedAction(null);
         } else {
             setActorDestination(hero, targetLocation);
             clickedToMove = true;
@@ -87,7 +87,7 @@ export function handleAdventureMouseIsDown(x: number, y: number) {
                 targetType: 'location',
                 area: hero.area,
                 x: hero.area.cameraX + x, y: 0, z: targetZ,
-                width: 0, height: 0,
+                w: 0, h: 0,
             });
         }
     }
@@ -96,7 +96,7 @@ export function getTargetLocation(area: Area, canvasX: number, canvasY: number):
     let z = -(canvasY - GROUND_Y) * 2;
     if (z < -190 || z > 190) return null;
     z = limitZ(z);
-    return {targetType: 'location', area, x: area.cameraX + canvasX, y: 0, z, width:0, height: 0};
+    return {targetType: 'location', area, x: area.cameraX + canvasX, y: 0, z, w: 0, h: 0};
 }
 document.addEventListener('mouseup',function (event) {
     clickedToMove = false;
@@ -106,7 +106,7 @@ function setActorDestination(hero: Hero, target: Target) {
         type: 'move',
         x: target.x,
         y: 0,
-        z: limitZ(target.z, hero.width / 2)
+        z: limitZ(target.z, hero.w / 2)
     };
     if (getDistanceBetweenPointsSquared(hero, activity) > 200) {
         if (hero.activity.type === 'none') {
@@ -128,7 +128,7 @@ function setActionTarget(hero: Hero, action: Action, target: Target) {
         target
     };
 }
-export function setActorInteractionTarget(hero: Hero, target: LocationTarget | AreaObject) {
+export function setActorInteractionTarget(hero: Hero, target: AreaObjectTarget) {
     hero.activity = {
         type: 'interact',
         target

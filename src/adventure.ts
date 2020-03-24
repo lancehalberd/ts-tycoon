@@ -41,7 +41,7 @@ import { isMouseDown } from 'app/utils/mouse';
 import { playSound } from 'app/utils/sounds';
 
 import {
-    Actor, Area, AreaEntity, BonusSource, Character, Exit, Frame,
+    Actor, Area, AreaEntity, AreaTarget, BonusSource, Character, Exit, Frame,
     GuildArea, Hero, LevelData, LevelDifficulty, MonsterData, MonsterSpawn, Target,
 } from 'app/types';
 
@@ -367,7 +367,7 @@ function processStatusEffects(target: Actor) {
     if (target.pull && target.dominoAttackStats) {
         for (let i = 0; i < target.allies.length; i++) {
             const ally = target.allies[i];
-            if (ally === target || ally.x < target.x || target.x + target.width < ally.x) continue;
+            if (ally === target || ally.x < target.x || target.x + target.w < ally.x) continue;
             applyAttackToTarget(target.dominoAttackStats, ally);
             target.dominoAttackStats = null;
             target.pull = null;
@@ -414,8 +414,8 @@ function processStatusEffects(target: Actor) {
         }
         // End the pull if the target hits something.
         for (const object of target.area.objects) {
-            if (object.solid === false) continue;
-            const distance = getDistanceOverlap(target, object);
+            if (object.isSolid === false || !object.getAreaTarget) continue;
+            const distance = getDistanceOverlap(target, object.getAreaTarget(object));
             if (distance <= -8) {
                 target.pull = null;
                 target.y = (target.type === 'monster') && target.baseY || 0;
@@ -504,29 +504,19 @@ function runActorLoop(actor: Actor) {
         const character = actor.character;
         // Code for intracting with chest/shrine at the end of level and leaving the area.
         for (const object of area.objects) {
-            if (object.type !== 'fixedObject') continue;
-            // Hack the actor will only check objects the he hasn't passed yet.
-            if (
-                object.solid === false
-                || object.x < actor.x + 100
+            if (!object.getAreaTarget || !object.shouldInteract || !object.shouldInteract(object, actor)) {
+                continue;
+            }
+            const objectTarget = object.getAreaTarget(object);
+            if (objectTarget.x < actor.x + 100
+                || actor.consideredObjects.has(object)
                 || (object.isEnabled && !object.isEnabled(object))
             ) {
                 continue;
             }
             // The AI only considers each object once.
-            object.considered = true;
-            if (object.key === 'closedChest') {
-                setActorInteractionTarget(actor, object);
-                break;
-            }
-            if (object.key === 'skillShrine' && !character.skipShrines) {
-                setActorInteractionTarget(actor, object);
-                break;
-            }
-            if (object.exit) {
-                setActorInteractionTarget(actor, object);
-                break;
-            }
+            actor.consideredObjects.add(object);
+            setActorInteractionTarget(actor, objectTarget);
         }
     }
     // Manual control doesn't use the auto targeting logic.
@@ -607,10 +597,10 @@ export function getDistance(spriteA: AreaEntity, spriteB: AreaEntity) {
 export function getDistanceOverlap(spriteA: AreaEntity, spriteB: AreaEntity) {
     const dx = spriteA.x - spriteB.x;
     const dz = spriteA.z - spriteB.z;
-    const distance = Math.sqrt(dx*dx + dz*dz) - ((spriteA.width || 0) + (spriteB.width || 0)) / 2;
+    const distance = Math.sqrt(dx*dx + dz*dz) - ((spriteA.w || 0) + (spriteB.w || 0)) / 2;
     if (isNaN(distance)) {
-        console.log(JSON.stringify(['A:', spriteA.x, spriteA.y, spriteA.z, spriteA.width]));
-        console.log(JSON.stringify(['B:', spriteB.x, spriteB.y, spriteB.z, spriteB.width]));
+        console.log(JSON.stringify(['A:', spriteA.x, spriteA.y, spriteA.z, spriteA.w]));
+        console.log(JSON.stringify(['B:', spriteB.x, spriteB.y, spriteB.z, spriteB.w]));
         debugger;
     }
     return distance;
@@ -631,7 +621,7 @@ function defeatedEnemy(hero: Hero, enemy: Actor) {
     if (enemy.stats.anima) loot.push(animaLootDrop(enemy.stats.anima));
     loot.forEach(function (loot, index) {
         loot.gainLoot(hero);
-        loot.addTreasurePopup(hero, enemy.x + index * 20, enemy.height, index * 10);
+        loot.addTreasurePopup(hero, enemy.x + index * 20, enemy.h, index * 10);
         // If the last enemy is defeated in the boss area, the level is completed.
     });
     if (hero.area.isBossArea && hero.enemies.every(enemy => enemy.isDead)) {
@@ -674,7 +664,7 @@ export function completeLevel(hero: Hero, completionTime = 0) {
     const gainedDivinity = newDivinityScore - oldDivinityScore;
     if (gainedDivinity > 0) {
         character.divinity += gainedDivinity;
-        const textPopup = {value:'+' + abbreviate(gainedDivinity) + ' Divinity', x: hero.x, y: hero.height, z: hero.z, color: 'gold', fontSize: 15, 'vx': 0, 'vy': 1, 'gravity': .1};
+        const textPopup = {value:'+' + abbreviate(gainedDivinity) + ' Divinity', x: hero.x, y: hero.h, z: hero.z, color: 'gold', fontSize: 15, 'vx': 0, 'vy': 1, 'gravity': .1};
         appendTextPopup(hero.area, textPopup, true);
     }
     character.divinityScores[character.currentLevelKey] = Math.max(oldDivinityScore, newDivinityScore);
@@ -693,7 +683,7 @@ export function completeLevel(hero: Hero, completionTime = 0) {
 
 export function messageCharacter(character: Character, text: string) {
     const hero = character.hero;
-    appendTextPopup(hero.area, {'value': text, 'duration': 70, 'x': hero.x + 32, y: hero.height, z: hero.z, color: 'white', fontSize: 15, 'vx': 0, 'vy': .5, 'gravity': .05}, true);
+    appendTextPopup(hero.area, {'value': text, 'duration': 70, 'x': hero.x + 32, y: hero.h, z: hero.z, color: 'white', fontSize: 15, 'vx': 0, 'vy': .5, 'gravity': .05}, true);
 }
 
 export function returnToMap(character: Character) {

@@ -21,7 +21,7 @@ import { abbreviate } from 'app/utils/formatters';
 import { ifdefor, isPointInRect, isPointInRectObject, isPointInShortRect, rectangle } from 'app/utils/index';
 import { getMousePosition, isMouseOverElement } from 'app/utils/mouse';
 
-import { Actor, FullRectangle } from 'app/types';
+import { Actor, FullRectangle, ShortRectangle } from 'app/types';
 
 interface Popup {
     target: any,
@@ -112,11 +112,18 @@ export function updateToolTip() {
 
 
 export function checkToShowMainCanvasToolTip(x, y) {
-    if (!(x >= 0)) return;
-    if ((popup && popup.element) || mainCanvas.style.display === 'none' || canvasPopupTarget) return;
+    if (!(x >= 0)) {
+        //console.log(x);
+        return;
+    }
+    if ((popup && popup.element) || mainCanvas.style.display === 'none' || canvasPopupTarget) {
+        //console.log(popup, popup && popup.element, mainCanvas.style.display, canvasPopupTarget);
+        return;
+    }
     canvasPopupTarget = getMainCanvasMouseTarget(x, y);
     mainCanvas.classList.toggle('clickable', !!canvasPopupTarget);
     if (!canvasPopupTarget) {
+        //console.log('no main canvas target');
         return;
     }
     const popupText = canvasPopupTarget.helpMethod ? canvasPopupTarget.helpMethod(canvasPopupTarget) : canvasPopupTarget.helpText;
@@ -131,10 +138,16 @@ export function checkToShowMainCanvasToolTip(x, y) {
 // Return the canvas object under the mouse with highest priority, if any.
 function getMainCanvasMouseTarget(x, y) {
     const state = getState();
-    if (state.selectedCharacter.context === 'map') return getMapPopupTarget(x, y);
+    if (state.selectedCharacter.context === 'map') {
+        return getMapPopupTarget(x, y);
+    }
     const area = state.selectedCharacter.hero.area;
-    if (!area) return null;
-    if (getChoosingTrophyAltar()) return getTrophyPopupTarget(x, y);
+    if (!area) {
+        return null;
+    }
+    if (getChoosingTrophyAltar()) {
+        return getTrophyPopupTarget(x, y);
+    }
     if (getUpgradingObject()) {
         if (isPointInRectObject(x, y, upgradeButton)) {
             return upgradeButton;
@@ -142,31 +155,56 @@ function getMainCanvasMouseTarget(x, y) {
         return null;
     }
     const abilityTarget = getAbilityPopupTarget(x, y);
-    if (abilityTarget) return abilityTarget;
+    if (abilityTarget) {
+        return abilityTarget;
+    }
     // Actors (heroes and enemies) have highest priority in the main game context during fights.
     for (const actor of area.allies.concat(area.enemies)) {
-        if (!actor.isDead && isPointInRectObject(x, y, actor as FullRectangle)) {
+        if (!actor.isDead && isPointInRectObject(x, y, {left: actor.left, top: actor.top, width: actor.w,  height: actor.h})) {
             return actor;
         }
     }
     const sortedObjects = area.objects.slice().sort(function (spriteA, spriteB) {
-        return spriteA.z - spriteB.z;
+        const A = spriteA.getAreaTarget ? spriteA.getAreaTarget(spriteA).z : -10000;
+        const B = spriteB.getAreaTarget ? spriteB.getAreaTarget(spriteB).z : -10000;
+        return A - B;
     });
-    for (const object of [...sortedObjects, ...(area.wallDecorations || []), ...getGlobalHud()]) {
-        if (!isCanvasTargetActive(object)) continue;
+    for (const hudObject of getGlobalHud()) {
+        if (!isCanvasTargetActive(hudObject)) continue;
+        if (isPointInRectObject(x, y, hudObject)) return hudObject;
+    }
+    for (const object of [...sortedObjects, ...(area.wallDecorations || [])]) {
+        if (!isCanvasTargetActive(object)) {
+            continue;
+        }
+        if (object.isPointOver) {
+            if (object.isPointOver(object, x, y)) {
+                return object;
+            }
+            continue;
+        }
         // (x,y) of objects is the bottom middle of their graphic.
-        const targetRectangle = object.target || object;
-        const left = ifdefor(targetRectangle.left, object.x - area.cameraX - object.width / 2);
-        const top = ifdefor(targetRectangle.top, GROUND_Y - object.y - object.height);
-        if (object.isOver) {
-            if (object.isOver(x, y)) return object;
-        } else if (isPointInRect(x, y, left, top, targetRectangle.width, targetRectangle.height)) return object;
+        let targetRectangle: ShortRectangle;
+        if (object.getMouseTarget) {
+            targetRectangle = object.getMouseTarget(object);
+        } else if (object.getAreaTarget) {
+            const areaTarget = object.getAreaTarget(object);
+            targetRectangle = {
+                x: areaTarget.x - area.cameraX - areaTarget.w / 2,
+                y: GROUND_Y - areaTarget.y - areaTarget.z / 2 - areaTarget.h,
+                w: areaTarget.w,
+                h: areaTarget.h,
+            }
+        }
+        if (targetRectangle && isPointInShortRect(x, y, targetRectangle)) {
+            return object;
+        }
     }
     return null;
 }
 window['getMainCanvasMouseTarget'] = getMainCanvasMouseTarget;
 function isCanvasTargetActive(canvasTarget) {
-    if (!canvasTarget.action && !canvasTarget.onClick) return false;
+    if (!canvasTarget.action && !canvasTarget.onClick && !canvasTarget.onInteract) return false;
     if (canvasTarget.isVisible && !canvasTarget.isVisible()) return false;
     if (canvasTarget.isEnabled && !canvasTarget.isEnabled(canvasTarget)) return false;
     return true;
@@ -250,8 +288,8 @@ function isMouseOverCanvasElement(x, y, element) {
     if (element.isVisible && !element.isVisible()) {
         return false;
     }
-    if (element.isOver) {
-        return element.isOver(x, y);
+    if (element.isPointOver) {
+        return element.isPointOver(element, x, y);
     }
     if (element.target) {
         // Support both short/full rectangles

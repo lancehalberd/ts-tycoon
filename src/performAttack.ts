@@ -237,7 +237,7 @@ export function createAttackStats(attacker: Actor, attack: Action, target: Targe
         sound,
         size: attack.base.size || (animation ? animation.frames[0][2] : 10),
         gravity,
-        speed: attack.base.speed || (attack.stats.range || 10) * 2.5,
+        speed: attack.base.speed || (attack.stats.range || 10),
         healthSacrificed: sacrificedHealth,
         source: attacker,
         attack,
@@ -284,7 +284,7 @@ function createSpellImprintedAttackStats(attacker: Actor, attack: Action, spell:
         sound,
         size: attack.base.size || (animation ? animation.frames[0][2] : 10),
         gravity,
-        speed: attack.base.speed || attack.base.speed || (attack.stats.range || 10) * 2.5,
+        speed: attack.base.speed || attack.base.speed || (attack.stats.range || 10),
         healthSacrificed: sacrificedHealth,
         source: attacker,
         attack,
@@ -329,9 +329,9 @@ export function performAttackProper(attackStats: AttackData, target: Target) {
         // It is easier for me to understand this code if I break it up into facing right and facing left cases.
         if (attacker.heading[0] > 0) {
             // Teleport to the location furthest from enemies that leaves the enemy within range to attack.
-            attacker.x = Math.max(attacker.x - teleport, Math.min(attacker.x + teleport, target.x - attackStats.attack.stats.range * RANGE_UNIT - attacker.width / 2 - target.width / 2));
+            attacker.x = Math.max(attacker.x - teleport, Math.min(attacker.x + teleport, target.x - attackStats.attack.stats.range * RANGE_UNIT - attacker.w / 2 - target.w / 2));
         } else {
-            attacker.x = Math.min(attacker.x + teleport, Math.max(attacker.x - teleport, target.x + target.width / 2 + attacker.width / 2 + attackStats.attack.stats.range * RANGE_UNIT));
+            attacker.x = Math.min(attacker.x + teleport, Math.max(attacker.x - teleport, target.x + target.w / 2 + attacker.w / 2 + attackStats.attack.stats.range * RANGE_UNIT));
         }
     }
     if (attackStats.attack.variableObject.tags['song']) {
@@ -366,18 +366,18 @@ export function performAttackProper(attackStats: AttackData, target: Target) {
             let vy = -y;
             let vx = currentTarget.x - x;
             let vz = currentTarget.z - z;
-            // Normalize starting speed at 15px per frame.
+            // Normalize starting speed at 1 tile per frame.
             const mag = Math.sqrt(vx * vx + vy * vy + vz * vz);
-            vy *= 15 / mag;
-            vx *= 15 / mag;
-            vz *= 15 / mag;
+            vy *= RANGE_UNIT / mag;
+            vx *= RANGE_UNIT / mag;
+            vz *= RANGE_UNIT / mag;
             area.projectiles.push(projectile(
                 projectileAttackStats, x, y, z, vx, vy, vz,currentTarget, Math.min(i * maxFrameSpread / count, i * 10), // delay is in frames
                 projectileAttackStats.isCritical ? 'yellow' : 'red', (projectileAttackStats.size || 20) * (projectileAttackStats.isCritical ? 1.5 : 1)));
         }
     } else if (attackStats.attack.variableObject.tags['ranged']) {
         const distance = getDistance(attacker, target);
-        const x = attacker.x + getXDirection(attacker) * attacker.width / 4;
+        const x = attacker.x + getXDirection(attacker) * attacker.w / 4;
         const y = getAttackY(attacker);
         const z = attacker.z;
         const v = getProjectileVelocity(attackStats, x, y, z, target);
@@ -475,7 +475,7 @@ export function applyAttackToTarget(attackStats: AttackData, actorOrLocation: Ta
     const target: Actor = actorOrLocation as Actor;
     const distance = attackStats.distance;
     const hitText: TextPopup = {
-        x: target.x, y: target.height + 10, z: target.z,
+        x: target.x, y: target.h + 10, z: target.z,
         color: 'grey', 'vx': -(Math.random() * 3 + 2) * target.heading[0], 'vy': 5
     };
     if (target.stats.invulnerable) {
@@ -641,8 +641,8 @@ export function applyAttackToTarget(attackStats: AttackData, actorOrLocation: Ta
         }
         if (attack.stats.pullsTarget) {
             target.stunned =  Math.max((target.stunned || 0), target.time + .3 + distance / RANGE_UNIT * (attack.stats.dragStun || 0) * effectiveness);
-            const targetX = (attacker.x > target.x) ? (attacker.x - target.width) : (attacker.x + attacker.width);
-            const targetZ = (attacker.z > target.z) ? (attacker.z - target.width) : (attacker.z + attacker.width);
+            const targetX = (attacker.x > target.x) ? (attacker.x - target.w) : (attacker.x + attacker.w);
+            const targetZ = (attacker.z > target.z) ? (attacker.z - target.w) : (attacker.z + attacker.w);
             target.pull = {sourceAttackStats: attackStats, x: targetX, z: targetZ, 'time': target.time + .3, 'damage': Math.floor(distance / RANGE_UNIT * damage * (attack.stats.dragDamage || 0) * effectiveness)};
             attacker.pull = {'x': attacker.x, z: attacker.z, 'time': attacker.time + .3, 'damage': 0};
             target.rotation = direction * ifdefor(attack.stats.knockbackRotation, -45);
@@ -651,7 +651,7 @@ export function applyAttackToTarget(attackStats: AttackData, actorOrLocation: Ta
         if (attack.stats.domino) {
             target.dominoAttackStats = attackStats;
             const targetX = (attacker.x < target.x)
-                ? (target.x + attacker.width + (attackStats.distance || 128) * effectiveness)
+                ? (target.x + attacker.w + (attackStats.distance || 128) * effectiveness)
                 : (target.x - (attackStats.distance || 128) * effectiveness);
             target.pull = {'x': targetX, z: target.z, 'time': target.time + .3, 'damage': 0};
             target.rotation = direction * ifdefor(attack.stats.knockbackRotation, 45);

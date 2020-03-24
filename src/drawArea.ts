@@ -7,7 +7,7 @@ import { editingMapState } from 'app/development/editLevel'
 import { createCanvas, mainCanvas, mainContext } from 'app/dom';
 import { getHoverAction, getSelectedAction } from 'app/drawSkills';
 import {
-    ADVENTURE_HEIGHT, BACKGROUND_HEIGHT, FIELD_HEIGHT,
+    ADVENTURE_HEIGHT, ADVENTURE_WIDTH, BACKGROUND_HEIGHT, BOTTOM_HUD_HEIGHT, FIELD_HEIGHT,
     FRAME_LENGTH, GROUND_Y, MIN_SLOW, RANGE_UNIT
 } from 'app/gameConstants';
 import { getCanvasCoords, getTargetLocation } from 'app/main';
@@ -22,7 +22,7 @@ import { canUseSkillOnTarget } from 'app/useSkill';
 import { drawFrame } from 'app/utils/animations';
 import { arrMod, rectangle, toR } from 'app/utils/index';
 
-import { Actor, ActorEffect, Animation, Area, AreaType } from 'app/types';
+import { Actor, ActorEffect, Animation, Area, AreaObject, AreaType } from 'app/types';
 
 export const bufferCanvas: HTMLCanvasElement = createCanvas(mainCanvas.width, mainCanvas.height);
 export const bufferContext = bufferCanvas.getContext('2d');
@@ -59,12 +59,12 @@ export function drawArea(area: Area) {
     const backgroundKey = area.backgroundPatterns[0];
     const areaType: AreaType = areaTypes[backgroundKey] || areaTypes.field;
     areaType.drawFloor(context, area);
-    const allSprites: ({
-        targetType?: string,
+    const allSprites: {
         z?: number,
-        render?: Function,
         drawGround?: Function,
-    })[] = [
+        getAreaTarget?: Function,
+        render?: Function,
+    }[] = [
         ...area.allies,
         ...area.enemies,
         ...area.objects,
@@ -74,10 +74,10 @@ export function drawArea(area: Area) {
     ];
     // Draw effects that appear underneath sprites. Do not sort these, rather, just draw them in
     // the order they are present in the arrays.
-    for (const sprite of allSprites) if (sprite.drawGround) sprite.drawGround(area);
+    for (const sprite of allSprites) if (sprite.drawGround) sprite.drawGround(context, sprite);
     for (const actor of area.allies.concat(area.enemies)) {
         drawActorShadow(context, actor);
-        drawActorGroundEffects(actor);
+        drawActorGroundEffects(context, actor);
     }
     drawActionTargetCircle(context);
     areaType.drawBackground(context, area);
@@ -87,7 +87,9 @@ export function drawArea(area: Area) {
         for (const object of area.wallDecorations) object.render(context, object);
     }
     const sortedSprites = allSprites.slice().sort(function (spriteA, spriteB) {
-        return (spriteB.z || 0) - (spriteA.z || 0);
+        const A = spriteA.getAreaTarget ? spriteA.getAreaTarget(spriteA).z : (spriteA.z || 0);
+        const B = spriteB.getAreaTarget ? spriteB.getAreaTarget(spriteB).z : (spriteB.z || 0);
+        return B - A;
     });
     for (const sprite of sortedSprites) {
         if (sprite.render) {
@@ -115,7 +117,7 @@ function drawRune(context: CanvasRenderingContext2D, actor: Actor, animation: An
     drawFrame(context, frame, {x: -size[0] / 2, y: -size[1] / 2, w: size[0], h: size[1]});
     context.restore();
 }
-function drawActorGroundEffects(actor: Actor) {
+function drawActorGroundEffects(context, actor: Actor) {
     const usedEffects = new Set();
     for (const effect of actor.allEffects) {
         const base = effect.base as {drawGround?: Function};
@@ -123,38 +125,41 @@ function drawActorGroundEffects(actor: Actor) {
         // Don't draw the same effect animation twice on the same character.
         if (usedEffects.has(base)) continue;
         usedEffects.add(base);
-        base.drawGround(actor);
+        base.drawGround(context, actor);
     }
     if (!actor.pull && !actor.stunned && !actor.isDead && actor.skillInUse && actor.recoveryTime === 0) {
         if (actor.skillInUse.variableObject.tags['spell']) {
             const castAnimation = effectAnimations.cast;
             const castFrame = Math.floor(actor.preparationTime / actor.skillInUse.totalPreparationTime * castAnimation.frames.length);
             if (castFrame < castAnimation.frames.length) {
-                drawOnGround(mainContext, (context) => {
-                    drawRune(context, actor, castAnimation, castFrame);
+                drawOnGround(context, groundContext => {
+                    drawRune(groundContext, actor, castAnimation, castFrame);
                 });
             }
         }
     }
 }
 function drawMinimap(area: Area) {
-    var y = 600 - 30;
-    var height = 6;
-    var x = 10;
-    var width = 750;
-    var context = mainContext;
-    var areaIndex = 0;
-    var numberOfAreas = area.areas.size;
-    var i = 0;
-    area.areas.forEach(mapArea => {
-        if (mapArea === area) areaIndex = i + 1;
+    const height = 3;
+    const width = ADVENTURE_WIDTH - 20;
+    const context = mainContext;
+    const numberOfAreas = area.areas.size;
+    let areaIndex = 0;
+    let i = 0;
+    let y = ADVENTURE_HEIGHT - BOTTOM_HUD_HEIGHT / 2;
+    let x = 10;
+    for (const [key, mapArea] of area.areas) {
+        if (mapArea === area) {
+            areaIndex = i + 1;
+            break;
+        }
         i++;
-    });
+    }
     drawBar(context, x, y, width, height, 'white', 'white', areaIndex / numberOfAreas);
-    var i = 0;
+    i = 0;
     area.areas.forEach(mapArea => {
-        var centerX = x + (i + 1) * width / area.areas.size;
-        var centerY = y + height / 2;
+        const centerX = x + (i + 1) * width / area.areas.size;
+        const centerY = y + height / 2;
         context.fillStyle = 'white';
         context.beginPath();
             context.arc(centerX, centerY, 11, 0, 2 * Math.PI);
@@ -162,18 +167,18 @@ function drawMinimap(area: Area) {
         i++;
     });
     context.fillStyle = 'orange';
-    context.fillRect(x + 1, y + 1, (width - 2) * (areaIndex / numberOfAreas) - 10, height - 2);
+    context.fillRect(x + 1, y + 1, (width - 2) * (areaIndex / numberOfAreas) - 5, height - 2);
     i = 0;
     area.areas.forEach(mapArea => {
-        var centerX = x + (i + 1) * width / numberOfAreas;
-        var centerY = y + height / 2;
+        const centerX = x + (i + 1) * width / numberOfAreas;
+        const centerY = y + height / 2;
         if (i < areaIndex) {
             context.fillStyle = 'orange';
             context.beginPath();
             context.arc(centerX, centerY, 10, 0, 2 * Math.PI);
             context.fill();
         }
-        var areaCompleted = !(mapArea.enemies || []).length;
+        const areaCompleted = !(mapArea.enemies || []).length;
         mapArea.drawMinimapIcon(context, areaCompleted, centerX, centerY);
         i++;
     });

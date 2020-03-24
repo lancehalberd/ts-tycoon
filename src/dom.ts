@@ -9,8 +9,10 @@ export function queryAll(className): NodeListOf<HTMLElement> {
 }
 
 export const mainCanvas:HTMLCanvasElement = query('.js-mainCanvas') as HTMLCanvasElement;
+window['mainCanvas'] = mainCanvas;
 export const mainContext = mainCanvas.getContext('2d');
 mainContext.imageSmoothingEnabled = false;
+window['mainContext'] = mainContext;
 
 export const jewelsCanvas:HTMLCanvasElement = query('.js-skillCanvas') as HTMLCanvasElement;
 export const jewelsContext = jewelsCanvas.getContext("2d");

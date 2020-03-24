@@ -294,7 +294,7 @@ export function drawOutlinedImage(context, image, color, thickness, source: Full
     globalTintContext.save();
         globalTintContext.fillStyle = color;
         globalTintContext.clearRect(0, 0, smallTarget.width, smallTarget.height);
-        var tintRectangle = {'left': 0, 'top': 0, 'width': smallTarget.width | 0, 'height': smallTarget.height | 0};
+        const tintRectangle = {'left': 0, 'top': 0, 'width': smallTarget.width | 0, 'height': smallTarget.height | 0};
         drawImage(globalTintContext, image, source, tintRectangle)
         globalTintContext.globalCompositeOperation = "source-in";
         globalTintContext.fillRect(0, 0, smallTarget.width, smallTarget.height);
@@ -310,6 +310,36 @@ export function drawOutlinedImage(context, image, color, thickness, source: Full
         }
     }
     drawImage(context, image, source, target);
+}
+export function drawWhiteOutlinedFrame(context: CanvasRenderingContext2D, frame: Frame, target: ShortRectangle) {
+    drawOutlinedFrame(context, frame, 'white', 1, target);
+}
+export function drawOutlinedFrame(
+    context: CanvasRenderingContext2D,
+    frame: Frame, color: string, thickness: number,
+    target: ShortRectangle
+) {
+    // First make a solid color in the shape of the image to tint.
+    const tintRectangle = {image: globalTintCanvas, x: 0, y: 0, w: target.w, h: target.h};
+    globalTintContext.save();
+        globalTintContext.fillStyle = color;
+        globalTintContext.clearRect(0, 0, target.w | 0, target.h | 0);
+        drawFrame(globalTintContext, frame, tintRectangle)
+        globalTintContext.globalCompositeOperation = "source-in";
+        globalTintContext.fillRect(0, 0, target.w | 0, target.h | 0);
+    globalTintContext.restore();
+
+    for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+            if (dy == 0 || dx == 0) continue;
+            drawFrame(context, tintRectangle, {
+                ...target,
+                x: target.x + dx * thickness,
+                y: target.y + dy * thickness
+            });
+        }
+    }
+    drawFrame(context, frame, target);
 }
 function logPixel(context, x, y) {
     var imgd = context.getImageData(x, y, 1, 1);

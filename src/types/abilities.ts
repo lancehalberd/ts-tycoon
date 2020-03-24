@@ -77,7 +77,7 @@ export interface Effect {
     icon?: Frame,
     tags: string[],
     icons?: ArrayFrame[],
-    drawGround?: (actor: Actor) => void,
+    drawGround?: (context: CanvasRenderingContext2D, actor: Actor) => void,
 }
 
 export interface ActiveEffect extends AreaEntity {
@@ -115,8 +115,8 @@ export interface Projectile {
     t: number,
     done: boolean,
     delay: number,
-    width: number,
-    height: number,
+    w: number,
+    h: number,
     color: Color,
     totalHits: number,
     hit: boolean,

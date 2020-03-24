@@ -1,8 +1,8 @@
 import {
-    ActiveEffect, ActorStats, Affix, Animation, Area, RenderableAreaEntity, AreaObject,
+    ActiveEffect, ActorStats, Affix, Animation, Area, AreaObject, AreaTarget, AreaObjectTarget,
     BonusSource, Exit,
     Job, JobKey, Level, LocationTarget, Monster,
-    SavedEquipment, Target,
+    SavedEquipment, ShortRectangle, Target,
     VariableObject
 } from 'app/types';
 import { Ability, Action, ActorEffect, Effect } from 'app/types/abilities';
@@ -25,7 +25,7 @@ export type ActorActivity = {
     target: Target,
 } | {
     type: 'interact',
-    target: LocationTarget | AreaObject,
+    target: AreaObjectTarget,
 }
 
 export interface ActorSource {
@@ -46,7 +46,7 @@ export interface ActorSource {
     attackY?: number,
 };
 
-export interface BaseActor extends RenderableAreaEntity {
+export interface BaseActor extends AreaTarget {
     targetType: 'actor',
     type: string,
     // Screen coordinates of the player (for mouseover purposes)
@@ -61,7 +61,6 @@ export interface BaseActor extends RenderableAreaEntity {
     attackCooldown: number,
     percentHealth: number,
     percentTargetHealth: number,
-    helpMethod: Function,
     heading: number[], // Character moves left to right by default.
     // tags?: string[],
     actions?: Action[],
@@ -137,6 +136,12 @@ export interface BaseActor extends RenderableAreaEntity {
     cloaked?: boolean,
     // Tracks when the next time a boss will recover.
     recoverSkillHealthThreshold?: number,
+
+    helpMethod: (actor: Actor, hero: Hero) => string,
+    render: (context: CanvasRenderingContext2D, actor: Actor) => void,
+
+    // This may be unset when an object has not been assigned to an area yet.
+    area: Area,
 }
 export interface Hero extends BaseActor {
     type: 'hero',
@@ -148,6 +153,7 @@ export interface Hero extends BaseActor {
     job: Job,
     unlockedAbilities: {[key: string]: true},
     abilities: Ability[],
+    consideredObjects: Set<AreaObject>,
 }
 export type Actor = Hero | Monster;
 export interface SavedActor {

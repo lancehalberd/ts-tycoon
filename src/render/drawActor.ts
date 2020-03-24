@@ -16,19 +16,19 @@ import { Actor, Frame } from 'app/types';
 export function updateActorDimensions(actor: Actor) {
     const scale = (actor.stats.scale || 1);
     const frame = getActorAnimationFrame(actor);
-    actor.width = (frame.content ? frame.content.w : frame.w) * scale;
-    actor.height = (frame.content ? frame.content.h : frame.h) * scale;
+    actor.w = (frame.content ? frame.content.w : frame.w) * scale;
+    actor.h = (frame.content ? frame.content.h : frame.h) * scale;
     // These values are used for determining when the mouse is hovering over the actor.
     // We only need these when the screen is displayed, so we can set them only on draw.
     if (actor.area) {
-        actor.top = Math.round(GROUND_Y - actor.height - (actor.y || 0) - (actor.z || 0) / 2);
-        actor.left = Math.round(actor.x - actor.width / 2 - actor.area.cameraX);
+        actor.top = Math.round(GROUND_Y - actor.h - (actor.y || 0) - (actor.z || 0) / 2);
+        actor.left = Math.round(actor.x - actor.w / 2 - actor.area.cameraX);
     }
-    if (isNaN(actor.width) || isNaN(actor.height)) {
+    if (isNaN(actor.w) || isNaN(actor.h)) {
         console.log(actor.stats.scale);
         console.log(actor.x);
         console.log({ frame });
-        console.log([actor.width, actor.height]);
+        console.log([actor.w, actor.h]);
         pause();
         return false;
     }
@@ -108,13 +108,13 @@ export function drawActor(context: CanvasRenderingContext2D, actor: Actor) {
     const xCenter = Math.round(actor.x - actor.area.cameraX);
     // Top is the top of the actor content, and height is the height of the content, so the center of the actor content
     // is a simple calculation.
-    const yCenter = Math.round(actor.top + actor.height / 2);
+    const yCenter = Math.round(actor.top + actor.h / 2);
     /*if (mouseDown) {
         console.log(actor.base.name ? actor.base.name : actor.name);
         console.log([actor.x, actor.y]);
         console.log(['xCenter', source.xCenter, 'actualWidth', source.actualWidth,  'width', source.width, 'xOffset', source.xOffset, 'scale', scale]);
         console.log(['yCenter', source.yCenter, 'actualHeight', source.actualHeight,  'height', source.height, 'yOffset', source.yOffset, 'scale', scale]);
-        console.log([left, top, actor.width, actor.height]);
+        console.log([left, top, actor.w, actor.height]);
         console.log([source.xCenter, source.yCenter]);
         console.log([xCenterOnMap, yCenterOnMap]);
     }*/
@@ -159,7 +159,7 @@ export function drawActorEffects(context: CanvasRenderingContext2D, actor: Actor
     if (actor.isDead) return;
     const barWidth = 32;
     // if (!actor.area.enemies.length) return;
-    let x = actor.left + actor.width / 2 - barWidth / 2;
+    let x = actor.left + actor.w / 2 - barWidth / 2;
     // Don't allow the main character's life bar to fall off the edges of the screen.
     const state = getState();
     if (actor === state.selectedCharacter.hero) {
@@ -206,7 +206,7 @@ export function drawActorEffects(context: CanvasRenderingContext2D, actor: Actor
         for (let i = 0; i < 3; i++ ) {
             const theta = 2 * Math.PI * (i + 3 * actor.time) / 3;
             // var scale = (actor.stats.scale || 1);
-            target.left = actor.left + (actor.width - shrineSource.width) / 2 + Math.cos(theta) * 30;
+            target.left = actor.left + (actor.w - shrineSource.width) / 2 + Math.cos(theta) * 30;
             target.top = actor.top - 5 + Math.sin(theta) * 10;
             drawImage(context, shrineSource.image, shrineSource, target);
         }
@@ -247,7 +247,7 @@ function drawEffectIcons(context: CanvasRenderingContext2D, actor: Actor, x: num
             drawImage(context, source.image, source, {'left': x + xOffset, 'top': y + yOffset, 'width': source.width, 'height': source.height});
         }
         effectXOffset += 16;
-        if (effectXOffset + 16 > Math.max(actor.width, 64)) {
+        if (effectXOffset + 16 > Math.max(actor.w, 64)) {
             effectXOffset = 0;
             effectYOffset += 20;
         }

@@ -247,7 +247,7 @@ export function useSkill(actor: Actor) {
     // visible animations, we should probably remove this.
     if (skill.base.showName) {
         const hitText: TextPopup = {
-            x: actor.x, y: actor.height, z: actor.z,
+            x: actor.x, y: actor.h, z: actor.z,
             color: 'white', fontSize: 15, 'vx': 0, 'vy': 1, 'gravity': .1,
             value: skill.base.name,
         };
@@ -271,7 +271,7 @@ export function useReaction(actor: Actor, reaction: Action, attackStats: AttackD
     // Show the name of the skill. When skills have distinct visible animations, we should probably remove this.
     if (reaction.base.showName) {
         const skillPopupText: TextPopup = {
-            x: actor.x, y: actor.height, z: actor.z,
+            x: actor.x, y: actor.h, z: actor.z,
             color: 'white', fontSize: 15, 'vx': 0, 'vy': 1, 'gravity': .1,
             value: reaction.base.name,
         };
@@ -488,9 +488,9 @@ actionDefinitions.minion = {
             newMonster.z = target.z;
         } else {
             newMonster = makeMonster(actor.area, {'key': minionSkill.base.monsterKey}, actor.level, [], 0);
-            newMonster.x = actor.x + actor.heading[0] * (actor.width / 2 + 48);
-            newMonster.y = actor.y + actor.heading[1] * (actor.width / 2 + 48);
-            newMonster.z = actor.z + actor.heading[2] * (actor.width / 2 + 48);
+            newMonster.x = actor.x + actor.heading[0] * (actor.w / 2 + 48);
+            newMonster.y = actor.y + actor.heading[1] * (actor.w / 2 + 48);
+            newMonster.z = actor.z + actor.heading[2] * (actor.w / 2 + 48);
         }
         newMonster.heading = actor.heading.slice();
         newMonster.skillSource = minionSkill;
@@ -687,7 +687,7 @@ reactionDefinitions.dodge = {
     use: function (actor, dodgeSkill, attackStats) {
         attackStats.dodged = true;
         if (dodgeSkill.stats.distance) {
-            const minX = actor.area.left, maxX = actor.area.width - actor.width / 2;
+            const minX = actor.area.left, maxX = actor.area.width - actor.w / 2;
             let targetX = actor.x + actor.heading[0] * dodgeSkill.stats.distance;
             // If the dodgeSkill distance is negative, it is designed to get away from the enemy.
             // However, if the actor is cornered, this isn't possible by jumping backwards,
@@ -730,10 +730,10 @@ reactionDefinitions.sideStep = {
         if (dodgeSkill.stats.distance) {
             var attacker = attackStats.source;
             actor.pull = {'time': actor.time + (dodgeSkill.stats.moveDuration || 0.3), 'damage': 0};
-            if (attacker.x > actor.x) actor.pull.x = Math.min(actor.x + actor.heading[0] * dodgeSkill.stats.distance, attacker.x - (attacker.width + actor.width) / 2);
-            else actor.pull.x = Math.max(actor.x + actor.heading[0] * dodgeSkill.stats.distance, attacker.x + (attacker.width + actor.width) / 2);
-            if (attacker.z > actor.z) actor.pull.z = Math.min(actor.z + actor.heading[2] * dodgeSkill.stats.distance, attacker.z - (attacker.width + actor.width) / 2);
-            else actor.pull.z = Math.max(actor.z + actor.heading[2] * dodgeSkill.stats.distance, attacker.z + (attacker.width + actor.width) / 2);
+            if (attacker.x > actor.x) actor.pull.x = Math.min(actor.x + actor.heading[0] * dodgeSkill.stats.distance, attacker.x - (attacker.w + actor.w) / 2);
+            else actor.pull.x = Math.max(actor.x + actor.heading[0] * dodgeSkill.stats.distance, attacker.x + (attacker.w + actor.w) / 2);
+            if (attacker.z > actor.z) actor.pull.z = Math.min(actor.z + actor.heading[2] * dodgeSkill.stats.distance, attacker.z - (attacker.w + actor.w) / 2);
+            else actor.pull.z = Math.max(actor.z + actor.heading[2] * dodgeSkill.stats.distance, attacker.z + (attacker.w + actor.w) / 2);
         }
         if (dodgeSkill.stats.buff) {
             addTimedEffect(actor, dodgeSkill.stats.buff, 0);
@@ -957,8 +957,8 @@ function banishTarget(actor: Actor, target: Actor, range: number, rotation: numb
     const dz = target.z - actor.z;
     const mag = Math.sqrt(dx * dx + dz * dz);
     target.pull = {
-        'x': actor.x + actor.width / 2 + RANGE_UNIT * range * dx / mag,
-        'z': actor.z + actor.width / 2 + RANGE_UNIT * range * dz / mag,
+        'x': actor.x + actor.w / 2 + RANGE_UNIT * range * dx / mag,
+        'z': actor.z + actor.w / 2 + RANGE_UNIT * range * dz / mag,
         'delay': target.time + getDistance(actor, target) * .02 / RANGE_UNIT,
         'time': target.time + range * .02, 'damage': 0
     };
@@ -1039,7 +1039,7 @@ actionDefinitions.leap = {
         return skillDefinition.shouldUse(actor, followupAction, target);
     },
     use: (actor, leapSkill, target) => {
-        const combinedRadius = (target.width + actor.width) / 2;
+        const combinedRadius = (target.w + actor.w) / 2;
         const distance = getDistance(actor, target);
         actor.pull = {
             x: (target.x < actor.x) ? target.x + combinedRadius : target.x - combinedRadius,
