@@ -8,7 +8,7 @@ import { bossMonsterBonuses, easyBonuses, hardBonuses, monsters } from 'app/cont
 import { setContext } from 'app/context';
 import { bodyDiv, divider, mainContext, queryAll, titleDiv, toggleElements } from 'app/dom';
 import { drawBoardPreview } from 'app/drawBoard';
-import { ADVENTURE_WIDTH, GROUND_Y, MAX_LEVEL, RANGE_UNIT, MIN_Z } from 'app/gameConstants';
+import { ADVENTURE_WIDTH, GROUND_Y, MAX_LEVEL, RANGE_UNIT, MAX_Z, MIN_Z } from 'app/gameConstants';
 import { drawImage, requireImage } from 'app/images';
 import { getJewelTiewerForLevel } from 'app/jewels';
 import { coinsLoot, jewelLoot } from 'app/loot';
@@ -97,7 +97,7 @@ export function instantiateLevel(
         base: levelData,
         enemyLevel,
         levelDifficulty,
-        entrance: {areaKey: 'area0', x: 120, z: 0},
+        entrance: {areaKey: 'area0', x: 48, z: 0},
         areas,
     }
     let lastArea: Area;
@@ -149,6 +149,7 @@ export function instantiateLevel(
                 drawImage(context, source.image, source.source, rectangle(x - 8, y - 8, 16, 16));
             }
             area.width += RANGE_UNIT * 2;
+            area.width = Math.max(area.width, ADVENTURE_WIDTH);
             areaType.addObjects(area, {
                 exits: [entranceDestination, exitDestination],
                 loot,
@@ -165,10 +166,10 @@ export function instantiateLevel(
             const monster: MonsterSpawn = {
                 key: Random.element(possibleMonsters),
                 level: enemyLevel,
-                location: [area.width + Random.range(0, RANGE_UNIT * 6), 0, 20]
+                location: [area.width + Random.range(0, RANGE_UNIT * 2), 0, Random.range(MIN_Z / 2, MAX_Z / 2)]
             };
             areaMonsters.push(monster);
-            area.width = monster.location[0] + RANGE_UNIT * 2;
+            area.width = monster.location[0] + RANGE_UNIT * 8;
             if (maxLoops-- < 0) debugger;
         }
         // Add the predetermined monsters towards the end of the area.
@@ -176,19 +177,20 @@ export function instantiateLevel(
             const monster: MonsterSpawn = {
                 key: eventMonsters.shift(),
                 level: enemyLevel,
-                location: [area.width + Random.range(0, RANGE_UNIT * 6), 0, 20]
+                location: [area.width + Random.range(0, RANGE_UNIT * 2), 0, Random.range(MIN_Z / 2, MAX_Z / 2)]
             };
             if (area.isBossArea) {
                 monster.bonusSources = [bossMonsterBonuses];
                 monster.rarity = 0; // Bosses cannot be enchanted or imbued.
             }
             areaMonsters.push(monster);
-            area.width = monster.location[0] + RANGE_UNIT * 2;
+            area.width = monster.location[0] + RANGE_UNIT * 8;
             if (maxLoops-- < 0) debugger;
         }
         area.width += RANGE_UNIT * 4;
         if (maxLoops-- < 0) debugger;
 
+        area.width = Math.max(area.width, ADVENTURE_WIDTH);
         areaType.addObjects(area, {
             monsters: areaMonsters,
             exits: [entranceDestination, exitDestination],

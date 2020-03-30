@@ -105,7 +105,6 @@ export interface Area {
     drawMinimapIcon?: Function,
     areas?: Map<string, Area>,
     width: number,
-    wallDecorations: AreaObject[],
     rightWall?: Animation,
     leftWall?: Animation,
     left: number,
@@ -125,4 +124,18 @@ export interface Area {
     textPopups: any[],
     treasurePopups: any[],
     objects: AreaObject[],
+    wallDecorations: AreaObject[],
+}
+
+export interface MonsterSpawner extends AreaObject {
+    proximity: number,
+    spawns: Partial<MonsterSpawn & {delay?: number}>[],
+    // leadSpawner+spawnDelay are used if this spawner is tied to the timing of another spawner.
+    leadSpawner?: MonsterSpawner,
+    // How many milliseconds to wait after the lead spawners spawns before spawning.
+    spawnDelay?: number,
+    lastSpawnTime: number,
+    // Next spawn occurs when this reaches 0.
+    spawnTimer: number,
+    spawnAnimation: Animation,
 }

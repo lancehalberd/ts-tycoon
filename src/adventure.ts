@@ -503,7 +503,12 @@ function runActorLoop(actor: Actor) {
     } else if (actor.type === 'hero' && actorShouldAutoplay(actor) && !actor.enemies.filter(enemy => enemy.targetHealth >= 0).length) {
         const character = actor.character;
         // Code for intracting with chest/shrine at the end of level and leaving the area.
-        for (const object of area.objects) {
+        // Might want to sort these by X coord at some point.
+        /*const sortedObjects = [...area.objects, ...area.wallDecorations];
+        sortedObjects.sort((A, B) => {
+            return B.getAreaTarget(B).x - A.getAreaTarget(A).x;
+        })*/
+        for (const object of [...area.objects, ...area.wallDecorations]) {
             if (!object.getAreaTarget || !object.shouldInteract || !object.shouldInteract(object, actor)) {
                 continue;
             }
@@ -517,6 +522,7 @@ function runActorLoop(actor: Actor) {
             // The AI only considers each object once.
             actor.consideredObjects.add(object);
             setActorInteractionTarget(actor, objectTarget);
+            break;
         }
     }
     // Manual control doesn't use the auto targeting logic.

@@ -6,7 +6,7 @@ import { map } from 'app/content/mapData';
 import { createCanvas } from 'app/dom';
 import { ParticleEffect } from 'app/effects';
 import { makeAffix } from 'app/enchanting';
-import { equipmentSlots } from 'app/gameConstants';
+import { ADVENTURE_WIDTH, equipmentSlots } from 'app/gameConstants';
 import { drawCompositeTintedFrame, requireImage } from 'app/images';
 import { makeItem } from 'app/inventory';
 import { drawActor, getActorAnimationFrame } from 'app/render/drawActor';
@@ -121,7 +121,7 @@ export function makeMonster(
         prefixes: [],
         suffixes: [],
         extraSkills,
-        aggroRadius: 600,
+        aggroRadius: ADVENTURE_WIDTH * 3 / 4,
         percentHealth: 1,
         percentTargetHealth: 1,
         helpMethod: actorHelpText,

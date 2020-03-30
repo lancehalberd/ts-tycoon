@@ -1,22 +1,28 @@
 import { addMonstersToArea, enterArea } from 'app/adventure';
+import {
+    initializeActorForAdventure,
+} from 'app/character';
+import { makeMonster } from 'app/content/monsters';
 import { bodyDiv, titleDiv } from 'app/dom';
 import {
     ADVENTURE_HEIGHT, ADVENTURE_WIDTH,
     BACKGROUND_HEIGHT, BOTTOM_HUD_RECT,
+    FRAME_LENGTH,
     GROUND_Y,
     MAX_Z, MIN_Z,
     RANGE_UNIT,
 } from 'app/gameConstants';
 import { drawWhiteOutlinedFrame, requireImage } from 'app/images';
 import { getCanvasPopupTarget } from 'app/popup';
-import { createAnimation, frame, drawFrame, frameAnimation } from 'app/utils/animations';
+import { createAnimation, frame, getFrame, drawFrame, frameAnimation } from 'app/utils/animations';
 import { r, fillRect, isPointInRect } from 'app/utils/index';
 import SRandom from 'app/utils/SRandom';
 
 import { fixedObject } from 'app/content/furniture';
 import {
     Ability, Actor, Area, AreaEntity, AreaObject, AreaObjectTarget,
-    AreaType, Exit, FixedObject, Frame, Hero,
+    AreaType, Exit, FixedObject, Frame, Hero, MonsterSpawn, MonsterSpawner,
+    Animation,
 } from 'app/types';
 /*
 interface BackgroundSource {
@@ -196,6 +202,8 @@ const [meadowRiver, meadowBridge] = createAnimation('gfx2/areas/meadowbridge.png
 const meadowClouds = createAnimation('gfx2/areas/meadowClouds.png',
     frame(0, 0, 128, 84), {cols: 3}).frames;
 
+const bushAnimation = createAnimation('gfx2/areas/meadowBush.png', r(0, 0, 32, 32), {cols: 4});
+
 export class AreaDecoration implements AreaObject {
     area: Area;
     frame: Frame;
@@ -246,14 +254,117 @@ export class AreaObstacle extends AreaDecoration {
     isSolid: boolean = true;
 }
 
+export class SimpleMonsterSpawner implements MonsterSpawner {
+    area: Area;
+    x: number;
+    y: number;
+    z: number;
+    isSolid: boolean = false;
+    proximity = ADVENTURE_WIDTH / 3;
+    spawns: Partial<MonsterSpawn & {delay?: number}>[];
+    time: number;
+    lastSpawnTime: number;
+    spawnTimer: number;
+    spawnAnimation: Animation;
+
+    constructor(spawns: MonsterSpawn[], initialDelay: number, delay: number, animation: Animation) {
+        this.spawns = spawns.map(spawn => ({...spawn, delay}));
+        this.spawnAnimation = animation;
+        this.lastSpawnTime = 0;
+        this.spawnTimer = initialDelay;
+    }
+
+    getCurrentFrame(): Frame {
+        return getFrame(this.spawnAnimation, Math.max(0, -this.spawnTimer));
+    }
+
+    getAreaTarget(): AreaObjectTarget {
+        const frame = this.getCurrentFrame();
+        const content = frame.content || frame;
+        return {
+            area: this.area,
+            targetType: 'object',
+            object: this,
+            x: this.x,
+            y: this.y,
+            z: this.z,
+            w: content.w,
+            h: content.x,
+        };
+    }
+
+    update() {
+        // Do nothing once all monsters are spawned.
+        if (!this.spawns.length) {
+            return;
+        }
+        this.time += FRAME_LENGTH;
+        // Do nothing if the hero is not in range.
+        if (Math.abs(this.x - this.area.allies.find(actor => actor.type === 'hero').x) > this.proximity) {
+            return;
+        }
+        this.spawnTimer -= FRAME_LENGTH;
+        if (this.spawnTimer <= -this.spawnAnimation.duration) {
+            // spawn the monster.
+            const monsterData = this.spawns.shift();
+            const bonusSources = [...(monsterData.bonusSources || []), ...this.area.enemyBonuses];
+            const rarity = monsterData.rarity;
+            const newMonster = makeMonster(this.area, monsterData.key, monsterData.level, bonusSources, rarity);
+            newMonster.heading = [-1, 0, 0]; // Monsters move right to left
+            newMonster.x = this.x;
+            newMonster.y = this.y;
+            newMonster.z = this.z;
+            newMonster.area = this.area;
+            initializeActorForAdventure(newMonster);
+            newMonster.time = 0;
+            newMonster.allies = newMonster.area.enemies;
+            newMonster.enemies = newMonster.area.allies;
+            newMonster.allies.push(newMonster);
+
+            this.lastSpawnTime = this.time;
+            if (this.spawns.length) {
+                this.spawnTimer = this.spawns[0].delay;
+            }
+        } else if (this.spawnTimer > 0 && this.area.enemies.filter(e => !e.isDead).length === 0) {
+            this.spawnTimer = 0;
+        }
+    }
+
+    render(context: CanvasRenderingContext2D) {
+        const frame = this.getCurrentFrame();
+        const content = frame.content || frame;
+        context.save();
+            context.translate(
+                this.x + content.w / 2 - this.area.cameraX,
+                GROUND_Y - content.h - this.z / 2
+            );
+            context.scale(-1, 1);
+            drawFrame(context, frame, {...frame, x: 0, y: 0});
+        context.restore();
+    }
+}
+
 const FieldArea: AreaType = {
-    addObjects(area, {monsters, exits, loot, ability}) {
+    addObjects(area, {monsters = [], exits, loot, ability}) {
         const random = SRandom.addSeed(area.seed);
-        addMonstersToArea(area, monsters, area.enemyBonuses);
+        if (monsters.length) {
+            monsters = [...monsters];
+            // Make the first monster into a spawner if there are more than one monster and this isn't the boss chamber.
+            if (monsters.length > 0 && !area.isBossArea) {
+                const spawnerMonster = monsters.shift();
+                const spawner = new SimpleMonsterSpawner([spawnerMonster, spawnerMonster], 2000, 4000, bushAnimation);
+                spawner.x = spawnerMonster.location[0] - RANGE_UNIT * 10;
+                spawner.y = 0;
+                spawner.z = spawnerMonster.location[2];
+                area.objects.push(spawner);
+            }
+            addMonstersToArea(area, monsters, area.enemyBonuses);
+        }
+
         addChest(area, loot);
         addShrine(area, ability);
         // Do this last since it depends on the final dimensions of the area.
-        addBridgeExits(area, exits);
+        addExits(area, exits, meadowBridge);
         area.leftWall = areaWalls.river;
         area.rightWall = areaWalls.river;
         // Add an obstacle to the corners
@@ -336,6 +447,104 @@ const FieldArea: AreaType = {
     }
 };
 
+
+const caveFrames = createAnimation('gfx2/areas/cavetiles.png', r(0, 0, 32, 32), {cols: 6}).frames;
+const caveBackFrontFrames = createAnimation('gfx2/areas/caveforeground.png',
+    r(0, 0, 128, 86), {cols: 2}).frames;
+const [stoneWallMid, stoneWallLeft, stoneWallRight, ...caveBackFrames] = createAnimation('gfx2/areas/cavebackground.png',
+    r(0, 0, 128, 84), {cols: 6}).frames;
+const caveThingFrames = createAnimation('gfx2/areas/cavethings.png',
+    r(0, 0, 32, 32), {cols: 2}).frames;
+
+const [caveWall, caveDoorOpen, caveDoorClosed] = createAnimation('gfx2/areas/cavebridge.png',
+    frame(0, 0, 39, 148, r(16, 92, 23, 35)), {cols: 3}).frames;
+
+const CaveArea: AreaType = {
+    addObjects(area, {monsters = [], exits, loot, ability}) {
+        const random = SRandom.addSeed(area.seed);
+        addMonstersToArea(area, monsters, area.enemyBonuses);
+
+        addChest(area, loot);
+        addShrine(area, ability);
+        // Do this last since it depends on the final dimensions of the area.
+        addExits(area, exits, caveDoorOpen);
+        area.leftWall = areaWalls.caveWall;
+        area.rightWall = areaWalls.caveWall;
+        // Add an obstacle to the corners
+        area.objects.push(new AreaObstacle(random.addSeed(1).element(caveThingFrames), 44, MAX_Z - 24));
+        area.objects.push(new AreaObstacle(random.addSeed(2).element(caveThingFrames), area.width - 44, MAX_Z - 24));
+        finalizeArea(area);
+    },
+    drawFloor(context, area) {
+        const random = SRandom.addSeed(area.seed);
+        let w = FLOOR_TILE_SIZE;
+        let h = FLOOR_TILE_SIZE;
+        let x = Math.floor(area.cameraX / w) * w;
+        while (x < area.cameraX + ADVENTURE_WIDTH) {
+            for (let row = 0; row < 2; row++) {
+                const frame = random.addSeed(x + row).element(caveFrames);
+                drawFrame(context, frame, {x: x - area.cameraX, y: BACKGROUND_HEIGHT + h * row, w, h});
+            }
+            x += w;
+        }
+        fillRect(context, BOTTOM_HUD_RECT, '#883');
+    },
+    drawBackground(context, area) {
+        drawFrame(context, meadowSky, {...meadowSky, x: 0, y: 0});
+        const random = SRandom.addSeed(area.seed);
+        // Draws the pillars with parallax.
+        {
+            let w = 128;
+            let h = 84;
+            let X = area.cameraX * 0.8;
+            let x = Math.floor(X / w) * w;
+            while (x < X + ADVENTURE_WIDTH) {
+                const frame = random.addSeed(x).element(caveBackFrames);
+                drawFrame(context, frame, {x: x - X, y: 0, w, h});
+                x += w;
+            }
+        }
+
+        // Draw a continuous stone wall, possibly with a gap in one section.
+        {
+            const gap = random.range(0, 2);
+            let w = 128;
+            let h = 84;
+            let X = area.cameraX;
+            let x = Math.floor(X / w) * w;
+            while (x < X + ADVENTURE_WIDTH) {
+                const i = Math.round(x / w);
+                if (i === gap) {
+                    x += w;
+                    continue;
+                }
+                let frame;
+                if (i === gap - 1) {
+                    frame = stoneWallRight;
+                } else if (i === gap + 1) {
+                    frame = stoneWallLeft;
+                } else {
+                    frame = stoneWallMid;
+                }
+                drawFrame(context, frame, {x: x - X, y: 0, w, h});
+                x += w;
+            }
+        }
+
+        // row of rocks in front of the background.
+        {
+            let w = 128;
+            let h = 86;
+            let x = Math.floor(area.cameraX / w) * w;
+            while (x < area.cameraX + ADVENTURE_WIDTH) {
+                const frame = random.addSeed(x).element(caveBackFrontFrames);
+                drawFrame(context, frame, {x: x - area.cameraX, y: 0, w, h});
+                x += w;
+            }
+        }
+    }
+};
+
 const guildFrames = createAnimation('gfx2/areas/Guild tiles2.png', r(0, 0, FLOOR_TILE_SIZE, FLOOR_TILE_SIZE), {rows: 3}).frames;
 const guildBackFrontFrames = createAnimation('gfx2/areas/guildtiles.png',
     r(0, 0, 128, BG_TILE_HEIGHT), {cols: 2}).frames;
@@ -348,7 +557,7 @@ const GuildArea: AreaType = {
         addChest(area, loot);
         addShrine(area, ability);
         // Do this last since it depends on the final dimensions of the area.
-        addDoorExits(area, exits);
+        addExits(area, exits);
         finalizeArea(area);
     },
     drawFloor(context, area) {
@@ -379,6 +588,7 @@ const GuildArea: AreaType = {
 };
 
 export const areaWalls = {
+    caveWall: frameAnimation(caveWall),
     river: frameAnimation(meadowRiver),
     guildWall: frameAnimation(guildRightWall),
 };
@@ -402,6 +612,10 @@ export class AreaDoor implements AreaObject {
 
     onInteract(door: AreaDoor, hero: Hero) {
         enterArea(hero, door.exit);
+    }
+
+    shouldInteract(object: FixedObject, hero: Hero) {
+        return !this.isLeftDoor;
     }
 
     getAreaTarget(door: AreaDoor): AreaObjectTarget {
@@ -447,26 +661,15 @@ function finalizeArea(area: Area) {
     for (const object of area.wallDecorations) object.area = area;
 }
 
-function addDoorExits(area: Area, exits: Exit[]) {
+function addExits(area: Area, exits: Exit[], frame: Frame = guildRightDoorEmpty) {
     if (exits[0]) {
-        area.wallDecorations.push(new AreaDoor(true, exits[0]));
+        area.wallDecorations.push(new AreaDoor(true, exits[0], frame));
     }
     if (exits[1]) {
-        area.wallDecorations.push(new AreaDoor(false, exits[1]));
+        area.wallDecorations.push(new AreaDoor(false, exits[1], frame));
     }
 }
 
-function addBridgeExits(area: Area, exits: Exit[]) {
-    if (exits[0]) {
-        area.wallDecorations.push(new AreaDoor(true, exits[0], meadowBridge));
-        //area.objects.push(fixedObject('woodBridge', [12, 0, 0], {'xScale': -1, exit: exits[0]}));
-    }
-    if (exits[1]) {
-        area.wallDecorations.push(new AreaDoor(false, exits[1], meadowBridge));
-        //area.objects.push(fixedObject('woodBridge', [area.width - 12, 0, 0],
-        //    {isEnabled: isExitEnabled, exit: exits[1]}));
-    }
-}
 function isExitEnabled(object: AreaObject): boolean {
     return !object.area.isBossArea || !object.area.enemies.length;
 }
@@ -501,8 +704,8 @@ export const areaTypes = {
     garden: FieldArea,
     orchard: FieldArea,
     field: FieldArea,
-    cemetery: FieldArea,
-    cave: FieldArea,
+    cemetery: CaveArea,
+    cave: CaveArea,
     beach: FieldArea,
-    town: FieldArea,
+    town: GuildArea,
 };
