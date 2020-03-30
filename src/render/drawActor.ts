@@ -199,8 +199,9 @@ export function drawActorEffects(context: CanvasRenderingContext2D, actor: Actor
         y -= 2;
         drawBar(context, x, y, barWidth, 3, 'white', '#aaa', actor.temporalShield / actor.maxTemporalShield);
     }
-    y = actor.top - 5;
-    drawEffectIcons(context, actor, x, y);
+    y = actor.top - 7;
+    drawEffectIcons(context, actor, x, y, barWidth);
+    // Draw spinning icons over stunned actor.
     if (!actor.isDead && actor.stunned) {
         const target =  {'left': 0, 'top': 0, 'width': shrineSource.width, 'height': shrineSource.height}
         for (let i = 0; i < 3; i++ ) {
@@ -229,9 +230,9 @@ function getActorTints(actor: Actor) {
     if (actor.slow > 0) tints.push(['#fff', Math.min(1, actor.slow)]);
     return tints;
 }
-function drawEffectIcons(context: CanvasRenderingContext2D, actor: Actor, x: number, y: number) {
+function drawEffectIcons(context: CanvasRenderingContext2D, actor: Actor, x: number, y: number, barWidth: number) {
     let effectXOffset = 0;
-    let effectYOffset = 2;
+    let effectYOffset = 0;
     const seenEffects = {};
     for (const effect of actor.allEffects) {
         const effectText = bonusSourceHelpText(effect, actor);
@@ -244,12 +245,12 @@ function drawEffectIcons(context: CanvasRenderingContext2D, actor: Actor, x: num
         for (const iconData of icons) {
             const source = {'image': requireImage(iconData[0]), 'left': iconData[1], 'top': iconData[2], 'width': iconData[3], 'height': iconData[4]};
             const xOffset = effectXOffset + iconData[5], yOffset = effectYOffset + iconData[6];
-            drawImage(context, source.image, source, {'left': x + xOffset, 'top': y + yOffset, 'width': source.width, 'height': source.height});
+            drawImage(context, source.image, source, {'left': x + xOffset, 'top': y + yOffset, 'width': 8, 'height': 8});
         }
-        effectXOffset += 16;
-        if (effectXOffset + 16 > Math.max(actor.w, 64)) {
+        effectXOffset += 8;
+        if (effectXOffset + 8 > barWidth) {
             effectXOffset = 0;
-            effectYOffset += 20;
+            effectYOffset += 8;
         }
     }
 }

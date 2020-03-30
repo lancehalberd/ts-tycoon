@@ -262,7 +262,7 @@ export function importState(savedState: SavedState) {
     savedState.inventoryItems.map(importItem).filter(item => item).forEach(addToInventory);
     // This might happen if we changed how much each holder contains during an update.
     state.characters = savedState.characters.map(importCharacter);
-    state.characters.forEach(character => {
+    state.characters.forEach((character, index) => {
         updateTrophy('level-' + character.adventurer.job.key, character.adventurer.level);
         for (var levelKey of Object.keys(character.divinityScores)) {
             var level = map[levelKey];
@@ -275,7 +275,7 @@ export function importState(savedState: SavedState) {
             }
             state.savedState.completedLevels[levelKey] = true;
         }
-        const bed = state.availableBeds[state.characters.length - 1];
+        const bed = state.availableBeds[index];
         if (bed) enterArea(character.hero, {'areaKey': bed.area.key, 'x': (bed.x > 160) ? bed.x - 30 : bed.x + 40, 'z': bed.z});
         else enterArea(character.hero, guildYardEntrance);
         query('.js-charactersBox').appendChild(character.characterCanvas);

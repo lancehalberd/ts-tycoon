@@ -406,14 +406,15 @@ const FieldArea: AreaType = {
                 frame.x, frame.y, frame.w, frame.h,
                 Math.round(x + SRandom.seed(index).random()), -SRandom.seed(index).range(0, 8), w, h
             );*/
-            const P = 20;
+            const P = Math.max(50 / cloudSpeed);
             const W = frame.w / P;
+            const y = -random.addSeed(index).range(0, 8);
             for (let i = 0; i < P; i++) {
                 // This is 1px wide for all but the last section so they will not have gaps between.
-                const width = W + ((i === P) ? 0 : 1);
-                drawFrame(context, {...frame, w: width, x: frame.x + i * W}, {
-                    x: Math.round(x + i * W + random.addSeed(index).random() + i / P),
-                    y: -random.addSeed(index).range(0, 8), w: width, h});
+                const width = Math.ceil(W + 1);//((i === P) ? 0 : 1);
+                drawFrame(context, {...frame, w: width, x: Math.floor(frame.x + i * W)}, {
+                    x: Math.floor(x + i * W /*+ random.addSeed(index).random()*/ + i / P),
+                    y, w: width, h});
             }
             x += w;
             index++;
@@ -452,7 +453,7 @@ const caveFrames = createAnimation('gfx2/areas/cavetiles.png', r(0, 0, 32, 32), 
 const caveBackFrontFrames = createAnimation('gfx2/areas/caveforeground.png',
     r(0, 0, 128, 86), {cols: 2}).frames;
 const [stoneWallMid, stoneWallLeft, stoneWallRight, ...caveBackFrames] = createAnimation('gfx2/areas/cavebackground.png',
-    r(0, 0, 128, 84), {cols: 6}).frames;
+    r(0, 0, 128, 86), {cols: 6}).frames;
 const caveThingFrames = createAnimation('gfx2/areas/cavethings.png',
     r(0, 0, 32, 32), {cols: 2}).frames;
 
@@ -471,12 +472,17 @@ const CaveArea: AreaType = {
         area.leftWall = areaWalls.caveWall;
         area.rightWall = areaWalls.caveWall;
         // Add an obstacle to the corners
-        area.objects.push(new AreaObstacle(random.addSeed(1).element(caveThingFrames), 44, MAX_Z - 24));
-        area.objects.push(new AreaObstacle(random.addSeed(2).element(caveThingFrames), area.width - 44, MAX_Z - 24));
+        area.objects.push(new AreaObstacle(random.addSeed(1).element(caveThingFrames), 44, MAX_Z - 30));
+        area.objects.push(new AreaObstacle(random.addSeed(2).element(caveThingFrames), area.width - 44, MAX_Z - 30));
         finalizeArea(area);
     },
     drawFloor(context, area) {
         const random = SRandom.addSeed(area.seed);
+
+        // Draw a black background behind everything. This is for pits and when the background is empty.
+        context.fillStyle = '#121115';
+        context.fillRect(0, 0, ADVENTURE_WIDTH, ADVENTURE_HEIGHT);
+
         let w = FLOOR_TILE_SIZE;
         let h = FLOOR_TILE_SIZE;
         let x = Math.floor(area.cameraX / w) * w;
@@ -490,12 +496,12 @@ const CaveArea: AreaType = {
         fillRect(context, BOTTOM_HUD_RECT, '#883');
     },
     drawBackground(context, area) {
-        drawFrame(context, meadowSky, {...meadowSky, x: 0, y: 0});
         const random = SRandom.addSeed(area.seed);
+
         // Draws the pillars with parallax.
         {
             let w = 128;
-            let h = 84;
+            let h = 86;
             let X = area.cameraX * 0.8;
             let x = Math.floor(X / w) * w;
             while (x < X + ADVENTURE_WIDTH) {
@@ -509,7 +515,7 @@ const CaveArea: AreaType = {
         {
             const gap = random.range(0, 2);
             let w = 128;
-            let h = 84;
+            let h = 86;
             let X = area.cameraX;
             let x = Math.floor(X / w) * w;
             while (x < X + ADVENTURE_WIDTH) {
@@ -538,7 +544,8 @@ const CaveArea: AreaType = {
             let x = Math.floor(area.cameraX / w) * w;
             while (x < area.cameraX + ADVENTURE_WIDTH) {
                 const frame = random.addSeed(x).element(caveBackFrontFrames);
-                drawFrame(context, frame, {x: x - area.cameraX, y: 0, w, h});
+                // Currently this needs to be down several pixels to line up correctly.
+                drawFrame(context, frame, {x: x - area.cameraX, y: 5, w, h});
                 x += w;
             }
         }

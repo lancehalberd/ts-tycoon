@@ -1,7 +1,7 @@
 import { areaWalls, AreaDoor } from 'app/content/areaTypes';
 import { allApplications, allBeds, guildObject } from 'app/content/furniture';
 import { createCanvas, mainContext } from 'app/dom';
-import { MAX_Z } from 'app/gameConstants';
+import { MAX_Z, MIN_Z } from 'app/gameConstants';
 import { drawImage, drawOutlinedImage, requireImage } from 'app/images';
 import { drawTextureMap } from 'app/render/drawTextureMap';
 import { getCanvasPopupTarget } from 'app/popup';
@@ -95,53 +95,60 @@ export function getDefaultGuildAreas(): GuildAreas {
             {key: 'skeleton', level: 1, location: [360, 0, 0]},
         ],
     }, 2);
-    guildAreas.guildFrontHall = initializeGuldArea({
-        'key': 'guildFrontHall',
-        'width': 400,
-        'backgroundPatterns': {'0': 'oldGuild'},
-        'wallDecorations': [
-            guildObject('candles', [165, 50, wallZ], {'xScale': -1, 'scale': 1.5}),
-            guildObject('door', [250, 0, wallZ], {'exit': {'areaKey': 'guildGuestRoom', 'x': 400, 'z': 150}, 'scale': 1}),
-            guildObject('candles', [540, 70, wallZ], {'xScale': -1, 'scale': 1.5}),
-            guildObject('door', [600, 0, wallZ], {'exit': {'areaKey': 'guildKitchen', 'x': 150, 'z': 150}, 'scale': 1}),
-            guildObject('candles', [660, 70, wallZ], {'scale': 1.5}),
-            guildObject('candles', [1035, 50, wallZ], {'scale': 1.5}),
-            guildObject('downstairs', [800, 0, wallZ], {'exit': {'areaKey': 'guildBasement', 'x': 800, 'z': 150}, 'scale': 1}),
-        ],
-        'objects': [
-            guildObject('stoneBridge', [12, 0, 0], {'xScale': -1, exit: {areaKey: 'guildFoyer', x: 400 - 48, z: 0}}),
-            guildObject('jewelShrine', [600, 0, 0], {'scale': 1}),
-            guildObject('coinStash', [340, 0, 165], {'level': 1, 'key': 'coinStashA'}),
-            guildObject('coinStash', [400, 0, 165], {'level': 2, 'key': 'coinStashB'}),
-            guildObject('trophyAltar', [300, 0, 0], {'scale': 1, 'key': 'trophyAltarA'}),
-            guildObject('trophyAltar', [900, 0, 0], {'scale': 1, 'key': 'trophyAltarB'}),
-        ],
-        'monsters': [
-            {key: 'spider', level: 3, location: [600, 0, 40]},
-            {key: 'gnome', level: 3, location: [880, 0, 0]},
-        ],
-        'leftWall': areaWalls.guildWall,
-        'rightWall': areaWalls.guildWall,
-    }, 3);
+    {
+        const width = 600;
+        guildAreas.guildFrontHall = initializeGuldArea({
+            'key': 'guildFrontHall',
+            width,
+            'backgroundPatterns': {'0': 'oldGuild'},
+            'wallDecorations': [
+                guildObject('candles', [70, 12, wallZ], {'xScale': -1, 'scale': 1}),
+                guildObject('door', [125, 0, wallZ], {'exit': {'areaKey': 'guildGuestRoom', 'x': 160, 'z': MAX_Z - 24}, 'scale': 1}),
+                guildObject('candles', [width / 2 - 30, 24, wallZ], {'xScale': -1, 'scale': 1}),
+                guildObject('door', [width / 2, 0, wallZ], {'exit': {'areaKey': 'guildKitchen', 'x': 160, 'z': MAX_Z - 24}, 'scale': 1}),
+                guildObject('candles', [width / 2 + 30, 24, wallZ], {'scale': 1}),
+                guildObject('candles', [width - 70, 12, wallZ], {'scale': 1}),
+                //guildObject('downstairs', [200, 0, wallZ], {'exit': {'areaKey': 'guildBasement', 'x': 800, 'z': 150}, 'scale': 1}),
+                new AreaDoor(true, {areaKey: 'guildFoyer', x: 400 - 48, z: 0}, AreaDoor.openDoorFrame),
+                new AreaDoor(false, {'areaKey': 'guildBasement', 'x': 250 - 48, 'z': MAX_Z - 24}, AreaDoor.openDoorFrame),
+            ],
+            'objects': [
+                guildObject('jewelShrine', [width / 2, 0, 0], {'scale': 1}),
+                guildObject('coinStash', [175, 0, MAX_Z - 15], {'level': 1, 'key': 'coinStashA'}),
+                guildObject('coinStash', [200, 0, MAX_Z - 15], {'level': 2, 'key': 'coinStashB'}),
+                guildObject('trophyAltar', [width / 4, 0, 0], {'scale': 1, 'key': 'trophyAltarA'}),
+                guildObject('trophyAltar', [3 * width / 4, 0, 0], {'scale': 1, 'key': 'trophyAltarB'}),
+            ],
+            'monsters': [
+                {key: 'spider', level: 3, location: [600, 0, 40]},
+                {key: 'gnome', level: 3, location: [880, 0, 0]},
+            ],
+            'leftWall': areaWalls.guildWall,
+            'rightWall': areaWalls.guildWall,
+        }, 3);
+    }
 
-    guildAreas.guildGuestRoom = initializeGuldArea({
-        'key': 'guildGuestRoom',
-        'width': 320,
-        'backgroundPatterns': {'0': 'oldGuild'},
-        'wallDecorations': [
-            guildObject('candles', [340, 50, wallZ], {'xScale': -1, 'scale': 1.5}),
-            guildObject('candles', [460, 50, wallZ], {'scale': 1.5}),
-            guildObject('door', [400, 0, wallZ], {'exit': {'areaKey': 'guildFrontHall', 'x': 250, 'z': 150}, 'scale': 1}),
-        ],
-        'objects': [
-            guildObject('bed', [120, 0, 140], {'scale': 1, 'xScale': -1}),
-            guildObject('bed', [680, 0, 140], {'scale': 1, 'xScale': -1}),
-            guildObject('coinStash', [60, 0, -140], {'level': 1, 'key': 'coinStashA'}),
-            guildObject('coinStash', [740, 0, -140], {'level': 1, 'key': 'coinStashB'}),
-        ],
-        'leftWall': areaWalls.guildWall,
-        'rightWall': areaWalls.guildWall,
-    }, 4);
+    {
+        const width = 320;
+        guildAreas.guildGuestRoom = initializeGuldArea({
+            'key': 'guildGuestRoom',
+            width,
+            'backgroundPatterns': {'0': 'oldGuild'},
+            'wallDecorations': [
+                guildObject('candles', [130, 12, wallZ], {'xScale': -1, 'scale': 1}),
+                guildObject('door', [160, 0, wallZ], {'exit': {'areaKey': 'guildFrontHall', 'x': 125, 'z': MAX_Z - 24}, 'scale': 1}),
+                guildObject('candles', [190, 12, wallZ], {'scale': 1}),
+            ],
+            'objects': [
+                guildObject('bed', [60, 0, MAX_Z - 15], {'scale': 1, 'xScale': -1}),
+                guildObject('bed', [width - 60, 0, MAX_Z - 15], {'scale': 1, 'xScale': -1}),
+                guildObject('coinStash', [20, 0, MIN_Z + 15], {'level': 1, 'key': 'coinStashA'}),
+                guildObject('coinStash', [width - 20, 0, MIN_Z + 15], {'level': 1, 'key': 'coinStashB'}),
+            ],
+            'leftWall': areaWalls.guildWall,
+            'rightWall': areaWalls.guildWall,
+        }, 4);
+    }
 
     guildAreas.guildKitchen = initializeGuldArea({
         'key': 'guildKitchen',

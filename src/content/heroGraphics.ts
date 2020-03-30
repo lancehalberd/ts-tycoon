@@ -1,5 +1,5 @@
 import { drawComplexCompositeTintedFrame, drawCompositeTintedFrame, requireImage } from 'app/images';
-import { drawFrame } from 'app/utils/animations';
+import { createAnimation, drawFrame } from 'app/utils/animations';
 import Random from 'app/utils/Random';
 
 import { Hero, JobKey, TintedFrame } from 'app/types';
@@ -147,6 +147,7 @@ export function createHeroColors(jobKey: JobKey) {
     };
 }
 export function updateHeroGraphics(hero: Hero) {
+    //document.body.appendChild(hero.personCanvas);
     hero.personCanvas.width = totalWidth;
     hero.personCanvas.height = totalHeight;
     hero.personContext.clearRect(0, 0, totalWidth, totalHeight);
@@ -199,10 +200,10 @@ export function updateHeroGraphics(hero: Hero) {
     const weapon = hero.equipment.weapon;
     switch (weapon ? weapon.base.type : 'none') {
         case 'bow': {
-            // First frame for a bow attack is the preparation frame 7 (offset 6)
+            // First two frames for a bow attack are the preparation frames 7+8 (offset 6+7)
             context.drawImage(bowSheet,
-                0, 0, frameWidth, totalHeight,
-                6 * frameWidth, 0, frameWidth, totalHeight,
+                0, 0, 2 * frameWidth, totalHeight,
+                6 * frameWidth, 0, 2 * frameWidth, totalHeight,
             );
             // The remaining two frames are frame 16+17 for drawing and releasing the arrow.
             const width = 2 * frameWidth;
@@ -214,11 +215,15 @@ export function updateHeroGraphics(hero: Hero) {
             break;
         }
         case 'throwing': {
-            const width = 2 * frameWidth;
-            const offset = 8 * frameWidth;
-            context.drawImage(staffSheet,
-                0, 0, width, totalHeight,
-                offset, 0, width, totalHeight,
+            // First throw frame is put on frame 9 (for initial attack).
+            context.drawImage(throwSheet,
+                0, 0, frameWidth, totalHeight,
+                8 * frameWidth, 0, frameWidth, totalHeight,
+            );
+            // Second throw frame is on frame 11 (for secondary attack).
+            context.drawImage(throwSheet,
+                frameWidth, 0, frameWidth, totalHeight,
+                10 * frameWidth, 0, frameWidth, totalHeight,
             );
             break;
         }
@@ -252,5 +257,26 @@ export function updateHeroGraphics(hero: Hero) {
     } else if (hero.colors.bandanaColor) {
         // This should apply the color, but it isn't a tintable graphic yet.
         drawFrame(context, {image: bandanaSheet, ...characterRectangle}, characterRectangle);
+    }
+    const heroFrame = {x: 0, y: 0, w: 64, h: 48, content: {x: 20, y: 16, w: 16, h: 31}};
+    if (weapon && weapon.base.type === 'bow') {
+        // Bows have different attack animation frames than other weapons
+        hero.source.attackPreparationAnimation = createAnimation(
+            hero.personCanvas, heroFrame,
+            {cols: 17, frameMap: [6, 7, 15]},
+        );
+        hero.source.attackRecoveryAnimation = createAnimation(
+            hero.personCanvas, heroFrame,
+            {cols: 17, frameMap: [16, 16]},
+        );
+    } else {
+        hero.source.attackPreparationAnimation = createAnimation(
+            hero.personCanvas, heroFrame,
+            {cols: 17, frameMap: [6, 7, 8]},
+        );
+        hero.source.attackRecoveryAnimation = createAnimation(
+            hero.personCanvas, heroFrame,
+            {cols: 17, frameMap: [9, 9]},
+        );
     }
 }

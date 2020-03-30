@@ -628,7 +628,7 @@ export function setSelectedCharacter(character: Character) {
     updateSkillConfirmationButtons();
     updateEquipableItems();
     //character.$characterCanvas.after($('.js-divinityPoints'));
-    query('.js-charactersBox .js-divinityPoints').after(character.characterCanvas)
+    //query('.js-charactersBox .js-divinityPoints').after(character.characterCanvas)
     //query('.js-charactersBox').appendChild();
     showContext(character.context);
     // Immediately show the desired camera position so the camera doesn't have to

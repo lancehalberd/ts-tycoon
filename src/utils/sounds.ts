@@ -101,6 +101,7 @@ export function requireSound(key, callback = null) {
             howlerProperties.sprite = {
                 sprite: [offset, duration],
             };
+            newSound.spriteName = 'sprite';
         }
         newSound.howl = new Howl(howlerProperties),
         newSound.activeInstances = 0;
@@ -129,7 +130,11 @@ export function playSound(key, muted = false) {
     sound.canPlayAfter = now + customDelay;
     if (sound.howl) {
         sound.howl.mute(muted);
-        sound.howl.play();
+        if (sound.spriteName) {
+            sound.howl.play(sound.spriteName);
+        } else {
+            sound.howl.play();
+        }
     } else if (sound.play && !muted) {
         sound.play();
     }
