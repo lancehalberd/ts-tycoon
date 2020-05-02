@@ -130,6 +130,9 @@ export function initializeCraftingGrid() {
         checkToShowCraftingToopTip();
     };
     craftingCanvas.onmousedown = function (event) {
+        if (event.which !== 1) {
+            return;
+        }
         if (inventoryState.dragHelper) {
             return;
         }

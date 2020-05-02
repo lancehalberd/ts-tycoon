@@ -1,7 +1,7 @@
 import { enterArea } from 'app/adventure';
 import { newCharacter, refreshStatsPanel, setSelectedCharacter, updateAdventurer } from 'app/character';
 import { updateTrophy } from 'app/content/achievements';
-import { allApplications } from 'app/content/furniture';
+import { HeroApplication } from 'app/content/areas';
 import { guildYardEntrance } from 'app/content/guild';
 import { characterClasses } from 'app/content/jobs';
 import { handleChildEvent, query, queryAll, tagElement } from 'app/dom';
@@ -17,7 +17,7 @@ import { getState } from 'app/state';
 import { drawFrame } from 'app/utils/animations';
 import Random from 'app/utils/Random';
 
-import { Character, FixedObject, JobKey } from 'app/types';
+import { Character, JobKey } from 'app/types';
 
 export const jobRanks: JobKey[][] = [
     ['juggler', 'blackbelt', 'priest'],
@@ -48,9 +48,9 @@ export function createNewHeroApplicant(jobKey: JobKey = null) {
 const applicationElement: HTMLElement = query('.js-heroApplication');
 const seekNewApplicantButton = query('.js-seekNewApplicant');
 const hireApplicantButton = query('.js-hireApplicant');
-let displayedApplication: FixedObject = null;
+let displayedApplication: HeroApplication = null;
 
-export function showHeroApplication(application: FixedObject) {
+export function showHeroApplication(application: HeroApplication) {
     displayedApplication = application;
     const character = application.character;
     const boardCanvas = applicationElement.querySelector('.js-applicationSkillCanvas') as HTMLCanvasElement;
@@ -84,7 +84,7 @@ export function showHeroApplication(application: FixedObject) {
 }
 
 export function increaseAgeOfApplications() {
-    for (const application of allApplications) {
+    for (const application of HeroApplication.instances) {
         if (!application || !application.character) return;
         application.character.applicationAge++;
     }

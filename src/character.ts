@@ -1,4 +1,5 @@
 import * as _ from 'lodash';
+import { isPointOverActor, updateActorFrame } from 'app/actor';
 import { updateAdventureButtons } from 'app/adventureButtons';
 import {
     addBonusSourceToObject, addVariableChildToObject,
@@ -32,7 +33,7 @@ import { smallJewelLoot } from 'app/loot';
 import { centerMapOnLevel } from 'app/map';
 import { findActionByTag, getBasicAttack, updateDamageInfo } from 'app/performAttack';
 import { gain } from 'app/points';
-import { drawActor, updateActorDimensions } from 'app/render/drawActor';
+import { drawActor } from 'app/render/drawActor';
 import { getState } from 'app/state';
 import { getTargetCameraX } from 'app/update';
 import { createAnimation } from 'app/utils/animations';
@@ -45,7 +46,7 @@ import {
     Ability, Action, ActionStats, Actor, ActorStats,
     Board, BoardData, Bonuses, BonusSource, Character,
     Effect, Equipment, EquipmentData, Hero, HeroColors, Item,
-    Job, Monster, Tags, VariableObject
+    Job, Monster, ShortRectangle, Tags, VariableObject
 } from 'app/types';
 
 export const personFrames = 5;
@@ -110,7 +111,7 @@ export function initializeActorForAdventure(actor: Actor) {
     // actor.heading = [1, 0, 0];
     var stopTimeAction = findActionByTag(actor.reactions, 'stopTime');
     actor.temporalShield = actor.maxTemporalShield = (stopTimeAction ? stopTimeAction.stats.duration : 0);
-    updateActorDimensions(actor);
+    updateActorFrame(actor);
 }
 function setText(element: HTMLElement, text: string) {
     if (!element) {
@@ -152,6 +153,7 @@ export function newCharacter(job: Job): Character {
     hero.abilities.push(abilities[abilityKey]);
     const character: Character = {
         adventurer: hero,
+        actionShortcuts: [],
         context: 'guild',
         autoplay: false,
         hero,
@@ -219,25 +221,10 @@ export function makeAdventurerFromData({
         z: 0,
         w: 0,
         h: 0,
+        d: 0,
         equipment: {},
         job: characterClasses[jobKey],
         source: {
-            /*width: 64,
-            height: 48,
-            yCenter: 44, // Measured from the top of the source
-            // I think this is the distance from the top of the frame to the top of the head
-            yOffset: 16, // Measured from the top of the source
-            // I think this is the distance from the bottom to the top of the head.
-            actualHeight: 32,
-            // I think this is the distance from the left side of the frame to the back.
-            xOffset: 22,
-            actualWidth: 12,
-            attackY: 18, // Measured from the bottom of the source
-            idleFrames: [0, 1],
-            deathFrames: [16],
-            walkFrames: [2, 3, 4, 5],
-            attackPreparationFrames: [6, 7, 8, 9],
-            attackRecoveryFrames: [11, 11]*/
             walkAnimation: createAnimation(
                 personCanvas, heroFrame,
                 {cols: 17, frameMap: [2, 3, 4, 5]},
@@ -252,7 +239,7 @@ export function makeAdventurerFromData({
             ),
             deathAnimation: createAnimation(
                 personCanvas, heroFrame,
-                {cols: 17, frameMap: [16]},
+                {cols: 17, frameMap: [14]},
             ),
             attackPreparationAnimation: createAnimation(
                 personCanvas, heroFrame,
@@ -261,6 +248,14 @@ export function makeAdventurerFromData({
             attackRecoveryAnimation: createAnimation(
                 personCanvas, heroFrame,
                 {cols: 17, frameMap: [9, 9]},
+            ),
+            spellPreparationAnimation: createAnimation(
+                personCanvas, heroFrame,
+                {cols: 17, frameMap: [12, 13, 13]},
+            ),
+            spellRecoveryAnimation: createAnimation(
+                personCanvas, heroFrame,
+                {cols: 17, frameMap: [13]},
             ),
             shadowAnimation: heroShadow,
             // Measured up from the bottom of the frame content.
@@ -281,6 +276,7 @@ export function makeAdventurerFromData({
         percentHealth: 1,
         percentTargetHealth: 1,
         helpMethod: actorHelpText,
+        isPointOver: isPointOverActor,
         heading: [1, 0, 0], // Character moves left to right by default.
         render: drawActor,
         consideredObjects: new Set(),
@@ -516,35 +512,35 @@ export function recomputeActorTags(actor: Actor): Tags {
     }
     return tags as Tags;
 }
-export function actorHelpText(actor: Actor) {
-    var name = actor.name;
-    if (actor.type === 'hero') {
-        name = actor.job.name + ' ' + name;
+export function actorHelpText(this: Actor) {
+    var name = this.name;
+    if (this.type === 'hero') {
+        name = this.job.name + ' ' + name;
     }
     var prefixNames = [];
     var suffixNames = [];
-    for (var prefix of ifdefor(actor.prefixes, [])) prefixNames.push(prefix.base.name);
-    for (var suffix of ifdefor(actor.suffixes, [])) suffixNames.push(suffix.base.name);
+    for (var prefix of ifdefor(this.prefixes, [])) prefixNames.push(prefix.base.name);
+    for (var suffix of ifdefor(this.suffixes, [])) suffixNames.push(suffix.base.name);
     if (prefixNames.length) name = prefixNames.join(', ') + ' ' + name;
     if (suffixNames.length) name = name + ' of ' + suffixNames.join(' and ');
-    var title = 'Lvl ' + actor.level + ' ' + name;
-    var sections = ['Health: ' + abbreviate(Math.ceil(actor.health)) +
-        '/' + abbreviate(Math.ceil(actor.stats.maxHealth))];
-    if (actor.temporalShield > 0) {
-        sections.push('Temporal Shield: ' + actor.temporalShield.toFixed(1) + 's');
+    var title = 'Lvl ' + this.level + ' ' + name;
+    var sections = ['Health: ' + abbreviate(Math.ceil(this.health)) +
+        '/' + abbreviate(Math.ceil(this.stats.maxHealth))];
+    if (this.temporalShield > 0) {
+        sections.push('Temporal Shield: ' + this.temporalShield.toFixed(1) + 's');
     }
-    if (actor.reflectBarrier > 0) {
-        sections.push('Reflect: ' + abbreviate(actor.reflectBarrier.toFixed(0)));
+    if (this.reflectBarrier > 0) {
+        sections.push('Reflect: ' + abbreviate(this.reflectBarrier.toFixed(0)));
     }
-    (actor.prefixes || []).forEach(function (affix) {
-        sections.push(bonusSourceHelpText(affix, actor));
+    (this.prefixes || []).forEach(affix => {
+        sections.push(bonusSourceHelpText(affix, this));
     });
-    (actor.suffixes || []).forEach(function (affix) {
-        sections.push(bonusSourceHelpText(affix, actor));
+    (this.suffixes || []).forEach(affix => {
+        sections.push(bonusSourceHelpText(affix, this));
     });
     const countMap = {};
-    (actor.allEffects || []).forEach(function (effect) {
-        var effectText = bonusSourceHelpText(effect, actor);
+    (this.allEffects || []).forEach(effect => {
+        var effectText = bonusSourceHelpText(effect, this);
         countMap[effectText] = (countMap[effectText] || 0) + 1;
     });
     for (let text in countMap) {

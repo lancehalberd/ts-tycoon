@@ -14,12 +14,12 @@ import { r, fillRect } from 'app/utils/index';
 import Random from 'app/utils/Random';
 
 import {
-    ActiveEffect, Actor, ActorEffect, Animation, Area, AreaEntity, AttackData,
+    ActiveEffect, Actor, ActorEffect, FrameAnimation, Area, AreaEntity, AttackData,
     BonusSource, Color, Effect, EffectStats, EffectVariableObject, Projectile,
     TimedActorEffect, Target, VariableObjectBase,
 } from 'app/types';
 
-export function songEffect(attackStats: AttackData) {
+export function songEffect(attackStats: AttackData): ActiveEffect {
     const color = (attackStats.attack.base.color || 'red');
     const alpha = (attackStats.attack.base.alpha || .3);
     const frames = 30; // This could be a property on ActionData.
@@ -36,21 +36,21 @@ export function songEffect(attackStats: AttackData) {
     const notes = [];
     const thetaOffset = Math.PI * Math.random();
     const effectedTargets: Set<Actor> = new Set();
-    const self: ActiveEffect = {
+    return {
         // The song's position is based on followTarget
         x: 0, y: 0, z: 0,
         // The song itself doesn't have dimensions.
-        w: 0, h: 0,
+        w: 0, h: 0, d: 0,
         area: followTarget.area,
         attackStats, 'currentFrame': 0, 'done': false,
-        update(effect: ActiveEffect) {
-            self.currentFrame++;
+        update() {
+            this.currentFrame++;
             if (notes.length < 6) {
                 const note = animationEffect(effectAnimations.song,
-                    {targetType: 'location', area: self.area, x:0, y: 20, z: 0, w: 25, h: 50},
+                    {targetType: 'location', area: this.area, x: 0, y: 20, z: 0, w: 25, h: 50, d: 25},
                     {loop: true, frameSpeed: .5, tintColor: color, tintValue: .5}
                 );
-                self.area.effects.push(note);
+                this.area.effects.push(note);
                 followTarget.boundEffects.push(note);
                 notes.push(note);
             }
@@ -58,11 +58,11 @@ export function songEffect(attackStats: AttackData) {
                 this.finish();
                 return;
             }
-            const currentRadius = Math.round(radius * Math.min(1, self.currentFrame / frames));
+            const currentRadius = Math.round(radius * Math.min(1, this.currentFrame / frames));
             const currentLocation: AreaEntity = {
-                area: self.area,
+                area: this.area,
                 x: followTarget.x, y: followTarget.y, z: followTarget.z,
-                w: 0, h: 0,
+                w: 0, h: 0, d: 0,
             }; // We can't just use followTarget because we need width/height to be 0.
             for (let i = 0; i < notes.length; i++) {
                 const note = notes[i];
@@ -74,16 +74,16 @@ export function songEffect(attackStats: AttackData) {
                 note.target.y = 40 + 20 * Math.cos(i * Math.PI / 4 + 6 * timeTheta);
             }
             const currentTargets: Set<Actor> = new Set();
-            for (const target of self.attackStats.source.allies) {
+            for (const target of this.attackStats.source.allies) {
                 if (getDistance(currentLocation, target) > currentRadius) {
                     if (effectedTargets.has(target)) {
-                        removeEffectFromActor(target, self.attackStats.attack.stats.buff, true);
+                        removeEffectFromActor(target, this.attackStats.attack.stats.buff, true);
                         effectedTargets.delete(target);
                     }
                 } else {
                     currentTargets.add(target);
                     if (!effectedTargets.has(target)) {
-                        addEffectToActor(target, self.attackStats.attack.stats.buff, true);
+                        addEffectToActor(target, this.attackStats.attack.stats.buff, true);
                         effectedTargets.add(target);
                     }
                 }
@@ -92,15 +92,15 @@ export function songEffect(attackStats: AttackData) {
             // before the owner moved to another area.
             for (const target of effectedTargets) {
                 if (!currentTargets.has(target)) {
-                    removeEffectFromActor(target, self.attackStats.attack.stats.buff, true);
+                    removeEffectFromActor(target, this.attackStats.attack.stats.buff, true);
                     effectedTargets.delete(target);
                 }
             }
         },
-        drawGround(context: CanvasRenderingContext2D, effect: ActiveEffect) {
+        drawGround(context: CanvasRenderingContext2D) {
             drawOnGround(context, (groundContext: CanvasRenderingContext2D) => {
-                const currentRadius = Math.round(radius * Math.min(1, self.currentFrame / frames));
-                drawGroundCircle(context, self.area, followTarget.x, followTarget.z, currentRadius)
+                const currentRadius = Math.round(radius * Math.min(1, this.currentFrame / frames));
+                drawGroundCircle(context, this.area, followTarget.x, followTarget.z, currentRadius)
                 groundContext.save();
                 groundContext.globalAlpha = alpha;
                 groundContext.fillStyle = '' + color;
@@ -113,19 +113,18 @@ export function songEffect(attackStats: AttackData) {
             });
         },
         finish() {
-            effectedTargets.forEach(target => removeEffectFromActor(target, self.attackStats.attack.stats.buff, true));
+            effectedTargets.forEach(target => removeEffectFromActor(target, this.attackStats.attack.stats.buff, true));
             effectedTargets.clear();
-            self.done = true;
+            this.done = true;
             while (notes.length) notes.pop().done = true;
         }
     };
-    return self;
 }
 
 // Used to play an animation that has no other effects, for example, the sparkles for the heal spell.
 // Set target to a character to have an effect follow them, or to a static target to display in place.
 export function animationEffect(
-    animation: Animation, target: Target, {scale = [1, 1], loop = false, frameSpeed = 1, tintColor = null, tintValue = null}
+    animation: FrameAnimation, target: Target, {scale = [1, 1, 1], loop = false, frameSpeed = 1, tintColor = null, tintValue = null}
 ): ActiveEffect {
     return {
         area: target.area,
@@ -133,24 +132,26 @@ export function animationEffect(
         x: target.x, y: target.y, z: target.z,
         w: target.w * scale[0],
         h: target.h * scale[1],
+        d: target.d * (scale[2] || 1),
         currentFrame: 0, done: false,
-        update(effect: ActiveEffect) {
-            effect.currentFrame+=frameSpeed;
-            effect.x = target.x;
-            effect.y = target.y;
-            effect.z = target.z - 1; //Show the effect in front of the target.
-            effect.w = target.w * scale[0];
-            effect.h = target.h * scale[1];
-            if (!loop && effect.currentFrame >= animation.frames.length) effect.done = true;
+        update() {
+            this.currentFrame+=frameSpeed;
+            this.x = target.x;
+            this.y = target.y;
+            this.z = target.z - 1; //Show the this effect in front of the target.
+            this.w = target.w * scale[0];
+            this.h = target.h * scale[1];
+            this.d = target.d * (scale[2] || 1);
+            if (!loop && this.currentFrame >= animation.frames.length) this.done = true;
         },
-        render(context: CanvasRenderingContext2D, effect: ActiveEffect) {
-            if (effect.done) return;
+        render(context: CanvasRenderingContext2D) {
+            if (this.done) return;
             context.save();
             // context.globalAlpha = alpha;
-            context.translate((effect.x - effect.area.cameraX), GROUND_Y - effect.y - effect.z / 2 - target.h / 2);
-            // fillRect(context, r(-effect.width / 2, -effect.height / 2, effect.width, effect.height), 'red');
-            const frame = animation.frames[Math.floor(effect.currentFrame) % animation.frames.length];
-            const targetRectangle = r(-effect.w / 2, -effect.h / 2, effect.w, effect.h);
+            context.translate((this.x - this.area.cameraX), GROUND_Y - this.y - this.z / 2 - target.h / 2);
+            // fillRect(context, r(-this.width / 2, -this.height / 2, this.width, this.height), 'red');
+            const frame = animation.frames[Math.floor(this.currentFrame) % animation.frames.length];
+            const targetRectangle = r(-this.w / 2, -this.h / 2, this.w, this.h);
             if (tintColor) {
                 drawTintedImage(context, frame.image, tintColor, tintValue || .5,
                     frame, targetRectangle);
@@ -186,48 +187,48 @@ export function explosionEffect(attackStats: AttackData, x: number, y: number, z
     }
     return {
         area: attackStats.source.area,
-        hitTargets: [], attackStats, x, y, z, w: 0, h: 0, currentFrame: 0, done: false,
-        update(effect: ActiveEffect) {
-            effect.currentFrame++;
-            if (effect.currentFrame > frames) {
-                if (effect.currentFrame > frames + endFrames) effect.done = true;
+        hitTargets: [], attackStats, x, y, z, w: 0, h: 0, d: 0, currentFrame: 0, done: false,
+        update() {
+            this.currentFrame++;
+            if (this.currentFrame > frames) {
+                if (this.currentFrame > frames + endFrames) this.done = true;
                 return;
             }
-            const currentRadius = Math.round(radius * Math.min(1, effect.currentFrame / frames));
-            effect.w = currentRadius * 2;
-            //effect.height = height * currentRadius / radius;
-            effect.h = effect.w * currentRadius / radius;
-            // areaCoefficient is the amount of effectiveness lost at the very edge of the radius.
-            // areaCoefficient = 0 means the blast is equally effective everywhere.
+            const currentRadius = Math.round(radius * Math.min(1, this.currentFrame / frames));
+            this.w = this.d = currentRadius * 2;
+            //this.height = height * currentRadius / radius;
+            this.h = this.w * currentRadius / radius;
+            // areaCoefficient is the amount of thisiveness lost at the very edge of the radius.
+            // areaCoefficient = 0 means the blast is equally thisive everywhere.
             // areaCoefficient = 1 means the blast has no effect at the edge.
             // areaCoefficient < 0 means the blast has increased effect the further it is from the center.
-            effect.attackStats.effectiveness = 1 - currentRadius / radius * (effect.attackStats.attack.stats.areaCoefficient || 1);
-            for (let i = 0; i < effect.attackStats.source.enemies.length; i++) {
-                const target = effect.attackStats.source.enemies[i];
-                if (target.isDead || effect.hitTargets.indexOf(target) >= 0) continue;
-                const distance = getDistance(effect as AreaEntity, target);
+            this.attackStats.thisiveness = 1 - currentRadius / radius * (this.attackStats.attack.stats.areaCoefficient || 1);
+            for (let i = 0; i < this.attackStats.source.enemies.length; i++) {
+                const target = this.attackStats.source.enemies[i];
+                if (target.isDead || this.hitTargets.indexOf(target) >= 0) continue;
+                const distance = getDistance(this as AreaEntity, target);
                 if (distance > 0) continue;
                 applyAttackToTarget(attackStats, target);
-                // console.log("Hit with effectiveness " + attackStats.effectiveness);
-                effect.hitTargets.push(target);
+                // console.log("Hit with thisiveness " + attackStats.effectiveness);
+                this.hitTargets.push(target);
             }
         },
-        render(context: CanvasRenderingContext2D, effect: ActiveEffect) {
-            if (effect.done) return
-            let currentRadius = Math.round(radius * Math.min(1, effect.currentFrame / frames));
+        render(context: CanvasRenderingContext2D) {
+            if (this.done) return
+            let currentRadius = Math.round(radius * Math.min(1, this.currentFrame / frames));
             context.save();
             context.globalAlpha = alpha;
-            context.translate((effect.x - effect.area.cameraX), GROUND_Y - effect.y - effect.z / 2);
+            context.translate((this.x - this.area.cameraX), GROUND_Y - this.y - this.z / 2);
             if (animation) {
-                const frame = (effect.currentFrame < frames || !animation.endFrames)
-                    ? animation.frames[Math.min(frames - 1, effect.currentFrame)]
-                    : animation.endFrames[Math.min(endFrames - 1, effect.currentFrame - frames)];
+                const frame = (this.currentFrame < frames || !animation.endFrames)
+                    ? animation.frames[Math.min(frames - 1, this.currentFrame)]
+                    : animation.endFrames[Math.min(endFrames - 1, this.currentFrame - frames)];
                 currentRadius = currentRadius * (animation.scale || 1)
                 drawFrame(context, frame, {x: -currentRadius, y: -currentRadius, w: currentRadius * 2, h: currentRadius * 2})
             } else {
                 context.beginPath();
                 context.scale(1, height / (2 * radius));
-                const theta = effect.attackStats.attack.base.minTheta || 0;
+                const theta = this.attackStats.attack.base.minTheta || 0;
                 const endTheta = 2 * Math.PI; // self.attackStats.attack.base.maxTheta || 2 * Math.PI;
                 context.arc(0, 0, currentRadius, theta, endTheta);
                 context.fillStyle = '' + color;
@@ -252,50 +253,50 @@ export function novaEffect(attackStats: AttackData, x: number, y: number, z: num
     const radius = attack.stats.area * (attackStats.effectiveness || 1) * RANGE_UNIT;
     return {
         area: attackStats.source.area,
-        'hitTargets': [], attackStats, x, y, z, w: 0, h: 0, 'currentFrame': 0, 'done': false,
-        update(effect: ActiveEffect) {
-            effect.currentFrame++;
-            if (effect.currentFrame > frames) {
-                if (effect.currentFrame > frames + endFrames) effect.done = true;
+        'hitTargets': [], attackStats, x, y, z, w: 0, h: 0, d: 0, 'currentFrame': 0, 'done': false,
+        update() {
+            this.currentFrame++;
+            if (this.currentFrame > frames) {
+                if (this.currentFrame > frames + endFrames) this.done = true;
                 return;
             }
-            const currentRadius = Math.round(radius * Math.min(1, effect.currentFrame / frames));
+            const currentRadius = Math.round(radius * Math.min(1, this.currentFrame / frames));
             // This animation shows up randomly in the circle.
             for (let i = 0; i < 2; i++) {
                 const animation = _.sample(attack.base.blastAnimation);
                 const scale = 1.5 * attack.stats.area / 5;
                 const width = scale * animation.frames[0][2];
                 if (currentRadius > RANGE_UNIT + width / 4 && blasts.length < 15) {
-                    const blastZ = effect.z + Math.sin(theta) * (currentRadius - width / 4);
+                    const blastZ = this.z + Math.sin(theta) * (currentRadius - width / 4);
                     if (blastZ > MIN_Z && blastZ < MAX_Z) {
                         const blast = animationEffect(animation,
                             {
                                 targetType: 'location',
-                                area: effect.area,
-                                x: effect.x + Math.cos(theta) * (currentRadius - width / 4), y: -16, z: blastZ,
-                                w: width, h: scale * animation.frames[0][3]
+                                area: this.area,
+                                x: this.x + Math.cos(theta) * (currentRadius - width / 4), y: -16, z: blastZ,
+                                w: width, h: scale * animation.frames[0][3], d: width,
                             }, {frameSpeed: .2});
-                        effect.area.effects.push(blast);
+                        this.area.thiss.push(blast);
                         blasts.push(blast);
                     }
                     theta += Math.PI * (Math.random() * .1 + .9) / 3;
                 }
             }
-            effect.w = currentRadius * 2;
-            effect.h = effect.w * currentRadius / radius;
+            this.w = this.d = currentRadius * 2;
+            this.h = this.w * currentRadius / radius;
             // areaCoefficient is the amount of effectiveness lost at the very edge of the radius.
             // areaCoefficient = 0 means the blast is equally effective everywhere.
             // areaCoefficient = 1 means the blast has no effect at the edge.
             // areaCoefficient < 0 means the blast has increased effect the further it is from the center.
-            effect.attackStats.effectiveness = 1 - currentRadius / radius * (effect.attackStats.attack.stats.areaCoefficient || 1);
-            for (let i = 0; i < effect.attackStats.source.enemies.length; i++) {
-                const target = effect.attackStats.source.enemies[i];
-                if (target.isDead || effect.hitTargets.indexOf(target) >= 0) continue;
-                const distance = getDistance(effect as AreaEntity, target);
+            this.attackStats.thisiveness = 1 - currentRadius / radius * (this.attackStats.attack.stats.areaCoefficient || 1);
+            for (let i = 0; i < this.attackStats.source.enemies.length; i++) {
+                const target = this.attackStats.source.enemies[i];
+                if (target.isDead || this.hitTargets.indexOf(target) >= 0) continue;
+                const distance = getDistance(this as AreaEntity, target);
                 if (distance > 0) continue;
                 applyAttackToTarget(attackStats, target);
                 // console.log("Hit with effectiveness " + attackStats.effectiveness);
-                effect.hitTargets.push(target);
+                this.hitTargets.push(target);
                 // This animation just shows up on the targets that are hit.
                 /*var animation = _.sample(attack.base.blastAnimation);
                 var scale = 2;
@@ -310,10 +311,10 @@ export function novaEffect(attackStats: AttackData, x: number, y: number, z: num
         //render(context: CanvasRenderingContext2D, area: Area) {
             // Only the ground circle and the blasts are drawn for this effect.
         //},
-        drawGround(context: CanvasRenderingContext2D, effect: ActiveEffect) {
+        drawGround(context: CanvasRenderingContext2D) {
             drawOnGround(context, groundContext => {
-                const currentRadius = Math.round(radius * Math.min(1, effect.currentFrame / frames));
-                drawGroundCircle(groundContext, effect.area, effect.x, effect.z, currentRadius)
+                const currentRadius = Math.round(radius * Math.min(1, this.currentFrame / frames));
+                drawGroundCircle(groundContext, this.area, this.x, this.z, currentRadius)
                 groundContext.save();
                 groundContext.globalAlpha = alpha;
                 groundContext.fillStyle = color;
@@ -344,34 +345,34 @@ export function fieldEffect(attackStats: AttackData, followTarget: Actor): Activ
     return {
         area: attackStats.source.area,
         attackStats,
-        'x': followTarget.x,
-        'y': followTarget.y,
-        'z': followTarget.z,
-        'w': radius * 2, h: height,
+        x: followTarget.x,
+        y: followTarget.y,
+        z: followTarget.z,
+        w: radius * 2, h: height, d: radius * 2,
         'currentFrame': 0, 'done': false,
-        update(effect: ActiveEffect) {
-            effect.currentFrame++;
-            if (effect.attackStats.source.time > endTime || attackStats.source.isDead) {
-                effect.done = true;
+        update() {
+            this.currentFrame++;
+            if (this.attackStats.source.time > endTime || attackStats.source.isDead) {
+                this.done = true;
                 return;
             }
             // followTarget.time gets changed when changing areas, so we need to correct the
             // next hit time when this happens. It is sufficent to just move it closer if the
             // current next hit time is too far in the future.
             nextHit = Math.min(followTarget.time + 1 / attack.stats.hitsPerSecond, nextHit);
-            const currentRadius = Math.round(radius * Math.min(1, effect.currentFrame / frames));
-            effect.w = currentRadius * 2;
-            effect.x = followTarget.x;
-            effect.y = followTarget.y;
-            effect.z = followTarget.z;
-            effect.h = height * currentRadius / radius;
+            const currentRadius = Math.round(radius * Math.min(1, this.currentFrame / frames));
+            this.w = currentRadius * 2;
+            this.x = followTarget.x;
+            this.y = followTarget.y;
+            this.z = followTarget.z;
+            this.h = height * currentRadius / radius;
             if (followTarget.time < nextHit) {
                 return;
             }
             nextHit += 1 / attack.stats.hitsPerSecond;
 
             const livingTargets = followTarget.enemies.filter(target => !target.isDead);
-            const livingTargetsInRange = livingTargets.filter(target => getDistance(effect, target) <= 0);
+            const livingTargetsInRange = livingTargets.filter(target => getDistance(this, target) <= 0);
             const healthyTargetsInRange = livingTargetsInRange.filter(target => !isActorDying(target));
             if (healthyTargetsInRange.length) {
                 applyAttackToTarget(attackStats, Random.element(healthyTargetsInRange));
@@ -379,24 +380,24 @@ export function fieldEffect(attackStats: AttackData, followTarget: Actor): Activ
                 applyAttackToTarget(attackStats, Random.element(livingTargetsInRange));
             }
         },
-        render(context: CanvasRenderingContext2D, effect: ActiveEffect) {
-            if (effect.done) return
-            var currentRadius = Math.round(radius * Math.min(1, effect.currentFrame / frames));
+        render(context: CanvasRenderingContext2D) {
+            if (this.done) return
+            var currentRadius = Math.round(radius * Math.min(1, this.currentFrame / frames));
             context.globalAlpha = alpha;
             context.fillStyle = '' + color;
             context.beginPath();
             context.save();
-            context.translate((followTarget.x - effect.area.cameraX), GROUND_Y - yOffset - followTarget.z / 2);
+            context.translate((followTarget.x - this.area.cameraX), GROUND_Y - yOffset - followTarget.z / 2);
             context.scale(1, height / (2 * currentRadius));
             context.arc(0, 0, currentRadius, 0, 2 * Math.PI);
             context.fill();
             context.restore();
             context.globalAlpha = 1;
         },
-        drawGround(context: CanvasRenderingContext2D, effect: ActiveEffect) {
+        drawGround(context: CanvasRenderingContext2D) {
             drawOnGround(context, (groundContext: CanvasRenderingContext2D) => {
-                var currentRadius = Math.round(radius * Math.min(1, effect.currentFrame / frames));
-                drawGroundCircle(groundContext, effect.area, followTarget.x, followTarget.z, currentRadius)
+                var currentRadius = Math.round(radius * Math.min(1, this.currentFrame / frames));
+                drawGroundCircle(groundContext, this.area, followTarget.x, followTarget.z, currentRadius)
                 groundContext.save();
                 groundContext.globalAlpha = alpha;
                 groundContext.fillStyle = '' + color;
@@ -415,15 +416,15 @@ function afterImage({attackStats, x, y, z, vx, vy, vz, color, size, t}: Projecti
     let alpha = 1;
     return {
         area: attackStats.source.area,
-        update(projectile: Projectile) {
+        update() {
             alpha -= 1 / ((attackStats.attack.base.afterImages || 3) + 1);
-            if (alpha <= 0) projectile.done = true;
+            if (alpha <= 0) this.done = true;
         },
-        render(context: CanvasRenderingContext2D, projectile: Projectile) {
-            if (projectile.done || alpha >= 1) return;
+        render(context: CanvasRenderingContext2D) {
+            if (this.done || alpha >= 1) return;
             context.save();
             context.globalAlpha = alpha;
-            context.translate(x - projectile.area.cameraX, GROUND_Y - y - z / 2);
+            context.translate(x - this.area.cameraX, GROUND_Y - y - z / 2);
             if (vx < 0) {
                 context.scale(-1, 1);
                 context.rotate(-Math.atan2(vy, -vx));
@@ -458,14 +459,14 @@ export function projectile(
     const projectile: Projectile = {
         area: attackStats.source.area,
         'distance': 0, x, y, z, vx, vy, vz, size, 't': 0, 'done': false, delay,
-        w: size, h: size, color,
+        w: size, h: size, d: size, color,
         totalHits: 0,
         'hit': false, target, attackStats, 'hitTargets': [],
-        stickToTarget(projectile: Projectile, target: Target) {
+        stickToTarget(target: Target) {
             stuckTarget = target;
             stuckDelta = {x: projectile.x - projectile.vx - target.x, y: projectile.y - projectile.vy - target.y, z: projectile.z - projectile.vz - target.z};
         },
-        update(projectile: Projectile) {
+        update() {
             if (stuckDelta) {
                 if (!stuckTarget.pull || stuckTarget.pull.sourceAttackStats !== attackStats) {
                     projectile.done = true;
@@ -477,7 +478,12 @@ export function projectile(
             }
             // Put an absolute cap on how far a projectile can travel
             if (projectile.y < 0 || projectile.totalHits >= 5 || projectile.distance > 2000 && !stuckDelta) {
-                applyAttackToTarget(projectile.attackStats, {targetType: 'location', area: projectile.area, 'x': projectile.x, 'y': projectile.y, 'z': projectile.z, w: 0, h: 0});
+                applyAttackToTarget(projectile.attackStats, {
+                    targetType: 'location',
+                    area: projectile.area,
+                    x: projectile.x, y: projectile.y, z: projectile.z,
+                    w: 0, h: 0, d: 0
+                });
                 projectile.done = true;
             }
             if (projectile.done || projectile.delay-- > 0) return;
@@ -516,7 +522,7 @@ export function projectile(
                     if (getDistance(projectile, enemy) && enemy.health > 0) {
                         projectile.hitTargets.push(enemy);
                         if (applyAttackToTarget(projectile.attackStats, enemy) && projectile.attackStats.attack.stats.pullsTarget) {
-                            projectile.stickToTarget(projectile, enemy);
+                            projectile.stickToTarget(enemy);
                             return;
                         }
                     }
@@ -542,7 +548,7 @@ export function projectile(
             } else if (attackStats.friendly || applyAttackToTarget(projectile.attackStats, projectile.target)) {
                 // Friendly attack shouldn't hook the user, this is like when a juggler bounces a ball off of himprojectile.
                 if (!attackStats.friendly && projectile.attackStats.attack.stats.pullsTarget) {
-                    projectile.stickToTarget(projectile, projectile.target);
+                    projectile.stickToTarget(projectile.target);
                     return;
                 }
                 attackStats.friendly = false;
@@ -585,7 +591,7 @@ export function projectile(
                 }
             }
         },
-        render(context: CanvasRenderingContext2D, projectile: Projectile) {
+        render(context: CanvasRenderingContext2D) {
             if (projectile.done || projectile.delay > 0) return
             context.save();
             context.translate(projectile.x - projectile.area.cameraX, GROUND_Y - projectile.y - projectile.z / 2);
@@ -699,7 +705,7 @@ function removeEffectFromActor(actor: Actor, effect: ActorEffect, triggerComputa
 
 export class ParticleEffect implements ActiveEffect {
     area: Area;
-    animation: Animation;
+    animation: FrameAnimation;
     scale: number;
     x: number;
     y: number;
@@ -708,6 +714,7 @@ export class ParticleEffect implements ActiveEffect {
     z: number;
     w: number;
     h: number;
+    d: number;
     r: number = 0;
     vx: number = 0;
     vy: number = 0;
@@ -734,7 +741,7 @@ export class ParticleEffect implements ActiveEffect {
             this.done = true;
         }
     }
-    render(context: CanvasRenderingContext2D, effect: ActiveEffect) {
+    render(context: CanvasRenderingContext2D) {
         const frame = getFrame(this.animation, this.time);
         // Draw a red dot at the actual coordinates, can be useful for debugging rendering errors.
         // context.fillStyle = 'red';
@@ -759,7 +766,8 @@ export class ParticleEffect implements ActiveEffect {
             const content = frame.content || {...frame, x: 0, y: 0};
             drawFrame(context, frame, {
                 x: (this.x - content.x - content.w / 2) | 0,
-                y: (this.y - content.y - content.h / 2) | 0, w: frame.w * this.scale, h: frame.h * this.scale});
+                y: (this.y - content.y - content.h / 2) | 0,
+                w: frame.w * this.scale, h: frame.h * this.scale});
         }
     }
 }

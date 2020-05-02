@@ -12,21 +12,24 @@ import {
 import { attemptToApplyCost, canAffordCost, costHelpText, hidePointsPreview, previewCost } from 'app/points';
 import { saveGame } from 'app/saveGame';
 import { getState } from 'app/state';
-import { fillRectangle, isPointInRectObject, rectangle, shrinkRectangle } from 'app/utils/index';
+import { drawFrame } from 'app/utils/animations';
+import { fillRectangle, isPointInShortRect, r, shrinkRectangle } from 'app/utils/index';
 
-let upgradingObject = null;
-const upgradeRectangle = rectangle(90, 45, 140, 90);
+import { AreaObject, Cost, Frame, UpgradeableObject } from 'app/types';
+
+let upgradingObject: UpgradeableObject = null;
+const upgradeRectangle = r(90, 45, 140, 90);
 
 export function getUpgradeRectangle() {
     return upgradeRectangle;
 }
 
 export const upgradeButton = {
-    left: 0, top: 0, width: 0, height: 0,
+    x: 0, y: 0, w: 0, h: 0,
     isVisible() {
         return !!getUpgradingObject();
     },
-    render(context, button) {
+    render(context: CanvasRenderingContext2D) {
         const currentTier = getUpgradingObject().getCurrentTier();
         const canUpgrade = canAffordCost(currentTier.upgradeCost);
         context.textAlign = 'center'
@@ -37,18 +40,21 @@ export const upgradeButton = {
         context.fillStyle = canUpgrade ? '#6C6' : '#CCC';
         const padding = 7;
         const metrics = context.measureText('Upgrade to...');
-        button.width = metrics.width + 2 * padding;
-        button.height = 20 + 2 * padding;
-        button.left = upgradeRectangle.left + (upgradeRectangle.width - button.width) / 2;
-        button.top = upgradeRectangle.top + (upgradeRectangle.height - button.height) / 2;
-        drawTitleRectangle(context, button)
+        this.w = metrics.width + 2 * padding;
+        this.h = 20 + 2 * padding;
+        this.x = upgradeRectangle.x + (upgradeRectangle.w - this.w) / 2;
+        this.y = upgradeRectangle.y + (upgradeRectangle.h - this.h) / 2;
+        drawTitleRectangle(context, this)
         context.fillStyle = canUpgrade ? 'white' : '#AAA';
-        context.fillText('Upgrade to...', button.left + button.width / 2, button.top + button.height / 2);
+        context.fillText('Upgrade to...', this.x + this.w / 2, this.y + this.h / 2);
     },
     helpMethod() {
         const currentTier = upgradingObject.getCurrentTier();
         previewCost(currentTier.upgradeCost);
         return null;
+    },
+    isPointOver(x, y) {
+        return isPointInShortRect(x, y, this);
     },
     onMouseOut() {
         hidePointsPreview();
@@ -67,7 +73,7 @@ export const upgradeButton = {
         upgradingObject = null;
     }
 };
-export function setUpgradingObject(object) {
+export function setUpgradingObject(object: UpgradeableObject) {
     upgradingObject = object;
 }
 export function getUpgradingObject() {
@@ -77,18 +83,20 @@ export function drawUpgradeBox() {
     drawRectangleBackground(mainContext, upgradeRectangle);
     const currentTier = upgradingObject.getCurrentTier();
     const nextTier = upgradingObject.getNextTier();
-    drawImage(mainContext, currentTier.source.image, currentTier.source, {'left': upgradeRectangle.left + 5, 'top': upgradeRectangle.top + 2, 'width': 20, 'height': 20});
-    drawImage(mainContext, nextTier.source.image, nextTier.source, {'left': upgradeRectangle.left + 5, 'top': upgradeRectangle.top + 35, 'width': 20, 'height': 20});
+    drawFrame(mainContext, currentTier.frame, {x: upgradeRectangle.x + 5, y: upgradeRectangle.y + 2, w: 20, h: 20});
+    drawFrame(mainContext, nextTier.frame, {x: upgradeRectangle.x + 5, y: upgradeRectangle.y + 35, w: 20, h: 20});
+    //drawImage(mainContext, currentTier.source.image, currentTier.source, {'x': upgradeRectangle.x + 5, 'y': upgradeRectangle.y + 2, 'w': 20, 'h': 20});
+    //drawImage(mainContext, nextTier.source.image, nextTier.source, {'x': upgradeRectangle.x + 5, 'y': upgradeRectangle.y + 35, 'w': 20, 'h': 20});
     mainContext.textAlign = 'left'
     mainContext.textBaseline = 'middle';
     mainContext.fillStyle = 'white';
     setFontSize(mainContext, 10);
-    mainContext.fillText(currentTier.name, upgradeRectangle.left + 30, upgradeRectangle.top + 10);
-    mainContext.fillText(nextTier.name, upgradeRectangle.left + 30, upgradeRectangle.top + 70);
+    mainContext.fillText(currentTier.name, upgradeRectangle.x + 30, upgradeRectangle.y + 10);
+    mainContext.fillText(nextTier.name, upgradeRectangle.x + 30, upgradeRectangle.y + 70);
     mainContext.fillStyle = toolTipColor;
     const state = getState();
-    mainContext.fillText(bonusSourceHelpText(currentTier, state.selectedCharacter.adventurer).replace(/<br ?\/?>/g, "\n"), upgradeRectangle.left + 30, upgradeRectangle.top + 20);
-    mainContext.fillText(bonusSourceHelpText(nextTier, state.selectedCharacter.adventurer).replace(/<br ?\/?>/g, "\n"), upgradeRectangle.left + 30, upgradeRectangle.top + 80);
+    mainContext.fillText(bonusSourceHelpText(currentTier, state.selectedCharacter.adventurer).replace(/<br ?\/?>/g, "\n"), upgradeRectangle.x + 30, upgradeRectangle.y + 20);
+    mainContext.fillText(bonusSourceHelpText(nextTier, state.selectedCharacter.adventurer).replace(/<br ?\/?>/g, "\n"), upgradeRectangle.x + 30, upgradeRectangle.y + 80);
 }
 
 function setFontSize(context, size) {

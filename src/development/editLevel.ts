@@ -2,7 +2,7 @@ import { startLevel } from 'app/adventure';
 import { updateAdventureButtons } from 'app/adventureButtons';
 import { setSelectedCharacter } from 'app/character';
 import { abilities } from 'app/content/abilities';
-import { areaTypes } from 'app/content/areaTypes';
+import { areaTypes } from 'app/content/areas';
 import { instantiateLevel } from 'app/content/levels';
 import { characterClasses } from 'app/content/jobs';
 import { map } from 'app/content/mapData';
@@ -476,10 +476,10 @@ function updateEditingState() {
     query('.js-mainCanvasContainer').style.top = inAdventureMode ? 'auto' : '-330px';
 }
 
-export function handleEditMapKeyDown(keycode: number): boolean {
+export function handleEditMapKeyDown(keyCode: number): boolean {
     const { editingMap, testingLevel, editingLevel } = editingMapState;
 
-    if (isEditingAllowed() && keycode === 69 && getState().selectedCharacter.context === 'map') { // 'e'
+    if (isEditingAllowed() && keyCode === 69 && getState().selectedCharacter.context === 'map') { // 'e'
         if (mapState.currentMapTarget) {
             startEditingLevel(mapState.currentMapTarget);
             return true;
@@ -491,24 +491,24 @@ export function handleEditMapKeyDown(keycode: number): boolean {
         }
     }
     if (editingMap) {
-        if (keycode === 8) { // delete key
+        if (keyCode === 8) { // delete key
             event.preventDefault();
             editingMapState.selectedMapNodes.forEach(deleteLevel);
             editingMapState.selectedMapNodes = [];
         }
-        if (keycode === 27) { // escape key
+        if (keyCode === 27) { // escape key
             stopMapEditing();
         }
-        if (keycode === 67) { // 'c'
+        if (keyCode === 67) { // 'c'
             exportMapToClipboard();
         }
-        if (keycode === 69) { // 'e'
+        if (keyCode === 69) { // 'e'
             stopMapEditing();
         }
         return true
     }
 
-    if (keycode === 27 /*ESC*/|| keycode === 69 /*'e'*/) {
+    if (keyCode === 27 /*ESC*/|| keyCode === 69 /*'e'*/) {
         if (testingLevel) {
             stopTestingLevel();
             return true;

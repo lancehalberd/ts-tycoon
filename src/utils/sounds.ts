@@ -98,6 +98,10 @@ export function requireSound(key, callback = null) {
             },
         };
         if (offset || duration) {
+            if (!duration) {
+                console.log('missing duration for sound sprite.', key, offset, duration);
+                debugger;
+            }
             howlerProperties.sprite = {
                 sprite: [offset, duration],
             };
@@ -128,15 +132,20 @@ export function playSound(key, muted = false) {
         return;
     }
     sound.canPlayAfter = now + customDelay;
-    if (sound.howl) {
-        sound.howl.mute(muted);
-        if (sound.spriteName) {
-            sound.howl.play(sound.spriteName);
-        } else {
-            sound.howl.play();
+    try {
+        if (sound.howl) {
+            sound.howl.mute(muted);
+            if (sound.spriteName) {
+                sound.howl.play(sound.spriteName);
+            } else {
+                sound.howl.play();
+            }
+        } else if (sound.play && !muted) {
+            sound.play();
         }
-    } else if (sound.play && !muted) {
-        sound.play();
+    } catch(e) {
+        console.log(e);
+        debugger;
     }
 }
 

@@ -16,7 +16,7 @@ export function getNameWithAffixes(name: string, prefixes: Affix[], suffixes: Af
     return name;
 }
 
-export function getItemHelpText(item: Item) {
+export function getItemHelpText(this: void, item: Item) {
     const sections = [];
     const state = getState();
     const actor = state.selectedCharacter.adventurer;
@@ -98,7 +98,7 @@ export function tagToCategoryDisplayName(tag) {
     return tagToCategoryMap[tag] || properCase(tag);
 }
 
-export function bonusSourceHelpText(bonusSource: BonusSource, coreObject, localObject = null) {
+export function bonusSourceHelpText(this: void, bonusSource: BonusSource, coreObject, localObject = null) {
     localObject = localObject || bonusSource;
     if (!bonusSource.bonuses) {
         console.log(bonusSource);
@@ -219,7 +219,7 @@ export function renderBonusText(bonusMap, bonusKey, bonusSource, coreObject, loc
     }
     return text;
 }
-export function abilityHelpText(ability: Ability, actor: Actor) {
+export function abilityHelpText(this: void, ability: Ability, actor: Actor) {
     const sections = [];
     if (ability.bonuses) sections.push(bonusSourceHelpText(ability, actor.variableObject));
     const action = ability.action || ability.reaction;

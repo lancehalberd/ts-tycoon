@@ -4,18 +4,24 @@ import { getChoosingTrophyAltar } from 'app/content/achievements';
 import { getUpgradingObject } from 'app/content/upgradeButton';
 import { setContext } from 'app/context';
 import {
+    editingAreaState,
+    handleEditAreaClick,
+    handleEditMouseDragged,
+} from 'app/development/editArea';
+import {
     getElementIndex, handleChildEvent, mainCanvas,
     query, queryAll, toggleElements,
 } from 'app/dom';
-import { getSelectedAction, setSelectedAction } from 'app/drawSkills';
+import { getSelectedAction, setSelectedAction } from 'app/render/drawActionShortcuts';
 import { ADVENTURE_SCALE, GROUND_Y } from 'app/gameConstants';
 import { handleMapMouseDown } from 'app/map';
 import { checkToShowMainCanvasToolTip, getCanvasPopupTarget } from 'app/popup'
 import { saveGame } from 'app/saveGame';
 import { getState } from 'app/state';
+import { getContextMenu, hideContextMenu, showContextMenu } from 'app/development/contextMenu';
 import { canUseSkillOnTarget } from 'app/useSkill';
 import { toolTipColor } from 'app/utils/colors';
-import { getMousePosition } from 'app/utils/mouse';
+import { getMousePosition, isMouseDown } from 'app/utils/mouse';
 
 import { Action, Actor, ActorActivity, Area, AreaObject, AreaObjectTarget, Hero, LocationTarget, Target } from 'app/types';
 
@@ -24,15 +30,30 @@ export function getCanvasCoords() {
     return canvasCoords;
 }
 mainCanvas.addEventListener('mousemove', function () {
+    const [lastX, lastY] = canvasCoords || [-1, -1];
     const [x, y] = getMousePosition(mainCanvas, ADVENTURE_SCALE);
     canvasCoords = [x, y];
     checkToShowMainCanvasToolTip(x, y);
+    // lastX will be -1 if the mouse wasn't previously over this element.
+    if (lastX > 0 && isMouseDown()) {
+        if (editingAreaState.isEditing) {
+            handleEditMouseDragged(x - lastX, y - lastY);
+            return;
+        }
+    }
 });
 let clickedToMove = false;
 
 mainCanvas.onmousedown = function (event) {
+    if (event.which !== 1) {
+        return;
+    }
     const [x, y] = getMousePosition(mainCanvas, ADVENTURE_SCALE);
     canvasCoords = [x, y];
+    if (editingAreaState.isEditing) {
+        handleEditAreaClick(x, y);
+        return;
+    }
     switch (getState().selectedCharacter.context) {
         case 'adventure':
         case 'guild':
@@ -53,18 +74,18 @@ function handleAdventureClick(x: number, y: number, event) {
     const selectedAction = getSelectedAction();
     if (canvasPopupTarget) {
         if (selectedAction) {
-            if (canvasPopupTarget.targetType === 'actor' && canUseSkillOnTarget(hero, selectedAction, canvasPopupTarget)) {
-                setActionTarget(hero, selectedAction, canvasPopupTarget);
+            if (canvasPopupTarget.targetType === 'actor' && canUseSkillOnTarget(hero, selectedAction, canvasPopupTarget as Actor)) {
+                setActionTarget(hero, selectedAction, canvasPopupTarget as Actor);
                 setSelectedAction(null);
                 return;
             }
         }
         if (canvasPopupTarget.getAreaTarget && canvasPopupTarget.onInteract) {
-            setActorInteractionTarget(hero, canvasPopupTarget.getAreaTarget(canvasPopupTarget));
+            setActorInteractionTarget(hero, canvasPopupTarget.getAreaTarget());
         } else if (canvasPopupTarget.onClick) {
-            canvasPopupTarget.onClick(state.selectedCharacter, canvasPopupTarget);
-        } else if (hero.enemies.indexOf(canvasPopupTarget) >= 0) {
-            setActorAttackTarget(hero, canvasPopupTarget);
+            canvasPopupTarget.onClick();
+        } else if (hero.enemies.indexOf(canvasPopupTarget as Actor) >= 0) {
+            setActorAttackTarget(hero, canvasPopupTarget as Actor);
         }
     } else if (!getUpgradingObject() && !getChoosingTrophyAltar()) {
         var targetLocation = getTargetLocation(hero.area, x, y);
@@ -87,7 +108,7 @@ export function handleAdventureMouseIsDown(x: number, y: number) {
                 targetType: 'location',
                 area: hero.area,
                 x: hero.area.cameraX + x, y: 0, z: targetZ,
-                w: 0, h: 0,
+                w: 0, h: 0, d: 0,
             });
         }
     }
@@ -96,11 +117,8 @@ export function getTargetLocation(area: Area, canvasX: number, canvasY: number):
     let z = -(canvasY - GROUND_Y) * 2;
     if (z < -190 || z > 190) return null;
     z = limitZ(z);
-    return {targetType: 'location', area, x: area.cameraX + canvasX, y: 0, z, w: 0, h: 0};
+    return {targetType: 'location', area, x: area.cameraX + canvasX, y: 0, z, w: 0, h: 0, d: 0};
 }
-document.addEventListener('mouseup',function (event) {
-    clickedToMove = false;
-});
 function setActorDestination(hero: Hero, target: Target) {
     const activity: ActorActivity = {
         type: 'move',
@@ -166,3 +184,20 @@ handleChildEvent('click', query('.js-charactersBox'), '.js-character', function 
     setSelectedCharacter(getState().characters[characterIndex]);
 });
 
+
+document.addEventListener('mouseup', function (event) {
+    if (event.which !== 1) {
+        return;
+    }
+    clickedToMove = false;
+    if (!(event.target as HTMLElement).closest('.contextMenu')) {
+        hideContextMenu();
+    }
+});
+
+mainCanvas.addEventListener('contextmenu', function (event) {
+    event.preventDefault();
+    const [x, y] = getMousePosition();
+    const menu = getContextMenu();
+    showContextMenu(menu, x, y);
+});

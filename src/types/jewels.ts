@@ -20,7 +20,7 @@ export interface Jewel {
     // Div for holding the jewel in the inventory.
     domElement?: HTMLElement,
     fixed: boolean,
-    helpMethod: (jewel: Jewel) => string,
+    helpMethod: (this: Jewel) => string,
     jewelType: number,
     price: number,
     qualifierBonus: number,

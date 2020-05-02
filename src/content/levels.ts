@@ -1,8 +1,7 @@
 import { addMonstersToArea, messageCharacter } from 'app/adventure';
 import { readBoardFromData, totalCostForNextLevel } from 'app/character';
 import { abilities } from 'app/content/abilities';
-import { areaTypes } from 'app/content/areaTypes';
-import { fixedObject } from 'app/content/furniture';
+import { areaTypes } from 'app/content/areas';
 import { map } from 'app/content/mapData';
 import { bossMonsterBonuses, easyBonuses, hardBonuses, monsters } from 'app/content/monsters';
 import { setContext } from 'app/context';
@@ -110,9 +109,8 @@ export function instantiateLevel(
         const area: Area = {
             key: `area${areas.size}`,
             isBossArea: false,
-            left: 0,
             width: ADVENTURE_WIDTH,
-            backgroundPatterns: {0: levelData.background},
+            areaType: levelData.background,
             objects: [],
             drawMinimapIcon: eventsLeft.length > 1 ? drawMinimapMonsterIcon : drawMinimapBossIcon,
             areas,

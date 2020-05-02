@@ -5,11 +5,12 @@ import { drawUpgradeBox, getUpgradingObject } from 'app/content/upgradeButton';
 import { abilities } from 'app/content/abilities';
 import { boards } from 'app/content/boards';
 import { editingMapState } from 'app/development/editLevel';
+import { renderEditAreaOverlay } from 'app/development/editArea';
 import { jewelsCanvas, mainCanvas, mainContext, previewContext, query } from 'app/dom';
 import { drawArea, drawHud } from 'app/drawArea';
 import { drawBoardBackground, drawBoardJewels, drawBoardJewelsProper } from 'app/drawBoard';
 import { drawMap } from 'app/drawMap';
-import { drawSkills } from 'app/drawSkills';
+import { drawActionShortcuts } from 'app/render/drawActionShortcuts';
 import { drawCraftingCanvas } from 'app/equipmentCrafting';
 import { FRAME_LENGTH } from 'app/gameConstants';
 import { drawImage, requireImage } from 'app/images';
@@ -84,7 +85,7 @@ export function render() {
         } else {
             drawArea(state.selectedCharacter.hero.area);
         }
-        drawSkills(state.selectedCharacter.hero);
+        drawActionShortcuts(mainContext, state.selectedCharacter);
     }
     if (state.selectedCharacter.context === 'adventure' && state.selectedCharacter.activeShrine) {
         renderChooseBlessing();
@@ -98,6 +99,7 @@ export function render() {
         drawHud();
     }
     drawTrophyPopups();
+    renderEditAreaOverlay(mainContext);
    // attackAnimationTest();
 }
 /*

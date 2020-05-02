@@ -1,3 +1,4 @@
+import { isPointOverActor } from 'app/actor';
 import { createVariableObject, addBonusSourceToObject, recomputeDirtyStats } from 'app/bonuses';
 import { actorHelpText, addActions, coreStatBonusSource, personFrames, recomputeActorTags } from 'app/character';
 import { abilities, leapAndAct } from 'app/content/abilities';
@@ -6,16 +7,16 @@ import { map } from 'app/content/mapData';
 import { createCanvas } from 'app/dom';
 import { ParticleEffect } from 'app/effects';
 import { makeAffix } from 'app/enchanting';
-import { ADVENTURE_WIDTH, equipmentSlots } from 'app/gameConstants';
+import { ADVENTURE_WIDTH, GROUND_Y, equipmentSlots } from 'app/gameConstants';
 import { drawCompositeTintedFrame, requireImage } from 'app/images';
 import { makeItem } from 'app/inventory';
-import { drawActor, getActorAnimationFrame } from 'app/render/drawActor';
+import { drawActor } from 'app/render/drawActor';
 import { createAnimation } from 'app/utils/animations';
 import { ifdefor } from 'app/utils/index';
 import Random from 'app/utils/Random';
 
 import {
-    Ability, Actor, ActorSource, ActorStats, Affix, AffixData, Animation, Area,
+    Ability, Actor, ActorSource, ActorStats, Affix, AffixData, FrameAnimation, Area,
     Bonuses, BonusSource, Equipment, EquipmentSlot, FrameRectangle,
     Monster, MonsterData,
 } from 'app/types';
@@ -112,7 +113,7 @@ export function makeMonster(
         area,
         type: 'monster',
         x: 0, y: 0, z: 0,
-        w: 0, h: 0,
+        w: 0, h: 0, d: 0,
         level,
         name: baseMonster.name,
         slow: 0,
@@ -125,6 +126,7 @@ export function makeMonster(
         percentHealth: 1,
         percentTargetHealth: 1,
         helpMethod: actorHelpText,
+        isPointOver: isPointOverActor,
         heading: [-1, 0, 0],
         base: baseMonster,
         source: baseMonster.source,
@@ -306,28 +308,33 @@ const monsterShadow = createAnimation(
 const airMonsterShadow = createAnimation(
     requireImage('gfx2/enemies/monsterflyshadow.png'), {x: 0, y: 0, w: 36, h: 36, content: {x: 12, y: 33, w: 12, h: 3}},
 );
-function completeMonsterSource(source: Partial<ActorSource> & {walkAnimation: Animation}, shadowAnimation: Animation = monsterShadow): ActorSource {
+function completeMonsterSource(source: Partial<ActorSource> & {walkAnimation: FrameAnimation}, shadowAnimation: FrameAnimation = monsterShadow): ActorSource {
     const attackPreparationAnimation = source.attackPreparationAnimation || source.walkAnimation;
+    const attackRecoveryAnimation = source.attackRecoveryAnimation || {
+        ...attackPreparationAnimation,
+        frames: attackPreparationAnimation.frames.slice().reverse(),
+    };
     return {
         ...source,
         idleAnimation: source.idleAnimation || source.walkAnimation,
         hurtAnimation: source.hurtAnimation || source.idleAnimation || source.walkAnimation,
         deathAnimation: source.deathAnimation || source.hurtAnimation || source.idleAnimation || source.walkAnimation,
         attackPreparationAnimation,
-        attackRecoveryAnimation: source.attackRecoveryAnimation || {
-            ...attackPreparationAnimation,
-            frames: attackPreparationAnimation.frames.slice().reverse(),
-        },
+        attackRecoveryAnimation,
+        spellPreparationAnimation: source.spellPreparationAnimation || attackPreparationAnimation,
+        spellRecoveryAnimation: source.spellRecoveryAnimation || attackRecoveryAnimation,
         shadowAnimation,
     };
 }
-function createMonsterSource(image: HTMLImageElement | HTMLCanvasElement, rectangle: FrameRectangle, shadowAnimation: Animation = monsterShadow ): ActorSource {
+function createMonsterSource(image: HTMLImageElement | HTMLCanvasElement, rectangle: FrameRectangle, shadowAnimation: FrameAnimation = monsterShadow ): ActorSource {
     const hurtAnimation = createAnimation(image, rectangle, {cols: 7, frameMap: [6]});
     return {
         idleAnimation: createAnimation(image, rectangle, {cols: 7, frameMap: [0]}),
         walkAnimation: createAnimation(image, rectangle, {cols: 7, frameMap: [0, 1, 2, 1]}),
         attackPreparationAnimation: createAnimation(image, rectangle, {cols: 7, frameMap: [3, 4]}),
         attackRecoveryAnimation: createAnimation(image, rectangle, {cols: 7, frameMap: [5]}),
+        spellPreparationAnimation: createAnimation(image, rectangle, {cols: 7, frameMap: [3, 4]}),
+        spellRecoveryAnimation: createAnimation(image, rectangle, {cols: 7, frameMap: [5]}),
         deathAnimation: hurtAnimation,
         hurtAnimation,
         shadowAnimation,
@@ -353,16 +360,18 @@ const skeletonRectangle = {x: 0, y: 0, w: 36, h: 36, content: {x: 6, y: 0, w: 12
 const gremlinSheet = requireImage('gfx2/enemies/gremlinsheet.png');
 const skeletonSheet = requireImage('gfx2/enemies/skeletonunarmedsheet.png');
 const skeletonDeathSheet = requireImage('gfx2/enemies/skeletondeathsheet.png');
-let plainSkeletonDeathParts: Animation[];
+let plainSkeletonDeathParts: FrameAnimation[];
 function addSkeletonExplosion(skeleton: Monster) {
     const scale = skeleton.stats.scale || 1;
-    const frame = getActorAnimationFrame(skeleton);
+    const frame = skeleton.frame;
     const content = frame.content || {...frame, x: 0, y: 0};
-    // Remember skelet.left is the left edge of the content box for the skeleton.
-    const left = skeleton.heading[0] < 0 ?
-        skeleton.left - (frame.w - content.x - content.w) * scale :
-        skeleton.left - content.x * scale;
-    const top = skeleton.top - content.y * scale;
+    // Calculate the top of the skeleton frame.
+    // Remember skeleton.x is the middle of the content box for the skeleton in area coords.
+    // And skeleton.y is the bottom of the content box in area coords.
+    const left = (skeleton.heading[0] < 0 ?
+        skeleton.x - (frame.w - content.x - content.w / 2) * scale :
+        skeleton.x - content.w * scale / 2 - content.x * scale) - skeleton.area.cameraX;
+    const top = GROUND_Y - skeleton.y - skeleton.z / 2 - content.h * scale - content.y * scale;
     for (let i = 0; i < plainSkeletonDeathParts.length; i++) {
         const animation = plainSkeletonDeathParts[i];
         const vx = -3 + i + Math.random() / 2;

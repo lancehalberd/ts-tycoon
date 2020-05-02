@@ -1,7 +1,9 @@
+import { updateActorFrame } from 'app/actor';
 import { updateArea } from 'app/adventure';
 import { refreshStatsPanel } from 'app/character';
 import { updateTrophyPopups } from 'app/content/achievements';
 import { areSoundsPreloaded, preloadSounds } from 'app/content/sounds';
+import { updateEditArea } from 'app/development/editArea';
 import { mainCanvas, query } from 'app/dom';
 import { updateCraftingCanvas } from 'app/equipmentCrafting';
 import { ADVENTURE_SCALE, ADVENTURE_WIDTH, FRAME_LENGTH, GROUND_Y } from 'app/gameConstants';
@@ -10,7 +12,6 @@ import { areAllImagesLoaded } from 'app/images';
 import { updateMap } from 'app/map';
 import { handleAdventureMouseIsDown } from 'app/main';
 import { checkToRemovePopup, updateActorHelpText } from 'app/popup';
-import { updateActorDimensions } from 'app/render/drawActor';
 import { getState } from 'app/state';
 import { getMousePosition, isMouseDown } from 'app/utils/mouse';
 import { isPlayingTrack } from 'app/utils/sounds';
@@ -46,6 +47,9 @@ export function update() {
         }
         return;
     }
+    if (updateEditArea()) {
+        return;
+    }
     try {
     const state = getState();
     //var characters = testingLevel ? [state.selectedCharacter] : state.characters;
@@ -73,7 +77,7 @@ export function update() {
         }
         if (character.context === 'guild' || character.context === 'adventure') {
             const everybody = hero.area.allies.concat(hero.area.enemies);
-            everybody.forEach(updateActorDimensions);
+            everybody.forEach(updateActorFrame);
             everybody.forEach(updateActorHelpText);
         }
     }
@@ -131,7 +135,7 @@ export function getTargetCameraX(hero: Hero) {
     if (mouseX > RIGHT) centerX = Math.max(centerX, hero.x) + (mouseX - RIGHT);
     else if (mouseX < LEFT) centerX = Math.min(centerX, hero.x) - (LEFT - mouseX);
     let target = Math.min(hero.x - 10, centerX - ADVENTURE_WIDTH / 2);
-    target = Math.max(area.left || 0, target);
+    target = Math.max(0, target);
     if (area.width) target = Math.min(area.width - ADVENTURE_WIDTH, target);
     // If a timestop is in effect, the caster must be in the frame.
     if (area.timeStopEffect) {

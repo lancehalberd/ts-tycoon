@@ -1,4 +1,3 @@
-import { actorHelpText } from 'app/character';
 import { abilities } from 'app/content/abilities';
 import { getChoosingTrophyAltar, getTrophyPopupTarget } from 'app/content/achievements';
 import { getUpgradingObject, upgradeButton } from 'app/content/upgradeButton';
@@ -7,7 +6,7 @@ import {
     bodyDiv, query, queryAll, tag, titleDiv,
 } from 'app/dom';
 import { getGlobalHud } from 'app/drawArea';
-import { getAbilityPopupTarget } from 'app/drawSkills';
+import { getAbilityPopupTarget } from 'app/render/drawActionShortcuts';
 import { equipmentCraftingState } from 'app/equipmentCrafting';
 import { ADVENTURE_SCALE, GROUND_Y } from 'app/gameConstants';
 import { abilityHelpText, getItemHelpText } from 'app/helpText';
@@ -21,7 +20,7 @@ import { abbreviate } from 'app/utils/formatters';
 import { ifdefor, isPointInRect, isPointInRectObject, isPointInShortRect, rectangle } from 'app/utils/index';
 import { getMousePosition, isMouseOverElement } from 'app/utils/mouse';
 
-import { Actor, FullRectangle, ShortRectangle } from 'app/types';
+import { Actor, Area, FullRectangle, ShortRectangle } from 'app/types';
 
 interface Popup {
     target: any,
@@ -33,26 +32,40 @@ export function updateActorHelpText(actor: Actor) {
     if (!popup || !popup.element) {
         return;
     }
-    if (getCanvasPopupTarget() === actor) {
-        popup.element.innerHTML = actorHelpText(actor);
+    if (getCanvasPopupTarget() === actor && actor.helpMethod) {
+        popup.element.innerHTML = actor.helpMethod();
         return;
     }
     if (!popup.target) {
         return;
     }
-    if (actor === popup.target) {
-        popup.element.innerHTML = actorHelpText(actor);
+    if (actor === popup.target && actor.helpMethod) {
+        popup.element.innerHTML = actor.helpMethod();
         return;
     }
 }
 
+interface CanvasPopupTarget {
+    isPointOver: (x: number, y: number) => boolean,
+    isVisible?: () => boolean,
+    onClick?: () => void,
+    onMouseOut?: () => void,
+    helpMethod?: () => string,
+    helpText?: string,
+    // These are only set on actors.
+    isDead?: boolean,
+    area?: Area,
+    targetType?: string,
+    getAreaTarget?: Function,
+    onInteract?: Function,
+}
 
-let canvasPopupTarget = null;
-export function getCanvasPopupTarget() {
+let canvasPopupTarget: CanvasPopupTarget = null;
+export function getCanvasPopupTarget(): CanvasPopupTarget {
     return canvasPopupTarget;
 }
 window['getCanvasPopupTarget'] = getCanvasPopupTarget;
-export function setCanvasPopupTarget(target) {
+export function setCanvasPopupTarget(target: CanvasPopupTarget) {
     canvasPopupTarget = target;
 }
 window['setCanvasPopupTarget'] = setCanvasPopupTarget;
@@ -70,6 +83,10 @@ export function removePopup() {
             popup.target.onMouseOut();
         }
         popup = null;
+    } else if (canvasPopupTarget && canvasPopupTarget.onMouseOut) {
+        // This handles the case when we were over a canvas target, but it
+        // didn't generate a popup, we still trigger mouse out on leaving it.
+        canvasPopupTarget.onMouseOut();
     }
     canvasPopupTarget = null;
 }
@@ -120,13 +137,18 @@ export function checkToShowMainCanvasToolTip(x, y) {
         //console.log(popup, popup && popup.element, mainCanvas.style.display, canvasPopupTarget);
         return;
     }
-    canvasPopupTarget = getMainCanvasMouseTarget(x, y);
+    const newCanvasPopupTarget = getMainCanvasMouseTarget(x, y);
+    // console.log(canvasPopupTarget, newCanvasPopupTarget);
+    if (canvasPopupTarget && canvasPopupTarget !== newCanvasPopupTarget && canvasPopupTarget.onMouseOut) {
+        canvasPopupTarget.onMouseOut();
+    }
+    canvasPopupTarget = newCanvasPopupTarget
     mainCanvas.classList.toggle('clickable', !!canvasPopupTarget);
     if (!canvasPopupTarget) {
         //console.log('no main canvas target');
         return;
     }
-    const popupText = canvasPopupTarget.helpMethod ? canvasPopupTarget.helpMethod(canvasPopupTarget) : canvasPopupTarget.helpText;
+    const popupText = canvasPopupTarget.helpMethod ? canvasPopupTarget.helpMethod() : canvasPopupTarget.helpText;
     if (!popupText) return;
     popup = {
         target: canvasPopupTarget,
@@ -136,7 +158,7 @@ export function checkToShowMainCanvasToolTip(x, y) {
     updateToolTip();
 }
 // Return the canvas object under the mouse with highest priority, if any.
-function getMainCanvasMouseTarget(x, y) {
+function getMainCanvasMouseTarget(x, y): CanvasPopupTarget {
     const state = getState();
     if (state.selectedCharacter.context === 'map') {
         return getMapPopupTarget(x, y);
@@ -149,7 +171,7 @@ function getMainCanvasMouseTarget(x, y) {
         return getTrophyPopupTarget(x, y);
     }
     if (getUpgradingObject()) {
-        if (isPointInRectObject(x, y, upgradeButton)) {
+        if (isPointInShortRect(x, y, upgradeButton)) {
             return upgradeButton;
         }
         return null;
@@ -160,55 +182,35 @@ function getMainCanvasMouseTarget(x, y) {
     }
     // Actors (heroes and enemies) have highest priority in the main game context during fights.
     for (const actor of area.allies.concat(area.enemies)) {
-        if (!actor.isDead && isPointInRectObject(x, y, {left: actor.left, top: actor.top, width: actor.w,  height: actor.h})) {
+        if (!actor.isDead && actor.isPointOver(x, y)) {
             return actor;
         }
     }
+    for (const hudObject of getGlobalHud()) {
+        if (!hudObject.onClick || (hudObject.isVisible && !hudObject.isVisible())) {
+            continue;
+        }
+        if (isPointInShortRect(x, y, hudObject)) {
+            return hudObject;
+        }
+    }
     const sortedObjects = area.objects.slice().sort(function (spriteA, spriteB) {
-        const A = spriteA.getAreaTarget ? spriteA.getAreaTarget(spriteA).z : -10000;
-        const B = spriteB.getAreaTarget ? spriteB.getAreaTarget(spriteB).z : -10000;
+        const A = spriteA.getAreaTarget ? spriteA.getAreaTarget().z : -10000;
+        const B = spriteB.getAreaTarget ? spriteB.getAreaTarget().z : -10000;
         return A - B;
     });
-    for (const hudObject of getGlobalHud()) {
-        if (!isCanvasTargetActive(hudObject)) continue;
-        if (isPointInRectObject(x, y, hudObject)) return hudObject;
-    }
     for (const object of [...sortedObjects, ...(area.wallDecorations || [])]) {
-        if (!isCanvasTargetActive(object)) {
+        if (!object.onInteract || (object.isEnabled && !object.isEnabled())) {
             continue;
         }
-        if (object.isPointOver) {
-            if (object.isPointOver(object, x, y)) {
-                return object;
-            }
-            continue;
-        }
-        // (x,y) of objects is the bottom middle of their graphic.
-        let targetRectangle: ShortRectangle;
-        if (object.getMouseTarget) {
-            targetRectangle = object.getMouseTarget(object);
-        } else if (object.getAreaTarget) {
-            const areaTarget = object.getAreaTarget(object);
-            targetRectangle = {
-                x: areaTarget.x - area.cameraX - areaTarget.w / 2,
-                y: GROUND_Y - areaTarget.y - areaTarget.z / 2 - areaTarget.h,
-                w: areaTarget.w,
-                h: areaTarget.h,
-            }
-        }
-        if (targetRectangle && isPointInShortRect(x, y, targetRectangle)) {
+        if (object.isPointOver(x, y)) {
             return object;
         }
     }
     return null;
 }
 window['getMainCanvasMouseTarget'] = getMainCanvasMouseTarget;
-function isCanvasTargetActive(canvasTarget) {
-    if (!canvasTarget.action && !canvasTarget.onClick && !canvasTarget.onInteract) return false;
-    if (canvasTarget.isVisible && !canvasTarget.isVisible()) return false;
-    if (canvasTarget.isEnabled && !canvasTarget.isEnabled(canvasTarget)) return false;
-    return true;
-}
+
 export function checkToShowJewelToolTip() {
     const jewel = jewelInventoryState.draggedJewel || jewelInventoryState.overJewel;
     if (!jewel) {
@@ -223,7 +225,7 @@ export function checkToShowJewelToolTip() {
         }
     }
     //console.log([event.pageX,event.pageY]);
-    const helpText = jewel.helpMethod ? jewel.helpMethod(jewel) : '';
+    const helpText = jewel.helpMethod ? jewel.helpMethod() : '';
     let element;
     if (jewel.fixed && !jewel.confirmed) {
         element = tagElement('div', 'toolTip js-toolTip', 'Drag and rotate to adjust this augmentation.<br/><br/> Click the "Apply" button above when you are done.<br/><br/>' + helpText);
@@ -263,7 +265,7 @@ export function checkToRemovePopup() {
     const [x, y] = getMousePosition(mainCanvas, ADVENTURE_SCALE);
     if (mainCanvas.style.display !== 'none') {
         const { selectedCharacter } = getState();
-        // console.log(canvasPopupTarget, x, y, isMouseOverCanvasElement(x, y, canvasPopupTarget));
+        // console.log(canvasPopupTarget, x, y, canvasPopupTarget && isMouseOverCanvasElement(x, y, canvasPopupTarget));
         if (canvasPopupTarget &&
             !canvasPopupTarget.isDead &&
             (!canvasPopupTarget.area || canvasPopupTarget.area === selectedCharacter.hero.area) &&
@@ -289,19 +291,19 @@ function isMouseOverCanvasElement(x, y, element) {
         return false;
     }
     if (element.isPointOver) {
-        return element.isPointOver(element, x, y);
+        return element.isPointOver(x, y);
     }
     if (element.target) {
         // Support both short/full rectangles
         if (element.target.w) return isPointInShortRect(x, y, element.target);
         if (element.target.width) return isPointInRectObject(x, y, element.target);
     }
-    if (element.targetType === 'actor') {
-        return isPointInRectObject(x, y, element);
-    }
     if (mapState.currentMapTarget && ifdefor(mapState.currentMapTarget.y) !== null) {
         return isPointInRectObject(x, y, element);
     }
+    // Attempt to treat the object itself as a ShortRectangle or FullRectangle.
+    if (element.w) return isPointInShortRect(x, y, element);
+    if (element.width) return isPointInRectObject(x, y, element);
     return false;
 }
 function getHelpText(popupTarget: HTMLElement) {
@@ -311,7 +313,11 @@ function getHelpText(popupTarget: HTMLElement) {
         return getItemHelpText(getItemForElement(popupTarget));
     }
     if (helpText === '$character$') {
-        return actorHelpText(getState().selectedCharacter.hero);
+        const hero = getState().selectedCharacter.hero;
+        if (hero.helpMethod) {
+            return hero.helpMethod();
+        }
+        return null;
     }
     if (helpText === '$coins$') {
         return titleDiv(abbreviate(state.savedState.coins) + ' / ' + abbreviate(state.guildStats.maxCoins) + ' coins')

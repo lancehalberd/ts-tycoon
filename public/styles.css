@@ -1529,3 +1529,30 @@ p {
 .chooseBlessingOptions canvas:not(:last-child) {
     margin-right: 20px;
 }
+
+/* Context Menu */
+.contextMenu {
+    position: absolute;
+    background-color: #DDD;
+    width: 150px;
+    z-index: 10;
+    user-select: none;
+}
+.contextOption > .contextMenu {
+    display: none;
+    left: 100%;
+    top: 0;
+}
+.contextOption:hover > .contextMenu {
+    display: block;
+}
+.contextOption {
+    position: relative;
+    cursor: pointer;
+    font-size: 14px;
+    font-family: sans-serif;
+    padding: 4px 8px;
+}
+.contextOption:hover {
+    background-color: #EEE;
+}

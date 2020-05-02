@@ -58,7 +58,7 @@ export function moveActor(actor: Actor) {
             case 'interact':
                 if (getDistanceOverlap(actor, activity.target) <= 5) {
                     if (activity.target.object.onInteract) {
-                        activity.target.object.onInteract(activity.target.object, actor);
+                        activity.target.object.onInteract(actor);
                     }
                     actor.activity = {type: 'none'};
                     break;
@@ -103,16 +103,14 @@ export function moveActor(actor: Actor) {
                 x: actor.owner.x + actor.owner.heading[0] * 300,
                 y: 0,
                 z: Math.max(-180, Math.min(180, actor.owner.z + actor.owner.heading[2] * 100)),
-                w: 0,
-                h: 0,
+                w: 0, h: 0, d: 0,
             } : {
                 targetType: 'location',
                 area: actor.area,
                 x: actor.owner.x - actor.owner.heading[2] * 200,
                 y: 0,
                 z: actor.owner.z > 0 ? actor.owner.z - 150 : actor.owner.z + 150,
-                w: 0,
-                h: 0,
+                w: 0, h: 0, d: 0,
             };
         const distanceToGoal = getDistance(actor, pointPosition);
         if (distanceToGoal > 20) {
@@ -197,9 +195,9 @@ export function moveActor(actor: Actor) {
         // Actor is not allowed to leave the path.
         actor.z = limitZ(actor.z, actor.w / 2);
         if (area.leftWall) {
-            actor.x = Math.max((area.left || 0) + 16 + actor.w / 2 + actor.z / 4, actor.x);
+            actor.x = Math.max(16 + actor.w / 2 + actor.z / 4, actor.x);
         } else {
-            actor.x = Math.max((area.left || 0) + actor.w / 2, actor.x);
+            actor.x = Math.max(actor.w / 2, actor.x);
         }
         if (area.rightWall) {
             actor.x = Math.min(area.width - 16 - actor.w / 2 - actor.z / 4, actor.x);
@@ -228,14 +226,38 @@ export function moveActor(actor: Actor) {
                     console.log(object);
                     debugger;
                 }
-                const objectTarget = object.getAreaTarget(object);
-                const distance = getDistanceOverlap(actor, objectTarget);
-                if (distance <= -8 &&
-                    new Vector([(actor.x - currentX), (actor.z - currentZ)])
-                        .dotProduct(new Vector([objectTarget.x - currentX, objectTarget.z - currentZ])) > 0
-                ) {
+                const objectTarget = object.getAreaTarget();
+                if (objectTarget.shapeType === 'rectangle') {
+                    if (actor.z - actor.d / 2 > objectTarget.z + objectTarget.d / 2 ||
+                        actor.z + actor.d / 2 < objectTarget.z - objectTarget.d / 2
+                    ) {
+                        continue;
+                    }
+                    if (actor.x - actor.w / 2 > objectTarget.x + objectTarget.w / 2 ||
+                        actor.x + actor.w / 2 < objectTarget.x - objectTarget.w / 2
+                    ) {
+                        continue;
+                    }
+                    // Allow the actor to move away from the object even when they are colliding with it.
+                    const v1 = new Vector([(actor.x - currentX), (actor.z - currentZ)]).normalize();
+                    const v2 = new Vector([objectTarget.x - currentX, objectTarget.z - currentZ]).normalize();
+                    // < 0 means they can move orthogonally, <= -1 requires them to move exactly away,
+                    // anything in between is more limiting the closer it gets to -1.
+                    if (v1.dotProduct(v2) < - 0.8) {
+                        continue;
+                    }
                     collision = true;
                     break;
+                } else {
+                    // Default handling is oval.
+                    const distance = getDistanceOverlap(actor, objectTarget);
+                    if (distance <= -8 &&
+                        new Vector([(actor.x - currentX), (actor.z - currentZ)])
+                            .dotProduct(new Vector([objectTarget.x - currentX, objectTarget.z - currentZ])) > 0
+                    ) {
+                        collision = true;
+                        break;
+                    }
                 }
             }
         }

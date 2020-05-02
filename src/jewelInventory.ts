@@ -157,8 +157,10 @@ document.body.ondblclick = function (event) {
     saveGame();
 }
 document.body.onmousedown = function (event) {
+    if (event.which !== 1) {
+        return;
+    }
     const specialClick = event.ctrlKey || event.metaKey;
-    if (event.which != 1) return; // Handle only left click.
     if (jewelInventoryState.draggedJewel || jewelInventoryState.draggingBoardJewel) {
         stopJewelDrag();
         return;

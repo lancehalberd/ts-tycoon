@@ -1,5 +1,7 @@
 export * from 'app/types/abilities';
 export * from 'app/types/actor';
+export * from 'app/types/areaObjects';
+export * from 'app/types/areas';
 export * from 'app/types/board';
 export * from 'app/types/bonuses';
 export * from 'app/types/character';
@@ -14,4 +16,4 @@ export * from 'app/types/other';
 export { default as JobAchievement } from 'app/content/JobAchievement';
 export { default as TintIcon } from 'app/content/TintIcon';
 export { JobIcon } from 'app/content/jobs';
-export { Animation } from 'app/utils/animations';
+export { FrameAnimation } from 'app/utils/animations';

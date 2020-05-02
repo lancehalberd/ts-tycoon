@@ -253,20 +253,22 @@ export const skills: {[key: string]: ActionData} = {
     'revive': spellAction('revive', {'icon': 'gfx/496RpgIcons/spellRevive.png', showName: true}, {'+cooldown': 120},
             'Upon receiving a lethal blow, cast a spell that brings you back to life with {+power} health.'),
     'protect': spellAction('effect', {'icon': 'gfx/496RpgIcons/spellProtect.png', 'target': 'allies', showName: true},
-            {'+cooldown': 30, '+range': 10, '$buff': buffEffect({'icons': [effectSourceUp, effectSourceArmor], drawGround(context, actor: Actor) {
-                //const animation = effectAnimations.blueRune;
-                const size = Math.max(actor.w, 128);
-                //const frame = animation.frames[frame];
-                drawOnGround(context, groundContext => {
-                    groundContext.save();
-                    groundContext.globalAlpha = .8 + .2 * Math.cos(3 * actor.time * Math.PI);
-                    groundContext.translate((actor.x - actor.area.cameraX), GROUND_Y - actor.z / 2);
-                    groundContext.scale(1, .5);
-                    groundContext.rotate(actor.time * Math.PI / 2);
-                    drawTintedImage(groundContext, requireImage('gfx/effects/circleOfProtection.png'), '#08F', 1, r(0,0,200,200), r(-size / 2, -size / 2, size, size));
-                    groundContext.restore();
-                });
-            }}, {'++armor': ['{intelligence}'], '+duration': 20})},
+            {'+cooldown': 30, '+range': 10, '$buff': buffEffect({'icons': [effectSourceUp, effectSourceArmor],
+                drawGround(context, actor: Actor) {
+                    //const animation = effectAnimations.blueRune;
+                    const size = Math.max(actor.w, 128);
+                    //const frame = animation.frames[frame];
+                    drawOnGround(context, groundContext => {
+                        groundContext.save();
+                        groundContext.globalAlpha = .8 + .2 * Math.cos(3 * actor.time * Math.PI);
+                        groundContext.translate((actor.x - actor.area.cameraX), GROUND_Y - actor.z / 2);
+                        groundContext.scale(1, .5);
+                        groundContext.rotate(actor.time * Math.PI / 2);
+                        drawTintedImage(groundContext, requireImage('gfx/effects/circleOfProtection.png'), '#08F', 1, r(0,0,200,200), r(-size / 2, -size / 2, size, size));
+                        groundContext.restore();
+                    });
+                }},
+                {'++armor': ['{intelligence}'], '+duration': 20})},
                            'Create a magic barrier that grants: {$buff}'),
     'aegis': spellAction('criticalCounter', {'icon': 'gfx/496RpgIcons/buffShield.png', showName: true}, {'+cooldown': 60, '+stopAttack': 1,
                 '$buff': buffEffect({}, {'$$maxBlock': 'Block checks are always perfect', '$$maxMagicBlock': 'Magic Block checks are always perfect', '+duration': 5})},

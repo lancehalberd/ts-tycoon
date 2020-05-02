@@ -1,7 +1,9 @@
-import { areaTypes } from 'app/content/areaTypes';
+import { areaTypes } from 'app/content/areas';
 import {
-    Ability, ActiveEffect, Actor, Animation, BonusSource, Exit,
-    FixedObject, FullRectangle, Hero, MonsterSpawn, ShortRectangle,
+    Ability, ActiveEffect, Actor, FrameAnimation,
+    AreaObject, BonusSource, Exit,
+    FixedObject, FullRectangle, Hero, MonsterSpawn,
+    ShortRectangle,
 } from 'app/types';
 
 export interface AreaType {
@@ -23,6 +25,7 @@ export interface Shrine extends ShortRectangle {
     targetType: 'shrine',
     level: LevelData,
     helpMethod?: Function,
+    isPointOver?: (x: number, y: number) => boolean,
 }
 
 export interface LevelData {
@@ -43,11 +46,12 @@ export interface LevelData {
     x?: number, y?: number,
     w?: number, h?: number,
     helpMethod?: Function,
+    isPointOver?: (x: number, y: number) => boolean,
     // Only used during testing
     testArea?: boolean,
 }
 
-export type MapTarget = LevelData | Shrine;
+export type MapTarget = (LevelData | Shrine) & {isPointOver: (x: number, y: number) => boolean};
 
 // instantiated level.
 export interface Level {
@@ -62,11 +66,13 @@ export interface Level {
 
 export interface AreaEntity {
     area: Area,
+    shapeType?: 'oval' | 'rectangle',
     x: number,
     y: number,
     z: number,
     w: number,
     h: number,
+    d: number,
 }
 
 export interface AreaTarget extends AreaEntity {
@@ -80,34 +86,16 @@ export interface LocationTarget extends AreaTarget {
     targetType: 'location',
 }
 
-export interface AreaObject {
-    update?: (object: AreaObject) => void,
-    getAreaTarget: (object: AreaObject) => AreaObjectTarget,
-    onInteract?: (object: AreaObject, actor: Actor) => void,
-    shouldInteract?: (object: AreaObject, actor: Actor) => boolean,
-    isEnabled?: (object: AreaObject) => boolean,
-    render?: (context: CanvasRenderingContext2D, object: AreaObject) => void,
-    drawGround?: (context: CanvasRenderingContext2D, object: AreaObject) => void,
-    getMouseTarget?: (object: AreaObject) => ShortRectangle,
-    isPointOver?: (object: AreaObject, x: number, y: number) => boolean,
-
-    // This may be unset when an object has not been assigned to an area yet.
-    area?: Area,
-    isSolid?: boolean,
-    helpMethod?: (object: AreaObject, hero: Hero) => string,
-}
-
 export interface Area {
     key: string,
+    areaType: string,
     isBossArea?: boolean,
     isGuildArea?: boolean,
-    backgroundPatterns: {[key: string]: string},
     drawMinimapIcon?: Function,
     areas?: Map<string, Area>,
     width: number,
-    rightWall?: Animation,
-    leftWall?: Animation,
-    left: number,
+    rightWall?: FrameAnimation,
+    leftWall?: FrameAnimation,
     cameraX: number,
     time: number,
     // Used for randomly generating area.
@@ -116,6 +104,7 @@ export interface Area {
     // Optional array of bonuses that apply to all enemies in this area.
     enemyBonuses?: BonusSource[],
     isShrineArea?: boolean,
+    monsters?: MonsterSpawn[],
 
     allies: Actor[],
     enemies: Actor[],
@@ -125,17 +114,5 @@ export interface Area {
     treasurePopups: any[],
     objects: AreaObject[],
     wallDecorations: AreaObject[],
-}
-
-export interface MonsterSpawner extends AreaObject {
-    proximity: number,
-    spawns: Partial<MonsterSpawn & {delay?: number}>[],
-    // leadSpawner+spawnDelay are used if this spawner is tied to the timing of another spawner.
-    leadSpawner?: MonsterSpawner,
-    // How many milliseconds to wait after the lead spawners spawns before spawning.
-    spawnDelay?: number,
-    lastSpawnTime: number,
-    // Next spawn occurs when this reaches 0.
-    spawnTimer: number,
-    spawnAnimation: Animation,
+    objectsByKey?: {[key in string]: AreaObject},
 }

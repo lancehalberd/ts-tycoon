@@ -27,6 +27,9 @@ export interface ShortRectangle {
     y: number,
     w: number,
     h: number,
+    // This is a bit of a hack but it is a simple way of allowing me to
+    // associate a depth value for an image.
+    d?: number,
 }
 export interface FrameRectangle extends ShortRectangle {
     // When a frame does not perfectly fit the size of the content, this content rectangle can be
@@ -39,10 +42,15 @@ export type Rectangle = FullRectangle | ShortRectangle;
 
 export interface Frame extends FrameRectangle {
     image: HTMLCanvasElement | HTMLImageElement,
+    // Additional property that may be used in some cases to indicate a frame should be flipped
+    // horizontally about the center of its content. Only some contexts respect this.
+    flipped?: boolean,
 }
 
 export interface TintedFrame extends Frame {
     color: string,
+    // Can be used for partial tints.
+    amount?: number,
     image: HTMLCanvasElement | HTMLImageElement,
 }
 
@@ -64,4 +72,14 @@ export interface TextPopup {
     color: Color,
     duration?: number,
     gravity?: number,
+}
+
+export type PointsType = 'anima' | 'coins' | 'divinity' | 'fame';
+// Cost is an amount of coins or a map of points types to amounts.
+export type Cost = number | {[key in PointsType]?: number};
+
+export interface HUDElement extends ShortRectangle {
+    isPointOver: (x: number, y: number) => boolean,
+    helpMethod?: () => string,
+    onClick?: () => void,
 }

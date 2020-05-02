@@ -13,50 +13,6 @@ import { arrMod } from 'app/utils/index';
 
 import { Actor, Frame } from 'app/types';
 
-export function updateActorDimensions(actor: Actor) {
-    const scale = (actor.stats.scale || 1);
-    const frame = getActorAnimationFrame(actor);
-    actor.w = (frame.content ? frame.content.w : frame.w) * scale;
-    actor.h = (frame.content ? frame.content.h : frame.h) * scale;
-    // These values are used for determining when the mouse is hovering over the actor.
-    // We only need these when the screen is displayed, so we can set them only on draw.
-    if (actor.area) {
-        actor.top = Math.round(GROUND_Y - actor.h - (actor.y || 0) - (actor.z || 0) / 2);
-        actor.left = Math.round(actor.x - actor.w / 2 - actor.area.cameraX);
-    }
-    if (isNaN(actor.w) || isNaN(actor.h)) {
-        console.log(actor.stats.scale);
-        console.log(actor.x);
-        console.log({ frame });
-        console.log([actor.w, actor.h]);
-        pause();
-        return false;
-    }
-    return true;
-}
-
-export function getActorAnimationFrame(actor: Actor): Frame {
-    const source = actor.source;
-    if (actor.pull || actor.stunned) {
-        return source.hurtAnimation.frames[0];
-    }
-    if (actor.isDead) {
-        const deathFps = 1.5 * source.deathAnimation.frames.length;
-        const frameIndex = Math.min(source.deathAnimation.frames.length - 1, Math.floor((actor.time - actor.timeOfDeath) * deathFps));
-        return arrMod(source.deathAnimation.frames, frameIndex);
-    }
-    if (actor.skillInUse && actor.recoveryTime < Math.min(actor.totalRecoveryTime, .3)) { // attacking loop
-        if (actor.recoveryTime === 0 && actor.preparationTime < actor.skillInUse.totalPreparationTime) {
-            return arrMod(source.attackPreparationAnimation.frames, Math.floor(actor.attackFrame));
-        }
-        return arrMod(source.attackRecoveryAnimation.frames, Math.floor(actor.attackFrame));
-    }
-    if (actor.isMoving) {
-        return arrMod(source.walkAnimation.frames, Math.floor(actor.walkFrame));
-    }
-    return arrMod(source.idleAnimation.frames, Math.floor(actor.idleFrame));
-}
-
 export function updateActorAnimationFrame(actor: Actor) {
     if (actor.pull || actor.stunned || actor.isDead ) {
         actor.walkFrame = 0;
@@ -97,18 +53,19 @@ export function drawActorShadow(context: CanvasRenderingContext2D, actor: Actor)
     context.restore();
 }
 
-export function drawActor(context: CanvasRenderingContext2D, actor: Actor) {
-    const source = actor.source;
-    const scale = (actor.stats.scale || 1);
+export function drawActor(this: Actor, context: CanvasRenderingContext2D) {
+    const source = this.source;
+    const scale = (this.stats.scale || 1);
     context.save();
-    if (actor.cloaked) {
+    if (this.cloaked) {
         context.globalAlpha = .2;
     }
     // This is easy to calculate because the x position of an actor is defined as the x coordinate of their content center.
-    const xCenter = Math.round(actor.x - actor.area.cameraX);
-    // Top is the top of the actor content, and height is the height of the content, so the center of the actor content
-    // is a simple calculation.
-    const yCenter = Math.round(actor.top + actor.h / 2);
+    const xCenter = Math.round(this.x - this.area.cameraX);
+    // This is a little more complicated. GROUND_Y is where the foot of actors is placed at y=z=0.
+    // Increasing y moves them up 1 pixel, increasing z moves them up 1/2 a pixel, and to get the center,
+    // we subtract half the height.
+    const yCenter = Math.round(GROUND_Y - this.y - this.z / 2 - this.h / 2);
     /*if (mouseDown) {
         console.log(actor.base.name ? actor.base.name : actor.name);
         console.log([actor.x, actor.y]);
@@ -120,16 +77,16 @@ export function drawActor(context: CanvasRenderingContext2D, actor: Actor) {
     }*/
     context.translate(xCenter, yCenter);
 
-    if (actor.rotation) {
-        context.rotate(actor.rotation * Math.PI/180);
+    if (this.rotation) {
+        context.rotate(this.rotation * Math.PI/180);
     }
-    if ((!source.flipped && actor.heading[0] < 0) || (source.flipped && actor.heading[0] > 0)) {
+    if ((!source.flipped && this.heading[0] < 0) || (source.flipped && this.heading[0] > 0)) {
         context.scale(-1, 1);
     }
-    if (actor.isDead) {
-        context.globalAlpha = Math.max(0, 1 - (actor.time - actor.timeOfDeath));
+    if (this.isDead) {
+        context.globalAlpha = Math.max(0, 1 - (this.time - this.timeOfDeath));
     }
-    const frame = getActorAnimationFrame(actor);
+    const frame = this.frame;
     const contentXCenterOffset = frame.content ? frame.content.x + frame.content.w / 2 : frame.w / 2;
     const contentYCenterOffset = frame.content ? frame.content.y + frame.content.h / 2 : frame.h / 2;
     // This is the rectangle we will draw the frame to. It is just the frame rectangle scaled and positions so that the
@@ -137,11 +94,11 @@ export function drawActor(context: CanvasRenderingContext2D, actor: Actor) {
     // sprite should be drawn.
     const target = {x: -contentXCenterOffset * scale, y: -contentYCenterOffset * scale, w: frame.w * scale, h: frame.h * scale};
 
-    var tints = getActorTints(actor);
+    var tints = getActorTints(this);
     if (tints.length) {
         prepareTintedImage();
         let tint = tints.pop();
-        const tintSource = {...frame, image: getTintedImage(actor.image, tint[0], tint[1], frame), x: 0, y: 0};
+        const tintSource = {...frame, image: getTintedImage(this.image, tint[0], tint[1], frame), x: 0, y: 0};
         for (tint of tints) {
             tintSource.image = getTintedImage(tintSource.image, tint[0], tint[1], tintSource);
         }
@@ -159,13 +116,15 @@ export function drawActorEffects(context: CanvasRenderingContext2D, actor: Actor
     if (actor.isDead) return;
     const barWidth = 32;
     // if (!actor.area.enemies.length) return;
-    let x = actor.left + actor.w / 2 - barWidth / 2;
+    let x = Math.round(actor.x - barWidth / 2 - actor.area.cameraX);
     // Don't allow the main character's life bar to fall off the edges of the screen.
-    const state = getState();
+    // (Not sure if we need this, it is confusing when editing)
+    /* const state = getState();
     if (actor === state.selectedCharacter.hero) {
         x = Math.min(320 - 5 - barWidth, Math.max(5, x));
-    }
-    let y = actor.top - 10;
+    } */
+    let actorTop = Math.round(GROUND_Y - actor.y - actor.z / 2 - actor.h);
+    let y = actorTop - 10;
     drawBar(context, x, y, barWidth, 3, 'white', (actor.stats.lifeBarColor || 'red'), actor.health / actor.stats.maxHealth);
     if (actor.stats.bonusMaxHealth >= 1 && actor.health >= actor.stats.maxHealth - actor.stats.bonusMaxHealth) {
         // This logic is kind of a mess but it is to make sure the % of the bar that is due to bonusMaxHealth
@@ -199,7 +158,7 @@ export function drawActorEffects(context: CanvasRenderingContext2D, actor: Actor
         y -= 2;
         drawBar(context, x, y, barWidth, 3, 'white', '#aaa', actor.temporalShield / actor.maxTemporalShield);
     }
-    y = actor.top - 7;
+    y = actorTop - 7;
     drawEffectIcons(context, actor, x, y, barWidth);
     // Draw spinning icons over stunned actor.
     if (!actor.isDead && actor.stunned) {
@@ -207,8 +166,8 @@ export function drawActorEffects(context: CanvasRenderingContext2D, actor: Actor
         for (let i = 0; i < 3; i++ ) {
             const theta = 2 * Math.PI * (i + 3 * actor.time) / 3;
             // var scale = (actor.stats.scale || 1);
-            target.left = actor.left + (actor.w - shrineSource.width) / 2 + Math.cos(theta) * 30;
-            target.top = actor.top - 5 + Math.sin(theta) * 10;
+            target.left = actor.x - shrineSource.width / 2 + Math.cos(theta) * 30 - actor.area.cameraX;
+            target.top = actorTop - 5 + Math.sin(theta) * 10;
             drawImage(context, shrineSource.image, shrineSource, target);
         }
     }

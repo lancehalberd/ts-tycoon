@@ -1,7 +1,7 @@
 import { JobIcon } from 'app/content/jobs';
 import { Bonuses } from 'app/types/bonuses';
 import {
-    ActionStats, Actor, Animation, AreaEntity, ArrayFrame, Area, BonusSource,
+    ActionStats, Actor, FrameAnimation, AreaEntity, ArrayFrame, Area, BonusSource,
     Character, Color, EffectVariableObject,
     Frame, Rectangle, ShortRectangle, Target, TintIcon,
     VariableObject, VariableObjectBase,
@@ -16,18 +16,6 @@ export interface Action {
     base: ActionData,
     // This is set as the player uses the skill.
     totalPreparationTime?: number,
-    // Properties used for drawing the skill hud/targetin.
-    target?: ShortRectangle, // This is the rectangle for the skill HUD button
-    onClick?: (character: Character, action: Action) => void,
-    shortcutTarget?: ShortRectangle, // This is the rectangle for displaying the shortcut key
-    // Button for toggling manual/auto use of skill.
-    toggleButton?: {
-        onClick: (character: Character, button: any) => void,
-        action: Action
-        helpMethod: () => string,
-        target?: ShortRectangle,
-    }
-    helpMethod?: (action: Action) => string,
 }
 
 export interface ActionData {
@@ -61,10 +49,10 @@ export interface ActionData {
     rangedOnly?: boolean,
     // Projectiles
     gravity?: number,
-    animation?: Animation,
-    explosionAnimation?: Animation,
+    animation?: FrameAnimation,
+    explosionAnimation?: FrameAnimation,
     explosionSound?: string,
-    blastAnimation?: Animation | Animation[],
+    blastAnimation?: FrameAnimation | FrameAnimation[],
     afterImages?: number,
     // For monster minion skills
     monsterKey?: string,
@@ -82,7 +70,7 @@ export interface Effect {
 
 export interface ActiveEffect extends AreaEntity {
     area: Area,
-    update: (effect: ActiveEffect) => void,
+    update: () => void,
     // Some effects are bound to a target.
     target?: Target,
     hitTargets?: Actor[],
@@ -90,8 +78,8 @@ export interface ActiveEffect extends AreaEntity {
     attackStats?: AttackData,
     currentFrame?: number,
     done: boolean,
-    render?: (context: CanvasRenderingContext2D, effect: ActiveEffect) => void,
-    drawGround?: (context: CanvasRenderingContext2D, effect: ActiveEffect) => void,
+    render?: (context: CanvasRenderingContext2D) => void,
+    drawGround?: (context: CanvasRenderingContext2D) => void,
 }
 export interface TimedActorEffect {
     base: VariableObjectBase,
@@ -102,12 +90,8 @@ export interface TimedActorEffect {
 }
 // Add expirationTime to EffectVariableObject so TS let's us attempt to read it.
 export type ActorEffect = TimedActorEffect | (EffectVariableObject & {expirationTime?: number});
-export interface Projectile {
-    area: Area,
+export interface Projectile extends AreaEntity {
     distance: number,
-    x: number,
-    y: number,
-    z: number,
     vx: number,
     vy: number,
     vz: number,
@@ -115,17 +99,15 @@ export interface Projectile {
     t: number,
     done: boolean,
     delay: number,
-    w: number,
-    h: number,
     color: Color,
     totalHits: number,
     hit: boolean,
     target: Target,
     attackStats: AttackData,
     hitTargets: Actor[],
-    stickToTarget: (projectile: Projectile, target: Target) => void,
-    update: (projectile: Projectile) => void,
-    render: (context: CanvasRenderingContext2D, projectile: Projectile) => void,
+    stickToTarget: (target: Target) => void,
+    update: () => void,
+    render: (context: CanvasRenderingContext2D) => void,
 }
 
 interface TriggerEffect {
@@ -149,7 +131,7 @@ export interface Ability {
 export interface AttackData {
     // How far the attack has traveled (used on projectiles).
     distance: number,
-    animation?: Animation,
+    animation?: FrameAnimation,
     sound?: any,
     size?: number,
     gravity: number,

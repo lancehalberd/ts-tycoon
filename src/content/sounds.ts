@@ -7,7 +7,7 @@ export function preloadSounds() {
         {key: 'strum', source: 'sounds/bfxr/strum.wav', volume: 10},
         {key: 'freeze', source: 'sounds/bfxr/freeze.wav', volume: 10},
         // See credits.html for: Pack: Melee Attack by Unfa.
-        {key: 'melee1', source: 'sounds/unfa/melee1.flac', offset: '200', volume: 10},
+        {key: 'melee1', source: 'sounds/unfa/melee1.flac', offset: '200:300', volume: 10},
         {key: 'melee2', source: 'sounds/unfa/melee2.flac'},
         {key: 'melee3', source: 'sounds/unfa/melee3.flac'},
         // See credits.html for: Negative Magic Spell by Iwan Gabovitch.

@@ -1,7 +1,7 @@
 import { makeFrames, requireImage, undoFrames } from 'app/images';
 import { createAnimation } from 'app/utils/animations';
 
-import { Animation } from 'app/types';
+import { FrameAnimation } from 'app/types';
 
 export const effectAnimations = {
     explosion: createAnimation('gfx/effects/explosion.png', {x: 0, y: 0, w: 96, h: 96}, {cols: 5}),

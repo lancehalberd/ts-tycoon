@@ -2,13 +2,14 @@ import { completeLevel, enterArea } from 'app/adventure';
 import { hideAreaMenu } from 'app/areaMenu';
 import { setChoosingTrophyAltar } from 'app/content/achievements';
 import { itemsByKey } from 'app/content/equipment/index';
-import { openWorldMap } from 'app/content/furniture';
+import { openWorldMap } from 'app/content/areas';
 import { guildYardEntrance } from 'app/content/guild';
 import { map } from 'app/content/mapData';
 import { setUpgradingObject } from 'app/content/upgradeButton';
 import { setContext } from 'app/context';
 import { query, queryAll } from 'app/dom';
-import { handleSkillKeyInput } from 'app/drawSkills';
+import { handleSkillKeyInput } from 'app/render/drawActionShortcuts';
+import { handleEditAreaKeyDown } from 'app/development/editArea';
 import { handleEditMapKeyDown, isEditingAllowed } from 'app/development/editLevel';
 import { pasteCharacterToClipBoard } from 'app/development/testCharacters';
 import { reforgeItems } from 'app/equipmentCrafting';
@@ -23,24 +24,55 @@ import { getPopup } from 'app/popup';
 import { getState } from 'app/state';
 import { isMouseOverElement } from 'app/utils/mouse';
 
-export const KEY_ESCAPE = 27;
-export const KEY_C = 67;
-export const KEY_E = 69;
-export const KEY_I = 73;
-export const KEY_J = 74;
-export const KEY_L = 76;
-export const KEY_M = 77;
-export const KEY_R = 82;
-export const KEY_S = 83;
+export const KEY = {
+    ESCAPE: 27,
+    LEFT: 37,
+    RIGHT: 39,
+    UP: 38,
+    DOWN: 40,
+    SPACE: 32,
+    SHIFT: 16,
+    ENTER: 13,
+    BACK_SPACE: 8,
+    E: 'E'.charCodeAt(0),
+    I: 'I'.charCodeAt(0),
+    J: 'J'.charCodeAt(0),
+    G: 'G'.charCodeAt(0),
+    L: 'L'.charCodeAt(0),
+    M: 'M'.charCodeAt(0),
+    S: 'S'.charCodeAt(0),
+    R: 'R'.charCodeAt(0),
+    X: 'X'.charCodeAt(0),
+    C: 'C'.charCodeAt(0),
+    V: 'V'.charCodeAt(0),
+    T: 'T'.charCodeAt(0),
+};
+
+const keysDown = {};
+export function isKeyDown(keyCode: number, releaseThreshold: boolean = false): number {
+    if (!keysDown[keyCode]) {
+        return 0;
+    }
+    if (releaseThreshold) {
+        keysDown[keyCode] = 0;
+    }
+    return 1;
+};
 
 export function addKeyCommands() {
+document.addEventListener('keyup', function(event) {
+    const keyCode: number = event.which;
+    delete keysDown[keyCode];
+});
 document.addEventListener('keydown', function(event) {
-    const keycode: number = event.which;
-    // console.log(keycode);
-    if (handleSkillKeyInput(keycode)) return;
-    if (handleEditMapKeyDown(keycode)) return;
+    const keyCode: number = event.which;
+    keysDown[keyCode] = true;
+    // console.log(keyCode);
+    if (handleSkillKeyInput(keyCode)) return;
+    if (handleEditMapKeyDown(keyCode)) return;
+    if (handleEditAreaKeyDown(keyCode)) return;
     const state = getState();
-    if (keycode === KEY_ESCAPE) {
+    if (keyCode === KEY.ESCAPE) {
         event.preventDefault();
         if (state.selectedCharacter.context === 'map') {
             hideAreaMenu();
@@ -63,10 +95,10 @@ document.addEventListener('keydown', function(event) {
         }
     }
     if (isEditingAllowed()) {
-        if (keycode === KEY_C) {
+        if (keyCode === KEY.C) {
             pasteCharacterToClipBoard(state.selectedCharacter);
         }
-        if (keycode === KEY_L) {
+        if (keyCode === KEY.L) {
             const mapTarget = mapState.currentMapTarget;
             if (mapTarget && mapTarget.targetType === 'level') {
                 state.selectedCharacter.currentLevelKey = mapTarget.levelKey;
@@ -74,15 +106,15 @@ document.addEventListener('keydown', function(event) {
             }
         }
     }
-    if ((keycode === KEY_C || keycode === KEY_I) && (true || state.guildStats.hasItemCrafting)) {
+    if ((keyCode === KEY.C || keyCode === KEY.I) && (true || state.guildStats.hasItemCrafting)) {
         if (state.selectedCharacter.context === 'item') setContext('guild');
         else if (state.selectedCharacter.context !== 'adventure') setContext('item');
     }
-    if (keycode === KEY_J && (true || state.guildStats.hasJewelCrafting)) {
+    if (keyCode === KEY.J && (true || state.guildStats.hasJewelCrafting)) {
         if (state.selectedCharacter.context === 'jewel') setContext('guild');
         else if (state.selectedCharacter.context !== 'adventure') setContext('jewel');
     }
-    if (keycode === KEY_M && state.guildStats.hasMap) {
+    if (keyCode === KEY.M && state.guildStats.hasMap) {
         // console.log(state.selectedCharacter.context);
         // Unlock the first areas on the map if they aren't unlocked yet.
         for (const levelKey of map.guild.unlocks) {
@@ -98,14 +130,14 @@ document.addEventListener('keydown', function(event) {
             openWorldMap();
         }
     }
-    if (keycode == KEY_R && !inventoryState.dragHelper && !(event.metaKey || event.ctrlKey)) { // 'r' without ctrl/cmd while not dragging an item.
+    if (keyCode == KEY.R && !inventoryState.dragHelper && !(event.metaKey || event.ctrlKey)) { // 'r' without ctrl/cmd while not dragging an item.
         // If they are looking at the item screen and the reforge option is available.
         if (state.selectedCharacter.context === 'item' && areAnyCraftedItemsVisible()) {
             reforgeItems();
             return;
         }
     }
-    if (keycode == KEY_S) { // 's'
+    if (keyCode == KEY.S) { // 's'
         if (jewelInventoryState.overJewel) {
             sellJewel(jewelInventoryState.overJewel);
             jewelInventoryState.overJewel = null;
@@ -136,7 +168,7 @@ document.addEventListener('keydown', function(event) {
             });
         });
     }*/
-    if (keycode == KEY_E) {
+    if (keyCode == KEY.E) {
         const popup = getPopup();
         if (!popup.target || !popup.target.closest('.js-inventory')) {
             return;

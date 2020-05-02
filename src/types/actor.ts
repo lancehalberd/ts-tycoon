@@ -1,6 +1,6 @@
 import {
-    ActiveEffect, ActorStats, Affix, Animation, Area, AreaObject, AreaTarget, AreaObjectTarget,
-    BonusSource, Exit,
+    ActiveEffect, ActorStats, Affix, FrameAnimation, Area, AreaObject, AreaTarget, AreaObjectTarget,
+    BonusSource, Exit, Frame,
     Job, JobKey, Level, LocationTarget, Monster,
     SavedEquipment, ShortRectangle, Target,
     VariableObject
@@ -31,13 +31,15 @@ export type ActorActivity = {
 export interface ActorSource {
     // Animations that can be set for an actor
     // All other animations will default to this if not defined.
-    walkAnimation: Animation,
-    idleAnimation: Animation,
-    deathAnimation: Animation,
-    hurtAnimation: Animation,
-    attackPreparationAnimation: Animation,
-    attackRecoveryAnimation: Animation,
-    shadowAnimation: Animation,
+    walkAnimation: FrameAnimation,
+    idleAnimation: FrameAnimation,
+    deathAnimation: FrameAnimation,
+    hurtAnimation: FrameAnimation,
+    attackPreparationAnimation: FrameAnimation,
+    attackRecoveryAnimation: FrameAnimation,
+    spellPreparationAnimation: FrameAnimation,
+    spellRecoveryAnimation: FrameAnimation,
+    shadowAnimation: FrameAnimation,
     // Set this for characters with animations facing left instead of right,
     // which we assume by default.
     flipped?: boolean,
@@ -49,12 +51,12 @@ export interface ActorSource {
 export interface BaseActor extends AreaTarget {
     targetType: 'actor',
     type: string,
-    // Screen coordinates of the player (for mouseover purposes)
-    top?: number,
-    left?: number,
     equipment: Equipment,
     // Set for monsters.
     source: ActorSource,
+    // The current frame displayed for the actor.
+    // It is a bit expensive to compute so we store it each update on the actor.
+    frame?: Frame,
     image: HTMLImageElement | HTMLCanvasElement,
     level: number,
     name: string,
@@ -137,7 +139,8 @@ export interface BaseActor extends AreaTarget {
     // Tracks when the next time a boss will recover.
     recoverSkillHealthThreshold?: number,
 
-    helpMethod: (actor: Actor, hero: Hero) => string,
+    helpMethod: () => string,
+    isPointOver: (x: number, y: number) => boolean,
     render: (context: CanvasRenderingContext2D, actor: Actor) => void,
 
     // This may be unset when an object has not been assigned to an area yet.

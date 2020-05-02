@@ -2,14 +2,11 @@ type Coords = [number, number];
 
 let mousePosition: Coords = [-1000, -1000];
 let mouseIsDown: boolean = false;
-let rightMouseDown: boolean = false;
 
 export function isMouseDown(): boolean {
     return mouseIsDown;
 }
-export function isRightMouseDown(): boolean {
-    return rightMouseDown;
-}
+
 
 export function getMousePosition(container: HTMLElement = null, scale = 1): Coords {
     if (container) {
@@ -28,11 +25,9 @@ function onMouseMove(event) {
 }
 function onMouseDown(event) {
     if (event.which == 1) mouseIsDown = true;
-    else if (event.which == 3) rightMouseDown = true;
 }
 function onMouseUp(event) {
     if (event.which == 1) mouseIsDown = false;
-    else if (event.which == 3) rightMouseDown = false;
 }
 
 export function bindMouseListeners() {
@@ -49,9 +44,6 @@ export function unbindMouseListeners() {
     mouseIsDown = false;
 }
 
-/*$(document).on('contextmenu', function (event) {
-    mouseDown = rightMouseDown = false;
-});*/
 
 export function isMouseOverElement(element: HTMLElement): boolean {
     const rect:DOMRect = element.getBoundingClientRect();

@@ -293,6 +293,9 @@ function removeItemSlotDragHintClasses() {
 }
 
 document.body.addEventListener('mouseup', function (event) {
+    if (event.which !== 1) {
+        return;
+    }
     if (inventoryState.dragged) {
         stopDrag();
     }
@@ -302,9 +305,11 @@ document.body.addEventListener('mouseup', function (event) {
     inventoryState.dragged = false;
 });
 handleChildEvent('mousedown', document.body, '.js-item', function (itemElement: HTMLElement, event) {
+    if (event.which !== 1) {
+        return;
+    }
     const specialClick = event.ctrlKey || event.metaKey;
     const { selectedCharacter } = getState();
-    if (event.which != 1) return; // Handle only left click.
     if (inventoryState.dragHelper) {
         stopDrag();
         return;

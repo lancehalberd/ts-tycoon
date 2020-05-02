@@ -29,7 +29,7 @@ import { hidePointsPreview, previewPointsChange } from 'app/points';
 import { saveGame } from 'app/saveGame';
 import { getState } from 'app/state';
 import { isPointInRect, isPointInShortRect } from 'app/utils/index';
-import { getMousePosition, isMouseDown, isRightMouseDown } from 'app/utils/mouse';
+import { getMousePosition, isMouseDown } from 'app/utils/mouse';
 import SphereVector from 'app/utils/SphereVector';
 import Vector from 'app/utils/Vector';
 import { worldCamera } from 'app/WorldCamera';
@@ -119,7 +119,7 @@ function getMapPopupTargetProper(x: number, y: number): MapTarget {
     if (editingMapState.editingLevel) {
         return null;
     }
-    const newMapTarget: MapTarget  = getMapTarget(x, y);
+    const newMapTarget: MapTarget = getMapTarget(x, y);
     if (!newMapTarget) {
         return null;
     }
@@ -134,32 +134,33 @@ function getMapPopupTargetProper(x: number, y: number): MapTarget {
     } else {
         newMapTarget.helpMethod = getMapLevelHelpText;
     }
+    newMapTarget.isPointOver = isPointOverMapTarget;
     return newMapTarget;
 }
 
-function getMapLevelHelpText(level: LevelData): string {
-    if (level.levelKey === 'guild') {
+function getMapLevelHelpText(this: LevelData): string {
+    if (this.levelKey === 'guild') {
         return titleDiv('Guild');
     }
     if (!editingMapState.editingMap) {
-        return titleDiv('Level ' + level.level + ' ' + level.name);
+        return titleDiv('Level ' + this.level + ' ' + this.name);
     }
-    let helpText = '<p style="font-weight: bold">Level ' + level.level + ' ' + level.name +'(' + level.background +  ')</p><br/>';
+    let helpText = '<p style="font-weight: bold">Level ' + this.level + ' ' + this.name +'(' + this.background +  ')</p><br/>';
     helpText += '<p><span style="font-weight: bold">Enemies:</span> ' +
-        level.monsters.map(k => monsters[k].name).join(', ') + '</p>';
-    if (level.events) {
-        helpText += '<p><span style="font-weight: bold"># Events: </span> ' + level.events.length + '</p>';
-        if (level.events.length) {
+        this.monsters.map(k => monsters[k].name).join(', ') + '</p>';
+    if (this.events) {
+        helpText += '<p><span style="font-weight: bold"># Events: </span> ' + this.events.length + '</p>';
+        if (this.events.length) {
             helpText += '<p><span style="font-weight: bold">Boss Event: </span> ' +
-                level.events[level.events.length - 1].map(k => monsters[k].name).join(', ') + '</p>';
+                this.events[this.events.length - 1].map(k => monsters[k].name).join(', ') + '</p>';
         }
     } else {
         helpText += '<p style="font-weight: bold; color: red;">No Events!</p>';
     }
     helpText += '<p><span style="font-weight: bold">Enemy Skills:</span> ' +
-        (level.enemySkills || []).map(k => abilities[k].name).join(', ') + '</p>';
+        (this.enemySkills || []).map(k => abilities[k].name).join(', ') + '</p>';
     helpText += '<br/><p style="font-weight: bold">Teaches:</p>';
-    const skill = abilities[level.skill];
+    const skill = abilities[this.skill];
     if (skill) {
         helpText += abilityHelpText(skill, getState().selectedCharacter.adventurer);
     } else {
@@ -167,10 +168,10 @@ function getMapLevelHelpText(level: LevelData): string {
     }
     return helpText;
 }
-function getMapShrineHelpText(shrine: Shrine): string {
+function getMapShrineHelpText(this: Shrine): string {
     const state = getState();
-    var skill = abilities[shrine.level.skill];
-    var totalCost = totalCostForNextLevel(state.selectedCharacter, shrine.level);
+    var skill = abilities[this.level.skill];
+    var totalCost = totalCostForNextLevel(state.selectedCharacter, this.level);
     var helpText = ''
     var skillAlreadyLearned = state.selectedCharacter.adventurer.unlockedAbilities[skill.key];
     if (!skillAlreadyLearned && state.selectedCharacter.adventurer.level >= MAX_LEVEL) {
@@ -189,14 +190,26 @@ function getMapShrineHelpText(shrine: Shrine): string {
 export function getMapTarget(x: number, y: number): MapTarget {
     for (let levelKey in mapState.visibleNodes) {
         const levelData = mapState.visibleNodes[levelKey];
-        if (isPointInShortRect(x, y, levelData as ShortRectangle)) {
-            return levelData;
+        if (!levelData.isPointOver) {
+            levelData.isPointOver = isPointOverMapTarget;
         }
-        if (!editingMapState.editingMap && levelData.shrine && isPointInShortRect(x, y, levelData.shrine)) {
-            return levelData.shrine;
+        if (levelData.isPointOver(x, y)) {
+            return levelData as MapTarget;
+        }
+        if (!editingMapState.editingMap && levelData.shrine) {
+            if (!levelData.shrine.isPointOver) {
+                levelData.shrine.isPointOver = isPointOverMapTarget;
+            }
+            if (levelData.shrine.isPointOver(x, y)) {
+                return levelData.shrine as MapTarget;
+            }
         }
     }
     return null;
+}
+
+function isPointOverMapTarget(this: MapTarget, x: number, y: number): boolean {
+    return isPointInShortRect(x, y, this as ShortRectangle);
 }
 
 // Disable context menu while editing the map because the right click is used for making nodes and edges.
@@ -236,6 +249,9 @@ export function handleMapMouseDown(x: number, y: number, event) {
     mapState.mapDragY = y;
 }
 document.addEventListener('mouseup', function (event) {
+    if (event.which !== 1) {
+        return;
+    }
     const [x, y] = getMousePosition(mainCanvas, ADVENTURE_SCALE);
     mapState.mapDragX = mapState.mapDragY = null;
     if (editingMapState.editingMap) {
@@ -247,7 +263,7 @@ document.addEventListener('mouseup', function (event) {
     }
 });
 document.addEventListener('mousemove', function (event) {
-    if (!isMouseDown() && !isRightMouseDown()) return;
+    if (!isMouseDown()) return;
     if (getState().selectedCharacter.context !== 'map') return;
     mapState.draggedMap = true;
     const [x, y] = getMousePosition(mouseContainer, ADVENTURE_SCALE);

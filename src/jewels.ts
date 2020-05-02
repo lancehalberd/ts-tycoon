@@ -354,32 +354,32 @@ export function setMaxAnimaJewelBonus(value: number) {
     maxAnimaJewelBonus = {'bonuses': {'*maxAnima': value}};
     addBonusSourceToObject(state.guildVariableObject, maxAnimaJewelBonus, true);
 }
-function jewelHelpText(jewel: Jewel): string {
-    var jewelDefinition = jewelDefinitions[jewel.jewelType];
+function jewelHelpText(this: Jewel): string {
+    var jewelDefinition = jewelDefinitions[this.jewelType];
     var name = jewelDefinition.name;
-    if (jewel.qualifierName) {
-        name = jewel.qualifierName + ' ' + name;
+    if (this.qualifierName) {
+        name = this.qualifierName + ' ' + name;
     }
-    name = 'Tier ' + jewel.tier + ' ' + name;
+    name = 'Tier ' + this.tier + ' ' + name;
     var sections = [name];
-    if (!jewel.fixed) {
-        sections.push('Requires level ' + jewelTierLevels[jewel.tier]);
+    if (!this.fixed) {
+        sections.push('Requires level ' + jewelTierLevels[this.tier]);
     }
     var componentSum = 0;
     var normalizedComponenets = [];
-    for (var component of jewel.components) {
+    for (var component of this.components) {
         componentSum += component;
     }
-    for (var i in jewel.components) {
-        normalizedComponenets[i] = jewel.components[i] / componentSum;
+    for (var i in this.components) {
+        normalizedComponenets[i] = this.components[i] / componentSum;
     }
     sections.push('');
     var totalWidth = 150;
     var height = 10;
     const componentsData = [
-        {color: '#f00', value: normalizedComponenets[0], width: Math.round(normalizedComponenets[0] * totalWidth), 'active': jewel.jewelType & 1},
-        {color: '#0b0', value: normalizedComponenets[1], width: Math.round(normalizedComponenets[1] * totalWidth), 'active': jewel.jewelType & 2},
-        {color: '#00f', value: normalizedComponenets[2], width: Math.round(normalizedComponenets[2] * totalWidth), 'active': jewel.jewelType & 4},
+        {color: '#f00', value: normalizedComponenets[0], width: Math.round(normalizedComponenets[0] * totalWidth), 'active': this.jewelType & 1},
+        {color: '#0b0', value: normalizedComponenets[1], width: Math.round(normalizedComponenets[1] * totalWidth), 'active': this.jewelType & 2},
+        {color: '#00f', value: normalizedComponenets[2], width: Math.round(normalizedComponenets[2] * totalWidth), 'active': this.jewelType & 4},
     ];
     componentsData.sort((A, B) => B.value - A.value);
     // Adjust the final element so the total width is exactly totalWidth.
@@ -394,24 +394,24 @@ function jewelHelpText(jewel: Jewel): string {
     }
     balanceComponent += '</div>';
     sections.push(balanceComponent);
-    sections.push('Quality ' + fixedDigits(jewel.quality, 2));
+    sections.push('Quality ' + fixedDigits(this.quality, 2));
 
     //sections.push('Balance ' + [(300 * normalizedComponenets[0]).toFixed(0), (300 * normalizedComponenets[1]).toFixed(0), (300 * normalizedComponenets[2]).toFixed(0)].join('/'));
-    // sections.push('Color ' + jewel.shape.color);
+    // sections.push('Color ' + this.shape.color);
     const state = getState();
     sections.push('');
-    sections.push(bonusSourceHelpText(jewel, state.selectedCharacter.adventurer));
+    sections.push(bonusSourceHelpText(this, state.selectedCharacter.adventurer));
     sections.push('');
-    var adjacencyBonusText = bonusSourceHelpText({'bonuses': jewel.adjacencyBonuses}, state.selectedCharacter.adventurer);
+    var adjacencyBonusText = bonusSourceHelpText({'bonuses': this.adjacencyBonuses}, state.selectedCharacter.adventurer);
     if (adjacencyBonusText.length) {
         sections.push(adjacencyBonusText);
         sections.push('');
     }
-    var sellValues = [points('coins',jewel.price), points('anima', jewel.price)];
+    var sellValues = [points('coins',this.price), points('anima', this.price)];
     sections.push(
         '<span style="color: white;">S</span>ell for'
         + divider + sellValues.join(' ') + '<br/>'
-        + percent(jewelAnimaBonus(jewel) - 1, 1) + ' increased max anima.');
+        + percent(jewelAnimaBonus(this) - 1, 1) + ' increased max anima.');
     return sections.join('<br/>');
 }
 

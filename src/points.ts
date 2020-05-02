@@ -5,9 +5,7 @@ import { abbreviate } from 'app/utils/formatters';
 import { updateReforgeButton } from 'app/equipmentCrafting';
 import { updateHireButtons } from 'app/heroApplication';
 
-export type PointsType = 'anima' | 'coins' | 'divinity' | 'fame';
-// Cost is an amount of coins or a map of points types to amounts.
-type Cost = number | {[key in PointsType]?: number};
+import { PointsType, Cost } from 'app/types';
 
 const pointsMap = {
     'anima': 'Anima',

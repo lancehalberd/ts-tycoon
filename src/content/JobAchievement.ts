@@ -3,11 +3,11 @@ import { characterClasses } from 'app/content/jobs';
 import { bodyDiv, divider, titleDiv } from 'app/dom';
 import { TROPHY_SIZE } from 'app/gameConstants';
 import { bonusSourceHelpText } from 'app/helpText';
-import { drawImage, drawOutlinedImage, drawSolidTintedImage } from 'app/images';
+import { drawWhiteOutlinedFrame, drawSolidTintedFrame, drawCompositeTintedFrame } from 'app/images';
 import { getCanvasCoords } from 'app/main';
 import { getState } from 'app/state';
 
-import { Bonuses, Color, JobKey } from 'app/types';
+import { Bonuses, Color, Frame, JobKey, ShortRectangle } from 'app/types';
 
 interface AchievementBonus {
     target: number,
@@ -20,10 +20,8 @@ export default class JobAchievement {
     level: number;
     value: number;
     // These coordinates get set during drawTrophySelection.
-    left: number;
-    top: number;
-    width: number;
-    height: number;
+    frame: Frame;
+    tintFrame: Frame;
     bonusesArray: AchievementBonus[];
     // These fields track where the trophy is displayed if it is displayed.
     areaKey?: string;
@@ -34,8 +32,13 @@ export default class JobAchievement {
         this.title = job.name + ' Trophy';
         this.level = 0;
         this.value = 0;
-        this.width = TROPHY_SIZE;
-        this.height = TROPHY_SIZE;
+        const image = characterClasses[this.jobKey].achievementImage;
+        this.frame = {
+            image, x: 41, y: 0, w: 40, h: 40,
+        };
+        this.tintFrame = {
+            image, x: 0, y: 0, w: 40, h: 40,
+        }
         this.bonusesArray = [
             {target: 2, bonuses: bonuses[0]},
             {target: 10, bonuses: bonuses[1]},
@@ -43,12 +46,13 @@ export default class JobAchievement {
             {target: 60, bonuses: bonuses[3]},
         ];
     }
-    render(context, target) {
+    render(context: CanvasRenderingContext2D, target: ShortRectangle) {
         const jobTrophyImage = characterClasses[this.jobKey].achievementImage;
         if (this.level === 0 ) {
-            context.save();
-            drawSolidTintedImage(context, jobTrophyImage, '#666', {'left': 0, 'top': 0, 'width': 40, 'height': 40}, target);
-            context.restore();
+            drawSolidTintedFrame(context, {...this.tintFrame, color: '#666'}, target);
+            //context.save();
+            //drawSolidTintedImage(context, jobTrophyImage, , {'left': 0, 'top': 0, 'width': 40, 'height': 40}, target);
+            //context.restore();
             return;
         }
         let color: Color;
@@ -57,8 +61,8 @@ export default class JobAchievement {
             var g = '30';
             const canvasCoords = getCanvasCoords();
             if (canvasCoords) {
-                var dx = canvasCoords[0] - (target.left + target.width / 2);
-                var dy = canvasCoords[1] - (target.top + target.height / 2);
+                var dx = canvasCoords[0] - (target.x + target.w / 2);
+                var dy = canvasCoords[1] - (target.y + target.h / 2);
                 g = Math.max(48, Math.round(112 - Math.max(0, (dx * dx + dy * dy) / 100 - 20))).toString(16);
             }
             // glow in time
@@ -68,14 +72,10 @@ export default class JobAchievement {
         } else {
             color = ['#C22', '#F84', '#CCD', '#FC0', '#F4F'][this.level - 1];
         }
+        drawCompositeTintedFrame(context, {...this.tintFrame, color}, this.frame, target);
+        /*drawSolidTintedFrame(context, , target);
         drawSolidTintedImage(context, jobTrophyImage, color, {'left': 0, 'top': 0, 'width': 40, 'height': 40}, target);
-        drawImage(context, jobTrophyImage, {'left': 41, 'top': 0, 'width': 40, 'height': 40}, target);
-    }
-    drawWithOutline(context, color, thickness, target) {
-        const jobTrophyImage = characterClasses[this.jobKey].achievementImage;
-        drawOutlinedImage(context, jobTrophyImage, 'white', 1, {'left': 0, 'top': 0, 'width': 40, 'height': 40}, target);
-        //drawSourceWithOutline(context, jobIcons[this.jobKey], color, thickness, target);
-        this.render(context, target);
+        drawImage(context, jobTrophyImage, {'left': 41, 'top': 0, 'width': 40, 'height': 40}, target);*/
     }
     helpMethod() {
         if (this.value === 0) return titleDiv('Mysterious Trophy') + bodyDiv('???');
@@ -91,7 +91,7 @@ export default class JobAchievement {
         }
         return titleDiv(this.title) + bodyDiv('Highest Level: ' + this.value + divider + parts.join('<br />'));
     }
-    onClick(character) {
-        selectTrophy(this, character);
+    onClick() {
+        selectTrophy(this, getState().selectedCharacter);
     }
 }

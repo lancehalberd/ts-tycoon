@@ -5,7 +5,7 @@ import {
     recomputeDirtyStats, removeBonusSourceFromObject, setStat,
 } from 'app/bonuses';
 import {
-    actorHelpText, baseDivinity, damageActor, healActor,
+    baseDivinity, damageActor, healActor,
     initializeActorForAdventure, refreshStatsPanel
 } from 'app/character';
 import { addAreaFurnitureBonuses } from 'app/content/furniture';
@@ -82,7 +82,7 @@ export function startLevel(character: Character, index: string) {
     saveGame();
 }
 
-export function enterArea(actor: Actor, {x, z, areaKey}: Exit) {
+export function enterArea(actor: Actor, {x, z, areaKey, objectKey}: Exit) {
     if (areaKey === 'worldMap' && actor.type === 'hero') {
         returnToMap(actor.character);
         return;
@@ -119,11 +119,28 @@ export function enterArea(actor: Actor, {x, z, areaKey}: Exit) {
         area.effects.push(effect);
     });
     actor.area = area;
+    if (objectKey) {
+        const object = area.objectsByKey[objectKey];
+        if (!object) {
+            console.log('missing object', objectKey);
+        } else {
+            const target = object.getAreaTarget();
+            z = target.z;
+            if (target.x < 100) {
+                x = target.x + 32;
+            } else if (target.x > area.width - 100) {
+                x = target.x - 32;
+            } else {
+                x = target.x;
+                z = target.z - 32;
+            }
+        }
+    }
     actor.x = x;
     actor.y = 0;
     actor.z = z;
     if (state.selectedCharacter && actor === state.selectedCharacter.hero) {
-        area.cameraX = Math.round(Math.max(area.left, Math.min(area.width - ADVENTURE_WIDTH, actor.x - ADVENTURE_WIDTH / 2)));
+        area.cameraX = Math.round(Math.max(0, Math.min(area.width - ADVENTURE_WIDTH, actor.x - ADVENTURE_WIDTH / 2)));
     }
     if (isNaN(actor.x) || isNaN(actor.z)) {
         debugger;
@@ -170,7 +187,7 @@ function checkIfActorDied(actor: Actor) {
         useReaction(actor, stopTimeAction, null);
         return;
     }
-    // The actor has actually died, mark them as such and begin their death animation and drop spoils.
+    // The actor has actually died, mark them as such and begin their death FrameAnimation and drop spoils.
     actor.isDead = true;
     actor.timeOfDeath = actor.time;
     // Call on death effects for monsters that have them.
@@ -308,7 +325,7 @@ export function updateArea(area: Area) {
     }
     for (const object of area.objects) {
         if (object.update) {
-            object.update(object);
+            object.update();
         }
     }
     area.allies.forEach(runActorLoop);
@@ -319,12 +336,12 @@ export function updateArea(area: Area) {
     // This may have changed if actors left the area.
     everybody = area.allies.concat(area.enemies);
     for (let i = 0; i < area.projectiles.length; i++) {
-        area.projectiles[i].update(area.projectiles[i]);
+        area.projectiles[i].update();
         if (area.projectiles[i].done) area.projectiles.splice(i--, 1);
     }
     for (let i = 0; i < area.effects.length; i++) {
         const effect = area.effects[i];
-        effect.update(effect);
+        effect.update();
         // If the effect was removed from the array already (when a song follows its owner between areas)
         // we need to decrement i to not skip the next effect.
         if (effect !== area.effects[i]) {
@@ -415,7 +432,7 @@ function processStatusEffects(target: Actor) {
         // End the pull if the target hits something.
         for (const object of target.area.objects) {
             if (object.isSolid === false || !object.getAreaTarget) continue;
-            const distance = getDistanceOverlap(target, object.getAreaTarget(object));
+            const distance = getDistanceOverlap(target, object.getAreaTarget());
             if (distance <= -8) {
                 target.pull = null;
                 target.y = (target.type === 'monster') && target.baseY || 0;
@@ -506,16 +523,16 @@ function runActorLoop(actor: Actor) {
         // Might want to sort these by X coord at some point.
         /*const sortedObjects = [...area.objects, ...area.wallDecorations];
         sortedObjects.sort((A, B) => {
-            return B.getAreaTarget(B).x - A.getAreaTarget(A).x;
+            return B.getAreaTarget().x - A.getAreaTarget().x;
         })*/
         for (const object of [...area.objects, ...area.wallDecorations]) {
-            if (!object.getAreaTarget || !object.shouldInteract || !object.shouldInteract(object, actor)) {
+            if (!object.getAreaTarget || !object.shouldInteract || !object.shouldInteract(actor)) {
                 continue;
             }
-            const objectTarget = object.getAreaTarget(object);
+            const objectTarget = object.getAreaTarget();
             if (objectTarget.x < actor.x + 100
                 || actor.consideredObjects.has(object)
-                || (object.isEnabled && !object.isEnabled(object))
+                || (object.isEnabled && !object.isEnabled())
             ) {
                 continue;
             }

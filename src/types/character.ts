@@ -1,5 +1,9 @@
-import { Actor, Board, BonusSource, FixedObject, Hero, JobKey, LevelDifficulty, SavedActor, SavedBoard } from 'app/types';
+import {
+    Action, Actor, Board, BonusSource, FixedObject, Hero, HUDElement,
+    JobKey, LevelDifficulty, SavedActor, SavedBoard,
+} from 'app/types';
 import { JobIcon } from 'app/content/jobs';
+import { ActionShortcut } from 'app/render/drawActionShortcuts';
 
 export interface Character {
     adventurer: Hero,
@@ -15,6 +19,9 @@ export interface Character {
     levelTimes: {[key in string]: {[key in string]: number}},
     divinity: number,
     jewelBonuses?: BonusSource,
+
+    // This is the set of shortcuts displayed on the screen for activating/managing actions.
+    actionShortcuts: ActionShortcut[],
 
     context: string,
     // Selected level key in the map

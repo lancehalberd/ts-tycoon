@@ -2,7 +2,8 @@ import { enterArea } from 'app/adventure';
 import { addBonusSourceToObject, createVariableObject } from 'app/bonuses';
 import { setSelectedCharacter } from 'app/character';
 import { addTrophyToAltar, checkIfAltarTrophyIsAvailable, getDefaultAltarTrophies, updateTrophy } from 'app/content/achievements';
-import { addAllUnlockedFurnitureBonuses, allApplications, allBeds,  } from 'app/content/furniture';
+import { Bed, HeroApplication, TrophyAltar } from 'app/content/areas';
+import { addAllUnlockedFurnitureBonuses } from 'app/content/furniture';
 import { getDefaultGuildAreas, guildYardEntrance } from 'app/content/guild';
 import { map } from 'app/content/mapData';
 import { craftingOptionsContainer, query, queryAll } from 'app/dom';
@@ -24,7 +25,7 @@ import {
 import { ShapeType } from 'app/types/board';
 import { BonusSource } from 'app/types/bonuses';
 import { Item } from 'app/types/items';
-import { FixedObject, JobAchievement, SavedCharacter, SavedJewel, TrophyAltar } from 'app/types';
+import { FixedObject, JobAchievement, SavedCharacter, SavedJewel } from 'app/types';
 
 // Types used for saving data in local storage.
 interface SavedGuildAreas {
@@ -218,9 +219,17 @@ export function importState(savedState: SavedState) {
     const savedGuildAreas = savedState.guildAreas || {};
     for (let areaKey in defaultGuildAreas) {
         state.guildAreas[areaKey] = defaultGuildAreas[areaKey];
+        if (!defaultGuildAreas[areaKey]) {
+            console.log('Warning area not found', areaKey);
+            continue;
+        }
         var savedAreaData = savedGuildAreas[areaKey] || {objects: {}};
         for (var objectKey in savedAreaData.objects) {
             var savedObjectData = savedAreaData.objects[objectKey];
+            if (!defaultGuildAreas[areaKey].objectsByKey[objectKey]) {
+                console.log(`Warning ${objectKey} not found in ${areaKey}`);
+                continue;
+            }
             try {
                 defaultGuildAreas[areaKey].objectsByKey[objectKey].level = savedObjectData.level;
             } catch (e) {
@@ -230,7 +239,11 @@ export function importState(savedState: SavedState) {
     }
     state.applicants = (savedState.applicants || []).map(importCharacter);
     for (let i = 0; i < state.applicants.length; i++) {
-        allApplications[i].character = state.applicants[i];
+        if (!HeroApplication.instances[i]) {
+            console.error(`No hero application available for applicant ${i}`);
+            continue;
+        }
+        HeroApplication.instances[i].character = state.applicants[i];
     }
     setMaxAnimaJewelBonus(savedState.maxAnimaJewelMultiplier || 1);
     // Read trophy data before characters so that their bonuses will be applied when
@@ -249,7 +262,7 @@ export function importState(savedState: SavedState) {
         addTrophyToAltar(altar, trophy);
     }
     addAllUnlockedFurnitureBonuses();
-    for (const bed of allBeds) {
+    for (const bed of Bed.instances) {
         if (savedState.unlockedGuildAreas[bed.area.key]) {
             state.availableBeds.push(bed);
         }
@@ -276,8 +289,14 @@ export function importState(savedState: SavedState) {
             state.savedState.completedLevels[levelKey] = true;
         }
         const bed = state.availableBeds[index];
-        if (bed) enterArea(character.hero, {'areaKey': bed.area.key, 'x': (bed.x > 160) ? bed.x - 30 : bed.x + 40, 'z': bed.z});
-        else enterArea(character.hero, guildYardEntrance);
+        if (bed) {
+            const target = bed.getAreaTarget();
+            enterArea(character.hero, {
+                areaKey: bed.area.key,
+                x: (target.x > 160) ? target.x - 30 : target.x + 40,
+                z: target.z
+            });
+        } else enterArea(character.hero, guildYardEntrance);
         query('.js-charactersBox').appendChild(character.characterCanvas);
     });
     for (let completedLevelKey in state.savedState.completedLevels) {

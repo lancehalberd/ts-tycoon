@@ -3,7 +3,7 @@ export const images = {};
 
 import { createCanvas } from 'app/dom';
 import {
-    drawRectangle, fillRectangle, ifdefor, shrinkRectangle
+    drawRectangle, fillRectangle, fillRect, ifdefor, shrinkRectangle, pad,
 } from 'app/utils/index';
 import {
     drawFrame
@@ -16,6 +16,8 @@ function loadImage(source, callback) {
     images[source] = new Image();
     images[source].onload = () => callback();
     images[source].src = source;
+    // Used for serializing images.
+    images[source].originalSource = source;
     return images[source];
 }
 
@@ -341,22 +343,39 @@ export function drawOutlinedFrame(
     }
     drawFrame(context, frame, target);
 }
+export function drawTintedFrame(context: CanvasRenderingContext2D, frame: TintedFrame, target: ShortRectangle): void {
+    // First make a solid color in the shape of the image to tint.
+    globalTintContext.save();
+        globalTintContext.fillStyle = frame.color;
+        globalTintContext.clearRect(0, 0, frame.w, frame.h);
+        globalTintContext.drawImage(frame.image, frame.x, frame.y, frame.w, frame.h, 0, 0, frame.w, frame.h);
+        globalTintContext.globalCompositeOperation = "source-in";
+        globalTintContext.fillRect(0, 0, frame.w, frame.h);
+    globalTintContext.restore();
+    context.save();
+        // Next draw the untinted image to the target.
+        context.drawImage(frame.image, frame.x, frame.y, frame.w, frame.h, target.x, target.y, target.w, target.h);
+        // Finally draw the tint color on top of the target with the desired opacity.
+        context.globalAlpha *= frame.amount; // This needs to be multiplicative since we might be drawing a partially transparent image already.
+        context.drawImage(globalTintCanvas, 0, 0, frame.w, frame.h, target.x, target.y, target.w, target.h);
+    context.restore();
+}
 function logPixel(context, x, y) {
     var imgd = context.getImageData(x, y, 1, 1);
     console.log(imgd.data)
 }
 
-export function drawRectangleBackground(context: CanvasRenderingContext2D, rectangle: FullRectangle) {
+export function drawRectangleBackground(context: CanvasRenderingContext2D, {x, y, w, h}: ShortRectangle) {
     context.save();
     context.beginPath();
     context.globalAlpha = .9;
     context.fillStyle = 'black';
-    fillRectangle(context, rectangle);
+    context.fillRect(x, y, w, h);
     context.globalAlpha = 1;
     context.fillStyle = 'white';
     context.beginPath();
-    drawRectangle(context, rectangle);
-    drawRectangle(context, shrinkRectangle(rectangle, 1));
+    context.rect(x, y, w, h);
+    context.rect(x + 1, y + 1, w - 2, h - 2);
     context.fill('evenodd');
     context.restore();
 }

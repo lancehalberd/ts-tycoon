@@ -135,6 +135,9 @@ export function fillRect(context: CanvasRenderingContext2D, {x, y, w, h}: ShortR
 export function drawRectangle(context: CanvasRenderingContext2D, rectangle: FullRectangle) {
     context.rect(rectangle.left, rectangle.top, rectangle.width, rectangle.height);
 }
+export function drawRect(context: CanvasRenderingContext2D, {x, y, w, h}: ShortRectangle) {
+    context.rect(x, y, w, h);
+}
 export function rectangle(left: number, top: number, width: number, height: number): FullRectangle {
     return {left: left, top: top, width: width, height: height, right: left + width, bottom: top + height};
 }

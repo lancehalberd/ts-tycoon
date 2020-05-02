@@ -83,6 +83,9 @@ export function getEndlessLevel(character: Character, level: LevelData): number 
 // TODO: attach this only when area menu is shown, and just call hideAreaMenu and rely
 // on stopping propogation from areaMenuElement to not hide it when clicked.
 document.addEventListener('mousedown', function (event) {
+    if (event.which !== 1) {
+        return;
+    }
     const target = event.target as HTMLElement;
     if (!target.closest('.js-areaMenu')) {
         hideAreaMenu();

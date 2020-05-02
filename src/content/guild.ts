@@ -1,106 +1,34 @@
-import { areaWalls, AreaDoor } from 'app/content/areaTypes';
-import { allApplications, allBeds, guildObject } from 'app/content/furniture';
-import { createCanvas, mainContext } from 'app/dom';
-import { MAX_Z, MIN_Z } from 'app/gameConstants';
-import { drawImage, drawOutlinedImage, requireImage } from 'app/images';
-import { drawTextureMap } from 'app/render/drawTextureMap';
-import { getCanvasPopupTarget } from 'app/popup';
-import { createAnimation, drawFrame, getFrame } from 'app/utils/animations';
-import { r, rectangle } from 'app/utils/index';
+import { Bed, HeroApplication, createAreaFromDefinition } from 'app/content/areas';
+import { areaDefinitions } from 'app/content/areaDefinitions';
+import { drawFrame, getFrame } from 'app/utils/animations';
 
-import { Area, Exit, FixedObject, GuildArea, GuildAreas, RawGuildArea } from 'app/types';
+import {
+    Area, AreaDefinition, AreaObject, AreaObjectDefinition, Exit, FixedObject,
+    GuildArea, GuildAreas, RawGuildArea,
+} from 'app/types';
 
 export const guildYardEntrance: Exit = {areaKey: 'guildYard', x: 120, z: 0};
 
-const wallOriginCoords = [-71, 213];
-const wallDepth = 120;
-const wallHeight = 130;
-const wallCanvas = createCanvas(wallDepth, wallHeight);
-const wallContext = wallCanvas.getContext('2d');
-
-function initializeGuldArea(rawGuildArea: RawGuildArea, seed: number): GuildArea {
-    const guildArea: GuildArea = {
-        objects: [],
-        wallDecorations: [],
-        monsters: [],
-        ...rawGuildArea,
-        isGuildArea: true,
-        allies: [],
-        enemies: [],
-        left: 0,
-        cameraX: 0,
-        time: 0,
-        projectiles: [],
-        effects: [],
-        textPopups: [],
-        treasurePopups: [],
-        objectsByKey: {},
-        seed,
-    };
-    for (const object of guildArea.objects) {
-        object.area = guildArea;
-        guildArea.objectsByKey[object.key] = object;
-    }
-    for (const wallDecoration of guildArea.wallDecorations) {
-        wallDecoration.area = guildArea;
-    }
-    return guildArea;
-}
-const wallZ = MAX_Z;
 export function getDefaultGuildAreas(): GuildAreas {
     // We need to reset these each time this function is called, otherwise we will
     // double up on beds/applications.
-    while (allApplications.length) allApplications.pop();
-    while (allBeds.length) allBeds.pop();
+    HeroApplication.instances = [];
+    Bed.instances = [];
     const guildAreas: GuildAreas = {};
-    guildAreas.guildYard = initializeGuldArea({
-        'key': 'guildYard',
-        'width': 340,
-        'backgroundPatterns': {'0': 'forest'},
-        'wallDecorations': [
-            new AreaDoor(false, {areaKey: 'guildFoyer', x: 48, z: 0}, AreaDoor.closedDoorFrame),
-            new AreaDoor(true, {areaKey: 'worldMap', x: 0, z: 0}, AreaDoor.woodBridge),
-        ],
-        objects: [],
-        'leftWall': areaWalls.river,
-        'rightWall': areaWalls.guildWall,
-    }, 1);
-    guildAreas.guildFoyer = initializeGuldArea({
-        'key': 'guildFoyer',
-        'width': 400,
-        'backgroundPatterns': {'0': 'oldGuild'},
-        'wallDecorations': [
-            guildObject('heroApplication', [75, 15, wallZ]),
-            guildObject('heroApplication', [110, 15, wallZ]),
-            // Candles are 25px wide currently
-            guildObject('candles', [50, 15, wallZ], {xScale: -1, scale: 1}),
-            guildObject('candles', [150, 25, wallZ], {xScale: -1, scale: 1}),
-            guildObject('candles', [225, 25, wallZ], {scale: 1}),
-            guildObject('candles', [325, 15, wallZ], {scale: 1}),
-            new AreaDoor(true, {areaKey: 'guildYard', x: 272, z: 0}, AreaDoor.closedDoorFrame),
-            new AreaDoor(false, {areaKey: 'guildFrontHall', x: 48, z: 0}),
-        ],
-        'leftWall': areaWalls.guildWall,
-        'rightWall': areaWalls.guildWall,
-        'objects': [
-            guildObject('mapTable', [100, 0, 0], {'scale': 1}),
-            guildObject('coinStash', [150, 0, MAX_Z - 10]),
-            guildObject('woodenAltar', [190, 0, MAX_Z - 5], {'scale': 1}),
-            guildObject('animaOrb', [230, 0, MAX_Z - 10], {'scale': 1}),
-            guildObject('trophyAltar', [290, 0, 0], {'scale': 1}),
-            guildObject('bed', [340, 0, MAX_Z - 15], {'scale': 1, 'xScale': -1}),
-        ],
-        'monsters': [
-            {key: 'gremlin', level: 1, location: [250, 0, 40]},
-            {key: 'skeleton', level: 1, location: [360, 0, 0]},
-        ],
-    }, 2);
+    for (let areaKey in areaDefinitions) {
+        const area: Area = createAreaFromDefinition(areaKey, areaDefinitions[areaKey]);
+        if (area.isGuildArea === true) {
+            guildAreas[areaKey] = area;
+        }
+    }
+    return guildAreas;
+    /*
     {
         const width = 600;
-        guildAreas.guildFrontHall = initializeGuldArea({
+        guildAreas.guildFrontHall = initializeGuildArea({
             'key': 'guildFrontHall',
             width,
-            'backgroundPatterns': {'0': 'oldGuild'},
+            areaType: 'oldGuild',
             'wallDecorations': [
                 guildObject('candles', [70, 12, wallZ], {'xScale': -1, 'scale': 1}),
                 guildObject('door', [125, 0, wallZ], {'exit': {'areaKey': 'guildGuestRoom', 'x': 160, 'z': MAX_Z - 24}, 'scale': 1}),
@@ -120,8 +48,8 @@ export function getDefaultGuildAreas(): GuildAreas {
                 guildObject('trophyAltar', [3 * width / 4, 0, 0], {'scale': 1, 'key': 'trophyAltarB'}),
             ],
             'monsters': [
-                {key: 'spider', level: 3, location: [600, 0, 40]},
-                {key: 'gnome', level: 3, location: [880, 0, 0]},
+                {key: 'spider', level: 3, location: [width / 2, 0, 40]},
+                {key: 'gnome', level: 3, location: [width - 100, 0, 0]},
             ],
             'leftWall': areaWalls.guildWall,
             'rightWall': areaWalls.guildWall,
@@ -130,10 +58,10 @@ export function getDefaultGuildAreas(): GuildAreas {
 
     {
         const width = 320;
-        guildAreas.guildGuestRoom = initializeGuldArea({
+        guildAreas.guildGuestRoom = initializeGuildArea({
             'key': 'guildGuestRoom',
             width,
-            'backgroundPatterns': {'0': 'oldGuild'},
+            areaType: 'oldGuild',
             'wallDecorations': [
                 guildObject('candles', [130, 12, wallZ], {'xScale': -1, 'scale': 1}),
                 guildObject('door', [160, 0, wallZ], {'exit': {'areaKey': 'guildFrontHall', 'x': 125, 'z': MAX_Z - 24}, 'scale': 1}),
@@ -150,10 +78,10 @@ export function getDefaultGuildAreas(): GuildAreas {
         }, 4);
     }
 
-    guildAreas.guildKitchen = initializeGuldArea({
+    guildAreas.guildKitchen = initializeGuildArea({
         'key': 'guildKitchen',
         'width': 400,
-        'backgroundPatterns': {'0': 'oldGuild'},
+        areaType: 'oldGuild',
         'wallDecorations': [
             guildObject('candles', [215, 50, wallZ], {'xScale': -1, 'scale': 1.5}),
             guildObject('candles', [835, 50, wallZ], {'scale': 1.5}),
@@ -170,10 +98,10 @@ export function getDefaultGuildAreas(): GuildAreas {
         'rightWall': areaWalls.guildWall,
     }, 5);
 
-    guildAreas.guildBasement = initializeGuldArea({
+    guildAreas.guildBasement = initializeGuildArea({
         'key': 'guildBasement',
         'width': 350,
-        'backgroundPatterns': {'0': 'guildBasement'},
+        areaType: 'guildBasement',
         'wallDecorations': [
             guildObject('candles', [740, 50, wallZ], {'xScale': -1, 'scale': 1.5}),
             guildObject('candles', [860, 50, wallZ], {'scale': 1.5}),
@@ -191,10 +119,10 @@ export function getDefaultGuildAreas(): GuildAreas {
         'rightWall': areaWalls.guildWall,
     }, 6);
 
-    guildAreas.guildVault = initializeGuldArea({
+    guildAreas.guildVault = initializeGuildArea({
         'key': 'guildVault',
         'width': 320,
-        'backgroundPatterns': {'0': 'guildBasement'},
+        areaType: 'guildBasement',
         'wallDecorations': [
             guildObject('candles', [215, 50, wallZ], {'xScale': -1, 'scale': 1.5}),
             guildObject('candles', [585, 50, wallZ], {'scale': 1.5}),
@@ -212,10 +140,8 @@ export function getDefaultGuildAreas(): GuildAreas {
         ],
         'leftWall': areaWalls.guildWall,
         'rightWall': areaWalls.guildWall,
-    }, 7);
-    return guildAreas;
+    }, 7);*/
 }
-//$('body').append(wallCanvas);
 export function drawRightWall(context: CanvasRenderingContext2D, guildArea: Area) {
     const frame = getFrame(guildArea.rightWall, guildArea.time);
     if (guildArea.cameraX + 320 < guildArea.width - frame.w) return;

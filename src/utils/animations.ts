@@ -16,7 +16,7 @@ interface ExtraAnimationProperties {
     // Frame to start from after looping.
     loopFrame?: number,
 }
-export type Animation = {
+export type FrameAnimation = {
     frames: Frame[],
     frameDuration: number,
     duration: number,
@@ -29,8 +29,8 @@ export function frame(
     return {x, y, w, h, content};
 }
 
-// Make a single frame into an animation.
-export function frameAnimation(frame: Frame): Animation {
+// Make a single frame into an FrameAnimation.
+export function frameAnimation(frame: Frame): FrameAnimation {
     return {frames: [frame], frameDuration: 1, duration: 1};
 }
 
@@ -39,7 +39,7 @@ export function createAnimation(
     rectangle: ShortRectangle & {content?: ShortRectangle},
     {x = 0, y = 0, rows = 1, cols = 1, xSpace = 0, top = 0, left = 0, duration = 8, frameMap = null}: CreateAnimationOptions = {},
     props: ExtraAnimationProperties = {},
-): Animation {
+): FrameAnimation {
     let frames: Frame[] = [];
     let image: HTMLImageElement | HTMLCanvasElement;
     if (typeof source === 'string') {
@@ -65,7 +65,7 @@ export function createAnimation(
     return {frames, frameDuration: duration, ...props, duration: FRAME_LENGTH * frames.length * duration};
 };
 
-export function getFrame(animation: Animation, animationTime: number): Frame {
+export function getFrame(animation: FrameAnimation, animationTime: number): Frame {
     let frameIndex = Math.floor(animationTime / (FRAME_LENGTH * (animation.frameDuration || 1)));
     if (animation.loop === false) { // You can set this to prevent an animation from looping.
         frameIndex = Math.min(frameIndex, animation.frames.length - 1);
@@ -78,14 +78,11 @@ export function getFrame(animation: Animation, animationTime: number): Frame {
     return animation.frames[frameIndex % animation.frames.length];
 };
 
-export function getAnimationFrameLength(animation) {
-    return animation.frames.length * animation.frameDuration;
-}
 export function drawFrame(
     context: CanvasRenderingContext2D,
     {image, x, y, w, h}: Frame,
     {x: tx, y: ty, w: tw, h: th}: ShortRectangle
-) {
+): void {
     // (x | 0) is faster than Math.floor(x)
     context.drawImage(image, x | 0, y | 0, w | 0, h | 0, tx | 0, ty | 0, tw | 0, th | 0);
 }
@@ -94,7 +91,7 @@ export function drawFrameCenteredInTarget(
     context: CanvasRenderingContext2D,
     {image, x, y, w, h}: Frame,
     {x: tx, y: ty, w: tw, h: th}: ShortRectangle
-) {
+): void {
     tx += Math.ceil((tw - w) / 2);
     ty += Math.ceil((th - h) / 2);
     // (x | 0) is faster than Math.floor(x)

@@ -139,7 +139,7 @@ query('.js-confirmSkill').onclick = function () {
 }
 query('.js-cancelSkill').onclick = () => setContext('adventure');
 
-export function activateShrine(shrine: FixedObject, hero: Hero) {
+export function activateShrine(this: FixedObject, hero: Hero) {
     const character = hero.character;
     // Don't activate the shrine a second time.
     if (character.activeShrine) return;
@@ -167,7 +167,7 @@ export function activateShrine(shrine: FixedObject, hero: Hero) {
         character.boardPreviewChoices.push(boardPreview);
         showChooseBlessing();
     }
-    character.activeShrine = shrine;
+    character.activeShrine = this;
 }
 
 function finishShrine(character: Character) {

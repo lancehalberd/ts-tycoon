@@ -2,8 +2,9 @@
 import { enterArea, startLevel } from 'app/adventure';
 import { addBonusSourceToObject, createVariableObject } from 'app/bonuses';
 import { newCharacter,updateAdventurer } from 'app/character';
+import { HeroApplication } from 'app/content/areas';
 import { addAllItems } from 'app/content/equipment/index';
-import { addAllUnlockedFurnitureBonuses, allApplications } from 'app/content/furniture';
+import { addAllUnlockedFurnitureBonuses } from 'app/content/furniture';
 import { getDefaultGuildAreas, guildYardEntrance } from 'app/content/guild';
 import { characterClasses, initializeJobs } from 'app/content/jobs';
 import { map } from 'app/content/mapData';
@@ -79,8 +80,8 @@ export function initializeGame() {
         hireCharacter(startingCharacter);
         const otherKeys = jobRanks[0].slice();
         removeElementFromArray(otherKeys, jobKey, true);
-        for (let i = 0; i < allApplications.length && otherKeys.length; i++) {
-            allApplications[i].character = createNewHeroApplicant(otherKeys.pop());
+        for (let i = 0; i < HeroApplication.instances.length && otherKeys.length; i++) {
+            HeroApplication.instances[i].character = createNewHeroApplicant(otherKeys.pop());
         }
         enterArea(state.selectedCharacter.hero, guildYardEntrance);
     }

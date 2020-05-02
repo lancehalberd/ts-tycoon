@@ -2,6 +2,7 @@ import { enterArea } from 'app/adventure';
 import { hideAreaMenu } from 'app/areaMenu';
 import { refreshStatsPanel } from 'app/character';
 import { guildYardEntrance } from 'app/content/guild';
+import { editingAreaState } from 'app/development/editArea';
 import { jewelsCanvas, query, queryAll, toggleElements } from 'app/dom';
 import { drawBoardJewels } from 'app/drawBoard';
 import { stopDrag } from 'app/inventory';
@@ -12,6 +13,10 @@ import { getState} from 'app/state';
 import { hideChooseBlessing, showChooseBlessing} from 'app/ui/chooseBlessing';
 
 export function setContext(context) {
+    // Changing context while editing can cause errors, so prevent it from happening.
+    if (editingAreaState.isEditing) {
+        return;
+    }
     const state = getState();
     if (state.selectedCharacter.context === 'item') {
         refreshStatsPanel(state.selectedCharacter, query('.js-characterColumn .js-stats'));

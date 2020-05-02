@@ -10,10 +10,12 @@ import { canUseSkillOnTarget, prepareToUseSkillOnTarget } from 'app/useSkill';
 import { drawFrame } from 'app/utils/animations';
 import { fillRect, fillRectangle, isPointInShortRect, pad, r, rectangle, shrinkRectangle } from 'app/utils/index';
 
-import { Action, Actor, Character, Hero } from 'app/types';
+import {
+    Action, ActionData, Actor, Character,
+    Hero, HUDElement, ShortRectangle, VariableObject,
+} from 'app/types';
 let goldFrame, silverFrame;
 let tinyGoldFrame, tinySilverFrame;
-let actionShortcuts = {};
 const actionKeyCodes = '1234567890'.split('').map(c => c.charCodeAt(0));
 
 function createScaledFrame(r, frame, scale = 1) {
@@ -50,93 +52,154 @@ function createScaledFrame(r, frame, scale = 1) {
     drawImage(context, smallCanvas, rectangle(0, 0, r.width / scale, r.height / scale), r);
     return canvas;
 }
-export function drawSkills(hero: Hero) {
-    const context = mainContext;
-    context.font = "10px Arial";
-    context.textBaseline = 'middle';
-    context.textAlign = 'center';
-    const frameSize = 4;
-    const interiorSize = 16;
-    const tinySize = 16;
-    const totalSize = interiorSize + frameSize;
-    if (!goldFrame) goldFrame = createScaledFrame(rectangle(0, 0, totalSize, totalSize), requireImage('gfx/goldFrame.png'), 1);
-    if (!silverFrame) silverFrame = createScaledFrame(rectangle(0, 0, totalSize, totalSize), requireImage('gfx/silverFrame.png'), 1);
-    if (!tinyGoldFrame) tinyGoldFrame = createScaledFrame(rectangle(0, 0, tinySize, tinySize), requireImage('gfx/goldFrame.png'));
-    if (!tinySilverFrame) tinySilverFrame = createScaledFrame(rectangle(0, 0, tinySize, tinySize), requireImage('gfx/silverFrame.png'));
+
+const interiorSize = 16;
+const tinySize = 16;
+const frameSize = 4;
+const totalSize = interiorSize + frameSize;
+
+export function updateActionShortcuts(character: Character) {
+    character.actionShortcuts = [];
     const margin = 5;
     const padding = 8;
     const top = mainCanvas.height - margin - totalSize; // 30 is the height of the minimap.
     let left = 30 + margin; // 60 pixels to make room for the return to map button.
-    actionShortcuts = {};
     const keysLeft = actionKeyCodes.slice();
-    for (const action of hero.actions) {
+    for (const action of character.hero.actions) {
         if (action.variableObject.tags.basic) continue;
-        action.target = r(left, top, totalSize, totalSize);
-        action.onClick = onClickSkill;
+        const actionKeyCode = keysLeft.length ? keysLeft.shift() : null;
+        const actionShortcut: ActionShortcut = new ActionShortcut(action, actionKeyCode, left, top);
+        left += totalSize + padding;
+    }
+}
+export class ActionShortcut implements HUDElement {
+    action: Action;
+    x: number;
+    y: number;
+    w: number = totalSize;
+    h: number = totalSize;
+    keyIndicator: HUDElement & {keyCode?: number, action: Action};
+    toggle: HUDElement & {action: Action};
+    constructor(action: Action, keyCode: number, x: number, y: number) {
+        this.action = action;
+        this.x = x;
+        this.y = y;
+        // Shortcut key indicator.
+        this.keyIndicator = {
+            keyCode,
+            action,
+            x: x + totalSize - frameSize - 6,
+            y: y + totalSize - frameSize - 6,
+            w: tinySize, h: tinySize,
+            isPointOver: isPointOverShortRect,
+        };
+        // Manual/Auto toggle button
+        this.toggle = {
+            action,
+            x: x + frameSize + 6 - tinySize,
+            y: y + frameSize + 6 - tinySize,
+            w: tinySize, h: tinySize,
+            isPointOver: isPointOverShortRect,
+            onClick: onClickAutoToggle,
+            helpMethod: autoToggleHelpMethod
+        }
+    }
+
+    helpMethod(): string {
+        const actor: Actor = this.action.actor;
+        const actionSource: ActionData = this.action.source.action;
+        const actionInstance: VariableObject = createVariableObject(actionSource, actor.variableObject);
+        applyParentToVariableChild(actor.variableObject, actionInstance);
+        return titleDiv(this.action.source.name) + bodyDiv(bonusSourceHelpText(actionSource, actor, actionInstance));
+    }
+
+    // We consider the mouse over this shortcut if it is over either the main rectangle
+    // or the key indicator rectangle, which may stick out a bit.
+    isPointOver(x: number, y: number): boolean {
+        return isPointInShortRect(x, y, this) || this.keyIndicator.isPointOver(x, y);
+    }
+
+    onClick(): void {
+        activateAction(this.action);
+    }
+}
+
+function isPointOverShortRect(this: ShortRectangle, x: number, y: number): boolean {
+    return isPointInShortRect(x, y, this);
+}
+
+function createFrames() {
+    if (!goldFrame) goldFrame = createScaledFrame(rectangle(0, 0, totalSize, totalSize), requireImage('gfx/goldFrame.png'), 1);
+    if (!silverFrame) silverFrame = createScaledFrame(rectangle(0, 0, totalSize, totalSize), requireImage('gfx/silverFrame.png'), 1);
+    if (!tinyGoldFrame) tinyGoldFrame = createScaledFrame(rectangle(0, 0, tinySize, tinySize), requireImage('gfx/goldFrame.png'));
+    if (!tinySilverFrame) tinySilverFrame = createScaledFrame(rectangle(0, 0, tinySize, tinySize), requireImage('gfx/silverFrame.png'));
+}
+export function drawActionShortcuts(context: CanvasRenderingContext2D, character: Character) {
+    // Make sure the frames are created
+    createFrames();
+    const hero = character.hero;
+    context.font = "10px Arial";
+    context.textBaseline = 'middle';
+    context.textAlign = 'center';
+    for (const actionShortcut of character.actionShortcuts) {
+        const action = actionShortcut.action;
+
         const iconSource = getAbilityIconSource(action.source);
         context.fillStyle = 'white';
-        fillRect(context, pad(action.target, -2));
-        drawAbilityIcon(context, iconSource, pad(action.target, -frameSize));
+        fillRect(context, pad(actionShortcut, -2));
+        drawAbilityIcon(context, iconSource, pad(actionShortcut, -frameSize));
         let frame = silverFrame;
         let tinyFrame = tinySilverFrame;
         if (isSkillActive(action)) {
             frame = goldFrame;
             tinyFrame = tinyGoldFrame;
         }
+        // Display the cooldown as a clock shadow
         const cooldown = action.readyAt - hero.time;
         if (cooldown > 0) {
             const percent = cooldown / action.stats.cooldown;
             context.save();
             context.globalAlpha = .7;
             context.fillStyle = 'black';
-            //fillRectangle(context, shrinkRectangle(action.target, totalSize * percent / 2));
             context.beginPath();
-            const r = action.target;
+            const r = actionShortcut;
             if (percent < 1) context.moveTo(r.x + r.w / 2, r.y + r.h / 2);
-            context.arc(r.x + r.w / 2, r.y + r.h / 2, totalSize / 2, -Math.PI / 2 - percent * 2 * Math.PI, -Math.PI / 2);
+            context.arc(r.x + r.w / 2, r.y + r.h / 2, actionShortcut.w / 2, -Math.PI / 2 - percent * 2 * Math.PI, -Math.PI / 2);
             if (percent < 1) context.closePath();
-            //drawRectangle(context, shrinkRectangle(action.target, frameSize));
             context.fill('evenodd');
 
             context.restore();
         }
-        drawFrame(context, {image: frame, ...r(0, 0, totalSize, totalSize)}, action.target);
-        const actionKeyCode = keysLeft.length ? keysLeft.shift() : null;
-        if (actionKeyCode) {
-            actionShortcuts[actionKeyCode] = action;
-            const tinyTarget = r(
-                    action.target.x + action.target.w - frameSize - 6,
-                    action.target.y + action.target.h - frameSize - 6, tinySize, tinySize);
-            context.fillStyle = 'white';
-            fillRect(context, pad(tinyTarget, -1));
-            drawFrame(context, {image: tinyFrame, ...r(0, 0, tinySize, tinySize)}, tinyTarget);
-            context.fillStyle = 'black';
-            context.fillText(String.fromCharCode(actionKeyCode), tinyTarget.x + tinyTarget.w / 2, tinyTarget.y + tinyTarget.h / 2);
-            action.shortcutTarget = tinyTarget;
-        } else {
-            action.shortcutTarget = null;
-        }
-        // Display the Manual/Auto indicator.
-        const tinyTarget = r(action.target.x + frameSize + 6 - tinySize, action.target.y + frameSize + 6 - tinySize, tinySize, tinySize);
+        // Display the keyboard shortcut indiactor.
+        drawFrame(context, {...actionShortcut, image: frame, x: 0, y: 0}, actionShortcut);
+
         context.fillStyle = 'white';
-        fillRect(context, pad(tinyTarget, -1));
+        fillRect(context, pad(actionShortcut.keyIndicator, -1));
+        drawFrame(context, {image: tinyFrame, ...r(0, 0, tinySize, tinySize)}, actionShortcut.keyIndicator);
+        context.fillStyle = 'black';
+        context.fillText(String.fromCharCode(actionShortcut.keyIndicator.keyCode),
+            actionShortcut.keyIndicator.x + actionShortcut.keyIndicator.w / 2,
+            actionShortcut.keyIndicator.y + actionShortcut.keyIndicator.h / 2
+        );
+
+        // Display the Manual/Auto indicator.
+        context.fillStyle = 'white';
+        fillRect(context, pad(actionShortcut.toggle, -1));
         context.fillStyle = 'black';
         let letter;
         if (hero.character.autoplay) letter = hero.character.manualActions[action.base.key] ? 'M' : 'A';
         else letter = hero.character.autoActions[action.base.key] ? 'A' : 'M';
         const image = ((letter === 'M') ? tinySilverFrame : tinyGoldFrame);
-        drawFrame(context, {image, ...r(0, 0, tinySize, tinySize)}, tinyTarget);
-        context.fillText(letter, tinyTarget.x + tinyTarget.w / 2, tinyTarget.y + tinyTarget.h / 2);
-        if (!action.toggleButton) {
-            action.toggleButton = {
-                onClick: onClickAutoToggle,
-                action,
-                helpMethod: autoToggleHelpMethod
-            };
-        }
-        action.toggleButton.target = tinyTarget;
-        left += totalSize + padding;
+        drawFrame(context, {...actionShortcut.toggle, image, x: 0, y: 0}, actionShortcut.toggle);
+        context.fillText(letter,
+            actionShortcut.toggle.x + actionShortcut.toggle.w / 2,
+            actionShortcut.toggle.y + actionShortcut.toggle.h / 2
+        );
     }
+}
+
+function isPointOverShortRectTarget(this: {target: ShortRectangle }, x: number, y: number) {
+    return isPointInShortRect(x, y, this.target);
 }
 
 let selectedAction: Action = null;
@@ -150,12 +213,10 @@ export function getSelectedAction(): Action {
 export function setSelectedAction(action: Action) {
     selectedAction = action;
 }
-function onClickSkill(character: Character, action: Action) {
-    activateAction(action);
-}
 
-function onClickAutoToggle(character: Character) {
+function onClickAutoToggle() {
     const action = this.action;
+    const character = getState().selectedCharacter;
     if (character.autoplay) {
         character.manualActions[action.base.key] = !character.manualActions[action.base.key];
     } else {
@@ -180,32 +241,19 @@ function autoToggleHelpMethod(): string {
     }
 }
 
-export function getAbilityPopupTarget(x: number, y: number) {
+export function getAbilityPopupTarget(x: number, y: number): HUDElement {
     hoverAction = null;
-    for (const action of getState().selectedCharacter.adventurer.actions) {
-        if (action.variableObject.tags.basic) continue;
+    for (const actionShortcut of getState().selectedCharacter.actionShortcuts) {
         // toggleButton doesn't get set until the ability is drawn the first time.
-        if (action.toggleButton && isPointInShortRect(x, y, action.toggleButton.target)) {
-            return action.toggleButton;
+        if (actionShortcut.toggle.isPointOver(x, y)) {
+            return actionShortcut.toggle;
         }
-        if (
-            (action.target && isPointInShortRect(x, y, action.target)) ||
-            (action.shortcutTarget && isPointInShortRect(x, y, action.shortcutTarget))
-        ) {
-            hoverAction = action;
-            action.helpMethod = actionHelptText;
-            return action;
+        if (actionShortcut.isPointOver(x, y)) {
+            hoverAction = actionShortcut.action;
+            return actionShortcut;
         }
     }
     return null;
-}
-
-function actionHelptText(action: Action): string {
-    const actor = action.actor;
-    const actionSource = action.source.action;
-    const actionInstance = createVariableObject(actionSource, actor.variableObject);
-    applyParentToVariableChild(actor.variableObject, actionInstance);
-    return titleDiv(action.source.name) + bodyDiv(bonusSourceHelpText(actionSource, actor, actionInstance));
 }
 
 // Skill is active if it is selected, or if the hero is performing/attempting to perform the skill.
@@ -217,13 +265,16 @@ function isSkillActive(action: Action): boolean {
 }
 
 export function handleSkillKeyInput(keyCode: number): boolean {
-    const action = actionShortcuts[keyCode];
-    if (!action) return false;
-    activateAction(action);
-    return true;
+    for (const actionShortcut of getState().selectedCharacter.actionShortcuts) {
+        if (actionShortcut.keyIndicator.keyCode === keyCode) {
+            activateAction(actionShortcut.action);
+            return true;
+        }
+    }
+    return false;
 }
 
-function activateAction(action: Action) {
+function activateAction(action: Action): void {
     if (action.readyAt > action.actor.time) return;
     // If a skill has no target, trigger it as soon as they click the skill button.
     if (action.base.target === 'none' || action.variableObject.tags.field) {

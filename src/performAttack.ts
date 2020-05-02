@@ -11,7 +11,6 @@ import {
     novaEffect, projectile, songEffect,
 } from 'app/effects';
 import { MAX_Z, RANGE_UNIT } from 'app/gameConstants';
-import { getActorAnimationFrame } from 'app/render/drawActor';
 import { canUseReaction, getXDirection, useReaction } from 'app/useSkill';
 import { toHex } from 'app/utils/colors';
 import { abbreviate, fixedDigits, percent } from 'app/utils/formatters';
@@ -400,7 +399,7 @@ export function getAttackY(target: Target): number {
     if (target.source.attackY !== null && target.source.attackY !== undefined) {
         return target.stats.scale * target.source.attackY;
     }
-    const frame = getActorAnimationFrame(target);
+    const frame = target.frame;
     return target.stats.scale * (frame.content ? frame.content.h / 2 : frame.h / 2);
 }
 export function applyAttackToTarget(attackStats: AttackData, actorOrLocation: Target = null): boolean {

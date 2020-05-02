@@ -687,7 +687,7 @@ reactionDefinitions.dodge = {
     use: function (actor, dodgeSkill, attackStats) {
         attackStats.dodged = true;
         if (dodgeSkill.stats.distance) {
-            const minX = actor.area.left, maxX = actor.area.width - actor.w / 2;
+            const minX = 0, maxX = actor.area.width - actor.w / 2;
             let targetX = actor.x + actor.heading[0] * dodgeSkill.stats.distance;
             // If the dodgeSkill distance is negative, it is designed to get away from the enemy.
             // However, if the actor is cornered, this isn't possible by jumping backwards,
