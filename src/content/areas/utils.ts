@@ -23,14 +23,14 @@ export function createAreaObjectFromDefinition(areaObjectDefinition: AreaObjectD
     return factory.createFromDefinition(areaObjectDefinition);
 }
 
-export function createAreaFromDefinition(areaKey: string, areaDefinition: AreaDefinition): Area {
-    const area: Area = {
-        areaType: areaDefinition.type,
+export function createNewArea(areaKey: string): Area {
+    return {
+        areaType: 'meadow',
         key: areaKey,
-        width: areaDefinition.width,
+        width: 600,
         objects: [],
         wallDecorations: [],
-        monsters: areaDefinition.monsters,
+        monsters: [],
         allies: [],
         enemies: [],
         cameraX: 0,
@@ -40,15 +40,32 @@ export function createAreaFromDefinition(areaKey: string, areaDefinition: AreaDe
         textPopups: [],
         treasurePopups: [],
         objectsByKey: {},
-        isGuildArea: areaDefinition.isGuildArea,
-        seed: areaDefinition.seed,
+        seed: null,
     };
+}
+
+export function createAreaFromDefinition(areaKey: string, areaDefinition: AreaDefinition): Area {
+    return applyDefinitionToArea(createNewArea(areaKey), areaDefinition);
+}
+
+export function applyDefinitionToArea(area: Area, areaDefinition: AreaDefinition): Area {
+    area.areaType = areaDefinition.type;
+    area.width = areaDefinition.width;
+    area.monsters = areaDefinition.monsters;
+    area.isGuildArea = areaDefinition.isGuildArea,
+    area.seed = areaDefinition.seed;
     if (areaDefinition.leftWallType) {
         area.leftWall = areaWalls[areaDefinition.leftWallType];
+    } else {
+        area.leftWall = null;
     }
     if (areaDefinition.rightWallType) {
         area.rightWall = areaWalls[areaDefinition.rightWallType];
+    } else {
+        area.rightWall = null;
     }
+    area.objectsByKey = {};
+    area.objects = [];
     for (const objectKey in areaDefinition.objects) {
         const object: AreaObject = createAreaObjectFromDefinition(areaDefinition.objects[objectKey]);
         object.area = area;
@@ -56,6 +73,7 @@ export function createAreaFromDefinition(areaKey: string, areaDefinition: AreaDe
         area.objectsByKey[objectKey] = object;
         area.objects.push(object);
     }
+    area.wallDecorations = [];
     for (const objectKey in areaDefinition.wallDecorations) {
         const object: AreaObject = createAreaObjectFromDefinition(areaDefinition.wallDecorations[objectKey]);
         object.area = area;

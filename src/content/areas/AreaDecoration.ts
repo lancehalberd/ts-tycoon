@@ -3,16 +3,25 @@ import {
     isPointOverAreaTarget,
     EditableAreaObject,
 } from 'app/content/areas';
+import { createObjectAtMouse } from 'app/development/editArea';
 import { createAnimation, frameAnimation, getFrame } from 'app/utils/animations';
 
 import {
     FrameAnimation, Area, AreaObject, AreaObjectTarget, BaseAreaObjectDefinition, Frame,
-    ShortRectangle,
+    MenuOption, ShortRectangle,
 } from 'app/types';
 
 const [
     emptyShelf, bookShelf, mixedShelf, itemShelf
 ] = createAnimation('gfx2/areas/bookccasesheet.png', {x: 0, y: 0, w: 34, h: 64, d: 28}, {cols: 4}).frames;
+
+
+type AnimationGroup = keyof typeof AreaDecoration.animations;
+export interface AreaDecorationDefinition extends BaseAreaObjectDefinition {
+    animationGroup: AnimationGroup,
+    animationKey: string,
+    isSolid?: boolean,
+}
 
 export class AreaDecoration extends EditableAreaObject {
     animation: FrameAnimation;
@@ -43,11 +52,28 @@ export class AreaDecoration extends EditableAreaObject {
             itemShelf: frameAnimation(itemShelf),
         },
     };
+
+    static getCreateMenu(): MenuOption {
+        return {
+            getLabel: () => 'Decoration',
+            getChildren() {
+                return Object.keys(AreaDecoration.animations).map((animationGroup: AnimationGroup) => {
+                    return {
+                        getLabel: () => animationGroup,
+                        getChildren() {
+                            return Object.keys(AreaDecoration.animations[animationGroup]).map(animationKey => {
+                                return {
+                                    getLabel: () => animationKey,
+                                    onSelect() {
+                                          createObjectAtMouse({type: 'decoration', animationGroup, animationKey});
+                                    }
+                                }
+                            });
+                        }
+                    }
+                })
+            }
+        }
+    }
 }
 areaObjectFactories.decoration = AreaDecoration;
-
-export interface AreaDecorationDefinition extends BaseAreaObjectDefinition {
-    animationGroup: keyof typeof AreaDecoration.animations,
-    animationKey: string,
-    isSolid?: boolean,
-}

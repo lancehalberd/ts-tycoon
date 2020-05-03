@@ -23,12 +23,12 @@ import {
 const guildImage = requireImage('gfx/guildhall.png');
 const chestImage = requireImage('gfx/chest-closed.png');
 
-const potFrame:Frame = {image: guildImage, x: 300, y: 150, w: 30, h: 30, d: 10};
-const jarFrame:Frame = {image: guildImage, x: 330, y: 150, w: 30, h: 30, d: 10};
-const piggyFrame:Frame = {image: guildImage, x: 300, y: 180, w: 30, h: 30, d: 10};
-const chestFrame:Frame = {image: chestImage, x: 0, y: 0, w: 32, h: 32, d: 10};
-const safeFrame:Frame = {image: guildImage, x: 330, y: 180, w: 30, h: 30, d: 10};
-const magicBagFrame:Frame = {image: guildImage, x: 300, y: 210, w: 30, h: 30, d: 10};
+const potFrame:Frame = {image: guildImage, x: 300, y: 150, w: 30, h: 30, d: 20};
+const jarFrame:Frame = {image: guildImage, x: 330, y: 150, w: 30, h: 30, d: 20};
+const piggyFrame:Frame = {image: guildImage, x: 300, y: 180, w: 30, h: 30, d: 20};
+const chestFrame:Frame = {image: chestImage, x: 0, y: 0, w: 32, h: 32, d: 20};
+const safeFrame:Frame = {image: guildImage, x: 330, y: 180, w: 30, h: 30, d: 20};
+const magicBagFrame:Frame = {image: guildImage, x: 300, y: 210, w: 30, h: 30, d: 20};
 
 const coinStashTiers: UpgradeableObjectTier[] = [
     {'name': 'Cracked Pot', 'bonuses': {'+maxCoins': 500}, 'upgradeCost': 500, frame: potFrame},

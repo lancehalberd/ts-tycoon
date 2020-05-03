@@ -1,15 +1,19 @@
 import _ from 'lodash';
 import { areaDefinitions } from 'app/content/areaDefinitions';
-import { areaTargetToScreenTarget, areaWalls } from 'app/content/areas';
+import {
+    applyDefinitionToArea,
+    areaObjectFactories, areaTargetToScreenTarget, areaTypes, areaWalls,
+    createAreaObjectFromDefinition,
+} from 'app/content/areas';
 import { mainCanvas } from 'app/dom';
-import { ADVENTURE_WIDTH, ADVENTURE_SCALE, MAX_Z, MIN_Z } from 'app/gameConstants';
+import { ADVENTURE_WIDTH, ADVENTURE_SCALE, BACKGROUND_HEIGHT, GROUND_Y, MAX_Z, MIN_Z } from 'app/gameConstants';
 import { isKeyDown, KEY } from 'app/keyCommands';
 import { getState } from 'app/state';
 import { getMousePosition } from 'app/utils/mouse';
 
 
 import {
-    Area, AreaObject,
+    Area, AreaDefinition, AreaObject, AreaObjectDefinition, MenuOption,
 } from 'app/types';
 
 interface EditingAreaState {
@@ -17,20 +21,29 @@ interface EditingAreaState {
     selectedObject: AreaObject,
     // This will override the cameraX for the area.
     cameraX: number,
+    contextCoords: number[],
 }
 export const editingAreaState: EditingAreaState = {
     isEditing: false,
     selectedObject: null,
     cameraX: null,
+    contextCoords: null,
 }
 
+// Note this actually fires on mousedown, not on click.
 export function handleEditAreaClick(x: number, y: number): void {
     //console.log('click', x, y);
     const hero = getState().selectedCharacter.hero;
     const area = hero.area;
     editingAreaState.selectedObject = null;
-    for (const object of area.objects) {
-        if (object.isPointOver && object.isPointOver(x, y)) {
+    const sortedObjects = [...area.objects];
+    // Consider objects closer to the screen first to make selection intuitive.
+    sortedObjects.sort((A, B) => A.getAreaTarget().z - B.getAreaTarget().z);
+    for (const object of sortedObjects) {
+        if (!object.definition) {
+            continue;
+        }
+        if (object.isPointOver(x, y)) {
             if (isKeyDown(KEY.SHIFT) && object.onInteract) {
                 object.onInteract(hero);
                 return;
@@ -39,8 +52,12 @@ export function handleEditAreaClick(x: number, y: number): void {
             return;
         }
     }
-    for (const object of area.wallDecorations) {
-        if (object.isPointOver && object.isPointOver(x, y)) {
+    for (let i: number = area.wallDecorations.length - 1; i >= 0 ; i--) {
+        const object: AreaObject = area.wallDecorations[i];
+        if (!object.definition) {
+            continue;
+        }
+        if (object.isPointOver(x, y)) {
             if (isKeyDown(KEY.SHIFT) && object.onInteract) {
                 object.onInteract(hero);
                 return;
@@ -58,13 +75,56 @@ export function handleEditMouseDragged(dx: number, dy: number): void {
     }
 }
 
+function uid(base: string, area: Area): string {
+    let i = 2, id = base;
+    while (area.objectsByKey[id]) {
+        id = base + (i++);
+    }
+    return id;
+}
+
+export function createObjectAtMouse(definition: AreaObjectDefinition): void {
+    const area = getState().selectedCharacter.hero.area;
+    const objectKey = uid(definition.type, area);
+    const [x, y] = editingAreaState.contextCoords;
+    const isWallDecoration = (y < BACKGROUND_HEIGHT);
+    if (isWallDecoration) {
+        definition.y = BACKGROUND_HEIGHT - y;
+        definition.zAlign = 'back';
+        definition.z = 0;
+    } else {
+        definition.y = 0;
+        // Recall GROUND_Y is y=0, z=0, and z is at 1/2 scale.
+        definition.z = (GROUND_Y - y) * 2;
+    }
+    definition.x = editingAreaState.cameraX + x;
+    const areaDefinition: AreaDefinition = areaDefinitions[area.key];
+    if (isWallDecoration) {
+        areaDefinition.wallDecorations[objectKey] = definition;
+    } else {
+        areaDefinition.objects[objectKey] = definition;
+    }
+    applyDefinitionToArea(area, areaDefinition);
+    /*const object: AreaObject = createAreaObjectFromDefinition(definition);
+    object.area = area;
+    object.key = objectKey;
+    area.objectsByKey[objectKey] = object;
+    if (isWallDecoration) {
+        area.wallDecorations.push(object);
+    } else {
+        area.objects.push(object);
+    }*/
+}
+
 function moveObject(object: AreaObject, dx: number, dy: number) {
     const area = getState().selectedCharacter.hero.area;
     let dz = 0;
     if (area.wallDecorations.includes(object)) {
         dy = -dy;
     } else {
-        dz = -dy;
+        // For dragging an object, we need to multiply by 2 to make it follow the mouse
+        // since the z is scaled by 0.5.
+        dz = -dy * 2;
         dy = 0;
     }
     // Only objects with definitions can be moved and saved.
@@ -94,7 +154,22 @@ function moveObject(object: AreaObject, dx: number, dy: number) {
             object.definition.y = Math.max(0, object.definition.y);
         }
     }
+    refreshDefinition(object);
+}
+
+// Reapply the definition for a given object and any objects that list it as an ancestor.
+function refreshDefinition(object: AreaObject) {
     object.applyDefinition(object.definition);
+    for (const otherObject of object.area.objects) {
+        if (otherObject.definition.parentKey === object.key) {
+            refreshDefinition(otherObject);
+        }
+    }
+    for (const otherObject of object.area.wallDecorations) {
+        if (otherObject.definition.parentKey === object.key) {
+            refreshDefinition(otherObject);
+        }
+    }
 }
 
 export function handleEditAreaKeyDown(keyCode: number): boolean {
@@ -161,6 +236,233 @@ export function renderEditAreaOverlay(context: CanvasRenderingContext2D): void {
         context.strokeStyle = 'white';
         context.lineWidth = 1;
         context.strokeRect(x | 0, y | 0, w | 0, h | 0);
+        if (selectedObject.definition && selectedObject.definition.parentKey) {
+            const parentObject = selectedObject.area.objectsByKey[selectedObject.definition.parentKey];
+            const {x, y, w, h} = areaTargetToScreenTarget(parentObject.getAreaTarget());
+            context.strokeStyle = 'purple';
+            context.lineWidth = 1;
+            context.strokeRect(x | 0, y | 0, w | 0, h | 0);
+        }
+    }
+}
+
+function updateAreaDefinition(updatedProps: Partial<AreaDefinition>) {
+    const area: Area = getState().selectedCharacter.hero.area;
+    areaDefinitions[area.key] = {
+        ...areaDefinitions[area.key],
+        ...updatedProps,
+    };
+    applyDefinitionToArea(area, areaDefinitions[area.key]);
+}
+
+export function getEditingContextMenu(): MenuOption[] {
+    const area = getState().selectedCharacter.hero.area;
+    if (!editingAreaState.isEditing) {
+        if (!areaDefinitions[area.key]) {
+            return [
+                {
+                    getLabel() {
+                        return 'Cannot Edit Here';
+                    },
+                },
+            ];
+        }
+        return [
+            {
+                getLabel() {
+                    return 'Start Editing';
+                },
+                onSelect() {
+                    editingAreaState.isEditing = true;
+                    editingAreaState.cameraX = getState().selectedCharacter.hero.area.cameraX;
+                }
+            },
+        ];
+    }
+    editingAreaState.contextCoords = getMousePosition(mainCanvas, ADVENTURE_SCALE);
+    const isWallDecoration = (editingAreaState.contextCoords[1] < BACKGROUND_HEIGHT);
+    return [
+        {
+            getLabel() {
+                return 'Stop Editing';
+            },
+            onSelect() {
+                editingAreaState.isEditing = false;
+                editingAreaState.selectedObject = null;
+            }
+        },
+        {
+            getLabel() {
+                return isWallDecoration ? 'Add to Wall...' : 'Add to Field...';
+            },
+            getChildren() {
+                return Object.keys(areaObjectFactories).map(getAddObjectMenuItem);
+            }
+        },
+        {
+            getLabel() {
+                return 'Set Area...';
+            },
+            getChildren() {
+                return Object.keys(areaTypes).map(getSetAreaTypeMenuItem);
+            }
+        },
+        {
+            getLabel() {
+                return 'Left wall...';
+            },
+            getChildren() {
+                const callback = (wallType) => {
+                    updateAreaDefinition({leftWallType: wallType});
+                }
+                return [
+                    {
+                        getLabel: () => 'None',
+                        onSelect() {
+                            updateAreaDefinition({leftWallType: null});
+                        }
+                    },
+                    ...Object.keys(areaWalls).map(wallType => getSetWallTypeMenuItem(wallType, callback))
+                ];
+            }
+        },
+        {
+            getLabel() {
+                return 'Right wall...';
+            },
+            getChildren() {
+                const callback = (wallType) => {
+                    updateAreaDefinition({rightWallType: wallType});
+                }
+                return [
+                    {
+                        getLabel: () => 'None',
+                        onSelect() {
+                            updateAreaDefinition({rightWallType: null});
+                        }
+                    },
+                    ...Object.keys(areaWalls).map(wallType => getSetWallTypeMenuItem(wallType, callback))
+                ];
+            }
+        },
+        {
+            getLabel() {
+                return 'Change size...';
+            },
+            getChildren() {
+                return [
+                            -200, -100, -50, -20,
+                            20, 50, 100, 200
+                        ].filter(size => area.width + size >= ADVENTURE_WIDTH).map(size => ({
+                    getLabel() {
+                        return `${area.width + size}`;
+                    },
+                    onSelect() {
+                        updateAreaDefinition({width: area.width + size});
+                    }
+                }));
+            }
+        },
+        ...getSelectedObjectContextMenu(),
+    ];
+}
+
+export function getSelectedObjectContextMenu(): MenuOption[] {
+    const {contextCoords, selectedObject} = editingAreaState;
+    if (!selectedObject
+        || !selectedObject.isPointOver(contextCoords[0], contextCoords[1])
+        || !selectedObject.definition
+    ) {
+        return [];
+    }
+    return [
+        {
+            getLabel() {
+                return 'Flip ' + selectedObject.definition.type;
+            },
+            onSelect() {
+                selectedObject.definition.flipped = !selectedObject.definition.flipped;
+                refreshDefinition(selectedObject);
+            }
+        },
+        {},
+        {
+            getLabel() {
+                return 'Delete ' + selectedObject.definition.type;
+            },
+            onSelect() {
+                deleteObject(selectedObject);
+                editingAreaState.selectedObject = null;
+            }
+        },
+    ]
+}
+
+function deleteObject(object: AreaObject, updateArea: boolean = true) {
+    const areaDefinition: AreaDefinition = areaDefinitions[object.area.key];
+    if (object.area.objects.indexOf(object) >= 0) {
+        if (areaDefinition.objects[object.key] !== object.definition) {
+            console.log('Did not find object definition where expected during delete.');
+            debugger;
+        }
+        delete areaDefinition.objects[object.key];
+    } else {
+        if (areaDefinition.wallDecorations[object.key] !== object.definition) {
+            console.log('Did not find object definition where expected during delete.');
+            debugger;
+        }
+        delete areaDefinition.wallDecorations[object.key];
+    }
+    // Recrusively delete child objects.
+    for (const otherObject of object.area.objects) {
+        if (otherObject.definition.parentKey === object.key) {
+            deleteObject(otherObject, false);
+        }
+    }
+    for (const otherObject of object.area.wallDecorations) {
+        if (otherObject.definition.parentKey === object.key) {
+            deleteObject(otherObject, false);
+        }
+    }
+    // For recursive calls, we only update area for the outer most call.
+    if (updateArea) {
+        applyDefinitionToArea(object.area, areaDefinition);
+    }
+}
+
+export function getAddObjectMenuItem(type: string): MenuOption {
+    if (areaObjectFactories[type].getCreateMenu) {
+        return areaObjectFactories[type].getCreateMenu();
+    }
+    return {
+        getLabel() {
+            return type;
+        },
+        onSelect() {
+            createObjectAtMouse({type});
+        }
+    }
+}
+
+export function getSetAreaTypeMenuItem(type: string): MenuOption {
+    return {
+        getLabel() {
+            return type;
+        },
+        onSelect() {
+            updateAreaDefinition({type});
+        }
+    }
+}
+
+export function getSetWallTypeMenuItem(wallType: string, callback: (string) => void): MenuOption {
+    return {
+        getLabel() {
+            return wallType;
+        },
+        onSelect() {
+            callback(wallType);
+        }
     }
 }
 

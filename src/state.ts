@@ -293,7 +293,7 @@ export function importState(savedState: SavedState) {
             const target = bed.getAreaTarget();
             enterArea(character.hero, {
                 areaKey: bed.area.key,
-                x: (target.x > 160) ? target.x - 30 : target.x + 40,
+                x: (target.x > 160) ? target.x - 40 : target.x + 40,
                 z: target.z
             });
         } else enterArea(character.hero, guildYardEntrance);

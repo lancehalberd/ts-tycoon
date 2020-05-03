@@ -1,12 +1,8 @@
 import { tagElement } from 'app/dom';
-import { editingAreaState } from 'app/development/editArea';
+import { getEditingContextMenu } from 'app/development/editArea';
 import { getState } from 'app/state';
 
-interface MenuOption {
-    getLabel: () => string,
-    onSelect: () => void,
-    getChildren?: () => MenuOption[],
-}
+import { MenuOption } from 'app/types';
 
 interface ContextMenuState {
     contextMenuElement?: HTMLElement,
@@ -17,19 +13,7 @@ export const contextMenuState: ContextMenuState = {
 
 export function getContextMenu() {
     return [
-        {
-            getLabel() {
-                return editingAreaState.isEditing ? 'Stop Editing' : 'Start Editing';
-            },
-            onSelect() {
-                editingAreaState.isEditing = !editingAreaState.isEditing;
-                if (editingAreaState.isEditing ){
-                    editingAreaState.cameraX = getState().selectedCharacter.hero.area.cameraX;
-                } else {
-                    editingAreaState.selectedObject = null;
-                }
-            }
-        }
+        ...getEditingContextMenu(),
     ]
 }
 
@@ -60,11 +44,15 @@ export function hideContextMenu() {
 export function createContextMenuElement(menu: MenuOption[]): HTMLElement {
     const container = tagElement('div', 'contextMenu');
     for (const option of menu) {
-        const optionElement = tagElement('div', 'contextOption', option.getLabel());
+        const label = option.getLabel ? option.getLabel() : ' ';
+        const optionElement = tagElement('div', 'contextOption', label);
         optionElement.onclick = function () {
-            option.onSelect();
-            hideContextMenu();
+            if (option.onSelect) {
+                option.onSelect();
+                hideContextMenu();
+            }
         }
+        // If this gets slow, we could render children only as they are needed.
         if (option.getChildren) {
             const children = option.getChildren();
             if (children && children.length) {

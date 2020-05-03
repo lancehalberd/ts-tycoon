@@ -83,3 +83,9 @@ export interface HUDElement extends ShortRectangle {
     helpMethod?: () => string,
     onClick?: () => void,
 }
+
+export interface MenuOption {
+    getLabel?: () => string,
+    onSelect?: () => void,
+    getChildren?: () => MenuOption[],
+}
