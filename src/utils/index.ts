@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 
-import { Frame, FullRectangle, ShortRectangle } from 'app/types';
+import { Frame, FrameDimensions, FullRectangle, ShortRectangle } from 'app/types';
 
 /**
  * Makes a deep copy of an object. Note that this will not make deep copies of
@@ -143,6 +143,9 @@ export function rectangle(left: number, top: number, width: number, height: numb
 }
 export function r(x: number, y: number, w: number, h: number): ShortRectangle {
     return {x, y, w, h};
+}
+export function d(w: number, h: number): FrameDimensions {
+    return {w, h};
 }
 export function toR(r: FullRectangle) {
     return {x: r.left, y: r.top, w: r.width, h: r.height};

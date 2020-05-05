@@ -8,21 +8,26 @@ import { bodyDiv, titleDiv } from 'app/dom';
 import { requireImage } from 'app/images';
 import { getState } from 'app/state';
 import { activateShrine } from 'app/ui/chooseBlessing';
+import { createAnimation, frameAnimation } from 'app/utils/animations';
 
 import {
     Area, AreaObject, AreaObjectDefinition, AreaObjectTarget, Exit, Frame, Hero,
     LootGenerator, MenuOption, ShortRectangle,
 } from 'app/types';
-const chestImage = requireImage('gfx/treasureChest.png');
-const closedChestFrame:Frame = {image: chestImage, x: 0, y: 0, w: 64, h: 64, d: 32};
-const openChestFrame:Frame = {image: chestImage, x: 64, y: 0, w: 64, h: 64, d: 32};
+const [
+    simpleChestFrame, chestFrame, silverChestFram
+] = createAnimation('gfx2/objects/chestssheet.png',
+    {w: 24, h: 18, content: {x: 3, y: 0, w: 18, h: 18}},
+    {cols: 3, top: 14}
+).frames;
+
 
 export class TreasureChest extends EditableAreaObject {
     name = 'Treasure Chest';
     opened = false;
     loot: LootGenerator[] = [];
     getFrame(): Frame {
-        return this.opened ? openChestFrame : closedChestFrame;
+        return this.opened ? silverChestFram : simpleChestFrame;
     }
     onInteract(hero: Hero) {
         if (this.opened) {

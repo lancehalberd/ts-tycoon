@@ -14,11 +14,11 @@ import {
 const [
     , guildRightDoorEmpty, guildRightDoor, guildRightBoardedDoor
 ] = createAnimation('gfx2/areas/guildbridge.png',
-    frame(0, 0, 39, 148, r(11, 50, 20, 70)), {cols: 4}).frames;
+    {w: 39, h: 148, content: r(11, 50, 20, 70)}, {cols: 4}).frames;
 const [, caveDoorOpen, caveDoorClosed] = createAnimation('gfx2/areas/cavebridge.png',
-    frame(0, 0, 39, 148, r(16, 92, 23, 35)), {cols: 3}).frames;
+    {w: 39, h: 148, content: r(16, 92, 23, 35)}, {cols: 3}).frames;
 const woodBridge = createAnimation('gfx2/areas/meadowbridge.png',
-    frame(0, 0, 39, 148, r(16, 92, 23, 35)), {x: 1, cols: 1});
+    {w: 39, h: 148, content: r(16, 92, 23, 35)}, {x: 1, cols: 1});
 
 export class AreaDoor extends EditableAreaObject {
     static animations = {

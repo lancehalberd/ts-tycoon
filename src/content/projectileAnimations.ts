@@ -1,17 +1,17 @@
 import { createCanvas } from 'app/dom';
 import { getTintedImage, images, makeFrames, prepareTintedImage, requireImage} from 'app/images';
 import { createAnimation } from 'app/utils/animations';
-import { r } from 'app/utils/index';
+import { d } from 'app/utils/index';
 
 
 const projectileCanvas = createCanvas(96, 96);
 
 export const projectileAnimations = {
-    fireball: createAnimation('gfx/effects/projectiles.png', r(0, 0, 20, 20), {cols: 3, xSpace: 12}),
-    wandHealing: createAnimation(projectileCanvas, r(0, 0, 20, 20), {cols: 4, xSpace: 12}),
-    throwingAttack: createAnimation(projectileCanvas, r(0, 0, 20, 20), {top: 64}),
-    wandAttack: createAnimation(projectileCanvas, r(0, 0, 20, 20), {cols: 4, xSpace: 12, top: 32}),
-    bowAttack: createAnimation(projectileCanvas, r(0, 0, 20, 20), {left: 32, top: 64}),
+    fireball: createAnimation('gfx/effects/projectiles.png', d(20, 20), {cols: 3, xSpace: 12}),
+    wandHealing: createAnimation(projectileCanvas, d(20, 20), {cols: 4, xSpace: 12}),
+    throwingAttack: createAnimation(projectileCanvas, d(20, 20), {top: 64}),
+    wandAttack: createAnimation(projectileCanvas, d(20, 20), {cols: 4, xSpace: 12, top: 32}),
+    bowAttack: createAnimation(projectileCanvas, d(20, 20), {left: 32, top: 64}),
 };
 
 

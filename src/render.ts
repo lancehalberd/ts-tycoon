@@ -103,7 +103,7 @@ export function render() {
    // attackAnimationTest();
 }
 /*
-const slashAnimation = createAnimation('gfx2/slash.png', {x: 0, y: 0, w: 64, h: 48}, {rows: 5, frameMap: [1, 2, 3, 4, 1]});
+const slashAnimation = createAnimation('gfx2/slash.png', {w: 64, h: 48}, {rows: 5, frameMap: [1, 2, 3, 4, 1]});
 function attackAnimationTest() {
     time += FRAME_LENGTH;
     const frameDuration = Math.round(1000 / fps / FRAME_LENGTH);

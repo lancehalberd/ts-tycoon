@@ -81,7 +81,7 @@ export const areaDefinitions: {[key in string]: AreaDefinition} = {
                 "flipped": true
             },
             "bookShelf": {
-                "type": "decoration",
+                "type": "obstacle",
                 "animationGroup": "guildFurniture",
                 "animationKey": "bookShelf",
                 "xAlign": "right",
@@ -89,7 +89,6 @@ export const areaDefinitions: {[key in string]: AreaDefinition} = {
                 "y": 0,
                 "zAlign": "back",
                 "z": 0,
-                "isSolid": true,
             },
             "frontDoor": {
                 "type": "door",
@@ -104,7 +103,7 @@ export const areaDefinitions: {[key in string]: AreaDefinition} = {
                 "type": "door",
                 "x": -8,
                 "xAlign": "right",
-                "exitKey": "guildHall:foyerDoor",
+                "exitKey": "guildFrontHall:foyerDoor",
                 "animation": "openDoor",
                 "y": 0,
                 "z": -7
@@ -255,7 +254,7 @@ export const areaDefinitions: {[key in string]: AreaDefinition} = {
         "isGuildArea": true,
         "seed": 2
     },
-    "guildHall": {
+    "guildFrontHall": {
         "type": "oldGuild",
         "width": 600,
         "leftWallType": "guildWall",
@@ -311,7 +310,7 @@ export const areaDefinitions: {[key in string]: AreaDefinition} = {
                 "x": -8,
                 "xAlign": "right",
                 // This is meant to go to guildBasement
-                "exitKey": "guildHall:foyerDoor",
+                "exitKey": "guildFrontHall:basementDoor",
                 "animation": "openDoor",
                 "y": 0,
                 "z": -7
@@ -328,7 +327,7 @@ export const areaDefinitions: {[key in string]: AreaDefinition} = {
     }
 };
 
-// Guild Hall is meant to have 3 exits on the back wall: door to guest room, door to kitchen, stairs to basementDoor
+// guildFrontHall is meant to have 3 exits on the back wall: door to guest room, door to kitchen, stairs to basementDoor
 // It is also meant to have stairs to the upstairs off of the right wall.
 // Obviously we can arrange these however we want
 

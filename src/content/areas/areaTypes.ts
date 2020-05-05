@@ -3,7 +3,7 @@ import {
     initializeActorForAdventure,
 } from 'app/character';
 import {
-    areaWalls, AreaDecoration, AreaDoor,
+    areaWalls, AreaDecoration, AreaDoor, AreaObstacle,
     SimpleMonsterSpawner, SkillShrine, TreasureChest,
 } from 'app/content/areas';
 import { makeMonster } from 'app/content/monsters';
@@ -188,28 +188,25 @@ export const backgrounds = {
         {'source': bgSources.houseTiles, 'spacing': 2},
     ],
 };*/
+
 const FLOOR_TILE_SIZE = 32;
 const BG_TILE_WIDTH = 256;
 const BG_TILE_HEIGHT = BACKGROUND_HEIGHT;
-const meadowFrames = createAnimation('gfx2/areas/meadowTiles.png', r(0, 0, 32, 32), {cols: 6}).frames;
-const meadowSky = createAnimation('gfx2/areas/meadowSky.png', r(0, 0, 320, BG_TILE_HEIGHT)).frames[0];
+const meadowFrames = createAnimation('gfx2/areas/meadowTiles.png', {w: 32, h: 32}, {cols: 6}).frames;
+const meadowSky = createAnimation('gfx2/areas/meadowSky.png', {w: 320, h: BG_TILE_HEIGHT}).frames[0];
 const meadowBackFrontFrames = createAnimation('gfx2/areas/meadowBackFront.png',
-    r(0, 0, BG_TILE_WIDTH, 86), {cols: 2}).frames;
+    {w: BG_TILE_WIDTH, h: 86}, {cols: 2}).frames;
 const meadowBackMidFrames = createAnimation('gfx2/areas/meadowBackMid.png',
-    r(0, 0, 128, 84), {cols: 3}).frames;
+    {w: 128, h: 84}, {cols: 3}).frames;
 const meadowThingFrames = createAnimation('gfx2/areas/meadowThings.png',
-    r(0, 0, 32, 32), {cols: 6}).frames;
+    {w: 32, h: 32}, {cols: 6}).frames;
 
 const [meadowRiver, meadowBridge] = createAnimation('gfx2/areas/meadowbridge.png',
     frame(0, 0, 39, 148, r(16, 92, 23, 35)), {cols: 2}).frames;
 const meadowClouds = createAnimation('gfx2/areas/meadowClouds.png',
     frame(0, 0, 128, 84), {cols: 3}).frames;
 
-const bushAnimation = createAnimation('gfx2/areas/meadowBush.png', r(0, 0, 32, 32), {cols: 4});
-
-export class AreaObstacle extends AreaDecoration {
-    isSolid: boolean = true;
-}
+const bushAnimation = createAnimation('gfx2/areas/meadowBush.png', {w: 32, h: 32}, {cols: 4});
 
 const FieldArea: AreaType = {
     addObjects(area, {monsters = [], exits, loot, ability}) {
@@ -338,13 +335,13 @@ const FieldArea: AreaType = {
 };
 
 
-const caveFrames = createAnimation('gfx2/areas/cavetiles.png', r(0, 0, 32, 32), {cols: 6}).frames;
+const caveFrames = createAnimation('gfx2/areas/cavetiles.png', {w: 32, h: 32}, {cols: 6}).frames;
 const caveBackFrontFrames = createAnimation('gfx2/areas/caveforeground.png',
-    r(0, 0, 128, 86), {cols: 2}).frames;
+    {w: 128, h: 86}, {cols: 2}).frames;
 const [stoneWallMid, stoneWallLeft, stoneWallRight, ...caveBackFrames] = createAnimation('gfx2/areas/cavebackground.png',
-    r(0, 0, 128, 86), {cols: 6}).frames;
+    {w: 128, h: 86}, {cols: 6}).frames;
 const caveThingFrames = createAnimation('gfx2/areas/cavethings.png',
-    r(0, 0, 32, 32), {cols: 2}).frames;
+    {w: 32, h: 32}, {cols: 2}).frames;
 
 const [caveWall, caveDoorOpen, caveDoorClosed] = createAnimation('gfx2/areas/cavebridge.png',
     frame(0, 0, 39, 148, r(16, 92, 23, 35)), {cols: 3}).frames;
@@ -441,9 +438,9 @@ const CaveArea: AreaType = {
     }
 };
 
-const guildFrames = createAnimation('gfx2/areas/Guild tiles2.png', r(0, 0, FLOOR_TILE_SIZE, FLOOR_TILE_SIZE), {rows: 3}).frames;
+const guildFrames = createAnimation('gfx2/areas/Guild tiles2.png', {w: FLOOR_TILE_SIZE, h: FLOOR_TILE_SIZE}, {rows: 3}).frames;
 const guildBackFrontFrames = createAnimation('gfx2/areas/guildtiles.png',
-    r(0, 0, 128, BG_TILE_HEIGHT), {cols: 2}).frames;
+    {w: 128, h: BG_TILE_HEIGHT}, {cols: 2}).frames;
 const [guildRightWall, guildRightDoorEmpty, guildRightDoor, guildRightBoardedDoor] = createAnimation('gfx2/areas/guildbridge.png',
     frame(0, 0, 39, 148, r(11, 50, 20, 70)), {cols: 4}).frames;
 
@@ -529,7 +526,6 @@ function addChest(area: Area, loot: LootGenerator[]) {
     chest.loot = loot;
     chest.definition = {
         type: "treasureChest",
-        scale: 0.5,
         x: area.width + SRandom.addSeed(area.seed).range(0, RANGE_UNIT * 4),
         y: 0,
         z: SRandom.addSeed(area.seed).range(MIN_Z + 16, MIN_Z + 32),

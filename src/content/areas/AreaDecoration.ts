@@ -11,17 +11,16 @@ import {
     MenuOption, ShortRectangle,
 } from 'app/types';
 
-const [
-    emptyShelf, bookShelf, mixedShelf, itemShelf
-] = createAnimation('gfx2/areas/bookccasesheet.png', {x: 0, y: 0, w: 34, h: 64, d: 28}, {cols: 4}).frames;
-
-
-type AnimationGroup = keyof typeof AreaDecoration.animations;
 export interface AreaDecorationDefinition extends BaseAreaObjectDefinition {
-    animationGroup: AnimationGroup,
+    animationGroup: string,
     animationKey: string,
     isSolid?: boolean,
 }
+
+type AnimationTree = {
+    [key in string]: {[key in string]: FrameAnimation}
+}
+
 
 export class AreaDecoration extends EditableAreaObject {
     animation: FrameAnimation;
@@ -35,21 +34,16 @@ export class AreaDecoration extends EditableAreaObject {
         this._areaTarget = null;
         this.definition = definition;
         this.animation = AreaDecoration.animations[definition.animationGroup][definition.animationKey];
-        this.isSolid = !!definition.isSolid;
+        // Default to false.
+        this.isSolid = definition.isSolid === true;
         return this;
     }
 
-    static animations = {
+    static animations: AnimationTree = {
         guildWall: {
-            niche: createAnimation('gfx2/areas/niche.png', {x: 0, y: 0, w: 25, h: 36, d: 0}),
-            candle: createAnimation('gfx2/areas/candlesheet.png', {x: 0, y: 0, w: 9, h: 14, d: 0}),
-            candleFlame: createAnimation('gfx2/areas/candlesheet.png', {x: 0, y: 0, w: 9, h: 14, d: 0}, {x: 1, cols: 3}),
-        },
-        guildFurniture: {
-            emptyShelf: frameAnimation(emptyShelf),
-            bookShelf: frameAnimation(bookShelf),
-            mixedShelf: frameAnimation(mixedShelf),
-            itemShelf: frameAnimation(itemShelf),
+            niche: createAnimation('gfx2/objects/niche.png', {w: 25, h: 36, d: 0}),
+            candle: createAnimation('gfx2/objects/candlesheet.png', {w: 9, h: 14, d: 0}),
+            candleFlame: createAnimation('gfx2/objects/candlesheet.png', {w: 9, h: 14, d: 0}, {x: 1, cols: 3}),
         },
     };
 
@@ -57,23 +51,80 @@ export class AreaDecoration extends EditableAreaObject {
         return {
             getLabel: () => 'Decoration',
             getChildren() {
-                return Object.keys(AreaDecoration.animations).map((animationGroup: AnimationGroup) => {
-                    return {
-                        getLabel: () => animationGroup,
-                        getChildren() {
-                            return Object.keys(AreaDecoration.animations[animationGroup]).map(animationKey => {
-                                return {
-                                    getLabel: () => animationKey,
-                                    onSelect() {
-                                          createObjectAtMouse({type: 'decoration', animationGroup, animationKey});
-                                    }
-                                }
-                            });
-                        }
-                    }
+                return chooseAnimationMenu(AreaDecoration.animations, (animationGroup: string, animationKey: string) => {
+                    createObjectAtMouse({type: 'decoration', animationGroup, animationKey});
                 })
             }
         }
     }
 }
 areaObjectFactories.decoration = AreaDecoration;
+
+function chooseAnimationMenu(
+    animations: AnimationTree,
+    callback: (animationGroup: string, animationKey: string) => void
+): MenuOption[] {
+    return Object.keys(animations).map((animationGroup: string) => {
+        return {
+            getLabel: () => animationGroup,
+            getChildren() {
+                return Object.keys(animations[animationGroup]).map(animationKey => {
+                    return {
+                        getLabel: () => animationKey,
+                        onSelect() {
+                              callback(animationGroup, animationKey);
+                        }
+                    }
+                });
+            }
+        }
+    })
+}
+
+const [
+    emptyShelf, bookShelf, mixedShelf, itemShelf
+] = createAnimation('gfx2/objects/bookccasesheet.png', {w: 34, h: 64, d: 28}, {cols: 4}).frames;
+
+const [
+    simpleChestFrame, chestFrame, silverChestFram
+] = createAnimation('gfx2/objects/chestssheet.png',
+    {w: 24, h: 18, content: {x: 3, y: 0, w: 18, h: 18}},
+    {cols: 3, top: 14}
+).frames;
+
+export class AreaObstacle extends AreaDecoration {
+    isSolid = true;
+
+    applyDefinition(definition: AreaDecorationDefinition) {
+        this._areaTarget = null;
+        this.definition = definition;
+        this.animation = AreaObstacle.animations[definition.animationGroup][definition.animationKey];
+        // Default to solid.
+        this.isSolid = definition.isSolid !== false;
+        return this;
+    }
+
+    static getCreateMenu(): MenuOption {
+        return {
+            getLabel: () => 'Obstacle',
+            getChildren() {
+                return chooseAnimationMenu(AreaObstacle.animations, (animationGroup: string, animationKey: string) => {
+                    createObjectAtMouse({type: 'obstacle', animationGroup, animationKey});
+                })
+            }
+        }
+    }
+
+    static animations: AnimationTree = {
+        guildFurniture: {
+            emptyShelf: frameAnimation(emptyShelf),
+            bookShelf: frameAnimation(bookShelf),
+            mixedShelf: frameAnimation(mixedShelf),
+            itemShelf: frameAnimation(itemShelf),
+            simpleChest: frameAnimation(simpleChestFrame),
+            chest: frameAnimation(chestFrame),
+            silverChest: frameAnimation(silverChestFram),
+        },
+    };
+}
+areaObjectFactories.obstacle = AreaObstacle;

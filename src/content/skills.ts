@@ -4,7 +4,7 @@ import { projectileAnimations } from 'app/content/projectileAnimations';
 import { drawOnGround } from 'app/drawArea';
 import { GROUND_Y } from 'app/gameConstants';
 import { drawTintedImage, requireImage } from 'app/images';
-import { r } from 'app/utils/index';
+import { d, r } from 'app/utils/index';
 
 import { ActionData, Effect } from 'app/types/abilities';
 import { Bonuses } from 'app/types/bonuses';
@@ -128,7 +128,7 @@ export const skills: {[key: string]: ActionData} = {
                               {'*damage': 3, '+cooldown': 30, '$alwaysHits': 'Never misses', '$undodgeable': 'Cannot be dodged',
                                         '+distance': 256, '$domino': 'Knocks target away possibly damaging other enemies.'}),
     'hook':  attackAction('attack',
-        {'icon': jobIcons.corsair, speed: 50, size: 50, animation: createAnimation('gfx/effects/hook.png', r(0, 0, 32, 32)), tags: ['ranged']},
+        {'icon': jobIcons.corsair, speed: 50, size: 50, animation: createAnimation('gfx/effects/hook.png', d(32, 32)), tags: ['ranged']},
         {'+cooldown': 10, '+range': 10, '+dragDamage': 0, '+dragStun': 0, '+knockbackRotation': -60, '+rangeDamage': 0, '$alwaysHits': 'Never misses', '$pullsTarget': 'Pulls target'},
         'Throw a hook to damage and pull enemies closer.'),
 

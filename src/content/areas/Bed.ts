@@ -10,7 +10,7 @@ import {
     Area, AreaObject, AreaObjectDefinition, AreaObjectTarget, Exit, Frame, Hero,
     ShortRectangle,
 } from 'app/types';
-const bedFrame:Frame = {image: requireImage('gfx2/areas/bed2.png'), x: 0, y: 0, w: 52, h: 38, d: 40};
+const bedFrame:Frame = {image: requireImage('gfx2/objects/bed2.png'), x: 0, y: 0, w: 52, h: 38, d: 40};
 
 export class Bed extends EditableAreaObject {
     static instances: Bed[];

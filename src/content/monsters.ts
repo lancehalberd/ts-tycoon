@@ -16,8 +16,9 @@ import { ifdefor } from 'app/utils/index';
 import Random from 'app/utils/Random';
 
 import {
-    Ability, Actor, ActorSource, ActorStats, Affix, AffixData, FrameAnimation, Area,
-    Bonuses, BonusSource, Equipment, EquipmentSlot, FrameRectangle,
+    Ability, Actor, ActorSource, ActorStats, Affix, AffixData,
+    Area, Bonuses, BonusSource, Equipment, EquipmentSlot,
+    FrameAnimation, FrameDimensions, FrameRectangle,
     Monster, MonsterData,
 } from 'app/types';
 
@@ -303,10 +304,10 @@ function getMonsterBonuses(monster: Monster): Bonuses {
     };
 }
 const monsterShadow = createAnimation(
-    requireImage('gfx2/enemies/monstershadow.png'), {x: 0, y: 0, w: 36, h: 36, content: {x: 14, y: 33, w: 19, h: 3}},
+    requireImage('gfx2/enemies/monstershadow.png'), {w: 36, h: 36, content: {x: 14, y: 33, w: 19, h: 3}},
 );
 const airMonsterShadow = createAnimation(
-    requireImage('gfx2/enemies/monsterflyshadow.png'), {x: 0, y: 0, w: 36, h: 36, content: {x: 12, y: 33, w: 12, h: 3}},
+    requireImage('gfx2/enemies/monsterflyshadow.png'), {w: 36, h: 36, content: {x: 12, y: 33, w: 12, h: 3}},
 );
 function completeMonsterSource(source: Partial<ActorSource> & {walkAnimation: FrameAnimation}, shadowAnimation: FrameAnimation = monsterShadow): ActorSource {
     const attackPreparationAnimation = source.attackPreparationAnimation || source.walkAnimation;
@@ -326,23 +327,23 @@ function completeMonsterSource(source: Partial<ActorSource> & {walkAnimation: Fr
         shadowAnimation,
     };
 }
-function createMonsterSource(image: HTMLImageElement | HTMLCanvasElement, rectangle: FrameRectangle, shadowAnimation: FrameAnimation = monsterShadow ): ActorSource {
-    const hurtAnimation = createAnimation(image, rectangle, {cols: 7, frameMap: [6]});
+function createMonsterSource(image: HTMLImageElement | HTMLCanvasElement, dimensions: FrameDimensions, shadowAnimation: FrameAnimation = monsterShadow ): ActorSource {
+    const hurtAnimation = createAnimation(image, dimensions, {cols: 7, frameMap: [6]});
     return {
-        idleAnimation: createAnimation(image, rectangle, {cols: 7, frameMap: [0]}),
-        walkAnimation: createAnimation(image, rectangle, {cols: 7, frameMap: [0, 1, 2, 1]}),
-        attackPreparationAnimation: createAnimation(image, rectangle, {cols: 7, frameMap: [3, 4]}),
-        attackRecoveryAnimation: createAnimation(image, rectangle, {cols: 7, frameMap: [5]}),
-        spellPreparationAnimation: createAnimation(image, rectangle, {cols: 7, frameMap: [3, 4]}),
-        spellRecoveryAnimation: createAnimation(image, rectangle, {cols: 7, frameMap: [5]}),
+        idleAnimation: createAnimation(image, dimensions, {cols: 7, frameMap: [0]}),
+        walkAnimation: createAnimation(image, dimensions, {cols: 7, frameMap: [0, 1, 2, 1]}),
+        attackPreparationAnimation: createAnimation(image, dimensions, {cols: 7, frameMap: [3, 4]}),
+        attackRecoveryAnimation: createAnimation(image, dimensions, {cols: 7, frameMap: [5]}),
+        spellPreparationAnimation: createAnimation(image, dimensions, {cols: 7, frameMap: [3, 4]}),
+        spellRecoveryAnimation: createAnimation(image, dimensions, {cols: 7, frameMap: [5]}),
         deathAnimation: hurtAnimation,
         hurtAnimation,
         shadowAnimation,
     };
 }
-function createSkeletonMonsterSource(image: HTMLImageElement | HTMLCanvasElement, rectangle: FrameRectangle ): ActorSource {
-    const actorSource = createMonsterSource(image, rectangle);
-    actorSource.walkAnimation = createAnimation(image, rectangle, {cols: 7, frameMap: [0, 1, 0, 2]});
+function createSkeletonMonsterSource(image: HTMLImageElement | HTMLCanvasElement, dimensions: FrameDimensions ): ActorSource {
+    const actorSource = createMonsterSource(image, dimensions);
+    actorSource.walkAnimation = createAnimation(image, dimensions, {cols: 7, frameMap: [0, 1, 0, 2]});
     return actorSource;
 }
 function createTintedImage(image: HTMLImageElement | HTMLCanvasElement, rectangle: FrameRectangle, color: string) {
@@ -356,7 +357,7 @@ function createTintedImage(image: HTMLImageElement | HTMLCanvasElement, rectangl
     return canvas;
 }
 const frameRectangle = {x: 0, y: 0, w: 36, h: 36};
-const skeletonRectangle = {x: 0, y: 0, w: 36, h: 36, content: {x: 6, y: 0, w: 12, h: 36}};
+const skeletonDimensions: FrameDimensions = {w: 36, h: 36, content: {x: 6, y: 0, w: 12, h: 36}};
 const gremlinSheet = requireImage('gfx2/enemies/gremlinsheet.png');
 const skeletonSheet = requireImage('gfx2/enemies/skeletonunarmedsheet.png');
 const skeletonDeathSheet = requireImage('gfx2/enemies/skeletondeathsheet.png');
@@ -405,85 +406,72 @@ function addSkeletonExplosion(skeleton: Monster) {
 
 export function initializeMonsters() {
     const caterpillarSource = completeMonsterSource({
-        walkAnimation: createAnimation(
-            requireImage('gfx/caterpillar.png'), {x: 0, y: 0, w: 48, h: 64, content: {x: 0, y: 40, w: 64, h: 24}},
+        walkAnimation: createAnimation('gfx/caterpillar.png', {w: 48, h: 64, content: {x: 0, y: 40, w: 64, h: 24}},
             {cols: 4},
         )
     });
     const gnomeSource = completeMonsterSource({
-        walkAnimation: createAnimation(
-            requireImage('gfx/gnome.png'), {x: 0, y: 0, w: 32, h: 64, content: {x: 0, y: 26, w: 32, h: 38}},
+        walkAnimation: createAnimation('gfx/gnome.png', {w: 32, h: 64, content: {x: 0, y: 26, w: 32, h: 38}},
             {cols: 4},
         ),
         flipped: true
     });
     const butterflySource = completeMonsterSource({
-        walkAnimation: createAnimation(
-            requireImage('gfx/yellowButterfly.png'), {x: 0, y: 0, w: 64, h: 64, content: {x: 0, y: 0, w: 48, h: 64}},
+        walkAnimation: createAnimation('gfx/yellowButterfly.png', {w: 64, h: 64, content: {x: 0, y: 0, w: 48, h: 64}},
             {cols: 7, rows: 2, frameMap: [1, 2, 3, 4, 5, 6, 4, 2, 0]},
         ),
-        attackPreparationAnimation: createAnimation(
-            requireImage('gfx/yellowButterfly.png'), {x: 0, y: 0, w: 64, h: 64, content: {x: 0, y: 0, w: 48, h: 64}},
+        attackPreparationAnimation: createAnimation('gfx/yellowButterfly.png', {w: 64, h: 64, content: {x: 0, y: 0, w: 48, h: 64}},
             {cols: 7, rows: 2, frameMap: [7, 10, 11]},
         ),
-        deathAnimation: createAnimation(
-            requireImage('gfx/yellowButterfly.png'), {x: 0, y: 0, w: 64, h: 64, content: {x: 0, y: 0, w: 48, h: 64}},
+        deathAnimation: createAnimation('gfx/yellowButterfly.png', {w: 64, h: 64, content: {x: 0, y: 0, w: 48, h: 64}},
             {cols: 7, rows: 2, frameMap: [7, 8, 9, 9]},
         )
     }, airMonsterShadow);
     const monarchSource = completeMonsterSource({
-        walkAnimation: createAnimation(
-            requireImage('gfx/monarchButterfly.png'), {x: 0, y: 0, w: 64, h: 64, content: {x: 0, y: 0, w: 48, h: 64}},
+        walkAnimation: createAnimation('gfx/monarchButterfly.png', {w: 64, h: 64, content: {x: 0, y: 0, w: 48, h: 64}},
             {cols: 7, rows: 2, frameMap: [1, 2, 3, 4, 5, 6, 4, 2, 0]},
         ),
         attackPreparationAnimation: createAnimation(
-            requireImage('gfx/monarchButterfly.png'), {x: 0, y: 0, w: 64, h: 64, content: {x: 0, y: 0, w: 48, h: 64}},
+            'gfx/monarchButterfly.png', {w: 64, h: 64, content: {x: 0, y: 0, w: 48, h: 64}},
             {cols: 7, rows: 2, frameMap: [7, 10, 11]},
         ),
         deathAnimation: createAnimation(
-            requireImage('gfx/monarchButterfly.png'), {x: 0, y: 0, w: 64, h: 64, content: {x: 0, y: 0, w: 48, h: 64}},
+            'gfx/monarchButterfly.png', {w: 64, h: 64, content: {x: 0, y: 0, w: 48, h: 64}},
             {cols: 7, rows: 2, frameMap: [7, 8, 9, 9]},
         ),
     }, airMonsterShadow);
     const turtleSource = completeMonsterSource({
-        walkAnimation: createAnimation(
-            requireImage('gfx/turtle.png'), {x: 0, y: 0, w: 64, h: 64},
+        walkAnimation: createAnimation('gfx/turtle.png', {w: 64, h: 64},
             {cols: 5, rows: 2, frameMap: [0, 1, 2, 3]},
         ),
-        attackPreparationAnimation: createAnimation(
-            requireImage('gfx/turtle.png'), {x: 0, y: 0, w: 64, h: 64},
+        attackPreparationAnimation: createAnimation('gfx/turtle.png', {w: 64, h: 64},
             {cols: 5, rows: 2, frameMap: [5, 6]},
         ),
-        deathAnimation: createAnimation(
-            requireImage('gfx/turtle.png'), {x: 0, y: 0, w: 64, h: 64},
+        deathAnimation: createAnimation('gfx/turtle.png', {w: 64, h: 64},
             {cols: 5, rows: 2, frameMap: [5, 7, 8, 9]},
         ),
     });
     const skeletonGiantSource = completeMonsterSource({
-        walkAnimation: createAnimation(
-            requireImage('gfx/skeletonGiant.png'), {x: 0, y: 0, w: 48, h: 64},
+        walkAnimation: createAnimation('gfx/skeletonGiant.png', {w: 48, h: 64},
             {cols: 7},
         ),
     });
     const dragonSource = completeMonsterSource({
-        walkAnimation: createAnimation(
-            requireImage('gfx/dragon.png'), {x: 0, y: 0, w: 64, h: 64, content: {x: 0, y: 0, w: 48, h: 64}},
+        walkAnimation: createAnimation('gfx/dragon.png', {w: 64, h: 64, content: {x: 0, y: 0, w: 48, h: 64}},
             {cols: 7, rows: 2, frameMap: [0, 1, 2, 3]},
         ),
-        attackPreparationAnimation: createAnimation(
-            requireImage('gfx/dragon.png'), {x: 0, y: 0, w: 64, h: 64, content: {x: 0, y: 0, w: 48, h: 64}},
+        attackPreparationAnimation: createAnimation('gfx/dragon.png', {w: 64, h: 64, content: {x: 0, y: 0, w: 48, h: 64}},
             {cols: 7, rows: 2, frameMap: [4, 5, 6]},
         ),
-        deathAnimation: createAnimation(
-            requireImage('gfx/dragon.png'), {x: 0, y: 0, w: 64, h: 64, content: {x: 0, y: 0, w: 48, h: 64}},
+        deathAnimation: createAnimation('gfx/dragon.png', {w: 64, h: 64, content: {x: 0, y: 0, w: 48, h: 64}},
             {cols: 7, rows: 2, frameMap: [7, 8, 9]},
         ),
     });
     // Missing y: 30 to make this monster "flying" maybe set it on the actor itself?
-    const batRectangle = {x: 0, y: 0, w: 36, h: 36, content: {x: 12, y: 0, w: 12, h: 36}};
-    const batSource = createMonsterSource(requireImage('gfx2/enemies/batsheet.png'), batRectangle, airMonsterShadow);
+    const batDimensions = {w: 36, h: 36, content: {x: 12, y: 0, w: 12, h: 36}};
+    const batSource = createMonsterSource(requireImage('gfx2/enemies/batsheet.png'), batDimensions, airMonsterShadow);
     const plainSkeletonSheet = createTintedImage(skeletonSheet, {x: 0, y: 0, w: 252, h: 36}, 'white');
-    const skeletonSource = createSkeletonMonsterSource(plainSkeletonSheet, skeletonRectangle);
+    const skeletonSource = createSkeletonMonsterSource(plainSkeletonSheet, skeletonDimensions);
     const plainSkeletonDeathSheet = createTintedImage(skeletonDeathSheet, {x: 0, y: 0, w: 252, h: 36}, 'white');
     // TODO: Add content rectangles to these so we can make them spin at some point.
     plainSkeletonDeathParts = [
@@ -496,35 +484,32 @@ export function initializeMonsters() {
         createAnimation(plainSkeletonDeathSheet, {...frameRectangle, content: {x: 12, y: 25, w: 10, h: 7}}, {x: 6, cols: 1}),
     ];
 
-    const skeletonSwordSource = createMonsterSource(requireImage('gfx2/enemies/skeletonswordsheet.png'), skeletonRectangle);
+    const skeletonSwordSource = createMonsterSource(requireImage('gfx2/enemies/skeletonswordsheet.png'), skeletonDimensions);
     const gremlinRectangle = {x: 0, y: 0, w: 36, h: 36, content: {x: 0, y: 20, w: 21, h: 16}};
     const orangeGremlinSheet = createTintedImage(gremlinSheet, {x: 0, y: 0, w: 252, h: 36}, 'orange');
     const gremlinSource = createMonsterSource(orangeGremlinSheet, gremlinRectangle);
     const spiderSource = completeMonsterSource({
         walkAnimation: createAnimation(
-            requireImage('gfx/spider.png'), {x: 0, y: 0, w: 48, h: 48, content: {x: 0, y: 10, w: 48, h: 38}},
+            requireImage('gfx/spider.png'), {w: 48, h: 48, content: {x: 0, y: 10, w: 48, h: 38}},
             {cols: 10, rows: 2, frameMap: [4, 5, 6, 7, 8, 9]},
         ),
         attackPreparationAnimation: createAnimation(
-            requireImage('gfx/spider.png'), {x: 0, y: 0, w: 48, h: 48, content: {x: 0, y: 10, w: 48, h: 38}},
+            requireImage('gfx/spider.png'), {w: 48, h: 48, content: {x: 0, y: 10, w: 48, h: 38}},
             {cols: 10, rows: 2, frameMap: [0, 1, 2, 3]},
         ),
         deathAnimation: createAnimation(
-            requireImage('gfx/spider.png'), {x: 0, y: 0, w: 48, h: 48, content: {x: 0, y: 10, w: 48, h: 38}},
+            requireImage('gfx/spider.png'), {w: 48, h: 48, content: {x: 0, y: 10, w: 48, h: 38}},
             {cols: 10, rows: 2, frameMap: [10, 11, 12, 13]},
         ),
     });
     const wolfSource = completeMonsterSource({
-        walkAnimation: createAnimation(
-            requireImage('gfx/wolf.png'), {x: 0, y: 0, w: 64, h: 32},
+        walkAnimation: createAnimation('gfx/wolf.png', {w: 64, h: 32},
             {cols: 7, rows: 2, frameMap:[0, 1, 2, 3]},
         ),
-        attackPreparationAnimation: createAnimation(
-            requireImage('gfx/wolf.png'), {x: 0, y: 0, w: 64, h: 32},
+        attackPreparationAnimation: createAnimation('gfx/wolf.png', {w: 64, h: 32},
             {cols: 7, rows: 2, frameMap: [6, 4, 5, 0]},
         ),
-        deathAnimation: createAnimation(
-            requireImage('gfx/wolf.png'), {x: 0, y: 0, w: 64, h: 32},
+        deathAnimation: createAnimation('gfx/wolf.png', {w: 64, h: 32},
             {cols: 7, rows: 2, frameMap: [0, 7, 8, 9]},
         ),
     });

@@ -1,6 +1,6 @@
 import { FRAME_LENGTH } from 'app/gameConstants';
 import { requireImage } from 'app/images';
-import { Frame, ShortRectangle } from 'app/types';
+import { Frame, FrameDimensions, FrameRectangle, ShortRectangle } from 'app/types';
 
 interface CreateAnimationOptions {
     x?: number, y?: number,
@@ -25,7 +25,7 @@ export type FrameAnimation = {
 export function frame(
     x: number, y: number, w: number, h: number,
     content: ShortRectangle = null
-): ShortRectangle & {content?: ShortRectangle} {
+): FrameRectangle {
     return {x, y, w, h, content};
 }
 
@@ -36,7 +36,7 @@ export function frameAnimation(frame: Frame): FrameAnimation {
 
 export function createAnimation(
     source: string | HTMLImageElement | HTMLCanvasElement,
-    rectangle: ShortRectangle & {content?: ShortRectangle},
+    dimensions: FrameDimensions,
     {x = 0, y = 0, rows = 1, cols = 1, xSpace = 0, top = 0, left = 0, duration = 8, frameMap = null}: CreateAnimationOptions = {},
     props: ExtraAnimationProperties = {},
 ): FrameAnimation {
@@ -50,9 +50,9 @@ export function createAnimation(
     for (let row = 0; row < rows; row++) {
         for (let col = 0; col < cols; col++) {
             frames[row * cols + col] = {
-                ...rectangle,
-                x: left + (rectangle.w + xSpace) * (x + col),
-                y: top + rectangle.h * (y + row),
+                ...dimensions,
+                x: left + (dimensions.w + xSpace) * (x + col),
+                y: top + dimensions.h * (y + row),
                 image
             };
         }

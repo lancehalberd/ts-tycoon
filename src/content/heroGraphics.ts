@@ -258,7 +258,7 @@ export function updateHeroGraphics(hero: Hero) {
         // This should apply the color, but it isn't a tintable graphic yet.
         drawFrame(context, {image: bandanaSheet, ...characterRectangle}, characterRectangle);
     }
-    const heroFrame = {x: 0, y: 0, w: 64, h: 48, content: {x: 20, y: 16, w: 16, h: 31}};
+    const heroFrame = {w: 64, h: 48, content: {x: 20, y: 16, w: 16, h: 31}};
     if (weapon && weapon.base.type === 'bow') {
         // Bows have different attack animation frames than other weapons
         hero.source.attackPreparationAnimation = createAnimation(

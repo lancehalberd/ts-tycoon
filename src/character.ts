@@ -198,7 +198,7 @@ export function newCharacter(job: Job): Character {
     return character;
 }
 const heroShadow = createAnimation(
-    requireImage('gfx2/character/c1shadow.png'), {x: 0, y: 0, w: 64, h: 48, content: {x: 17, y: 44, w: 20, h: 4}},
+    requireImage('gfx2/character/c1shadow.png'), {w: 64, h: 48, content: {x: 17, y: 44, w: 20, h: 4}},
 );
 export function makeAdventurerFromData({
         jobKey,
@@ -209,7 +209,7 @@ export function makeAdventurerFromData({
     const personCanvas = createCanvas(personFrames * 96, 64);
     const personContext = personCanvas.getContext("2d");
     personContext.imageSmoothingEnabled = false;
-    const heroFrame = {x: 0, y: 0, w: 64, h: 48, content: {x: 20, y: 16, w: 16, h: 31}};
+    const heroFrame = {w: 64, h: 48, content: {x: 20, y: 16, w: 16, h: 31}};
     const hero: Hero = {
         area: null,
         targetType: 'actor',

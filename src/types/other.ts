@@ -31,6 +31,14 @@ export interface ShortRectangle {
     // associate a depth value for an image.
     d?: number,
 }
+export interface FrameDimensions {
+    w: number,
+    h: number,
+    // This is a bit of a hack but it is a simple way of allowing me to
+    // associate a depth value for an image.
+    d?: number,
+    content?: ShortRectangle,
+}
 export interface FrameRectangle extends ShortRectangle {
     // When a frame does not perfectly fit the size of the content, this content rectangle can be
     // set to specify the portion of the image that is functionally part of the object in the frame.

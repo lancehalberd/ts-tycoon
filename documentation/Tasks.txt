@@ -1,0 +1,17 @@
+Split effects from effects.ts into individual files like: content/effects/songEffect.ts
+    - You will need to update references
+Move action definitions from useSkill.ts to content/actions/actions.ts
+    - You will need to update references
+Move reaction definitions from useSkill.ts to content/actions/reactions.ts
+    - You will need to update references
+Move areaMenu to ui/areaMenu
+    - You will need to update references
+Move content/upgradeButton to ui/upgradebutton
+    - You will need to update references
+
+
+Add DOM elements for upgrade button and/or trophy selection
+Or even to files for each action/reaction
+move drawX.ts files to render/drawX.ts
+
+
