@@ -14,7 +14,10 @@ import { rectangle } from 'app/utils/index';
 import { getMousePosition } from 'app/utils/mouse';
 import Random from 'app/utils/Random';
 
-import { Area, Hero, Jewel, JewelComponents, JewelTier, Range, ShapeType } from 'app/types';
+import {
+    Area, Hero, Jewel, JewelComponents, JewelTier,
+    LootDrop, LootGenerator, Range, ShapeType
+} from 'app/types';
 
 const image = requireImage('gfx/moneyIcon.png');
 export const coins = [
@@ -90,7 +93,7 @@ function coinTreasurePopup(coin: typeof coins[0], area: Area, x: number, y: numb
     };
 }
 
-export function coinsLootDrop(amount: number) {
+export function coinsLootDrop(amount: number): LootDrop {
     return {
         gainLoot(hero: Hero) {
             gain('coins', Math.round(amount * (1 + hero.stats.increasedDrops)));
@@ -115,12 +118,13 @@ export function coinsLootDrop(amount: number) {
         }
     }
 }
-export function coinsLoot(range: Range) {
+export function coinsLoot(range: Range): LootGenerator {
     return {
         type: 'coinsLoot',
-        generateLootDrop() {
-        return coinsLootDrop(Random.range(range[0], range[1]));
-    }};
+        generateLootDrop(): LootDrop {
+            return coinsLootDrop(Random.range(range[0], range[1]));
+        }
+    };
 }
 
 function animaTreasurePopup(hero: Hero, area: Area, coin: typeof animaDrops[0], x: number, y: number, z: number, vx: number, vy: number, vz: number, delay: number) {
@@ -153,7 +157,7 @@ function animaTreasurePopup(hero: Hero, area: Area, coin: typeof animaDrops[0], 
         }
     };
 }
-export function animaLootDrop(amount: number) {
+export function animaLootDrop(amount: number): LootDrop {
     return {
         gainLoot(hero: Hero) {
             gain('anima', Math.round(amount * (1 + hero.stats.increasedDrops)));
@@ -208,7 +212,7 @@ function jewelTreasurePopup(jewel: Jewel, area: Area, x: number, y: number, z: n
     };
 }
 
-function jewelLootDrop(jewel: Jewel) {
+function jewelLootDrop(jewel: Jewel): LootDrop {
     return {
         gainLoot(hero: Hero) {
             gainJewel(jewel);
@@ -232,7 +236,7 @@ export function jewelLoot(
     tiers: Range,
     components: [Range, Range, Range],
     permute: boolean
-) {
+): LootGenerator {
     return {
         type: 'jewelLoot',
         generateLootDrop() {

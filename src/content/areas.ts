@@ -1,6 +1,8 @@
-// This needs to be included before others.
+// This needs to be included before object types since they
+// add fields to areaObjectFactories.
 export * from 'app/content/areas/areaObjectFactories';
 export * from 'app/content/areas/utils';
+// Most area objects extend EditableAreaObject, so it should be included before them.
 export * from 'app/content/areas/EditableAreaObject';
 export * from 'app/content/areas/AnimaOrb';
 export * from 'app/content/areas/AreaDecoration';
@@ -13,5 +15,7 @@ export * from 'app/content/areas/MapTable';
 export * from 'app/content/areas/SimpleMonsterSpawner';
 export * from 'app/content/areas/ShrineOfCreation';
 export * from 'app/content/areas/ShrineOfFortune';
+export * from 'app/content/areas/SkillShrine';
+export * from 'app/content/areas/TreasureChest';
 export * from 'app/content/areas/TrophyAltar';
 export * from 'app/content/areas/areaTypes';

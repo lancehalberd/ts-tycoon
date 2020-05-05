@@ -21,7 +21,6 @@ import { attemptToApplyCost, canAffordCost, costHelpText, hidePointsPreview, pre
 import { getCanvasPopupTarget, removePopup } from 'app/popup';
 import { saveGame } from 'app/saveGame';
 import { getState } from 'app/state';
-import { activateShrine } from 'app/ui/chooseBlessing';
 import { fillRectangle, isPointInShortRect, rectangle, shrinkRectangle } from 'app/utils/index';
 import { getMousePosition } from 'app/utils/mouse';
 
@@ -41,57 +40,11 @@ mouseContainer.addEventListener('mousedown', function (event) {
     if (!isPointInShortRect(x, y, getUpgradeRectangle())) setUpgradingObject(null);
 });
 /*
-
 const areaObjects: {[key: string]: FixedObjectData} = {
-    'candles': {
-        'source': objectSource(guildImage, [540, 145], [25, 40, 0])
-    },
-
     'upstairs': {
         'source': objectSource(guildImage, [270, 94], [30, 51, 0]), onInteract: useDoor, 'isEnabled': isGuildExitEnabled},
     'downstairs': {
         'source': objectSource(guildImage, [300, 94], [30, 51, 0]), onInteract: useDoor, 'isEnabled': isGuildExitEnabled},
-
-    'skillShrine': {
-        'name': 'Shrine of Divinity',
-        'source': objectSource(guildImage, [360, 180], [60, 60, 4], {'actualWidth': 30, 'yOffset': -6}),
-        onInteract: activateShrine,
-        helpMethod(hero: Hero) {
-            return titleDiv('Divine Shrine')
-                + bodyDiv('Offer divinity at these shrines to be blessed by the Gods with new powers.');
-        },
-        shouldInteract(hero: Hero): boolean {
-            return !hero.character.skipShrines;
-        },
-    },
-    'closedChest': {
-        'name': 'Treasure Chest', 'source': objectSource(requireImage('gfx/treasureChest.png'), [0, 0], [64, 64, 64], {'yOffset': -6}),
-        onInteract(hero: Hero) {
-            // The loot array is an array of objects that can generate specific loot drops. Iterate over each one, generate a
-            // drop and then give the loot to the player and display it on the screen.
-            let delay = 0;
-            for (let i = 0; i < this.loot.length; i++) {
-                const drop = this.loot[i].generateLootDrop();
-                drop.gainLoot(hero);
-                var xOffset = (this.loot.length > 1) ? - 50 + 100 * i / (this.loot.length - 1) : 0;
-                drop.addTreasurePopup(hero, this.x + xOffset, this.y + 64, this.z, delay += 5);
-            }
-            // Replace this chest with an opened chest in the same location.
-            const openedChest = fixedObject('openChest', [this.x, this.y, this.z], {'scale': this.scale || 1});
-            openedChest.area = this.area;
-            this.area.objects[this.area.objects.indexOf(this)] = openedChest;
-            this.area.chestOpened = true;
-        },
-        shouldInteract(hero: Hero) {
-            return true;
-        }
-    },
-    'openChest': {
-        'name': 'Opened Treasure Chest', 'source': objectSource(requireImage('gfx/treasureChest.png'), [64, 0], [64, 64, 64], {'yOffset': -6}),
-        onInteract(hero: Hero) {
-            messageCharacter(hero.character, 'Empty');
-        }
-    },
 }*/
 /*function isGuildObjectEnabled(this: FixedObject) {
     if (!this.area) debugger;
@@ -107,71 +60,8 @@ function isGuildExitEnabled(this: FixedObject) {
     // It can also be used if the area it is connected to is unlocked.
     return getState().savedState.unlockedGuildAreas[this.exit.areaKey];
 }*/
-/*export function guildObject(baseObjectKey: string, coords: number[], properties: Partial<FixedObject> = {}): FixedObject {
-    return fixedObject(baseObjectKey, coords, {
-        isEnabled: isGuildObjectEnabled,
-        ...areaObjects[baseObjectKey],
-        ...properties,
-    });
-}*/
-/*function getFixedObjectAreaTarget(this: FixedObject): AreaObjectTarget {
-    return {
-        area: this.area,
-        targetType: 'object',
-        object: this,
-        x: this.x,
-        y: this.y,
-        z: this.z,
-        w: this.width,
-        h: this.height,
-    };
-}*/
-/*export function fixedObject(baseObjectKey: string, coords: number[], properties: Partial<FixedObject> = {}): FixedObject {
-    const base = areaObjects[baseObjectKey];
-    const imageSource = base.source;
-    const newFixedObject: FixedObject = {
-        type: 'fixedObject',
-        getAreaTarget: getFixedObjectAreaTarget,
-        isPointOver(x, y) {
-            return isPointOverAreaTarget(this.getAreaTarget(), x, y);
-        },
-        move(dx, dy, dz) {
-            this.x += dx;
-            this.y += dy;
-            this.z += dz;
-        },
-        area: null,
-        depth: imageSource.depth,
-        scale: 1,
-        width: imageSource.actualWidth || imageSource.width,
-        height: imageSource.actualHeight || imageSource.height,
-        render: drawFixedObject,
-        helpMethod: fixedObjectHelpText,
-        ...base,
-        key: baseObjectKey,
-        ...properties,
-        fixed: true,
-        base,
-        x: coords[0],
-        y: coords[1],
-        z: coords[2],
-        target: {
-            left: -1000,
-            top: -1000,
-            width: imageSource.width,
-            height: imageSource.height,
-        },
-    };
-    newFixedObject.width *= newFixedObject.scale;
-    newFixedObject.height *= newFixedObject.scale;
-    newFixedObject.target.width *= newFixedObject.scale;
-    newFixedObject.target.height *= newFixedObject.scale;
-    // TODO: Make sure these reset when defaultGuildAreas is reset.
-    return newFixedObject;
-}*/
-/*function fixedObjectHelpText(this: FixedObject) {
-    return this.base.name && titleDiv(this.base.name);
-}*/
+
+
 
 export function addFurnitureBonuses(furniture: AreaObject, recompute = false) {
     if (!furniture.getActiveBonusSources) return;

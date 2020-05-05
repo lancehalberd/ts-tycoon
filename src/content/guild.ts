@@ -4,7 +4,7 @@ import { drawFrame, getFrame } from 'app/utils/animations';
 
 import {
     Area, AreaDefinition, AreaObject, AreaObjectDefinition, Exit, FixedObject,
-    GuildArea, GuildAreas, RawGuildArea,
+    GuildArea, GuildAreas,
 } from 'app/types';
 
 export const guildYardEntrance: Exit = {areaKey: 'guildYard', x: 120, z: 0};

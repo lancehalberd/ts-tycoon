@@ -8,8 +8,8 @@ import { requireImage } from 'app/images';
 import { getState } from 'app/state';
 
 import {
-    Area, AreaObject, AreaObjectDefinition, AreaObjectTarget, Exit, Frame, Hero,
-    ShortRectangle,
+    Area, AreaObject, AreaObjectDefinition, AreaObjectTarget, BonusSource,
+    Exit, Frame, Hero, ShortRectangle,
 } from 'app/types';
 const guildImage = requireImage('gfx/guildhall.png');
 const mapTableFrame:Frame = {image: guildImage, x: 360, y: 150, w: 60, h: 30, content: {x: 0, y: 0, w: 60, h: 27, d: 30}};
@@ -31,7 +31,7 @@ export class MapTable extends EditableAreaObject {
     onInteract(hero: Hero): void {
         openWorldMap();
     }
-    getActiveBonusSources() {
+    getActiveBonusSources(): BonusSource[] {
         return [{'bonuses': {'$hasMap': true}}];
     }
 }

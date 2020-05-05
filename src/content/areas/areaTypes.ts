@@ -2,7 +2,10 @@ import { addMonstersToArea, enterArea } from 'app/adventure';
 import {
     initializeActorForAdventure,
 } from 'app/character';
-import { areaWalls, AreaDecoration, AreaDoor, SimpleMonsterSpawner } from 'app/content/areas';
+import {
+    areaWalls, AreaDecoration, AreaDoor,
+    SimpleMonsterSpawner, SkillShrine, TreasureChest,
+} from 'app/content/areas';
 import { makeMonster } from 'app/content/monsters';
 import { bodyDiv, titleDiv } from 'app/dom';
 import {
@@ -21,8 +24,8 @@ import SRandom from 'app/utils/SRandom';
 
 import {
     Ability, Actor, Area, AreaEntity, AreaObject, AreaObjectTarget,
-    AreaType, Exit, FixedObject, Frame, Hero, MonsterSpawn, MonsterSpawner,
-    FrameAnimation,
+    AreaType, Exit, FixedObject, Frame, Hero, LootGenerator,
+    MonsterSpawn, MonsterSpawner, FrameAnimation,
 } from 'app/types';
 /*
 interface BackgroundSource {
@@ -518,27 +521,38 @@ function isExitEnabled(object: AreaObject): boolean {
     return !object.area.isBossArea || !object.area.enemies.length;
 }
 
-function addChest(area: Area, loot: any[]) {
+function addChest(area: Area, loot: LootGenerator[]) {
     if (!loot || !loot.length) {
         return;
     }
-    /*const chest = fixedObject('closedChest', [0, 0, 0], {scale: 0.5, loot});
+    const chest: TreasureChest = new TreasureChest();
+    chest.loot = loot;
+    chest.definition = {
+        type: "treasureChest",
+        scale: 0.5,
+        x: area.width + SRandom.addSeed(area.seed).range(0, RANGE_UNIT * 4),
+        y: 0,
+        z: SRandom.addSeed(area.seed).range(MIN_Z + 16, MIN_Z + 32),
+    };
     area.objects.push(chest);
-    chest.x = area.width + SRandom.addSeed(area.seed).range(0, RANGE_UNIT * 4);
-    chest.z = SRandom.addSeed(area.seed).range(MIN_Z + 16, MIN_Z + 32);
-    area.width = chest.x + 100;*/
+    area.width = chest.definition.x + RANGE_UNIT * 10;
 }
 
 function addShrine(area: Area, ability: Ability) {
     if (!ability) {
         return;
     }
-    /*area.isShrineArea = true;
-    const shrine = fixedObject('skillShrine',
-        [area.width + SRandom.addSeed(area.seed).range(0, RANGE_UNIT * 4), 10, 0],
-    );
+    area.isShrineArea = true;
+    const shrine: SkillShrine = new SkillShrine();
+    shrine.definition = {
+        type: "skillShrine",
+        x: area.width + SRandom.addSeed(area.seed).range(0, RANGE_UNIT * 4),
+        y: 0,
+        z: 10,
+    };
     area.objects.push(shrine);
-    area.width = shrine.x + RANGE_UNIT * 8;*/
+    area.width = shrine.definition.x + RANGE_UNIT * 20;
+    console.log(shrine.definition.x, area.width);
 }
 
 export const areaTypes = {

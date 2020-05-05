@@ -22,7 +22,7 @@ import Random from 'app/utils/Random';
 import {
     Actor, Area, AreaType, Board, BoardData, BonusSource, Character, Exit,
     FixedObject, Hero, JewelComponents,
-    Level, LevelData, LevelDifficulty, MonsterSpawn, Range, ShapeData, ShapeType,
+    Level, LevelData, LevelDifficulty, LootGenerator, MonsterSpawn, Range, ShapeData, ShapeType,
 } from 'app/types';
 
 export const closedChestSource = {image: requireImage('gfx/chest-closed.png'), source: rectangle(0, 0, 32, 32)};
@@ -142,7 +142,7 @@ export function instantiateLevel(
             // When the area has already been completed on this difficulty, we always draw the chest mini map icon as open
             // so the player can tell at a glance that they are replaying the difficulty.
             const initialChestIcon = difficultyCompleted ? openChestSource : closedChestSource;
-            area.drawMinimapIcon = function (context, completed, x, y) {
+            area.drawMinimapIcon = function (this: Area, context, completed, x, y) {
                 const source = this.chestOpened ? openChestSource : initialChestIcon;
                 drawImage(context, source.image, source.source, rectangle(x - 8, y - 8, 16, 16));
             }
@@ -205,7 +205,7 @@ function generateLevelLoot(
     level: Level,
     difficultyCompleted: boolean,
     levelDegrees: number,
-): any[] {
+): LootGenerator[] {
     const loot = [];
     var pointsFactor = difficultyCompleted ? 1 : 4;
     var maxCoinsPerNormalEnemy = Math.floor(level.enemyLevel * Math.pow(1.15, level.enemyLevel));

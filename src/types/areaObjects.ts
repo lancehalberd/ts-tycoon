@@ -18,6 +18,8 @@ export interface BaseAreaObjectDefinition {
     zAlign?: 'back' | 'middle' | 'front',
     // This can be set to flip an object along its x-axis, if supported
     flipped?: boolean,
+    // Can be used to scale the entire size of the object.
+    scale?: number,
 }
 
 export interface UpgradeableObjectDefinition extends BaseAreaObjectDefinition {

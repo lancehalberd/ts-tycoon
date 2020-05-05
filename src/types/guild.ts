@@ -21,15 +21,6 @@ export interface SavedTrophy {
     objectKey?: string,
 }
 
-export interface RawGuildArea extends Partial<GuildArea>{
-    key: string,
-    width: number,
-    areaType: string,
-}
 export type GuildArea = Area;
-/*export interface GuildArea extends Area {
-    isGuildArea: true,
-    objects: FixedObject[],
-    objectsByKey: {[key: string]: FixedObject},
-}*/
+
 export type GuildAreas = {[key: string]: GuildArea};

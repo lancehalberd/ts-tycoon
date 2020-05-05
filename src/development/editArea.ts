@@ -296,7 +296,8 @@ export function getEditingContextMenu(): MenuOption[] {
                 return isWallDecoration ? 'Add to Wall...' : 'Add to Field...';
             },
             getChildren() {
-                return Object.keys(areaObjectFactories).map(getAddObjectMenuItem);
+                // Filter out null values, which are used to disable some object types.
+                return Object.keys(areaObjectFactories).map(getAddObjectMenuItem).filter(o => o);
             }
         },
         {

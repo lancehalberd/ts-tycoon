@@ -6,6 +6,16 @@ import {
     ShortRectangle,
 } from 'app/types';
 
+export interface LootDrop {
+    addTreasurePopup: (hero: Hero, x: number, y: number, z: number, delay: number) => void,
+    gainLoot: (hero: Hero) => void,
+}
+
+export interface LootGenerator {
+    type: string,
+    generateLootDrop: () => LootDrop,
+}
+
 export interface AreaType {
     addObjects: (area: Area, args: {
         monsters?: MonsterSpawn[],
@@ -115,4 +125,7 @@ export interface Area {
     objects: AreaObject[],
     wallDecorations: AreaObject[],
     objectsByKey?: {[key in string]: AreaObject},
+
+    // Used to show the chest open icon for the minimap.
+    chestOpened?: boolean,
 }
