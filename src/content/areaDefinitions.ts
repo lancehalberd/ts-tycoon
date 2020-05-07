@@ -261,7 +261,7 @@ export const areaDefinitions: {[key in string]: AreaDefinition} = {
         "rightWallType": "guildWall",
         "objects": {
             "shrineOfCreation": {
-                "type": "shrineOfFortune",
+                "type": "shrineOfCreation",
                 "xAlign": "middle",
                 "x": 0,
                 "zAlign": "middle",
