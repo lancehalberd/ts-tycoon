@@ -15,6 +15,7 @@ import { map } from 'app/content/mapData';
 import { makeMonster } from 'app/content/monsters';
 import { setContext, showContext } from 'app/context';
 import { editingMapState, stopTestingLevel } from 'app/development/editLevel';
+import { editingAreaState } from 'app/development/editArea';
 import { query } from 'app/dom';
 import { drawBoardBackground } from 'app/drawBoard';
 import { expireTimedEffects } from 'app/effects';
@@ -142,6 +143,7 @@ export function enterArea(actor: Actor, {x, z, areaKey, objectKey}: Exit) {
     if (state.selectedCharacter && actor === state.selectedCharacter.hero) {
         area.cameraX = Math.round(Math.max(0, Math.min(area.width - ADVENTURE_WIDTH, actor.x - ADVENTURE_WIDTH / 2)));
     }
+    editingAreaState.cameraX = area.cameraX;
     if (isNaN(actor.x) || isNaN(actor.z)) {
         debugger;
     }

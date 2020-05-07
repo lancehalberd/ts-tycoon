@@ -17,8 +17,8 @@ import {
 const [
     simpleChestFrame, chestFrame, silverChestFram
 ] = createAnimation('gfx2/objects/chestssheet.png',
-    {w: 24, h: 18, content: {x: 3, y: 0, w: 18, h: 18}},
-    {cols: 3, top: 14}
+    {w: 32, h: 23, content: {x: 4, y: 0, w: 24, h: 23}},
+    {cols: 3, top: 20}
 ).frames;
 
 
@@ -27,7 +27,7 @@ export class TreasureChest extends EditableAreaObject {
     opened = false;
     loot: LootGenerator[] = [];
     getFrame(): Frame {
-        return this.opened ? silverChestFram : simpleChestFrame;
+        return this.opened ? simpleChestFrame : silverChestFram;
     }
     onInteract(hero: Hero) {
         if (this.opened) {
@@ -42,8 +42,8 @@ export class TreasureChest extends EditableAreaObject {
         for (let i = 0; i < this.loot.length; i++) {
             const drop = this.loot[i].generateLootDrop();
             drop.gainLoot(hero);
-            const xOffset = (this.loot.length > 1) ? - 50 + 100 * i / (this.loot.length - 1) : 0;
-            drop.addTreasurePopup(hero, target.x + xOffset, target.y + 64, target.z, delay += 5);
+            const xOffset = (this.loot.length > 1) ? - 20 + 40 * i / (this.loot.length - 1) : 0;
+            drop.addTreasurePopup(hero, target.x + xOffset, target.y + target.h, target.z - 1, delay += 5);
         }
         this.opened = true;
         this.name = 'Opened Treasure Chest';

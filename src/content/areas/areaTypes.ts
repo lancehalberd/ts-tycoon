@@ -492,6 +492,10 @@ function addExits(area: Area, exits: Exit[], animation: FrameAnimation = AreaDoo
         door.exit = exits[0];
         door.definition = {
             "type": "door",
+            // These fields are required on the definition, but
+            // we are bypassing them in this context.
+            exitKey: null,
+            animation: null,
             "x": 0,
             "y": 0,
             "z": -7,
@@ -505,6 +509,10 @@ function addExits(area: Area, exits: Exit[], animation: FrameAnimation = AreaDoo
         door.exit = exits[1];
         door.definition = {
             "type": "door",
+            // These fields are required on the definition, but
+            // we are bypassing them in this context.
+            exitKey: null,
+            animation: null,
             x: 0,
             xAlign: "right",
             "y": 0,

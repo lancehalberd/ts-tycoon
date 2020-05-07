@@ -39,13 +39,7 @@ mouseContainer.addEventListener('mousedown', function (event) {
     if (!isPointInShortRect(x, y, trophySelectionRectangle)) setChoosingTrophyAltar(null);
     if (!isPointInShortRect(x, y, getUpgradeRectangle())) setUpgradingObject(null);
 });
-/*
-const areaObjects: {[key: string]: FixedObjectData} = {
-    'upstairs': {
-        'source': objectSource(guildImage, [270, 94], [30, 51, 0]), onInteract: useDoor, 'isEnabled': isGuildExitEnabled},
-    'downstairs': {
-        'source': objectSource(guildImage, [300, 94], [30, 51, 0]), onInteract: useDoor, 'isEnabled': isGuildExitEnabled},
-}*/
+
 /*function isGuildObjectEnabled(this: FixedObject) {
     if (!this.area) debugger;
     return getState().savedState.unlockedGuildAreas[this.area.key] && !this.area.enemies.length;

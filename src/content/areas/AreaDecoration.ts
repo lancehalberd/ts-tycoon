@@ -3,7 +3,7 @@ import {
     isPointOverAreaTarget,
     EditableAreaObject,
 } from 'app/content/areas';
-import { createObjectAtMouse } from 'app/development/editArea';
+import { createObjectAtMouse, refreshDefinition } from 'app/development/editArea';
 import { createAnimation, frameAnimation, getFrame } from 'app/utils/animations';
 
 import {
@@ -25,6 +25,7 @@ type AnimationTree = {
 export class AreaDecoration extends EditableAreaObject {
     animation: FrameAnimation;
     isSolid: boolean = false;
+    definition: AreaDecorationDefinition;
 
     getFrame(): Frame {
         return getFrame(this.animation, this.area.time * 1000);
@@ -55,7 +56,20 @@ export class AreaDecoration extends EditableAreaObject {
                     createObjectAtMouse({type: 'decoration', animationGroup, animationKey});
                 })
             }
-        }
+        };
+    }
+
+    static getEditMenu(object: AreaDecoration): MenuOption[] {
+        return [{
+            getLabel: () => 'Decoration Animation',
+            getChildren() {
+                return chooseAnimationMenu(AreaDecoration.animations, (animationGroup: string, animationKey: string) => {
+                    object.definition.animationGroup = animationGroup;
+                    object.definition.animationKey = animationKey;
+                    refreshDefinition(object)
+                })
+            }
+        }];
     }
 }
 areaObjectFactories.decoration = AreaDecoration;
@@ -87,7 +101,7 @@ const [
 
 const [
     simpleChestFrame, chestFrame, silverChestFram
-] = createAnimation('gfx2/objects/chestssheet.png',
+] = createAnimation('gfx2/objects/chestssheetsmall.png',
     {w: 24, h: 18, content: {x: 3, y: 0, w: 18, h: 18}},
     {cols: 3, top: 14}
 ).frames;
@@ -112,7 +126,20 @@ export class AreaObstacle extends AreaDecoration {
                     createObjectAtMouse({type: 'obstacle', animationGroup, animationKey});
                 })
             }
-        }
+        };
+    }
+
+    static getEditMenu(object: AreaDecoration): MenuOption[] {
+        return [{
+            getLabel: () => 'Obstacle Animation',
+            getChildren() {
+                return chooseAnimationMenu(AreaObstacle.animations, (animationGroup: string, animationKey: string) => {
+                    object.definition.animationGroup = animationGroup;
+                    object.definition.animationKey = animationKey;
+                    refreshDefinition(object)
+                })
+            }
+        }];
     }
 
     static animations: AnimationTree = {

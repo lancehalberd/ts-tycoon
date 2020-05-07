@@ -1,9 +1,10 @@
 import _ from 'lodash';
+import { enterArea } from 'app/adventure';
 import { areaDefinitions } from 'app/content/areaDefinitions';
 import {
     applyDefinitionToArea,
     areaObjectFactories, areaTargetToScreenTarget, areaTypes, areaWalls,
-    createAreaObjectFromDefinition,
+    createAreaObjectFromDefinition, createAreaFromDefinition,
 } from 'app/content/areas';
 import { mainCanvas } from 'app/dom';
 import { ADVENTURE_WIDTH, ADVENTURE_SCALE, BACKGROUND_HEIGHT, GROUND_Y, MAX_Z, MIN_Z } from 'app/gameConstants';
@@ -75,17 +76,26 @@ export function handleEditMouseDragged(dx: number, dy: number): void {
     }
 }
 
-function uid(base: string, area: Area): string {
+export function uniqueObjectId(base: string, area: Area): string {
     let i = 2, id = base;
     while (area.objectsByKey[id]) {
         id = base + (i++);
     }
     return id;
 }
+function uniqueAreaId(): string {
+    let i = 2, id = 'newArea';
+    while (areaDefinitions[id]) {
+        id = 'newArea' + (i++);
+    }
+    return id;
+}
 
-export function createObjectAtMouse(definition: AreaObjectDefinition): void {
+export function createObjectAtMouse(definition: AreaObjectDefinition, objectKey: string = null): AreaObject {
     const area = getState().selectedCharacter.hero.area;
-    const objectKey = uid(definition.type, area);
+    if (!objectKey) {
+        objectKey = uniqueObjectId(definition.type, area);
+    }
     const [x, y] = editingAreaState.contextCoords;
     const isWallDecoration = (y < BACKGROUND_HEIGHT);
     if (isWallDecoration) {
@@ -105,6 +115,7 @@ export function createObjectAtMouse(definition: AreaObjectDefinition): void {
         areaDefinition.objects[objectKey] = definition;
     }
     applyDefinitionToArea(area, areaDefinition);
+    return area.objectsByKey[objectKey];
     /*const object: AreaObject = createAreaObjectFromDefinition(definition);
     object.area = area;
     object.key = objectKey;
@@ -158,7 +169,7 @@ function moveObject(object: AreaObject, dx: number, dy: number) {
 }
 
 // Reapply the definition for a given object and any objects that list it as an ancestor.
-function refreshDefinition(object: AreaObject) {
+export function refreshDefinition(object: AreaObject) {
     object.applyDefinition(object.definition);
     for (const otherObject of object.area.objects) {
         if (otherObject.definition.parentKey === object.key) {
@@ -216,7 +227,9 @@ export function updateEditArea(): boolean {
         return false;
     }
     const area = getState().selectedCharacter.hero.area;
-    const [x, y] = getMousePosition(mainCanvas, ADVENTURE_SCALE);
+    let [x, y] = getMousePosition(mainCanvas, ADVENTURE_SCALE);
+    x = Math.round(x);
+    y = Math.round(y);
     if (x < 30) {
         adjustCamera(-5);
     }
@@ -280,6 +293,8 @@ export function getEditingContextMenu(): MenuOption[] {
         ];
     }
     editingAreaState.contextCoords = getMousePosition(mainCanvas, ADVENTURE_SCALE);
+    editingAreaState.contextCoords[0] = Math.round(editingAreaState.contextCoords[0]);
+    editingAreaState.contextCoords[1] = Math.round(editingAreaState.contextCoords[1]);
     const isWallDecoration = (editingAreaState.contextCoords[1] < BACKGROUND_HEIGHT);
     return [
         {
@@ -302,66 +317,118 @@ export function getEditingContextMenu(): MenuOption[] {
         },
         {
             getLabel() {
-                return 'Set Area...';
+                return 'Area...';
             },
             getChildren() {
-                return Object.keys(areaTypes).map(getSetAreaTypeMenuItem);
-            }
-        },
-        {
-            getLabel() {
-                return 'Left wall...';
-            },
-            getChildren() {
-                const callback = (wallType) => {
-                    updateAreaDefinition({leftWallType: wallType});
-                }
                 return [
                     {
-                        getLabel: () => 'None',
+                        getLabel() {
+                            return 'New';
+                        },
                         onSelect() {
-                            updateAreaDefinition({leftWallType: null});
+                            const areaKey = window.prompt('New area key', uniqueAreaId());
+                            if (!areaKey) {
+                                return;
+                            }
+                            const guildAreas = getState().guildAreas;
+                            let area = guildAreas[areaKey];
+                            if (!area) {
+                                const areaDefinition: AreaDefinition = {
+                                    type: 'oldGuild',
+                                    width: 600,
+                                    objects: {},
+                                    wallDecorations: {},
+                                    isGuildArea: true,
+                                }
+                                areaDefinitions[areaKey] = areaDefinition;
+                                area = createAreaFromDefinition(areaKey, areaDefinition);
+                                guildAreas[areaKey] = area;
+                            }
+                            enterArea(getState().selectedCharacter.hero, {x: 60, z: 0, areaKey});
                         }
                     },
-                    ...Object.keys(areaWalls).map(wallType => getSetWallTypeMenuItem(wallType, callback))
-                ];
-            }
-        },
-        {
-            getLabel() {
-                return 'Right wall...';
-            },
-            getChildren() {
-                const callback = (wallType) => {
-                    updateAreaDefinition({rightWallType: wallType});
-                }
-                return [
                     {
-                        getLabel: () => 'None',
-                        onSelect() {
-                            updateAreaDefinition({rightWallType: null});
+                        getLabel() {
+                            return 'Goto...';
+                        },
+                        getChildren() {
+                            const guildAreas = getState().guildAreas;
+                            return Object.keys(guildAreas).map((areaKey: string): MenuOption => {
+                                return {
+                                    getLabel: () => areaKey,
+                                    onSelect() {
+                                        enterArea(getState().selectedCharacter.hero, {x: 0, z: 0, areaKey});
+                                    }
+                                }
+                            });
                         }
                     },
-                    ...Object.keys(areaWalls).map(wallType => getSetWallTypeMenuItem(wallType, callback))
-                ];
-            }
-        },
-        {
-            getLabel() {
-                return 'Change size...';
-            },
-            getChildren() {
-                return [
-                            -200, -100, -50, -20,
-                            20, 50, 100, 200
-                        ].filter(size => area.width + size >= ADVENTURE_WIDTH).map(size => ({
-                    getLabel() {
-                        return `${area.width + size}`;
+                    {
+                        getLabel() {
+                            return 'Type...';
+                        },
+                        getChildren() {
+                            return Object.keys(areaTypes).map(getSetAreaTypeMenuItem);
+                        }
                     },
-                    onSelect() {
-                        updateAreaDefinition({width: area.width + size});
-                    }
-                }));
+                    {
+                        getLabel() {
+                            return 'Left wall...';
+                        },
+                        getChildren() {
+                            const callback = (wallType) => {
+                                updateAreaDefinition({leftWallType: wallType});
+                            }
+                            return [
+                                {
+                                    getLabel: () => 'None',
+                                    onSelect() {
+                                        updateAreaDefinition({leftWallType: null});
+                                    }
+                                },
+                                ...Object.keys(areaWalls).map(wallType => getSetWallTypeMenuItem(wallType, callback))
+                            ];
+                        }
+                    },
+                    {
+                        getLabel() {
+                            return 'Right wall...';
+                        },
+                        getChildren() {
+                            const callback = (wallType) => {
+                                updateAreaDefinition({rightWallType: wallType});
+                            }
+                            return [
+                                {
+                                    getLabel: () => 'None',
+                                    onSelect() {
+                                        updateAreaDefinition({rightWallType: null});
+                                    }
+                                },
+                                ...Object.keys(areaWalls).map(wallType => getSetWallTypeMenuItem(wallType, callback))
+                            ];
+                        }
+                    },
+                    {
+                        getLabel() {
+                            return 'Change size...';
+                        },
+                        getChildren() {
+                            return [
+                                        ADVENTURE_WIDTH,
+                                        -200, -100, -50, -20,
+                                        20, 50, 100, 200
+                                    ].filter(size => area.width + size >= ADVENTURE_WIDTH).map(size => ({
+                                getLabel() {
+                                    return `${area.width + size}`;
+                                },
+                                onSelect() {
+                                    updateAreaDefinition({width: area.width + size});
+                                }
+                            }));
+                        }
+                    },
+                ];
             }
         },
         ...getSelectedObjectContextMenu(),
@@ -376,7 +443,12 @@ export function getSelectedObjectContextMenu(): MenuOption[] {
     ) {
         return [];
     }
+    const areaObjectFactory = areaObjectFactories[selectedObject.definition.type];
     return [
+        ...(areaObjectFactory && areaObjectFactory.getEditMenu
+                ? areaObjectFactory.getEditMenu(selectedObject)
+                : []
+        ),
         {
             getLabel() {
                 return 'Flip ' + selectedObject.definition.type;

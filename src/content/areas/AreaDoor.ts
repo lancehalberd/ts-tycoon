@@ -3,12 +3,15 @@ import {
     EditableAreaObject,
     areaObjectFactories,
 } from 'app/content/areas';
+import { createObjectAtMouse, refreshDefinition, uniqueObjectId } from 'app/development/editArea';
+import { requireImage } from 'app/images';
+import { getState } from 'app/state';
 import { createAnimation, frame, getFrame, drawFrame, frameAnimation } from 'app/utils/animations';
 import { r } from 'app/utils/index';
 
 import {
     FrameAnimation, Area, AreaObject, BaseAreaObjectDefinition, AreaObjectTarget, Exit, Frame, Hero,
-    ShortRectangle,
+    MenuOption, ShortRectangle,
 } from 'app/types';
 
 const [
@@ -20,6 +23,11 @@ const [, caveDoorOpen, caveDoorClosed] = createAnimation('gfx2/areas/cavebridge.
 const woodBridge = createAnimation('gfx2/areas/meadowbridge.png',
     {w: 39, h: 148, content: r(16, 92, 23, 35)}, {x: 1, cols: 1});
 
+const guildImage = requireImage('gfx/guildhall.png');
+const backDoor = frameAnimation({image: guildImage, x: 240, y: 94, w: 30, h: 51});
+const upstairs = frameAnimation({image: guildImage, x: 270, y: 94, w: 30, h: 51});
+const downstairs = frameAnimation({image: guildImage, x: 300, y: 94, w: 30, h: 51});
+
 export class AreaDoor extends EditableAreaObject {
     static animations = {
         openDoor: frameAnimation(guildRightDoorEmpty),
@@ -28,10 +36,14 @@ export class AreaDoor extends EditableAreaObject {
         woodBridge,
         caveDoorOpen: frameAnimation(caveDoorOpen),
         caveDoorClosed: frameAnimation(caveDoorClosed),
+        backDoor,
+        upstairs,
+        downstairs,
     };
 
     exit: Exit;
     animation: FrameAnimation;
+    definition: AreaDoorDefinition;
 
     getFrame(): Frame {
         return getFrame(this.animation, this.area.time * 1000);
@@ -55,8 +67,69 @@ export class AreaDoor extends EditableAreaObject {
     shouldInteract(hero: Hero) {
         return this.getAreaTarget().x > 100;
     }
+
+    static getCreateMenu(): MenuOption {
+        return {
+            getLabel: () => 'Door',
+            getChildren() {
+                return chooseAnimationMenu((animation: string) => {
+                    const area: Area = getState().selectedCharacter.hero.area;
+                    // Generate the objectKey now so we can use it for the initial target of this door.
+                    const objectKey: string = uniqueObjectId('door', area);
+                    createObjectAtMouse({type: 'door', animation, exitKey: `${area.key}:${objectKey}`}, objectKey);
+                });
+            }
+        }
+    }
+
+    static getEditMenu(object: AreaDoor): MenuOption[] {
+        return [{
+            getLabel: () => 'Door Animation',
+            getChildren() {
+                return chooseAnimationMenu((animation: string) => {
+                    object.definition.animation = animation;
+                    refreshDefinition(object)
+                });
+            }
+        }, {
+            getLabel: () => 'Door Exit',
+            getChildren() {
+                const guildAreas = getState().guildAreas;
+                return Object.keys(guildAreas).map((areaKey: string): MenuOption => {
+                    const area: Area = guildAreas[areaKey];
+                    return {
+                        getLabel: () => areaKey,
+                        getChildren() {
+                            return Object.keys(area.objectsByKey)
+                                .filter(key => area.objectsByKey[key].definition.type === 'door')
+                                .map(key => {
+                                    return {
+                                        getLabel: () => key,
+                                        onSelect() {
+                                            object.definition.exitKey = `${areaKey}:${key}`;
+                                            refreshDefinition(object)
+                                        }
+                                    }
+                                });
+                        }
+                    };
+                });
+            }
+        }]
+    }
 }
 areaObjectFactories.door = AreaDoor;
+
+function chooseAnimationMenu(callback: (animation: string) => void): MenuOption[] {
+    return Object.keys(AreaDoor.animations).map((animation: string) => {
+        return {
+            getLabel: () => animation,
+            onSelect() {
+                  callback(animation);
+            }
+        }
+    })
+}
 
 export interface AreaDoorDefinition extends BaseAreaObjectDefinition {
     exitKey: string,

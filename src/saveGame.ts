@@ -33,7 +33,7 @@ export function loadSavedData() {
 }
 
 export function saveGame() {
-    //window.localStorage.setItem('savedGame', JSON.stringify(exportState(getState())));
+    window.localStorage.setItem('savedGame', JSON.stringify(exportState(getState())));
 }
 export function eraseSave() {
     window.localStorage.clear()

@@ -4,4 +4,5 @@ import { AreaObject, AreaObjectDefinition, MenuOption } from 'app/types'
 export const areaObjectFactories: {[key in string]: {
     createFromDefinition: (objectDefinition: AreaObjectDefinition) => AreaObject,
     getCreateMenu?: () => MenuOption,
+    getEditMenu?: (object: AreaObject) => MenuOption[],
 }} = {};
