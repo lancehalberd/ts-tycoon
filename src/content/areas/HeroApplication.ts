@@ -7,6 +7,7 @@ import { map } from 'app/content/mapData';
 import { setContext } from 'app/context';
 import { createNewHeroApplicant, hideHeroApplication, showHeroApplication } from 'app/heroApplication';
 import { getCanvasPopupTarget } from 'app/popup';
+import { getState } from 'app/state';
 import { fillRect, pad } from 'app/utils/index';
 
 import {
@@ -39,7 +40,7 @@ export class HeroApplication extends EditableAreaObject {
         context.fillStyle = '#fc8';
         fillRect(context, rectangle);
         if (!this.character) {
-            this.character = createNewHeroApplicant();
+            this.setApplicant(createNewHeroApplicant());
         }
         // Draw a faded job icon on the this application.
         context.save();
@@ -49,6 +50,14 @@ export class HeroApplication extends EditableAreaObject {
                 {x: rectangle.x + 2, y: rectangle.y + 5, w: 16, h: 16}
             );
         context.restore();
+    }
+
+    setApplicant(applicant: Character) {
+        this.character = createNewHeroApplicant();
+        const index = HeroApplication.instances.indexOf(this);
+        if (index >= 0) {
+            getState().applicants[index] = this.character;
+        }
     }
 }
 areaObjectFactories.application = HeroApplication;

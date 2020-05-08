@@ -1,5 +1,5 @@
 import { Bed, HeroApplication, createAreaFromDefinition } from 'app/content/areas';
-import { areaDefinitions } from 'app/content/areaDefinitions';
+import { zones } from 'app/content/zones';
 import { drawFrame, getFrame } from 'app/utils/animations';
 
 import {
@@ -15,11 +15,9 @@ export function getDefaultGuildAreas(): GuildAreas {
     HeroApplication.instances = [];
     Bed.instances = [];
     const guildAreas: GuildAreas = {};
-    for (let areaKey in areaDefinitions) {
-        const area: Area = createAreaFromDefinition(areaKey, areaDefinitions[areaKey]);
-        if (area.isGuildArea === true) {
-            guildAreas[areaKey] = area;
-        }
+    for (let areaKey in zones.guild) {
+        const area: Area = createAreaFromDefinition(areaKey, zones.guild[areaKey]);
+        guildAreas[areaKey] = area;
     }
     return guildAreas;
     /*

@@ -82,7 +82,7 @@ document.addEventListener('keydown', function(event) {
                 setContext('guild');
             }
         } else if (state.selectedCharacter.context === 'jewel' || state.selectedCharacter.context === 'item') {
-            if (state.selectedCharacter.hero.area && !state.selectedCharacter.hero.area.isGuildArea) {
+            if (state.selectedCharacter.hero.area && state.selectedCharacter.hero.area.zoneKey !== 'guild') {
                 setContext('adventure');
             } else {
                 setContext('guild');

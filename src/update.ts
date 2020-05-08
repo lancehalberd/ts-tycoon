@@ -107,7 +107,7 @@ const MAX_CAMERA_SPEED = 2;
 function updateAreaCamera(area: Area, hero: Hero) {
     // Only update the camera for the guild for the selected character, but
     // always update the camera for characters in adventure areas.
-    if (hero.area === area || (area && !area.isGuildArea)) {
+    if (hero.area === area || (area && area.zoneKey !== 'guild')) {
         const targetCameraX = getTargetCameraX(hero);
         const newCameraX = Math.round((area.cameraX * 3 + targetCameraX) / 4);
         if (newCameraX - area.cameraX > MAX_CAMERA_SPEED) area.cameraX += MAX_CAMERA_SPEED;

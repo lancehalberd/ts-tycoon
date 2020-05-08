@@ -120,7 +120,7 @@ hireApplicantButton.onclick = function (button) {
         return;
     }
     hireCharacter(character);
-    displayedApplication.character = createNewHeroApplicant();
+    displayedApplication.setApplicant(createNewHeroApplicant());
     updateRetireButtons();
     saveGame();
 }
@@ -134,7 +134,7 @@ seekNewApplicantButton.onclick = function () {
     if (!spend('coins', getNewApplicationCost(displayedApplication.character))) {
         return;
     }
-    displayedApplication.character = createNewHeroApplicant();
+    displayedApplication.setApplicant(createNewHeroApplicant());
     showHeroApplication(displayedApplication);
     saveGame();
 }

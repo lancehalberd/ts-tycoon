@@ -273,7 +273,7 @@ export function removeActor(actor: Actor) {
     if (actor.type === 'hero') {
         const character = actor.character;
         const area = actor.area;
-        if (area.isGuildArea) {
+        if (area.zoneKey) {
             removeAdventureEffects(actor);
             enterArea(actor, actor.escapeExit || guildYardEntrance);
             return;
@@ -300,7 +300,7 @@ function unlockGuildArea(guildArea: GuildArea) {
 }
 
 export function updateArea(area: Area) {
-    if (area.isGuildArea && !getState().savedState.unlockedGuildAreas[area.key] && !area.enemies.length && area.allies.some(actor => !actor.isDead)) {
+    if (area.zoneKey === 'guild' && !getState().savedState.unlockedGuildAreas[area.key] && !area.enemies.length && area.allies.some(actor => !actor.isDead)) {
         unlockGuildArea(area as GuildArea);
     }
     if (timeStopLoop(area)) {
@@ -609,7 +609,7 @@ export function actorShouldAutoplay(actor: Actor) {
         return true; // Only character heroes can be manually controlled.
     }
     return !actor.character.activeShrine
-        && actor.area && !actor.area.isGuildArea
+        && actor.area && !actor.area.zoneKey
         && (actor.character.autoplay || (actor.character !== getState().selectedCharacter && actor.enemies.length));
 }
 
@@ -737,7 +737,7 @@ export function leaveCurrentArea(actor: Actor, leavingZone = false) {
     if (!actor.area) return;
     // If the are is a safe guild area, it becomes the actors 'escape exit',
     // where they will respawn next if they die.
-    if (actor.type === 'hero' && actor.area.isGuildArea && !actor.area.enemies.length) {
+    if (actor.type === 'hero' && actor.area.zoneKey === 'guild' && !actor.area.enemies.length) {
         actor.escapeExit = {x: actor.x, z: actor.z, areaKey: actor.area.key};
     }
     var allyIndex = actor.area.allies.indexOf(actor);

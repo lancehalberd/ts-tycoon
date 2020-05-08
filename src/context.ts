@@ -31,7 +31,7 @@ export function setContext(context) {
     }
     state.selectedCharacter.context = context;
     // If the player is not already in the guild when we return to the guild context, move them to the foyer.
-    if (context === 'guild' && (!state.selectedCharacter.hero.area || !state.selectedCharacter.hero.area.isGuildArea)) {
+    if (context === 'guild' && (!state.selectedCharacter.hero.area || state.selectedCharacter.hero.area.zoneKey !== 'guild')) {
         enterArea(state.selectedCharacter.hero, guildYardEntrance);
     }
     showContext(context);

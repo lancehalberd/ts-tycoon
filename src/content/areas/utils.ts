@@ -52,7 +52,7 @@ export function applyDefinitionToArea(area: Area, areaDefinition: AreaDefinition
     area.areaType = areaDefinition.type;
     area.width = areaDefinition.width;
     area.monsters = areaDefinition.monsters;
-    area.isGuildArea = areaDefinition.isGuildArea,
+    area.zoneKey = areaDefinition.zoneKey,
     area.seed = areaDefinition.seed;
     if (areaDefinition.leftWallType) {
         area.leftWall = areaWalls[areaDefinition.leftWallType];

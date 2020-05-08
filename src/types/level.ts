@@ -1,8 +1,9 @@
 import { areaTypes } from 'app/content/areas';
 import {
-    Ability, ActiveEffect, Actor, FrameAnimation,
+    Ability, ActiveEffect, Actor, Area,
     AreaObject, BonusSource, Exit,
-    FixedObject, FullRectangle, Hero, MonsterSpawn,
+    FixedObject, FrameAnimation, FullRectangle,
+    Hero, MonsterSpawn,
     ShortRectangle,
 } from 'app/types';
 
@@ -51,7 +52,7 @@ export interface LevelData {
     enemySkills: string[],
     monsters: string[],
     events: string[][],
-    isGuildArea?: boolean,
+    isGuild?: boolean,
     shrine?: Shrine,
     x?: number, y?: number,
     w?: number, h?: number,
@@ -73,7 +74,6 @@ export interface Level {
     completed?: boolean,
 }
 
-
 export interface AreaEntity {
     area: Area,
     shapeType?: 'oval' | 'rectangle',
@@ -94,38 +94,4 @@ export interface AreaObjectTarget extends AreaTarget {
 }
 export interface LocationTarget extends AreaTarget {
     targetType: 'location',
-}
-
-export interface Area {
-    key: string,
-    areaType: string,
-    isBossArea?: boolean,
-    isGuildArea?: boolean,
-    drawMinimapIcon?: Function,
-    areas?: Map<string, Area>,
-    width: number,
-    rightWall?: FrameAnimation,
-    leftWall?: FrameAnimation,
-    cameraX: number,
-    time: number,
-    // Used for randomly generating area.
-    seed: number,
-    timeStopEffect?: any,
-    // Optional array of bonuses that apply to all enemies in this area.
-    enemyBonuses?: BonusSource[],
-    isShrineArea?: boolean,
-    monsters?: MonsterSpawn[],
-
-    allies: Actor[],
-    enemies: Actor[],
-    projectiles: any[],
-    effects: ActiveEffect[],
-    textPopups: any[],
-    treasurePopups: any[],
-    objects: AreaObject[],
-    wallDecorations: AreaObject[],
-    objectsByKey?: {[key in string]: AreaObject},
-
-    // Used to show the chest open icon for the minimap.
-    chestOpened?: boolean,
 }

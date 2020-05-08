@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import { enterArea } from 'app/adventure';
-import { areaDefinitions } from 'app/content/areaDefinitions';
+import { serializeZone, zones } from 'app/content/zones';
 import {
     applyDefinitionToArea,
     areaObjectFactories, areaTargetToScreenTarget, areaTypes, areaWalls,
@@ -29,6 +29,10 @@ export const editingAreaState: EditingAreaState = {
     selectedObject: null,
     cameraX: null,
     contextCoords: null,
+}
+
+function getArea(): Area {
+    return getState().selectedCharacter.hero.area;
 }
 
 // Note this actually fires on mousedown, not on click.
@@ -84,8 +88,9 @@ export function uniqueObjectId(base: string, area: Area): string {
     return id;
 }
 function uniqueAreaId(): string {
-    let i = 2, id = 'newArea';
-    while (areaDefinitions[id]) {
+    let zoneKey = getArea().zoneKey;
+    let i = 2, id: string = zoneKey;
+    while (zones[zoneKey][id]) {
         id = 'newArea' + (i++);
     }
     return id;
@@ -108,7 +113,7 @@ export function createObjectAtMouse(definition: AreaObjectDefinition, objectKey:
         definition.z = (GROUND_Y - y) * 2;
     }
     definition.x = editingAreaState.cameraX + x;
-    const areaDefinition: AreaDefinition = areaDefinitions[area.key];
+    const areaDefinition: AreaDefinition = zones[area.zoneKey][area.key];
     if (isWallDecoration) {
         areaDefinition.wallDecorations[objectKey] = definition;
     } else {
@@ -194,7 +199,7 @@ export function handleEditAreaKeyDown(keyCode: number): boolean {
     if (keyCode === KEY.C) {
         const area = getState().selectedCharacter.hero.area;
         // Add custom serialization code here that is more concise than JSON.
-        console.log(JSON.stringify(areaDefinitions, null, 4));
+        console.log(serializeZone(area.zoneKey));
     }
     const area = getState().selectedCharacter.hero.area;
     let dx = 0;
@@ -263,17 +268,17 @@ export function renderEditAreaOverlay(context: CanvasRenderingContext2D): void {
 
 function updateAreaDefinition(updatedProps: Partial<AreaDefinition>) {
     const area: Area = getState().selectedCharacter.hero.area;
-    areaDefinitions[area.key] = {
-        ...areaDefinitions[area.key],
+    zones[area.zoneKey][area.key] = {
+        ...zones[area.zoneKey][area.key],
         ...updatedProps,
     };
-    applyDefinitionToArea(area, areaDefinitions[area.key]);
+    applyDefinitionToArea(area, zones[area.zoneKey][area.key]);
 }
 
 export function getEditingContextMenu(): MenuOption[] {
     const area = getState().selectedCharacter.hero.area;
     if (!editingAreaState.isEditing) {
-        if (!areaDefinitions[area.key]) {
+        if (!area.zoneKey || !zones[area.zoneKey][area.key]) {
             return [
                 {
                     getLabel() {
@@ -340,9 +345,9 @@ export function getEditingContextMenu(): MenuOption[] {
                                     width: 600,
                                     objects: {},
                                     wallDecorations: {},
-                                    isGuildArea: true,
+                                    zoneKey: getState().selectedCharacter.hero.area.zoneKey,
                                 }
-                                areaDefinitions[areaKey] = areaDefinition;
+                                zones[areaDefinition.zoneKey][areaKey] = areaDefinition;
                                 area = createAreaFromDefinition(areaKey, areaDefinition);
                                 guildAreas[areaKey] = area;
                             }
@@ -473,7 +478,7 @@ export function getSelectedObjectContextMenu(): MenuOption[] {
 }
 
 function deleteObject(object: AreaObject, updateArea: boolean = true) {
-    const areaDefinition: AreaDefinition = areaDefinitions[object.area.key];
+    const areaDefinition: AreaDefinition = zones[object.area.zoneKey][object.area.key];
     if (object.area.objects.indexOf(object) >= 0) {
         if (areaDefinition.objects[object.key] !== object.definition) {
             console.log('Did not find object definition where expected during delete.');

@@ -81,7 +81,7 @@ export function initializeGame() {
         const otherKeys = jobRanks[0].slice();
         removeElementFromArray(otherKeys, jobKey, true);
         for (let i = 0; i < HeroApplication.instances.length && otherKeys.length; i++) {
-            HeroApplication.instances[i].character = createNewHeroApplicant(otherKeys.pop());
+            HeroApplication.instances[i].setApplicant(createNewHeroApplicant(otherKeys.pop()));
         }
         enterArea(state.selectedCharacter.hero, guildYardEntrance);
     }

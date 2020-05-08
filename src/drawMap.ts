@@ -133,7 +133,7 @@ export function drawMap(): void {
     const state = getState();
     for (let levelKey in map) {
         const levelData: LevelData = map[levelKey];
-        if (!editingMapState.editingMap && !levelData.isGuildArea && !state.visibleLevels[levelKey]) {
+        if (!editingMapState.editingMap && !levelData.isGuild && !state.visibleLevels[levelKey]) {
             continue;
         }
         if (new Vector(levelData.coords).dotProduct(worldCamera.forward) <= 0) {
