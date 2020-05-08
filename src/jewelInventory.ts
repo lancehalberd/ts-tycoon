@@ -19,7 +19,7 @@ import { saveGame } from 'app/saveGame'
 import { getState } from 'app/state';
 import {
     collision, getCollisionArea, getElementRectangle, ifdefor,
-    isPointInRectObject, rectangle,
+    isPointInShortRect, rectangle,
 } from 'app/utils/index';
 import { getMousePosition } from 'app/utils/mouse';
 import {
@@ -259,7 +259,7 @@ export function updateJewelUnderMouse(activeJewelsCanvas: HTMLCanvasElement, cha
     const [x, y] = getMousePosition(activeJewelsCanvas);
     jewelInventoryState.overJewel = null;
     jewelInventoryState.overVertex = null;
-    if (!isPointInRectObject(x, y, getElementRectangle(activeJewelsCanvas, activeJewelsCanvas))) {
+    if (!isPointInShortRect(x, y, getElementRectangle(activeJewelsCanvas, activeJewelsCanvas))) {
         for (const jewelElement of queryAll('.js-jewel')) {
             const jewel = getElementJewel(jewelElement);
             const points = jewel.shape.points;

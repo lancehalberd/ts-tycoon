@@ -98,14 +98,14 @@ export function getCollisionArea(element1: HTMLElement, element2: HTMLElement) {
     return Math.max(Math.min(B - t, b - T), 0) * Math.max(Math.min(R - l, r - L), 0);
 }
 
-export function getElementRectangle(element: HTMLElement, container = null): FullRectangle {
+export function getElementRectangle(element: HTMLElement, container = null): ShortRectangle {
     let b = element.getBoundingClientRect();
-    const rect = { left: b.left, top: b.top, width: b.width, height: b.height };
+    const rect = { x: b.left, y: b.top, w: b.width, h: b.height };
     // If container is specified, return the rectangle relative to the container's coordinates.
     if (container) {
         const containerRect = container.getBoundingClientRect();
-        rect.left -= containerRect.left;
-        rect.top -= containerRect.top;
+        rect.x -= containerRect.left;
+        rect.y -= containerRect.top;
     }
     return rect;
 }

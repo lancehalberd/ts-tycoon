@@ -115,6 +115,8 @@ export function createObjectAtMouse(definition: AreaObjectDefinition, objectKey:
         areaDefinition.objects[objectKey] = definition;
     }
     applyDefinitionToArea(area, areaDefinition);
+    // Select the most recently created object.
+    editingAreaState.selectedObject = area.objectsByKey[objectKey];
     return area.objectsByKey[objectKey];
     /*const object: AreaObject = createAreaObjectFromDefinition(definition);
     object.area = area;
