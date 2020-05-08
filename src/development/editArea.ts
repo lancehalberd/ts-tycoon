@@ -417,15 +417,14 @@ export function getEditingContextMenu(): MenuOption[] {
                         },
                         getChildren() {
                             return [
-                                        ADVENTURE_WIDTH,
-                                        -200, -100, -50, -20,
-                                        20, 50, 100, 200
-                                    ].filter(size => area.width + size >= ADVENTURE_WIDTH).map(size => ({
+                                ADVENTURE_WIDTH,
+                                ...[-200, -100, -50, -20, 20, 50, 100, 200].map(s => area.width + s)
+                            ].filter(size => size >= ADVENTURE_WIDTH).map(size => ({
                                 getLabel() {
-                                    return `${area.width + size}`;
+                                    return `${size}`;
                                 },
                                 onSelect() {
-                                    updateAreaDefinition({width: area.width + size});
+                                    updateAreaDefinition({width: size});
                                 }
                             }));
                         }
