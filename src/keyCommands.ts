@@ -3,7 +3,6 @@ import { hideAreaMenu } from 'app/areaMenu';
 import { setChoosingTrophyAltar } from 'app/content/achievements';
 import { itemsByKey } from 'app/content/equipment/index';
 import { openWorldMap } from 'app/content/areas';
-import { guildYardEntrance } from 'app/content/guild';
 import { map } from 'app/content/mapData';
 import { setUpgradingObject } from 'app/content/upgradeButton';
 import { setContext } from 'app/context';
@@ -21,7 +20,7 @@ import { jewelInventoryState, sellJewel } from 'app/jewelInventory';
 import { mapState } from 'app/map';
 import { gain } from 'app/points';
 import { getPopup } from 'app/popup';
-import { getState } from 'app/state';
+import { getState, guildYardEntrance } from 'app/state';
 import { isMouseOverElement } from 'app/utils/mouse';
 
 export const KEY = {

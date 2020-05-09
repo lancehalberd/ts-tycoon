@@ -1,61 +1,8 @@
-import { enterArea, messageCharacter } from 'app/adventure';
 import { addBonusSourceToObject, removeBonusSourceFromObject } from 'app/bonuses';
 import { recomputeAllCharacterDirtyStats } from 'app/character';
-import { getIsAltarTrophyAvailable, setChoosingTrophyAltar, trophySelectionRectangle } from 'app/content/achievements';
-import { isPointOverAreaTarget } from 'app/content/areas/AreaObjectTarget';
-import { map } from 'app/content/mapData';
-import { getUpgradeRectangle, setUpgradingObject } from 'app/content/upgradeButton';
-import { setContext } from 'app/context';
-import { bodyDiv, mainCanvas, mainContext, mouseContainer, titleDiv } from 'app/dom';
-import { bonusSourceHelpText } from 'app/helpText';
-import { ADVENTURE_SCALE, GROUND_Y } from 'app/gameConstants';
-import { createNewHeroApplicant, hideHeroApplication, showHeroApplication } from 'app/heroApplication';
-import {
-    drawImage,
-    drawOutlinedImage,
-    drawSourceWithOutline,
-    drawTintedImage,
-    drawTitleRectangle, requireImage
-} from 'app/images';
-import { attemptToApplyCost, canAffordCost, costHelpText, hidePointsPreview, previewCost } from 'app/points';
-import { getCanvasPopupTarget, removePopup } from 'app/popup';
-import { saveGame } from 'app/saveGame';
 import { getState } from 'app/state';
-import { fillRectangle, isPointInShortRect, rectangle, shrinkRectangle } from 'app/utils/index';
-import { getMousePosition } from 'app/utils/mouse';
 
-import {
-    Actor, Area, AreaObject, AreaObjectTarget, BonusSource, Character, Exit, FixedObject,
-    GuildArea, Hero,
-} from 'app/types';
-
-mouseContainer.addEventListener('mousedown', function (event) {
-    if (event.which !== 1) {
-        return;
-    }
-    const target = event.target as HTMLElement;
-    if (!target.closest('.js-heroApplication')) hideHeroApplication();
-    const [x, y] = getMousePosition(mainCanvas, ADVENTURE_SCALE);
-    if (!isPointInShortRect(x, y, trophySelectionRectangle)) setChoosingTrophyAltar(null);
-    if (!isPointInShortRect(x, y, getUpgradeRectangle())) setUpgradingObject(null);
-});
-
-/*function isGuildObjectEnabled(this: FixedObject) {
-    if (!this.area) debugger;
-    return getState().savedState.unlockedGuildAreas[this.area.key] && !this.area.enemies.length;
-}
-function isGuildExitEnabled(this: FixedObject) {
-    //if (this.area.key === 'guildFoyer') debugger;
-    // A door can be used if the are is unlocked.
-    if (isGuildObjectEnabled.call(this)) {
-        return true;
-    }
-    //if (this.area.key === 'guildFoyer') debugger;
-    // It can also be used if the area it is connected to is unlocked.
-    return getState().savedState.unlockedGuildAreas[this.exit.areaKey];
-}*/
-
-
+import { Area, AreaObject } from 'app/types';
 
 export function addFurnitureBonuses(furniture: AreaObject, recompute = false) {
     if (!furniture.getActiveBonusSources) return;
@@ -107,7 +54,7 @@ export function addAllUnlockedFurnitureBonuses() {
     recomputeAllCharacterDirtyStats();
 }
 
-export function addAreaFurnitureBonuses(guildArea: GuildArea, recompute = false) {
+export function addAreaFurnitureBonuses(guildArea: Area, recompute = false) {
     for (const object of guildArea.objects) addFurnitureBonuses(object, false);
     if (recompute) recomputeAllCharacterDirtyStats();
 }

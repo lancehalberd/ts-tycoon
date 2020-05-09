@@ -53,7 +53,7 @@ export class HeroApplication extends EditableAreaObject {
     }
 
     setApplicant(applicant: Character) {
-        this.character = createNewHeroApplicant();
+        this.character = applicant;
         const index = HeroApplication.instances.indexOf(this);
         if (index >= 0) {
             getState().applicants[index] = this.character;

@@ -1,7 +1,6 @@
 import { returnToMap } from 'app/adventure';
 import { areaTypes } from 'app/content/areas';
 import { effectAnimations } from 'app/content/effectAnimations';
-import { drawLeftWall, drawRightWall } from 'app/content/guild'
 import { upgradeButton } from 'app/content/upgradeButton';
 import { editingMapState } from 'app/development/editLevel'
 import { editingAreaState } from 'app/development/editArea';
@@ -20,7 +19,7 @@ import { getCanvasPopupTarget } from 'app/popup';
 import { drawActorEffects, drawActorShadow } from 'app/render/drawActor';
 import { getState } from 'app/state';
 import { canUseSkillOnTarget } from 'app/useSkill';
-import { drawFrame } from 'app/utils/animations';
+import { drawFrame, getFrame } from 'app/utils/animations';
 import { arrMod, isPointInShortRect, rectangle, toR } from 'app/utils/index';
 
 import { Actor, ActorEffect, FrameAnimation, Area, AreaObject, AreaType } from 'app/types';
@@ -282,4 +281,27 @@ function drawActionTargetCircle(targetContext) {
     //var context = bufferContext;
     //context.clearRect(0,0, bufferCanvas.width, bufferCanvas.height);
     //drawImage(targetContext, bufferCanvas, rectangle(0, 300, bufferCanvas.width, 180), rectangle(0, 300, bufferCanvas.width, 180));
+}
+
+function drawRightWall(context: CanvasRenderingContext2D, guildArea: Area) {
+    const frame = getFrame(guildArea.rightWall, guildArea.time);
+    if (guildArea.cameraX + 320 < guildArea.width - frame.w) return;
+    if (!guildArea.rightWall) return;
+    const target = {
+        ...frame,
+        x: guildArea.width - guildArea.cameraX - frame.w,
+        y: 0,
+    }
+    drawFrame(context, frame, target);
+}
+
+function drawLeftWall(context, guildArea) {
+    const frame = getFrame(guildArea.leftWall, guildArea.time);
+    if (guildArea.cameraX > frame.w) return;
+    if (!guildArea.leftWall) return;
+    context.save();
+        context.translate(frame.w - guildArea.cameraX, 0);
+        context.scale(-1, 1);
+        drawFrame(context, frame, {...frame, x: 0, y: 0});
+    context.restore();
 }

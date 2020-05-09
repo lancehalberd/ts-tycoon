@@ -1,7 +1,6 @@
 import { enterArea } from 'app/adventure';
 import { hideAreaMenu } from 'app/areaMenu';
 import { refreshStatsPanel } from 'app/character';
-import { guildYardEntrance } from 'app/content/guild';
 import { editingAreaState } from 'app/development/editArea';
 import { jewelsCanvas, query, queryAll, toggleElements } from 'app/dom';
 import { drawBoardJewels } from 'app/drawBoard';
@@ -9,7 +8,7 @@ import { stopDrag } from 'app/inventory';
 import { jewelInventoryState, stopJewelDrag } from 'app/jewelInventory';
 import { hidePointsPreview } from 'app/points';
 import { removePopup, setCanvasPopupTarget } from 'app/popup';
-import { getState} from 'app/state';
+import { getState, guildYardEntrance } from 'app/state';
 import { hideChooseBlessing, showChooseBlessing} from 'app/ui/chooseBlessing';
 
 export function setContext(context) {

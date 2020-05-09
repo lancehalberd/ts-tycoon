@@ -2,10 +2,10 @@ import { enterArea } from 'app/adventure';
 import { addBonusSourceToObject, createVariableObject } from 'app/bonuses';
 import { setSelectedCharacter } from 'app/character';
 import { addTrophyToAltar, checkIfAltarTrophyIsAvailable, getDefaultAltarTrophies, updateTrophy } from 'app/content/achievements';
-import { Bed, HeroApplication, TrophyAltar } from 'app/content/areas';
+import { createAreaFromDefinition, Bed, HeroApplication, TrophyAltar } from 'app/content/areas';
 import { addAllUnlockedFurnitureBonuses } from 'app/content/furniture';
-import { getDefaultGuildAreas, guildYardEntrance } from 'app/content/guild';
 import { map } from 'app/content/mapData';
+import { zones } from 'app/content/zones';
 import { craftingOptionsContainer, query, queryAll } from 'app/dom';
 import { getEnchantingItem, updateEnchantmentOptions } from 'app/enchanting';
 import { addToInventory, exportItem, getItemForElement, importItem } from 'app/inventory';
@@ -20,7 +20,8 @@ import {
 import { Polygon } from 'app/utils/polygon';
 
 import {
-    Character, GuildAreas, GuildStats, Jewel, SavedItem, SavedTrophy, VariableObject,
+    Area, Character, Exit, GuildAreas, GuildStats,
+    Jewel, SavedItem, SavedTrophy, VariableObject,
 } from 'app/types';
 import { ShapeType } from 'app/types/board';
 import { BonusSource } from 'app/types/bonuses';
@@ -83,6 +84,20 @@ export interface GameState {
     altarTrophies: Trophies,
     availableBeds: FixedObject[],
     time: number,
+}
+
+export const guildYardEntrance: Exit = {areaKey: 'guildYard', x: 120, z: 0};
+export function getDefaultGuildAreas(): GuildAreas {
+    // We need to reset these each time this function is called, otherwise we will
+    // double up on beds/applications.
+    HeroApplication.instances = [];
+    Bed.instances = [];
+    const guildAreas: GuildAreas = {};
+    for (let areaKey in zones.guild) {
+        const area: Area = createAreaFromDefinition(areaKey, zones.guild[areaKey]);
+        guildAreas[areaKey] = area;
+    }
+    return guildAreas;
 }
 
 function getDefaultSavedState(): SavedState {

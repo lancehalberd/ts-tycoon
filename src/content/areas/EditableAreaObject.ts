@@ -6,6 +6,7 @@ import {
 import { titleDiv } from 'app/dom';
 import { drawWhiteOutlinedFrame, requireImage } from 'app/images';
 import { getCanvasPopupTarget } from 'app/popup';
+import { getState } from 'app/state';
 import { drawFrame } from 'app/utils/animations';
 import { isPointInRect } from 'app/utils/index';
 
@@ -80,6 +81,16 @@ export class EditableAreaObject implements AreaObject {
 
     helpMethod(): string {
         return this.name && titleDiv(this.name);
+    }
+
+    isEnabled() {
+        // For now, everything outside of the guild is always enabled.
+        if (this.area.zoneKey !== 'guild') {
+            return true;
+        }
+        // In the guild, objects are only unlocked if the area is unlocked and there are no enemies.
+        // One exception is for doors that lead to other unlocked areas.
+        return getState().savedState.unlockedGuildAreas[this.area.key] && !this.area.enemies.length;
     }
 }
 

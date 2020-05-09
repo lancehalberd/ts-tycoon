@@ -5,7 +5,6 @@ import { newCharacter,updateAdventurer } from 'app/character';
 import { HeroApplication } from 'app/content/areas';
 import { addAllItems } from 'app/content/equipment/index';
 import { addAllUnlockedFurnitureBonuses } from 'app/content/furniture';
-import { getDefaultGuildAreas, guildYardEntrance } from 'app/content/guild';
 import { characterClasses, initializeJobs } from 'app/content/jobs';
 import { map } from 'app/content/mapData';
 import { initializeMonsters } from 'app/content/monsters';
@@ -23,7 +22,10 @@ import { gainJewel } from 'app/loot';
 import { centerMapOnLevel } from 'app/map';
 import { gain } from 'app/points';
 import { eraseSave, loadSavedData } from 'app/saveGame';
-import { getState, implicitGuildBonusSource, initializeState } from 'app/state';
+import {
+    getDefaultGuildAreas, guildYardEntrance, getState,
+    implicitGuildBonusSource, initializeState,
+} from 'app/state';
 import { removeElementFromArray } from 'app/utils/index';
 import { bindMouseListeners } from 'app/utils/mouse';
 import Random from 'app/utils/Random';

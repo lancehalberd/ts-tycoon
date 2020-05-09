@@ -9,7 +9,6 @@ import {
     initializeActorForAdventure, refreshStatsPanel
 } from 'app/character';
 import { addAreaFurnitureBonuses } from 'app/content/furniture';
-import { guildYardEntrance } from 'app/content/guild';
 import { instantiateLevel } from 'app/content/levels';
 import { map } from 'app/content/mapData';
 import { makeMonster } from 'app/content/monsters';
@@ -30,7 +29,7 @@ import { updateActorAnimationFrame } from 'app/render/drawActor';
 import { appendTextPopup, applyAttackToTarget, findActionByTag, getBasicAttack, performAttackProper } from 'app/performAttack';
 import { gain } from 'app/points';
 import { saveGame } from 'app/saveGame';
-import { getState } from 'app/state';
+import { getState, guildYardEntrance } from 'app/state';
 import {
     canUseReaction, canUseSkillOnTarget, gainReflectionBarrier,
     isTargetInRangeOfSkill,

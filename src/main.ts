@@ -1,7 +1,12 @@
 import { getDistanceBetweenPointsSquared, leaveCurrentArea, limitZ } from 'app/adventure';
 import { setSelectedCharacter } from 'app/character';
-import { getChoosingTrophyAltar } from 'app/content/achievements';
-import { getUpgradingObject } from 'app/content/upgradeButton';
+import {
+    getIsAltarTrophyAvailable,
+    getChoosingTrophyAltar,
+    setChoosingTrophyAltar,
+    trophySelectionRectangle,
+} from 'app/content/achievements';
+import { getUpgradingObject,getUpgradeRectangle, setUpgradingObject } from 'app/content/upgradeButton';
 import { setContext } from 'app/context';
 import {
     editingAreaState,
@@ -14,6 +19,7 @@ import {
 } from 'app/dom';
 import { getSelectedAction, setSelectedAction } from 'app/render/drawActionShortcuts';
 import { ADVENTURE_SCALE, GROUND_Y } from 'app/gameConstants';
+import { hideHeroApplication } from 'app/heroApplication';
 import { handleMapMouseDown } from 'app/map';
 import { checkToShowMainCanvasToolTip, getCanvasPopupTarget } from 'app/popup'
 import { saveGame } from 'app/saveGame';
@@ -21,6 +27,7 @@ import { getState } from 'app/state';
 import { getContextMenu, hideContextMenu, showContextMenu } from 'app/development/contextMenu';
 import { canUseSkillOnTarget } from 'app/useSkill';
 import { toolTipColor } from 'app/utils/colors';
+import { isPointInShortRect } from 'app/utils/index';
 import { getMousePosition, isMouseDown } from 'app/utils/mouse';
 
 import { Action, Actor, ActorActivity, Area, AreaObject, AreaObjectTarget, Hero, LocationTarget, Target } from 'app/types';
@@ -44,11 +51,30 @@ mainCanvas.addEventListener('mousemove', function () {
 });
 let clickedToMove = false;
 
+mainCanvas.addEventListener('mousedown', function (event) {
+    if (event.which !== 1) {
+        return;
+    }
+});
+
 mainCanvas.onmousedown = function (event) {
     if (event.which !== 1) {
         return;
     }
+
+    // This code is for hiding overlays in the guild (heroApplication, upgradeModal, chooseTrophyModal).
+    const target = event.target as HTMLElement;
+    if (!target.closest('.js-heroApplication')) {
+        hideHeroApplication();
+    }
     const [x, y] = getMousePosition(mainCanvas, ADVENTURE_SCALE);
+    if (!isPointInShortRect(x, y, trophySelectionRectangle)) {
+        setChoosingTrophyAltar(null);
+    }
+    if (!isPointInShortRect(x, y, getUpgradeRectangle())) {
+        setUpgradingObject(null);
+    }
+
     canvasCoords = [x, y];
     if (editingAreaState.isEditing) {
         handleEditAreaClick(x, y);

@@ -68,6 +68,22 @@ export class AreaDoor extends EditableAreaObject {
         return this.getAreaTarget().x > 100;
     }
 
+    isEnabled() {
+        // Outside the guild, only boss doors are disabled until all enemies are defeated.
+        if (this.area.zoneKey !== 'guild') {
+            if (this.area.isBossArea) {
+                return !this.area.enemies.length;
+            }
+            return true;
+        }
+        // If furniture is unlocked in general, the doors are also unlocked.
+        if (super.isEnabled()) {
+            return true;
+        }
+        // It can also be used if the area it is connected to is unlocked.
+        return getState().savedState.unlockedGuildAreas[this.exit.areaKey];
+    }
+
     static getCreateMenu(): MenuOption {
         return {
             getLabel: () => 'Door',

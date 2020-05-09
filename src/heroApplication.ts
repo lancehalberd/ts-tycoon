@@ -2,7 +2,6 @@ import { enterArea } from 'app/adventure';
 import { newCharacter, refreshStatsPanel, setSelectedCharacter, updateAdventurer } from 'app/character';
 import { updateTrophy } from 'app/content/achievements';
 import { HeroApplication } from 'app/content/areas';
-import { guildYardEntrance } from 'app/content/guild';
 import { characterClasses } from 'app/content/jobs';
 import { handleChildEvent, query, queryAll, tagElement } from 'app/dom';
 import { drawBoardBackground, drawBoardJewels } from 'app/drawBoard';
@@ -13,7 +12,7 @@ import { unlockMapLevel } from 'app/map';
 import { updateRetireButtons } from 'app/main';
 import { gain, hidePointsPreview, previewPointsChange, points, spend } from 'app/points';
 import { saveGame } from 'app/saveGame';
-import { getState } from 'app/state';
+import { getState, guildYardEntrance } from 'app/state';
 import { drawFrame } from 'app/utils/animations';
 import Random from 'app/utils/Random';
 
