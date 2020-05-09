@@ -1,8 +1,9 @@
-import { enterArea } from 'app/adventure';
+import { enterArea, getArea } from 'app/adventure';
 import {
     EditableAreaObject,
     areaObjectFactories,
 } from 'app/content/areas';
+import { zones } from 'app/content/zones';
 import { createObjectAtMouse, refreshDefinition, uniqueObjectId } from 'app/development/editArea';
 import { requireImage } from 'app/images';
 import { getState } from 'app/state';
@@ -110,9 +111,9 @@ export class AreaDoor extends EditableAreaObject {
         }, {
             getLabel: () => 'Door Exit',
             getChildren() {
-                const guildAreas = getState().guildAreas;
-                return Object.keys(guildAreas).map((areaKey: string): MenuOption => {
-                    const area: Area = guildAreas[areaKey];
+                const zoneKey = object.area.zoneKey;
+                return Object.keys(zones[zoneKey]).map((areaKey: string): MenuOption => {
+                    const area: Area = getArea(zoneKey, areaKey);
                     return {
                         getLabel: () => areaKey,
                         getChildren() {

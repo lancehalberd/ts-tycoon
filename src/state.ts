@@ -1,4 +1,4 @@
-import { enterArea } from 'app/adventure';
+import { enterArea, getArea } from 'app/adventure';
 import { addBonusSourceToObject, createVariableObject } from 'app/bonuses';
 import { setSelectedCharacter } from 'app/character';
 import { addTrophyToAltar, checkIfAltarTrophyIsAvailable, getDefaultAltarTrophies, updateTrophy } from 'app/content/achievements';
@@ -20,7 +20,7 @@ import {
 import { Polygon } from 'app/utils/polygon';
 
 import {
-    Area, Character, Exit, GuildAreas, GuildStats,
+    Area, Character, Exit, GuildStats,
     Jewel, SavedItem, SavedTrophy, VariableObject,
 } from 'app/types';
 import { ShapeType } from 'app/types/board';
@@ -29,14 +29,15 @@ import { Item } from 'app/types/items';
 import { FixedObject, JobAchievement, SavedCharacter, SavedJewel } from 'app/types';
 
 // Types used for saving data in local storage.
-interface SavedGuildAreas {
-    [key: string]: {
-        objects: {
-            [key: string]: {
-                level: number,
-            }
+interface SavedGuildArea {
+    objects: {
+        [key: string]: {
+            level: number,
         }
     }
+}
+interface SavedGuildAreas {
+    [key: string]: SavedGuildArea,
 }
 
 type Trophies = {[key: string]: JobAchievement};
@@ -79,26 +80,13 @@ export interface GameState {
     visibleLevels: {[key: string]: true},
     characters: Character[],
     applicants: Character[],
-    guildAreas: GuildAreas,
     guildBonusSources: BonusSource[];
     altarTrophies: Trophies,
     availableBeds: FixedObject[],
     time: number,
 }
 
-export const guildYardEntrance: Exit = {areaKey: 'guildYard', x: 120, z: 0};
-export function getDefaultGuildAreas(): GuildAreas {
-    // We need to reset these each time this function is called, otherwise we will
-    // double up on beds/applications.
-    HeroApplication.instances = [];
-    Bed.instances = [];
-    const guildAreas: GuildAreas = {};
-    for (let areaKey in zones.guild) {
-        const area: Area = createAreaFromDefinition(areaKey, zones.guild[areaKey]);
-        guildAreas[areaKey] = area;
-    }
-    return guildAreas;
-}
+export const guildYardEntrance: Exit = {zoneKey: 'guild', areaKey: 'guildYard', objectKey: 'mapExit'};
 
 function getDefaultSavedState(): SavedState {
     return {
@@ -138,7 +126,6 @@ function getDefaultState(): GameState {
         visibleLevels: {}, // This isn't stored, it is computed from completedLevels on load.
         characters: [],
         applicants: [],
-        guildAreas: {},
         guildBonusSources: [],
         altarTrophies: getDefaultAltarTrophies(),
         availableBeds: [],
@@ -174,7 +161,7 @@ export function exportState(state: GameState): SavedState {
         inventoryItems: [...queryAll('.js-inventory .js-item')].map(getItemForElement).map(exportItem),
         craftingItems: [...queryAll('.js-craftingSelectOptions .js-item')].map(getItemForElement).map(exportItem),
         enchantmentItem: enchantmentItem ? exportItem(enchantmentItem) : null,
-        guildAreas: exportGuildAreas(state.guildAreas),
+        guildAreas: exportGuildAreas(),
         jewels: jewelElements.map(getElementJewel).map(exportJewel),
         selectedCharacterIndex: state.characters.indexOf(state.selectedCharacter),
         trophies: exportTrophies(state.altarTrophies),
@@ -195,22 +182,24 @@ function exportTrophies(altarTrophies: Trophies): SavedTrophies {
     return trophies;
 }
 
-function exportGuildAreas(guildAreas): SavedGuildAreas {
+function exportGuildAreas(): SavedGuildAreas {
     const exportedAreas: SavedGuildAreas = {};
-    for (let areaKey in state.guildAreas) {
-        const area = state.guildAreas[areaKey];
-        exportedAreas[areaKey] = {'objects': {}};
+    for (let areaKey in zones.guild) {
+        const area = getArea('guild', areaKey);
+        const savedGuildArea: SavedGuildArea = {'objects': {}};
         for (const object of area.objects) {
             if (object.key && object.level) {
-                exportedAreas[areaKey].objects[object.key] = {level: object.level};
+                savedGuildArea.objects[object.key] = {level: object.level};
             }
+        }
+        if (Object.keys(savedGuildArea.objects).length) {
+            exportedAreas[areaKey] = savedGuildArea;
         }
     }
     return exportedAreas;
 }
 
 export function importState(savedState: SavedState) {
-    const defaultGuildAreas = getDefaultGuildAreas();
     // Clear all existing elements.
     const helperSlotElement = query('.js-inventory .js-inventorySlot');
     helperSlotElement.remove();
@@ -232,21 +221,17 @@ export function importState(savedState: SavedState) {
     state.guildStats = state.guildVariableObject.stats as GuildStats;
     addBonusSourceToObject(state.guildVariableObject, implicitGuildBonusSource);
     const savedGuildAreas = savedState.guildAreas || {};
-    for (let areaKey in defaultGuildAreas) {
-        state.guildAreas[areaKey] = defaultGuildAreas[areaKey];
-        if (!defaultGuildAreas[areaKey]) {
-            console.log('Warning area not found', areaKey);
-            continue;
-        }
-        var savedAreaData = savedGuildAreas[areaKey] || {objects: {}};
-        for (var objectKey in savedAreaData.objects) {
-            var savedObjectData = savedAreaData.objects[objectKey];
-            if (!defaultGuildAreas[areaKey].objectsByKey[objectKey]) {
+    for (let areaKey in savedGuildAreas) {
+        const area: Area = getArea('guild', areaKey);
+        const savedAreaData: SavedGuildArea = savedGuildAreas[areaKey] || {objects: {}};
+        for (let objectKey in savedAreaData.objects) {
+            const savedObjectData = savedAreaData.objects[objectKey];
+            if (!area.objectsByKey[objectKey]) {
                 console.log(`Warning ${objectKey} not found in ${areaKey}`);
                 continue;
             }
             try {
-                defaultGuildAreas[areaKey].objectsByKey[objectKey].level = savedObjectData.level;
+                area.objectsByKey[objectKey].level = savedObjectData.level;
             } catch (e) {
                 debugger;
             }
@@ -265,15 +250,24 @@ export function importState(savedState: SavedState) {
     // we first initialize the characters.
     savedState.trophies = savedState.trophies || {};
     for (let trophyKey in state.altarTrophies) {
-        if (!savedState.trophies[trophyKey]) continue;
+        if (!savedState.trophies[trophyKey]) {
+            continue;
+        }
         const trophy = state.altarTrophies[trophyKey];
         const trophyData = savedState.trophies[trophyKey];
         trophy.level = trophyData.level;
         trophy.value = trophyData.value;
-        const area = defaultGuildAreas[trophyData.areaKey];
-        if (!area) continue;
+        if (!trophyData.areaKey) {
+            continue;
+        }
+        const area = getArea('guild', trophyData.areaKey);
+        if (!area) {
+            continue;
+        }
         const altar = area.objectsByKey[trophyData.objectKey] as TrophyAltar;
-        if (!altar) continue;
+        if (!altar) {
+            continue;
+        }
         addTrophyToAltar(altar, trophy);
     }
     addAllUnlockedFurnitureBonuses();
@@ -307,6 +301,7 @@ export function importState(savedState: SavedState) {
         if (bed) {
             const target = bed.getAreaTarget();
             enterArea(character.hero, {
+                zoneKey: 'guild',
                 areaKey: bed.area.key,
                 x: (target.x > 160) ? target.x - 40 : target.x + 40,
                 z: target.z

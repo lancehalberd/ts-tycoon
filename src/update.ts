@@ -1,5 +1,5 @@
 import { updateActorFrame } from 'app/actor';
-import { updateArea } from 'app/adventure';
+import { getArea, updateArea } from 'app/adventure';
 import { refreshStatsPanel } from 'app/character';
 import { updateTrophyPopups } from 'app/content/achievements';
 import { areSoundsPreloaded, preloadSounds } from 'app/content/sounds';
@@ -82,8 +82,9 @@ export function update() {
         }
     }
     for (let guildAreaKey in activeGuildAreaHash) {
-        updateAreaCamera(state.guildAreas[guildAreaKey], state.selectedCharacter.hero);
-        updateArea(state.guildAreas[guildAreaKey]);
+        const area = getArea('guild', guildAreaKey);
+        updateAreaCamera(area, state.selectedCharacter.hero);
+        updateArea(area);
     }
     const context = state.selectedCharacter.context;
     if (isMouseDown() && (context === 'adventure' || context === 'guild')) {

@@ -1,3 +1,4 @@
+import { getArea } from 'app/adventure';
 import { addBonusSourceToObject, recomputeDirtyStats, removeBonusSourceFromObject } from 'app/bonuses';
 import { recomputeAllCharacterDirtyStats } from 'app/character';
 import { TrophyAltar } from 'app/content/areas';
@@ -130,7 +131,7 @@ export function selectTrophy(selectedTrophy: JobAchievement, character: Characte
 }
 function detachTrophy(trophy: JobAchievement): TrophyAltar {
     // It is possible the area or altar assigned no longer exists after a game update.
-    const area = getState().guildAreas[trophy.areaKey];
+    const area = getArea('guild', trophy.areaKey);
     if (!area) {
         return null;
     }
@@ -181,7 +182,6 @@ export function drawTrophySelection() {
         initializeTrophySelections();
     }
     drawRectangleBackground(mainContext, trophySelectionRectangle);
-    const guildAreas = getState().guildAreas;
     const trophySpacing = 5;
     const checkSource = {};
     let x = 5;
@@ -191,7 +191,7 @@ export function drawTrophySelection() {
         trophySelection.x = trophySelectionRectangle.x + x;
         trophySelection.y = trophySelectionRectangle.y + y;
         trophy.render(mainContext, trophySelection);
-        const area = trophy.areaKey && guildAreas[trophy.areaKey];
+        const area = trophy.areaKey && getArea('guild', trophy.areaKey);
         if (area && area.objectsByKey[trophy.objectKey]) {
             const target: ShortRectangle = {
                 x: trophySelection.x + trophySelection.w - 5,

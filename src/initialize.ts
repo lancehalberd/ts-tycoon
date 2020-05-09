@@ -1,8 +1,9 @@
 // Load any graphic assets needed by the game here.
-import { enterArea, startLevel } from 'app/adventure';
+import { enterArea, getArea, startLevel } from 'app/adventure';
 import { addBonusSourceToObject, createVariableObject } from 'app/bonuses';
 import { newCharacter,updateAdventurer } from 'app/character';
-import { HeroApplication } from 'app/content/areas';
+import { Bed, HeroApplication } from 'app/content/areas';
+import { zones } from 'app/content/zones';
 import { addAllItems } from 'app/content/equipment/index';
 import { addAllUnlockedFurnitureBonuses } from 'app/content/furniture';
 import { characterClasses, initializeJobs } from 'app/content/jobs';
@@ -23,7 +24,7 @@ import { centerMapOnLevel } from 'app/map';
 import { gain } from 'app/points';
 import { eraseSave, loadSavedData } from 'app/saveGame';
 import {
-    getDefaultGuildAreas, guildYardEntrance, getState,
+    guildYardEntrance, getState,
     implicitGuildBonusSource, initializeState,
 } from 'app/state';
 import { removeElementFromArray } from 'app/utils/index';
@@ -37,6 +38,16 @@ import { GuildStats } from 'app/types';
 let gameHasBeenInitialized = false;
 export function isGameInitialized() {
     return gameHasBeenInitialized;
+}
+export function initializeGuildAreas() {
+    // We need to reset these each time this function is called, otherwise we will
+    // double up on beds/applications.
+    HeroApplication.instances = [];
+    Bed.instances = [];
+    for (let areaKey in zones.guild) {
+        getArea('guild', areaKey);
+
+    }
 }
 export function initializeGame() {
     gameHasBeenInitialized = true;
@@ -59,12 +70,12 @@ export function initializeGame() {
             eraseSave();
         }
     }
+    initializeGuildAreas();
     if (loadSavedData()) {
         const state = getState();
         showContext(state.selectedCharacter.context);
     } else {
         const state = getState();
-        state.guildAreas = getDefaultGuildAreas();
         state.guildVariableObject = createVariableObject({'variableObjectType': 'guild'});
         state.guildStats = state.guildVariableObject.stats as GuildStats;
         addBonusSourceToObject(state.guildVariableObject, implicitGuildBonusSource);

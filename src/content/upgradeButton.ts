@@ -65,10 +65,6 @@ export const upgradeButton = {
         removeFurnitureBonuses(upgradingObject, false);
         upgradingObject.level++;
         addFurnitureBonuses(upgradingObject, true);
-        const state = getState();
-        if (!state.guildAreas[upgradingObject.area.key]) {
-            state.guildAreas[upgradingObject.area.key] = upgradingObject.area;
-        }
         saveGame();
         upgradingObject = null;
     }

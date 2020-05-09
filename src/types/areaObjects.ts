@@ -1,7 +1,7 @@
 import {
     Actor, FrameAnimation, Area, AreaObjectTarget,
     Bonuses, BonusSource, Character, Cost,
-    Exit, Frame, Hero, JobAchievement, MonsterSpawn,
+    Frame, Hero, JobAchievement, MonsterSpawn, ZoneType,
 } from 'app/types';
 
 import { AreaDecorationDefinition, AreaDoorDefinition } from 'app/content/areas';
@@ -90,4 +90,24 @@ export interface UpgradeableObjectTier {
 export interface UpgradeableObject extends AreaObject {
     getCurrentTier: () => UpgradeableObjectTier,
     getNextTier: () => UpgradeableObjectTier,
+}
+
+export interface Exit {
+    // The zone to enter when using this exit, if different than the current zone.
+    zoneKey?: ZoneType,
+    // The area to enter when using this exit.
+    areaKey: string,
+    // The target door in the area, can be used instead of x/z coords.
+    objectKey?: string,
+    // The target location to appear when entering the next area.
+    x?: number,
+    z?: number,
+}
+
+export interface SavedTrophy {
+    level: number,
+    value: number,
+    // These will be set if the trophy is currently displayed somewhere.
+    areaKey?: string,
+    objectKey?: string,
 }

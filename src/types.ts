@@ -6,7 +6,6 @@ export * from 'app/types/board';
 export * from 'app/types/bonuses';
 export * from 'app/types/character';
 export * from 'app/types/enchantments';
-export * from 'app/types/guild';
 export * from 'app/types/items';
 export * from 'app/types/jewels';
 export * from 'app/types/jobs';

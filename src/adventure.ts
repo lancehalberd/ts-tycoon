@@ -8,10 +8,12 @@ import {
     baseDivinity, damageActor, healActor,
     initializeActorForAdventure, refreshStatsPanel
 } from 'app/character';
+import { createAreaFromDefinition } from 'app/content/areas';
 import { addAreaFurnitureBonuses } from 'app/content/furniture';
 import { instantiateLevel } from 'app/content/levels';
 import { map } from 'app/content/mapData';
 import { makeMonster } from 'app/content/monsters';
+import { zones } from 'app/content/zones';
 import { setContext, showContext } from 'app/context';
 import { editingMapState, stopTestingLevel } from 'app/development/editLevel';
 import { editingAreaState } from 'app/development/editArea';
@@ -42,7 +44,8 @@ import { playSound } from 'app/utils/sounds';
 
 import {
     Actor, Area, AreaEntity, AreaTarget, BonusSource, Character, Exit, Frame,
-    GuildArea, Hero, LevelData, LevelDifficulty, MonsterData, MonsterSpawn, Target,
+    Hero, Level, LevelData, LevelDifficulty, MonsterData, MonsterSpawn, Target,
+    ZoneType,
 } from 'app/types';
 
 
@@ -82,20 +85,50 @@ export function startLevel(character: Character, index: string) {
     saveGame();
 }
 
-export function enterArea(actor: Actor, {x, z, areaKey, objectKey}: Exit) {
+const activeAreas: {[key: string]: Area} = {};
+export function getArea(zoneKey: ZoneType, areaKey: string): Area {
+    const fullKey = `${zoneKey}:${areaKey}`;
+    if (activeAreas[fullKey]) {
+        return activeAreas[fullKey];
+    }
+    if (!zones[zoneKey]) {
+        console.log('Missing zone', zoneKey);
+        debugger;
+        return;
+    }
+    if (!zones[zoneKey][areaKey]) {
+        console.log('Missing area', areaKey, zones[zoneKey]);
+        // debugger;
+        return;
+    }
+    activeAreas[fullKey] = createAreaFromDefinition(areaKey, zones[zoneKey][areaKey]);
+    return activeAreas[fullKey];
+}
+
+export function enterArea(actor: Actor, {x, z, areaKey, objectKey, zoneKey}: Exit) {
     if (areaKey === 'worldMap' && actor.type === 'hero') {
         returnToMap(actor.character);
         return;
     }
-    leaveCurrentArea(actor);
+    zoneKey = zoneKey || ((actor.owner || actor).area ? (actor.owner || actor).area.zoneKey : null);
     let area: Area;
-    const state = getState();
-    if (state.guildAreas[areaKey]) {
-        const guildArea = state.guildAreas[areaKey];
-        initializeActorForAdventure(actor);
-        if (!guildArea.allies.length && !state.savedState.unlockedGuildAreas[guildArea.key]) {
-            addMonstersToArea(guildArea, guildArea.monsters, [], 0);
+    if (!zoneKey) {
+        const levelInstance: Level = (actor.owner || actor).levelInstance;
+        if (!levelInstance) {
+            console.log('Warning, could not determine what zone to enter.');
+            debugger;
+            return;
         }
+        area = levelInstance.areas.get(areaKey);
+    } else {
+        area = getArea(zoneKey, areaKey);
+    }
+    leaveCurrentArea(actor);
+    const state = getState();
+
+    if (area.zoneKey === 'guild') {
+        // Heal+restore cooldowns on switching guild areas.
+        initializeActorForAdventure(actor);
         actor.actions.concat(actor.reactions).forEach(function (action) {
             action.readyAt = 0;
         });
@@ -108,9 +141,10 @@ export function enterArea(actor: Actor, {x, z, areaKey, objectKey}: Exit) {
                 showContext('guild');
             }
         }
-        area = guildArea;
-    } else {
-        area = (actor.owner || actor).levelInstance.areas.get(areaKey);
+        // If this is the first hero entering an area in the guild that isn't locked, refresh the monsters.
+        if (!area.allies.length && !state.savedState.unlockedGuildAreas[area.key]) {
+            addMonstersToArea(area, area.monsters, [], 0);
+        }
     }
     // This can be uncommented to allow minions to follow you through areas.
     (actor.minions || []).forEach(minion => enterArea(minion, {x:x + actor.heading[0] * 10, z: z - 90, areaKey}));
@@ -291,16 +325,17 @@ export function removeActor(actor: Actor) {
     }
 }
 
-function unlockGuildArea(guildArea: GuildArea) {
+function unlockGuildArea(guildArea: Area) {
     getState().savedState.unlockedGuildAreas[guildArea.key] = true;
     // Now that the guild area is unlocked the furniture bonuses should apply.
     addAreaFurnitureBonuses(guildArea, true);
     saveGame();
 }
 
+
 export function updateArea(area: Area) {
     if (area.zoneKey === 'guild' && !getState().savedState.unlockedGuildAreas[area.key] && !area.enemies.length && area.allies.some(actor => !actor.isDead)) {
-        unlockGuildArea(area as GuildArea);
+        unlockGuildArea(area);
     }
     if (timeStopLoop(area)) {
         return;
@@ -733,11 +768,13 @@ export function returnToMap(character: Character) {
 }
 
 export function leaveCurrentArea(actor: Actor, leavingZone = false) {
-    if (!actor.area) return;
-    // If the are is a safe guild area, it becomes the actors 'escape exit',
+    if (!actor.area) {
+        return;
+    }
+    // If the current area is a safe guild area, it becomes the actors 'escape exit',
     // where they will respawn next if they die.
     if (actor.type === 'hero' && actor.area.zoneKey === 'guild' && !actor.area.enemies.length) {
-        actor.escapeExit = {x: actor.x, z: actor.z, areaKey: actor.area.key};
+        actor.escapeExit = {x: actor.x, z: actor.z, areaKey: actor.area.key, zoneKey: 'guild'};
     }
     var allyIndex = actor.area.allies.indexOf(actor);
     if (allyIndex >= 0) actor.area.allies.splice(allyIndex, 1);

@@ -1,3 +1,4 @@
+import { getArea } from 'app/adventure';
 import { addBonusSourceToObject, removeBonusSourceFromObject } from 'app/bonuses';
 import { recomputeAllCharacterDirtyStats } from 'app/character';
 import { getState } from 'app/state';
@@ -43,13 +44,12 @@ export function removeFurnitureBonuses(furniture: AreaObject, recompute = false)
 }
 
 export function addAllUnlockedFurnitureBonuses() {
-    const state = getState();
-    for (let areaKey in state.savedState.unlockedGuildAreas) {
-        if (!state.guildAreas[areaKey]) {
-            console.log('warning, no area for ', areaKey);
+    for (let areaKey in getState().savedState.unlockedGuildAreas) {
+        const area = getArea('guild', areaKey);
+        if (!area) {
             continue;
         }
-        addAreaFurnitureBonuses(state.guildAreas[areaKey]);
+        addAreaFurnitureBonuses(area);
     }
     recomputeAllCharacterDirtyStats();
 }
