@@ -9,7 +9,7 @@ export * from 'app/content/zones/guild';
 // Set zoneKey in each areaDefinition.
 for (let zoneKey in zones) {
     const zone: Zone = zones[zoneKey];
-    for (let areaKey in zones[zoneKey]) {
+    for (let areaKey in zone) {
         const areaDefinition: AreaDefinition = zone[areaKey];
         areaDefinition.zoneKey = zoneKey as ZoneType;
     }
@@ -19,7 +19,7 @@ export function serializeZone(zoneKey: ZoneType): string {
     const lines: string[] = [
         "import { zones } from 'app/content/zones';",
         "",
-        "import { AreaDefinition } from 'app/types'",
+        "import { AreaDefinition } from 'app/types';",
         "",
     ];
     for (let areaKey in zones[zoneKey]) {

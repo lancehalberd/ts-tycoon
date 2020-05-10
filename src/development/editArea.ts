@@ -10,6 +10,7 @@ import { mainCanvas } from 'app/dom';
 import { ADVENTURE_WIDTH, ADVENTURE_SCALE, BACKGROUND_HEIGHT, GROUND_Y, MAX_Z, MIN_Z } from 'app/gameConstants';
 import { isKeyDown, KEY } from 'app/keyCommands';
 import { getState } from 'app/state';
+import { readFromFile, saveToFile } from 'app/utils/index';
 import { getMousePosition } from 'app/utils/mouse';
 
 
@@ -70,6 +71,11 @@ export function handleEditAreaClick(x: number, y: number): void {
             editingAreaState.selectedObject = object;
             return;
         }
+    }
+    if (isKeyDown(KEY.SHIFT) && y > BACKGROUND_HEIGHT) {
+        const hero = getState().selectedCharacter.hero;
+        hero.x = x + hero.area.cameraX;
+        hero.z = 2 * (GROUND_Y - y);
     }
 }
 
@@ -194,12 +200,6 @@ export function handleEditAreaKeyDown(keyCode: number): boolean {
     const { isEditing, selectedObject } = editingAreaState;
     if (!isEditing) {
         return false;
-    }
-    // Output the code for the current area to the console/clipboard.
-    if (keyCode === KEY.C) {
-        const area = getState().selectedCharacter.hero.area;
-        // Add custom serialization code here that is more concise than JSON.
-        console.log(serializeZone(area.zoneKey));
     }
     const area = getState().selectedCharacter.hero.area;
     let dx = 0;
@@ -444,6 +444,7 @@ function promptToCreateNewArea(zoneKey: ZoneType): void {
 }
 
 export function getZoneContextMenuOption(): MenuOption {
+    const area = getState().selectedCharacter.hero.area;
     return {
         getLabel() {
             return 'Zone...';
@@ -488,9 +489,90 @@ export function getZoneContextMenuOption(): MenuOption {
                         });
                     }
                 },
+                {
+                    getLabel() {
+                        return 'Export to...';
+                    },
+                    getChildren() {
+                        return [
+                            {
+                                getLabel() {
+                                    return 'File';
+                                },
+                                onSelect() {
+                                    saveToFile(serializeZone(area.zoneKey), `${area.zoneKey}.ts`, 'text/javascript');
+                                }
+                            },
+                            {
+                                getLabel() {
+                                    return 'Clipboard';
+                                },
+                                onSelect() {
+                                    navigator.clipboard.writeText(serializeZone(area.zoneKey))
+                                }
+                            },
+                            {
+                                getLabel() {
+                                    return 'Console';
+                                },
+                                onSelect() {
+                                    console.log(serializeZone(area.zoneKey))
+                                }
+                            },
+                        ];
+                    }
+                },
+                {
+                    getLabel() {
+                        return 'Import from...';
+                    },
+                    getChildren() {
+                        return [
+                            {
+                                getLabel() {
+                                    return 'File';
+                                },
+                                onSelect() {
+                                    readFromFile().then(contents => importZone(contents));
+                                }
+                            },
+                            {
+                                getLabel() {
+                                    return 'Clipboard';
+                                },
+                                onSelect() {
+                                    navigator.clipboard.readText().then(contents => importZone(contents));
+                                }
+                            },
+                        ];
+                    }
+                },
             ];
         }
     };
+}
+
+function importZone(zoneFileContents: string) {
+    // Remove all import lines.
+    zoneFileContents = zoneFileContents.replace(/import.*\n/g, '');
+    // Remove all export tokens at the start of lines.
+    zoneFileContents = zoneFileContents.replace(/\bexport /g, '');
+    // Remove all type definitions.
+    zoneFileContents = zoneFileContents.replace(/: [A-Z][a-zA-Z]+/g, '');
+    // console.log(zoneFileContents);
+    const matches = zoneFileContents.match(/zones\.(\w+) = {/);
+    const zoneKey = matches[1] as ZoneType;
+    eval(zoneFileContents);
+    // Set zoneKey on the newly imported area definitions.
+    for (let areaKey in zones[zoneKey]) {
+        const areaDefinition: AreaDefinition = zones[zoneKey][areaKey];
+        areaDefinition.zoneKey = zoneKey;
+    }
+    // Enter the first area found in the imported zone.
+    for (let areaKey in zones[zoneKey]) {
+        enterArea(getState().selectedCharacter.hero, {x: 0, z: 0, zoneKey, areaKey});
+        break;
+    }
 }
 
 export function getSelectedObjectContextMenu(): MenuOption[] {

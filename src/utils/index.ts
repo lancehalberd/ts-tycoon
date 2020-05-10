@@ -225,3 +225,39 @@ export function getThetaDistance(angle1: number, angle2: number): number {
     const diff = Math.abs(angle1 - angle2) % 360;
     return Math.min(diff, 360 - diff);
 }
+
+export function saveToFile(content, fileName, contentType) {
+    const a = document.createElement('a');
+    const file = new Blob([content], {type: contentType});
+    a.href = URL.createObjectURL(file);
+    a.download = fileName;
+    a.click();
+    // This might prevent leaking memory.
+    URL.revokeObjectURL(a.href);
+}
+
+export function readFromFile(): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const input = document.createElement("input");
+        input.type = 'file';
+        input.click();
+        input.onchange = function () {
+            console.log('on change');
+            console.log(input.files);
+            if (!input.files[0]) {
+                return;
+            }
+            const reader = new FileReader();
+            reader.readAsText(input.files[0], "UTF-8");
+            reader.onload = function (event) {
+                console.log('Loaded file contents');
+                resolve('' + event.target.result);
+            }
+            reader.onerror = function (event) {
+                console.log(event);
+                reject("error reading file");
+                debugger;
+            }
+        };
+    });
+}
