@@ -45,6 +45,40 @@ Possible cabal member: avatar of the elder god
 Name for the utopianists? Revolution, people's army, hands of salvation,
 
 
+G: "Lord X, what a pleasant surprise! And who's this you've brought?"
+X: "This is Fiona, they've volunteered to be your new founding member."
+G: "I'd hoped you'd finally given up on this, you know I won't risk opening the guild...(against the will of the people, weren't my stories convincing?)"
+X: "Oh I remember, (reaching into jacket) that's why I've brought this (offers declaration, opening it)."
+X: "It's an official decree from the king revoking the ban on guilds."
+G: (takes the decree) "Is this real? Has the monarchy really changed its mind about the guilds?"
+X: "Not really, but they are desperate enough to risk it." (especially with me offering to shore up their financial situation)
+G: "Desperate... I'm not sure that is good enough."
+F: "Please! The monarchy doesn't speak for all the people. I'm but one of many people without a home to return to now, we need something to keep us going, doesn't what we want count?"
+G: "Wait, I can feel it in you. The will of the people, their hopes riding on you, on us."
+F: "Their hopes?"
+G: "I'm almost scared to say it, but I think this could actually work."
+X: "It better because we are running out of time. I'm worried it might already be too late."
+G: "Then let's not waste time. Fiona, think of your people, how you intend to serve them and take my hand."
+Fiona takes a moment, then takes the offered hand.
+G: "I accept the will of you and your people and take you, Fiona, as the founding member of our guild."
+Fiona glows, then the guild gate flickers and begins to glow.
+
+X: "Let's get down to business. (approaches guild gate) I've got dozens of refugees at my estate with more coming in each day, but we can't keep them forever. Sprite, if you please." (Sprite appears)
+S: "Of course, here is the outpost."
+X: "My grandfather helped plan this outpost as a young man before it was abandoned. It's broken down and full of beasts and other... things, but I still hold title to all the lands."
+X: "I would like to hire the guild to clear the village of dangers so we can rebuild it for the refugees. In return I will grant you the services of Sprite indefinitely for the management of the guild."
+
+
+At the dawn of the new age, when the world was still wild and unclaimed guilds were created to keep order and protect the people.
+
+We guild spirits were celebrated and honoured throughout the lands.
+
+But as kingdoms grew along with their armies, the guilds became unwelcome competition, and eventually were disbanded.
+
+Some fought to survive, others continued in secret, but eventually, our members dwindled and we all closed our doors.
+
+Even without members, I tried to preserve our guild and the memories it held
+
 
 
 Origin -> Provenance -> Prove Once -> Shoomei Ichido -> Smeichido -> Semichido

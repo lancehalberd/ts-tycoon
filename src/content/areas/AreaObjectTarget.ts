@@ -3,11 +3,31 @@ import { isPointInShortRect } from 'app/utils/index';
 
 import {
     Area, AreaObject, AreaObjectDefinition, AreaObjectTarget,
-    Frame, ShortRectangle,
+    Frame, LocationDefinition, ShortRectangle,
 } from 'app/types';
 
 export function getAreaObjectTargetFromDefinition(object: AreaObject, content: ShortRectangle, definition: AreaObjectDefinition): AreaObjectTarget {
     const area: Area = object.area;
+    let scale = definition.scale || 1;
+    let w = content.w * scale;
+    let h = content.h * scale;
+    let d = (typeof(content.d) === 'undefined' ? content.w : content.d) * scale;
+    return {
+        targetType: 'object',
+        object,
+        area,
+        ...getPositionFromLocationDefinition(area, {w, h, d}, definition),
+        w, h, d,
+    };
+}
+
+interface Dimensions {
+    w: number,
+    h: number,
+    d: number,
+}
+
+export function getPositionFromLocationDefinition(area: Area, {w, h, d}: Dimensions, definition: LocationDefinition): {x: number, y: number, z: number} {
     let parentTarget: Partial<AreaObjectTarget> & {d?: number};
     if (definition.parentKey) {
         const parentObject: AreaObject = area.objectsByKey[definition.parentKey];
@@ -23,10 +43,6 @@ export function getAreaObjectTargetFromDefinition(object: AreaObject, content: S
             x: area.width / 2, y: 0, z: 0,
         };
     }
-    let scale = definition.scale || 1;
-    let w = content.w * scale;
-    let h = content.h * scale;
-    let d = (typeof(content.d) === 'undefined' ? content.w : content.d) * scale;
     let baseX, baseY, baseZ;
     // Align the right edge of this object with the right edge of the parent
     if (definition.xAlign === 'right') baseX = parentTarget.x + parentTarget.w / 2 - w / 2;
@@ -42,8 +58,6 @@ export function getAreaObjectTargetFromDefinition(object: AreaObject, content: S
     // Align the base edge of this object with the base of the parent
     else baseY = parentTarget.y;
 
-    // Use content.d as the depth of the object and default back to content.w if it isn't set.
-    const depth = typeof(content.d) === 'undefined' ? content.w : content.d
     // Align the front of this object with the front of the parent
     if (definition.zAlign === 'front') baseZ = parentTarget.z - parentTarget.d / 2 + d / 2;
     // Align the back of this object with the back of the parent
@@ -52,14 +66,10 @@ export function getAreaObjectTargetFromDefinition(object: AreaObject, content: S
     else baseZ = parentTarget.z;
 
     return {
-        targetType: 'object',
-        object,
-        area,
         x: baseX + (definition.x || 0),
         y: baseY + (definition.y || 0),
         z: baseZ + (definition.z || 0),
-        w, h, d,
-    };
+    }
 }
 
 export function areaTargetToScreenTarget(target: AreaObjectTarget): ShortRectangle {

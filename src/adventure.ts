@@ -199,9 +199,9 @@ export function addMonstersToArea(
         const rarity = monsterData.rarity || specifiedRarity;
         const newMonster = makeMonster(area, monsterData.key, monsterData.level, bonusSources, rarity);
         newMonster.heading = [-1, 0, 0]; // Monsters move right to left
-        newMonster.x = monsterData.location[0];
-        newMonster.y = monsterData.location[1];
-        newMonster.z = monsterData.location[2];
+        newMonster.x = monsterData.location.x;
+        newMonster.y = monsterData.location.y;
+        newMonster.z = monsterData.location.z;
         newMonster.area = area;
         initializeActorForAdventure(newMonster);
         newMonster.time = 0;

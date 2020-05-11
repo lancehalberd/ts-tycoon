@@ -217,9 +217,9 @@ const FieldArea: AreaType = {
             if (monsters.length > 0 && !area.isBossArea) {
                 const spawnerMonster = monsters.shift();
                 const spawner = new SimpleMonsterSpawner([spawnerMonster, spawnerMonster], 2000, 4000, bushAnimation);
-                spawner.x = spawnerMonster.location[0] - RANGE_UNIT * 10;
+                spawner.x = spawnerMonster.location.x - RANGE_UNIT * 10;
                 spawner.y = 0;
-                spawner.z = spawnerMonster.location[2];
+                spawner.z = spawnerMonster.location.z;
                 area.objects.push(spawner);
             }
             addMonstersToArea(area, monsters, area.enemyBonuses);

@@ -6,9 +6,7 @@ import {
 
 import { AreaDecorationDefinition, AreaDoorDefinition } from 'app/content/areas';
 
-export interface BaseAreaObjectDefinition {
-    type: string,
-    shapeType?: 'oval' | 'rectangle',
+export interface LocationDefinition {
     // Default to 0, relative to the parent coordinates.
     x?: number, y?: number, z?: number,
     // If this is unset, the parent is the area.
@@ -16,6 +14,11 @@ export interface BaseAreaObjectDefinition {
     xAlign?: 'left' | 'middle' | 'right',
     yAlign?: 'top' | 'middle' | 'bottom',
     zAlign?: 'back' | 'middle' | 'front',
+}
+
+export interface BaseAreaObjectDefinition extends LocationDefinition {
+    type: string,
+    shapeType?: 'oval' | 'rectangle',
     // This can be set to flip an object along its x-axis, if supported
     flipped?: boolean,
     // Can be used to scale the entire size of the object.

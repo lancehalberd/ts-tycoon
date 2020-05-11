@@ -1,6 +1,9 @@
-import { FrameAnimation, Area, AreaDefinition, AreaObject, AreaObjectDefinition } from 'app/types'
+import {
+    Area, AreaDefinition, AreaObject, AreaObjectDefinition,
+    FrameAnimation, MonsterSpawn,
+} from 'app/types'
 
-import { areaObjectFactories } from 'app/content/areas';
+import { areaObjectFactories, getPositionFromLocationDefinition } from 'app/content/areas';
 
 import { createAnimation, frame } from 'app/utils/animations';
 import { r } from 'app/utils/index';
@@ -51,7 +54,12 @@ export function createAreaFromDefinition(areaKey: string, areaDefinition: AreaDe
 export function applyDefinitionToArea(area: Area, areaDefinition: AreaDefinition): Area {
     area.areaType = areaDefinition.type;
     area.width = areaDefinition.width;
-    area.monsters = areaDefinition.monsters;
+    area.monsters = areaDefinition.monsters ? areaDefinition.monsters.map(monster => {
+        return {
+            ...monster,
+            location: getPositionFromLocationDefinition(area, {w: 30, h: 30, d: 30}, monster.location)
+        };
+    }) : [];
     area.zoneKey = areaDefinition.zoneKey,
     area.seed = areaDefinition.seed;
     if (areaDefinition.leftWallType) {

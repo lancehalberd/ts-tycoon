@@ -164,10 +164,10 @@ export function instantiateLevel(
             const monster: MonsterSpawn = {
                 key: Random.element(possibleMonsters),
                 level: enemyLevel,
-                location: [area.width + Random.range(0, RANGE_UNIT * 2), 0, Random.range(MIN_Z / 2, MAX_Z / 2)]
+                location: {x: area.width + Random.range(0, RANGE_UNIT * 2), y: 0, z: Random.range(MIN_Z / 2, MAX_Z / 2)},
             };
             areaMonsters.push(monster);
-            area.width = monster.location[0] + RANGE_UNIT * 8;
+            area.width = monster.location.x + RANGE_UNIT * 8;
             if (maxLoops-- < 0) debugger;
         }
         // Add the predetermined monsters towards the end of the area.
@@ -175,14 +175,14 @@ export function instantiateLevel(
             const monster: MonsterSpawn = {
                 key: eventMonsters.shift(),
                 level: enemyLevel,
-                location: [area.width + Random.range(0, RANGE_UNIT * 2), 0, Random.range(MIN_Z / 2, MAX_Z / 2)]
+                location: {x: area.width + Random.range(0, RANGE_UNIT * 2), y: 0, z: Random.range(MIN_Z / 2, MAX_Z / 2)},
             };
             if (area.isBossArea) {
                 monster.bonusSources = [bossMonsterBonuses];
                 monster.rarity = 0; // Bosses cannot be enchanted or imbued.
             }
             areaMonsters.push(monster);
-            area.width = monster.location[0] + RANGE_UNIT * 8;
+            area.width = monster.location.x + RANGE_UNIT * 8;
             if (maxLoops-- < 0) debugger;
         }
         area.width += RANGE_UNIT * 4;

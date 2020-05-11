@@ -2,7 +2,7 @@ import {
     ActiveEffect, Actor, AreaObject, AreaObjectDefinition,
     BonusSource,
     FrameAnimation,
-    MonsterSpawn,
+    MonsterDefinition, MonsterSpawn,
 } from 'app/types';
 
 export type ZoneType = 'guild';
@@ -20,7 +20,7 @@ export interface AreaDefinition {
     objects: {[key in string]: AreaObjectDefinition},
     wallDecorations: {[key in string]: AreaObjectDefinition},
     seed?: number,
-    monsters?: MonsterSpawn[],
+    monsters?: MonsterDefinition[],
 }
 
 export interface Area {

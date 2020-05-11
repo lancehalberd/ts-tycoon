@@ -169,7 +169,7 @@ document.addEventListener('keydown', function(event) {
     }*/
     if (keyCode == KEY.E) {
         const popup = getPopup();
-        if (!popup.target || !popup.target.closest('.js-inventory')) {
+        if (!popup || !popup.target || !popup.target.closest('.js-inventory')) {
             return;
         }
         const actor = state.selectedCharacter.adventurer;

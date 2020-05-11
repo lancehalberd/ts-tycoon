@@ -1,4 +1,4 @@
-import { AreaDefinition, AreaObjectDefinition, Zone, Zones, ZoneType } from 'app/types';
+import { AreaDefinition, AreaObjectDefinition, LocationDefinition, Zone, Zones, ZoneType } from 'app/types';
 
 import { zones } from 'app/content/zones/zoneHash';
 
@@ -74,41 +74,52 @@ function serializeAreaDefinition(areaDefinition: AreaDefinition): string {
     if (areaDefinition.monsters && areaDefinition.monsters.length) {
         lines.push('    monsters: [');
         for (const monster of areaDefinition.monsters) {
-            lines.push(`        {key: '${monster.key}', level: ${monster.level}, location: [${monster.location.join(', ')}]},`);
+            lines.push(`        {key: '${monster.key}', level: ${monster.level}, location: {${serializeLocation(monster.location)}}},`);
         }
         lines.push('    ],')
     }
     lines.push('}');
     return lines.join("\n");
 }
+function serializeLocation(location: LocationDefinition) {
+    const parts = [];
+    if (location.parentKey) {
+        parts.push(`parentKey: '${location.parentKey}'`);
+    }
+    if (location.xAlign && location.xAlign !== 'left') {
+        parts.push(`xAlign: '${location.xAlign}'`);
+    }
+    if (location.x) {
+        parts.push(`x: ${location.x}`);
+    }
+    if (location.yAlign && location.yAlign !== 'bottom') {
+        parts.push(`yAlign: '${location.yAlign}'`);
+    }
+    if (location.y) {
+        parts.push(`y: ${location.y}`);
+    }
+    if (location.zAlign && location.zAlign !== 'middle') {
+        parts.push(`zAlign: '${location.zAlign}'`);
+    }
+    if (location.z) {
+        parts.push(`z: ${location.z}`);
+    }
+    return parts.join(', ');
+}
 
 function serializeObjectDefinition(definition: AreaObjectDefinition): string {
     const lines = ['{'];
     lines.push(`            type: '${definition.type}',`);
-    if (definition.xAlign && definition.xAlign !== 'left') {
-        lines.push(`            xAlign: '${definition.xAlign}',`);
-    }
-    if (definition.x) {
-        lines.push(`            x: ${definition.x},`);
-    }
-    if (definition.yAlign && definition.yAlign !== 'bottom') {
-        lines.push(`            yAlign: '${definition.yAlign}',`);
-    }
-    if (definition.y) {
-        lines.push(`            y: ${definition.y},`);
-    }
-    if (definition.zAlign && definition.zAlign !== 'middle') {
-        lines.push(`            zAlign: '${definition.zAlign}',`);
-    }
-    if (definition.z) {
-        lines.push(`            z: ${definition.z},`);
+    const location = serializeLocation(definition);
+    if (location) {
+        lines.push(`            ${location},`);
     }
     if (definition.flipped) {
         lines.push(`            flipped: ${definition.flipped},`);
     }
     // All additional fields are included last.
     for (let key in definition) {
-        if (['type', 'x', 'y', 'z', 'xAlign', 'yAlign', 'zAlign', 'flipped'].includes(key)) {
+        if (['type', 'parentKey', 'x', 'y', 'z', 'xAlign', 'yAlign', 'zAlign', 'flipped'].includes(key)) {
             continue;
         }
         lines.push(`            ${key}: ${JSON.stringify(definition[key])},`);

@@ -1,4 +1,4 @@
-import { Ability, ActorSource, BaseActor, Bonuses, BonusSource } from 'app/types';
+import { Ability, ActorSource, BaseActor, Bonuses, BonusSource, LocationDefinition } from 'app/types';
 
 export interface MonsterData {
     key: string,
@@ -14,10 +14,18 @@ export interface MonsterData {
     onDeath?: Function,
 }
 
+export interface MonsterDefinition {
+    key: string,
+    level: number,
+    location: LocationDefinition,
+    bonusSources?: BonusSource[],
+    rarity?: number,
+}
+
 export interface MonsterSpawn {
     key: string,
     level: number,
-    location: [number, number, number],
+    location: {x: number, y: number, z: number},
     bonusSources?: BonusSource[],
     rarity?: number,
 }
