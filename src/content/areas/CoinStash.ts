@@ -10,6 +10,7 @@ import { titleDiv } from 'app/dom';
 import { ADVENTURE_WIDTH, GROUND_Y } from 'app/gameConstants';
 import { bonusSourceHelpText } from 'app/helpText';
 import { drawWhiteOutlinedFrame, drawTintedFrame, requireImage } from 'app/images';
+import { isKeyDown, KEY } from 'app/keyCommands';
 import { canAffordCost, costHelpText, hidePointsPreview, previewCost } from 'app/points';
 import { getCanvasPopupTarget, removePopup } from 'app/popup';
 import { getState } from 'app/state';
@@ -77,7 +78,7 @@ export class CoinStash extends EditableAreaObject implements UpgradeableObject {
             draw = drawFlashing;
         }
         const isEditing = editingAreaState.selectedObject === this;
-        drawFrameToAreaTarget(context, this.getAreaTarget(), {...frame, flipped: this.definition.flipped}, draw, isEditing);
+        drawFrameToAreaTarget(context, this.getAreaTarget(), {...frame, flipped: this.definition.flipped}, draw, isEditing && isKeyDown(KEY.SHIFT));
     }
 
     getActiveBonusSources() {

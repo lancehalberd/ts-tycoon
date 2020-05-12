@@ -40,14 +40,14 @@ mainCanvas.addEventListener('mousemove', function () {
     const [lastX, lastY] = canvasCoords || [-1, -1];
     const [x, y] = getMousePosition(mainCanvas, ADVENTURE_SCALE);
     canvasCoords = [x, y];
-    checkToShowMainCanvasToolTip(x, y);
-    // lastX will be -1 if the mouse wasn't previously over this element.
-    if (lastX > 0 && isMouseDown()) {
-        if (editingAreaState.isEditing) {
+    if (editingAreaState.isEditing) {
+        // lastX will be -1 if the mouse wasn't previously over this element.
+        if (lastX > 0 && isMouseDown()) {
             handleEditMouseDragged(x - lastX, y - lastY);
-            return;
         }
+        return;
     }
+    checkToShowMainCanvasToolTip(x, y);
 });
 let clickedToMove = false;
 
@@ -98,6 +98,9 @@ function handleAdventureClick(x: number, y: number, event) {
     const hero = state.selectedCharacter.adventurer;
     const canvasPopupTarget = getCanvasPopupTarget();
     const selectedAction = getSelectedAction();
+    if (editingAreaState.isEditing) {
+        return;
+    }
     if (canvasPopupTarget) {
         if (selectedAction) {
             if (canvasPopupTarget.targetType === 'actor' && canUseSkillOnTarget(hero, selectedAction, canvasPopupTarget as Actor)) {

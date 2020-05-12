@@ -165,6 +165,7 @@ export function instantiateLevel(
                 key: Random.element(possibleMonsters),
                 level: enemyLevel,
                 location: {x: area.width + Random.range(0, RANGE_UNIT * 2), y: 0, z: Random.range(MIN_Z / 2, MAX_Z / 2)},
+                heading: [-1, 0, 0],
             };
             areaMonsters.push(monster);
             area.width = monster.location.x + RANGE_UNIT * 8;
@@ -176,6 +177,7 @@ export function instantiateLevel(
                 key: eventMonsters.shift(),
                 level: enemyLevel,
                 location: {x: area.width + Random.range(0, RANGE_UNIT * 2), y: 0, z: Random.range(MIN_Z / 2, MAX_Z / 2)},
+                heading: [-1, 0, 0],
             };
             if (area.isBossArea) {
                 monster.bonusSources = [bossMonsterBonuses];

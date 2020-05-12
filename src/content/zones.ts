@@ -104,6 +104,9 @@ function serializeLocation(location: LocationDefinition) {
     if (location.z) {
         parts.push(`z: ${location.z}`);
     }
+    if (location.flipped) {
+        parts.push(`flipped: ${location.flipped}`);
+    }
     return parts.join(', ');
 }
 
@@ -113,9 +116,6 @@ function serializeObjectDefinition(definition: AreaObjectDefinition): string {
     const location = serializeLocation(definition);
     if (location) {
         lines.push(`            ${location},`);
-    }
-    if (definition.flipped) {
-        lines.push(`            flipped: ${definition.flipped},`);
     }
     // All additional fields are included last.
     for (let key in definition) {

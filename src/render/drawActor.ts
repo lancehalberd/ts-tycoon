@@ -1,4 +1,6 @@
 import { pause, updateAdventureButtons } from 'app/adventureButtons';
+import { drawFrameToAreaTarget, getPositionFromLocationDefinition } from 'app/content/areas';
+import { monsters } from 'app/content/monsters';
 import { drawBar } from 'app/drawArea';
 import { FRAME_LENGTH, GROUND_Y, MIN_SLOW } from 'app/gameConstants';
 import { bonusSourceHelpText } from 'app/helpText';
@@ -11,7 +13,10 @@ import { getState } from 'app/state';
 import { drawFrame, getFrame } from 'app/utils/animations';
 import { arrMod } from 'app/utils/index';
 
-import { Actor, Frame } from 'app/types';
+import {
+    Actor, Area, AreaObject, AreaObjectTarget,
+    Frame, MonsterData, MonsterDefinition,
+} from 'app/types';
 
 export function updateActorAnimationFrame(actor: Actor) {
     if (actor.pull || actor.stunned || actor.isDead ) {
@@ -110,6 +115,24 @@ export function drawActor(this: Actor, context: CanvasRenderingContext2D) {
     context.fillStyle = 'red';
     context.fillRect(target.left, target.top, target.width, target.height);*/
     context.restore();
+}
+export function renderMonsterFromDefinition(context: CanvasRenderingContext2D, area: Area, definition: MonsterDefinition, drawGuides: boolean = false): void {
+    const data: MonsterData = monsters[definition.key];
+    const frame: Frame = data.source.idleAnimation.frames[0];
+    let {w, h, d} = (frame.content || frame);
+    d = d || w;
+    const {x, y, z} = getPositionFromLocationDefinition(area, {w, h, d}, definition.location);
+    // In the editor make all the monsters face left by default.
+    let flipped = !data.source.flipped;
+    // Typescript suggests using `!==` for boolean XOR as `^` will conver to a number.
+    flipped = flipped !== definition.location.flipped;
+    drawFrameToAreaTarget(
+        context,
+        {area, x, y, z, w, h, d},
+        {...frame, flipped},
+        drawFrame,
+        drawGuides
+    );
 }
 export function drawActorEffects(context: CanvasRenderingContext2D, actor: Actor) {
     // life bar

@@ -14,13 +14,13 @@ export interface LocationDefinition {
     xAlign?: 'left' | 'middle' | 'right',
     yAlign?: 'top' | 'middle' | 'bottom',
     zAlign?: 'back' | 'middle' | 'front',
+    // This can be set to flip an object along its x-axis, if supported
+    flipped?: boolean,
 }
 
 export interface BaseAreaObjectDefinition extends LocationDefinition {
     type: string,
     shapeType?: 'oval' | 'rectangle',
-    // This can be set to flip an object along its x-axis, if supported
-    flipped?: boolean,
     // Can be used to scale the entire size of the object.
     scale?: number,
 }

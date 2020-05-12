@@ -2,7 +2,7 @@ import { BACKGROUND_HEIGHT, GROUND_Y, MAX_Z, MIN_Z } from 'app/gameConstants';
 import { isPointInShortRect } from 'app/utils/index';
 
 import {
-    Area, AreaObject, AreaObjectDefinition, AreaObjectTarget,
+    Area, AreaEntity, AreaObject, AreaObjectDefinition, AreaObjectTarget,
     Frame, LocationDefinition, ShortRectangle,
 } from 'app/types';
 
@@ -28,7 +28,7 @@ interface Dimensions {
 }
 
 export function getPositionFromLocationDefinition(area: Area, {w, h, d}: Dimensions, definition: LocationDefinition): {x: number, y: number, z: number} {
-    let parentTarget: Partial<AreaObjectTarget> & {d?: number};
+    let parentTarget: AreaEntity;
     if (definition.parentKey) {
         const parentObject: AreaObject = area.objectsByKey[definition.parentKey];
         if (!parentObject) {
@@ -39,6 +39,7 @@ export function getPositionFromLocationDefinition(area: Area, {w, h, d}: Dimensi
         }
     } else {
         parentTarget = {
+            area,
             w: area.width, h: BACKGROUND_HEIGHT, d: MAX_Z - MIN_Z,
             x: area.width / 2, y: 0, z: 0,
         };
@@ -72,16 +73,17 @@ export function getPositionFromLocationDefinition(area: Area, {w, h, d}: Dimensi
     }
 }
 
-export function areaTargetToScreenTarget(target: AreaObjectTarget): ShortRectangle {
+export function areaTargetToScreenTarget(target: AreaEntity): ShortRectangle {
     return {
-        x: target.x - target.area.cameraX - target.w / 2,
-        y: GROUND_Y - target.y - target.z / 2 - target.h + target.d / 4,
-        w: target.w,
-        h: target.h,
+        x: Math.round(target.x - target.area.cameraX - target.w / 2),
+        y: Math.round(GROUND_Y - target.y - target.z / 2 - target.h + target.d / 4),
+        w: Math.round(target.w),
+        h: Math.round(target.h),
+        d: Math.round(target.d),
     };
 }
 
-export function isPointOverAreaTarget(target: AreaObjectTarget, x: number, y: number): boolean {
+export function isPointOverAreaTarget(target: AreaEntity, x: number, y: number): boolean {
     return isPointInShortRect(x, y, areaTargetToScreenTarget(target));
 }
 
@@ -90,10 +92,10 @@ type DrawFrameFunction = (context: CanvasRenderingContext2D, frame: Frame, targe
 export function drawFrameToAreaTarget(
     this: void,
     context: CanvasRenderingContext2D,
-    target: AreaObjectTarget,
+    target: AreaEntity,
     frame: Frame,
     draw: DrawFrameFunction,
-    drawGuides: boolean = true,
+    drawGuides: boolean = false,
 ): void {
     const content = frame.content || {...frame, x: 0, y: 0};
 
@@ -101,39 +103,39 @@ export function drawFrameToAreaTarget(
     const yScale = target.h / content.h;
 
     // Calculate the left/top values from x/y/z coords, which drawImage will use.
-    const left = target.x - target.w / 2 - content.x * xScale - target.area.cameraX;
-    const top = GROUND_Y - target.y - target.h - target.z / 2 - content.y * yScale + target.d / 4;
+    const left = Math.round(target.x - target.w / 2 - content.x * xScale - target.area.cameraX);
+    const top = Math.round(GROUND_Y - target.y - target.h - target.z / 2 - content.y * yScale + target.d / 4);
     context.save();
     // If the object is flipped, flip it about the center of the content, which will keep
     // the content centered at its location.
     if (frame.flipped) {
-        context.translate(left + content.x * xScale + target.w / 2, 0);
+        context.translate(Math.round(left + content.x * xScale + target.w / 2), 0);
         context.scale(-1, 1);
-        context.translate(-left - content.x * xScale - target.w / 2, 0);
+        context.translate(Math.round(-left - content.x * xScale - target.w / 2), 0);
     }
-    draw(context, frame, {...frame, x: left, y: top, w: frame.w * xScale, h: frame.h * yScale});
+    draw(context, frame, {...frame, x: left, y: top, w: Math.round(frame.w * xScale), h: Math.round(frame.h * yScale)});
     if (drawGuides) {
         context.globalAlpha = 0.2;
         // Where the frame is drawn
         context.fillStyle = 'blue';
         context.fillRect(left,
             top,
-            frame.w * xScale,
-            frame.h * yScale,
+            Math.round(frame.w * xScale),
+            Math.round(frame.h * yScale),
         );
         // Content rectangle based on where the frame is drawn
         context.fillStyle = 'green';
         context.fillRect(
-            left + content.x * xScale,
-            top + content.y * yScale,
+            left + Math.round(content.x * xScale),
+            top + Math.round(content.y * yScale),
             target.w,
             target.h,
         );
         // Content rectangle as defined in the areaTarget (should match above content rectangle)
         context.fillStyle = 'red';
-        context.fillRect(target.x - target.area.cameraX - target.w / 2,
+        context.fillRect(Math.round(target.x - target.area.cameraX - target.w / 2),
             // target.d / 4 because it is offset by half the depth and the z-coord is divided by 2 again.
-            GROUND_Y - target.y - target.z / 2 - target.h + target.d / 4,
+            Math.round(GROUND_Y - target.y - target.z / 2 - target.h + target.d / 4),
             target.w,
             target.h,
         );

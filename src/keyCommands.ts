@@ -48,14 +48,14 @@ export const KEY = {
 };
 
 const keysDown = {};
-export function isKeyDown(keyCode: number, releaseThreshold: boolean = false): number {
+export function isKeyDown(keyCode: number, releaseThreshold: boolean = false): boolean {
     if (!keysDown[keyCode]) {
-        return 0;
+        return false;
     }
     if (releaseThreshold) {
-        keysDown[keyCode] = 0;
+        keysDown[keyCode] = false;
     }
-    return 1;
+    return true;
 };
 
 export function addKeyCommands() {

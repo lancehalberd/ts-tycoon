@@ -24,6 +24,7 @@ export interface MonsterDefinition {
 
 export interface MonsterSpawn {
     key: string,
+    heading: number[],
     level: number,
     location: {x: number, y: number, z: number},
     bonusSources?: BonusSource[],

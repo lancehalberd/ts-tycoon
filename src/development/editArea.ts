@@ -1,26 +1,31 @@
 import _ from 'lodash';
 import { enterArea } from 'app/adventure';
+import { monsters } from 'app/content/monsters';
 import { serializeZone, zones } from 'app/content/zones';
 import {
     applyDefinitionToArea,
     areaObjectFactories, areaTargetToScreenTarget, areaTypes, areaWalls,
     createAreaObjectFromDefinition, createAreaFromDefinition,
+    getPositionFromLocationDefinition, isPointOverAreaTarget,
 } from 'app/content/areas';
 import { mainCanvas } from 'app/dom';
 import { ADVENTURE_WIDTH, ADVENTURE_SCALE, BACKGROUND_HEIGHT, GROUND_Y, MAX_Z, MIN_Z } from 'app/gameConstants';
 import { isKeyDown, KEY } from 'app/keyCommands';
+import { renderMonsterFromDefinition } from 'app/render/drawActor';
 import { getState } from 'app/state';
 import { readFromFile, saveToFile } from 'app/utils/index';
 import { getMousePosition } from 'app/utils/mouse';
 
 
 import {
-    Area, AreaDefinition, AreaObject, AreaObjectDefinition, MenuOption, ZoneType,
+    Actor, Area, AreaDefinition, AreaEntity, AreaObject, AreaObjectDefinition, AreaObjectTarget, Frame,
+    MenuOption, MonsterData, MonsterDefinition, ShortRectangle, ZoneType,
 } from 'app/types';
 
 interface EditingAreaState {
     isEditing: boolean,
     selectedObject: AreaObject,
+    selectedMonsterIndex: number,
     // This will override the cameraX for the area.
     cameraX: number,
     contextCoords: number[],
@@ -28,12 +33,51 @@ interface EditingAreaState {
 export const editingAreaState: EditingAreaState = {
     isEditing: false,
     selectedObject: null,
+    selectedMonsterIndex: null,
     cameraX: null,
     contextCoords: null,
 }
+window['editingAreaState'] = editingAreaState;
 
 function getArea(): Area {
     return getState().selectedCharacter.hero.area;
+}
+function getAreaDefinition(): AreaDefinition {
+    const area: Area = getArea();
+    return zones[area.zoneKey][area.key];
+}
+
+class MonsterDefinitionAreaObject implements AreaObject {
+    area: Area;
+    index: number;
+    constructor(area: Area, index: number) {
+        this.area = area;
+        this.index = index;
+    }
+    getAreaTarget(): AreaObjectTarget {
+        const areaDefinition = zones[this.area.zoneKey][this.area.key];
+        const monsterDefinition: MonsterDefinition = areaDefinition.monsters[this.index];
+        return {
+            targetType: 'object',
+            object: this,
+            ...getMonsterDefinitionAreaEntity(this.area, monsterDefinition),
+        };
+    }
+    isPointOver(x: number, y: number): boolean {
+        return isPointOverAreaTarget(this.getAreaTarget(), x, y);
+    }
+}
+
+function getMonsterDefinitionAreaEntity(this: void, area: Area, monsterDefinition: MonsterDefinition): AreaEntity {
+    const data: MonsterData = monsters[monsterDefinition.key];
+    const frame: Frame = data.source.idleAnimation.frames[0];
+    let {w, h, d} = (frame.content || frame);
+    d = d || w;
+    return {
+        area,
+        ...getPositionFromLocationDefinition(area, {w, h, d}, monsterDefinition.location),
+        w, h, d,
+    };
 }
 
 // Note this actually fires on mousedown, not on click.
@@ -41,21 +85,31 @@ export function handleEditAreaClick(x: number, y: number): void {
     //console.log('click', x, y);
     const hero = getState().selectedCharacter.hero;
     const area = hero.area;
+    const areaDefinition = getAreaDefinition();
+    editingAreaState.selectedMonsterIndex = null;
     editingAreaState.selectedObject = null;
-    const sortedObjects = [...area.objects];
+    const monsterObjects: MonsterDefinitionAreaObject[] = (areaDefinition.monsters || []).map((definition, index) => {
+        return new MonsterDefinitionAreaObject(area, index);
+    });
+    const sortedObjects = [...area.objects, ...monsterObjects];
     // Consider objects closer to the screen first to make selection intuitive.
     sortedObjects.sort((A, B) => A.getAreaTarget().z - B.getAreaTarget().z);
     for (const object of sortedObjects) {
-        if (!object.definition) {
+        if (!(object instanceof MonsterDefinitionAreaObject) && !object.definition) {
             continue;
         }
         if (object.isPointOver(x, y)) {
-            if (isKeyDown(KEY.SHIFT) && object.onInteract) {
-                object.onInteract(hero);
+            if (object instanceof MonsterDefinitionAreaObject) {
+                editingAreaState.selectedMonsterIndex = object.index;
+                return;
+            } else {
+                if (isKeyDown(KEY.SHIFT) && object.onInteract) {
+                    object.onInteract(hero);
+                    return;
+                }
+                editingAreaState.selectedObject = object;
                 return;
             }
-            editingAreaState.selectedObject = object;
-            return;
         }
     }
     for (let i: number = area.wallDecorations.length - 1; i >= 0 ; i--) {
@@ -247,23 +301,59 @@ export function updateEditArea(): boolean {
 }
 
 export function renderEditAreaOverlay(context: CanvasRenderingContext2D): void {
-    const { isEditing, selectedObject } = editingAreaState;
+    const { isEditing, selectedObject, selectedMonsterIndex } = editingAreaState;
     if (!isEditing) {
         return;
     }
-    if (selectedObject) {
-        const {x, y, w, h} = areaTargetToScreenTarget(selectedObject.getAreaTarget());
-        context.strokeStyle = 'white';
-        context.lineWidth = 1;
-        context.strokeRect(x | 0, y | 0, w | 0, h | 0);
-        if (selectedObject.definition && selectedObject.definition.parentKey) {
-            const parentObject = selectedObject.area.objectsByKey[selectedObject.definition.parentKey];
-            const {x, y, w, h} = areaTargetToScreenTarget(parentObject.getAreaTarget());
-            context.strokeStyle = 'purple';
-            context.lineWidth = 1;
-            context.strokeRect(x | 0, y | 0, w | 0, h | 0);
+    const area = getArea();
+    const areaDefinition = getAreaDefinition();
+    context.save();
+        context.globalAlpha = 0.5;
+        for (let i =0; i < (areaDefinition.monsters || []).length; i++) {
+            const monster = areaDefinition.monsters[i];
+            renderMonsterFromDefinition(context, area, monster, i === selectedMonsterIndex && isKeyDown(KEY.SHIFT));
         }
+    context.restore();
+    let parentKey = null;
+    if (selectedMonsterIndex !== null) {
+        const monsterDefinition = areaDefinition.monsters[selectedMonsterIndex];
+        drawBox(context, 'white', areaTargetToScreenTarget(getMonsterDefinitionAreaEntity(area, monsterDefinition)));
+        parentKey = monsterDefinition.location.parentKey;
+    } else if (selectedObject) {
+        drawBox(context, 'white', areaTargetToScreenTarget(selectedObject.getAreaTarget()));
+        parentKey = selectedObject.definition && selectedObject.definition.parentKey;
     }
+    if (parentKey) {
+        const parentObject = selectedObject.area.objectsByKey[parentKey];
+        drawBox(context, 'purple', areaTargetToScreenTarget(parentObject.getAreaTarget()));
+    }
+}
+// Draws a simple representation of the "3D" box that an object is projected to on the screen.
+// This could be useful for checking if the in game geometry is actually matching the art since it easy to
+// get the art displaying well, even when it does not match the actual geometry being used.
+function drawBox(context: CanvasRenderingContext2D, color: string, {x, y, w, h, d}: ShortRectangle): void {
+    const d2 = Math.round(d / 2);
+    context.save();
+        context.globalAlpha = 0.5;
+        context.fillStyle = color;
+        // Draw the bars from the back of the box to the front.
+        context.fillRect(x, y, 1, d2);
+        context.fillRect(x + w - 1, y, 1, d2);
+        context.fillRect(x, y + h - d2, 1, d2);
+        context.fillRect(x + w - 1, y + h - d2, 1, d2);
+        // Draw the back of the box.
+        h -= d2;
+        context.fillRect(x, y, w, 1);
+        context.fillRect(x, y, 1, h);
+        context.fillRect(x, y + h - 1, w, 1);
+        context.fillRect(x + w - 1, y, 1, h);
+        // Draw the front of the box.
+        y += d2;
+        context.fillRect(x, y, w, 1);
+        context.fillRect(x, y, 1, h);
+        context.fillRect(x, y + h - 1, w, 1);
+        context.fillRect(x + w - 1, y, 1, h);
+    context.restore();
 }
 
 function updateAreaDefinition(updatedProps: Partial<AreaDefinition>) {

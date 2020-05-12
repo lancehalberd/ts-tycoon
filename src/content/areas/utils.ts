@@ -57,7 +57,9 @@ export function applyDefinitionToArea(area: Area, areaDefinition: AreaDefinition
     area.monsters = areaDefinition.monsters ? areaDefinition.monsters.map(monster => {
         return {
             ...monster,
-            location: getPositionFromLocationDefinition(area, {w: 30, h: 30, d: 30}, monster.location)
+            location: getPositionFromLocationDefinition(area, {w: 30, h: 30, d: 30}, monster.location),
+            // By default monsters face left, but they can be flipped to face right.
+            heading: [monster.location.flipped ? 1 : -1, 0, 0],
         };
     }) : [];
     area.zoneKey = areaDefinition.zoneKey,

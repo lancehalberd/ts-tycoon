@@ -5,6 +5,7 @@ import {
 } from 'app/content/areas';
 import { titleDiv } from 'app/dom';
 import { drawWhiteOutlinedFrame, requireImage } from 'app/images';
+import { isKeyDown, KEY } from 'app/keyCommands';
 import { getCanvasPopupTarget } from 'app/popup';
 import { getState } from 'app/state';
 import { drawFrame } from 'app/utils/animations';
@@ -71,7 +72,7 @@ export class EditableAreaObject implements AreaObject {
             this.getAreaTarget(),
             {...this.getFrame(), flipped: this.definition.flipped},
             draw,
-            isEditing
+            isEditing && isKeyDown(KEY.SHIFT)
         );
     }
 
