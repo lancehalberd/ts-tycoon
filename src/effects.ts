@@ -477,7 +477,13 @@ export function projectile(
                 projectile.z = stuckTarget.z + stuckDelta.z;
             }
             // Put an absolute cap on how far a projectile can travel
-            if (projectile.y < 0 || projectile.totalHits >= 5 || projectile.distance > 2000 && !stuckDelta) {
+            if (
+                projectile.y < 0 ||
+                projectile.z <= MIN_Z ||
+                projectile.z >= MAX_Z ||
+                projectile.totalHits >= 5 ||
+                projectile.distance > 2000 && !stuckDelta
+            ) {
                 applyAttackToTarget(projectile.attackStats, {
                     targetType: 'location',
                     area: projectile.area,
@@ -621,13 +627,13 @@ export function getProjectileVelocity(attackStats: AttackData, x: number, y: num
     const ty = (target.y || 0) + (target.targetType === 'location' ? 0 : target.h || 32) * 3 / 4;
     const v = [target.x - x, ty - y, target.z - z];
     let distance = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
-    const speed = Math.min(attackStats.speed, distance / 5);
+    const speed = attackStats.speed; // Math.max(5, Math.min(attackStats.speed, distance / 5));
     const frameEstimate = distance / speed;
     //console.log({x, y, z}, target, {ty, v, distance, speed, frameEstimate, gravity: attackStats.gravity});
     // Over a period of N frames, the projectile will fall roughly N^2 / 2, update target velocity accordingly
     v[1] += attackStats.gravity * frameEstimate * frameEstimate / 2;
-    distance = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
-    if (distance === 0 || isNaN(distance) || isNaN(v[0]) || isNaN(v[1])) {
+    const mag = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+    if (mag === 0 || isNaN(distance) || isNaN(v[0]) || isNaN(v[1])) {
         console.log("invalid velocity");
         console.log([speed, attackStats.gravity]);
         console.log([x, y, z, target.x, ty, target.z]);
@@ -638,7 +644,7 @@ export function getProjectileVelocity(attackStats: AttackData, x: number, y: num
         debugger;
     }
     // console.log([v[0] * speed / distance, v[1] * speed / distance, v[2] * speed / distance]);
-    return [v[0] * speed / distance, v[1] * speed / distance, v[2] * speed / distance];
+    return [v[0] * speed / mag, v[1] * speed / mag, v[2] * speed / mag];
 }
 
 export function expireTimedEffects(actor: Actor) {

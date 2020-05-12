@@ -158,12 +158,13 @@ export function moveActor(actor: Actor) {
         const skill: Action = actor.skillInUse
             || (actor.type === 'hero' && actor.activity.type === 'action' && actor.activity.action)
             || getBasicAttack(actor);
-        const skillRange = skill.stats.range || .5;
+        const skillRange = skill.stats.range || 0.5;
         const distanceToTarget = getDistanceOverlap(actor, goalTarget);
         // Set the max distance to back away to to 10, otherwise they will back out of the range
         // of many activated abilities like fireball and meteor.
+        const desiredDistanceFromTarget = (Math.max(0.5, Math.min(skillRange - 1.5, 10))) * RANGE_UNIT;
         if (
-            distanceToTarget < (Math.min(skillRange - 1.5, 10)) * RANGE_UNIT ||
+            distanceToTarget < desiredDistanceFromTarget ||
             (goalTarget.targetType === 'actor' && goalTarget.targetHealth < 0)
         ) {
             // Actors backing away from their targets will eventually corner themselves in the edge of the room.
@@ -193,7 +194,7 @@ export function moveActor(actor: Actor) {
             debugger;
         }
         // Actor is not allowed to leave the path.
-        actor.z = limitZ(actor.z, actor.w / 2);
+        actor.z = limitZ(actor.z, actor.d / 2);
         if (area.leftWall) {
             actor.x = Math.max(16 + actor.w / 2 + actor.z / 4, actor.x);
         } else {
@@ -271,7 +272,7 @@ export function moveActor(actor: Actor) {
                     collision = false;
                     break;
                 }
-                if (distance <= -16 && new Vector([speedBonus * actor.heading[0], speedBonus * actor.heading[2]]).dotProduct(new Vector([enemy.x - actor.x, enemy.z - actor.z])) > 0) {
+                if (distance <= 4 && new Vector([speedBonus * actor.heading[0], speedBonus * actor.heading[2]]).dotProduct(new Vector([enemy.x - actor.x, enemy.z - actor.z])) >= 0) {
                     collision = true;
                     blockedByEnemy = enemy;
                     break;
@@ -313,6 +314,8 @@ export function moveActor(actor: Actor) {
         actor.x = currentX;
         actor.z = currentZ;
     }
+    // Return actor to their original heading so they don't change frames rapidly when navigating around objects.
+    actor.heading = originalHeading.slice();
     // If the actor hit something, complete the charge effect. The splash may still hit enemies,
     // and if it had an animation, it should play.
     if (collision && actor.chargeEffect) {

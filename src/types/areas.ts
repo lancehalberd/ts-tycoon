@@ -41,7 +41,6 @@ export interface Area {
     // Optional array of bonuses that apply to all enemies in this area.
     enemyBonuses?: BonusSource[],
     isShrineArea?: boolean,
-    monsters?: MonsterSpawn[],
 
     allies: Actor[],
     enemies: Actor[],

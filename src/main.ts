@@ -153,10 +153,10 @@ function setActorDestination(hero: Hero, target: Target) {
         type: 'move',
         x: target.x,
         y: 0,
-        z: limitZ(target.z, hero.w / 2)
+        z: limitZ(target.z, hero.d / 2)
     };
     if (getDistanceBetweenPointsSquared(hero, activity) > 200) {
-        if (hero.activity.type === 'none') {
+        if (hero.activity.type === 'none' && !hero.isMoving) {
             hero.walkFrame = 1;
         }
         hero.activity = activity;

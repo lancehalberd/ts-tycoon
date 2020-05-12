@@ -1,4 +1,4 @@
-import { addMonstersToArea, messageCharacter } from 'app/adventure';
+import { messageCharacter } from 'app/adventure';
 import { readBoardFromData, totalCostForNextLevel } from 'app/character';
 import { abilities } from 'app/content/abilities';
 import { areaTypes } from 'app/content/areas';

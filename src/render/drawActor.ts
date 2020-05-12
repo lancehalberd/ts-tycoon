@@ -50,7 +50,7 @@ export function drawActorShadow(context: CanvasRenderingContext2D, actor: Actor)
         const shadowFrame = getFrame(source.shadowAnimation, actor.time);
         const shadowTarget = {
             x: Math.round(actor.x - actor.area.cameraX - (shadowFrame.content.x + shadowFrame.content.w / 2) * scale),
-            y: Math.round(GROUND_Y - (actor.y || 0) - (actor.z || 0) / 2 - (shadowFrame.content.y + shadowFrame.content.h / 2) * scale),
+            y: Math.round(GROUND_Y - (actor.y || 0) - (actor.z || 0) / 2 + actor.d / 4 - (shadowFrame.content.y + shadowFrame.content.h / 2) * scale),
             w: shadowFrame.w * scale, h: shadowFrame.h * scale
         };
         drawFrame(context, shadowFrame, shadowTarget);
@@ -70,7 +70,7 @@ export function drawActor(this: Actor, context: CanvasRenderingContext2D) {
     // This is a little more complicated. GROUND_Y is where the foot of actors is placed at y=z=0.
     // Increasing y moves them up 1 pixel, increasing z moves them up 1/2 a pixel, and to get the center,
     // we subtract half the height.
-    const yCenter = Math.round(GROUND_Y - this.y - this.z / 2 - this.h / 2);
+    const yCenter = Math.round(GROUND_Y - this.y - this.z / 2 - this.h / 2 + this.d / 4);
     /*if (mouseDown) {
         console.log(actor.base.name ? actor.base.name : actor.name);
         console.log([actor.x, actor.y]);
@@ -125,7 +125,7 @@ export function renderMonsterFromDefinition(context: CanvasRenderingContext2D, a
     // In the editor make all the monsters face left by default.
     let flipped = !data.source.flipped;
     // Typescript suggests using `!==` for boolean XOR as `^` will conver to a number.
-    flipped = flipped !== definition.location.flipped;
+    flipped = flipped !== (!!definition.location.flipped);
     drawFrameToAreaTarget(
         context,
         {area, x, y, z, w, h, d},

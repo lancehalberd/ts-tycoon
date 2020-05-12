@@ -1539,6 +1539,9 @@ p {
     user-select: none;
     /* Without some outline, it is hard to see what is happening when one menu is on top of another */
     box-shadow: 2px 2px 10px black;
+    /* Make the menu scroll when there are too many elements to display comfortably. */
+    max-height: 400px;
+    overflow-y: auto;
 }
 .contextOption {
     position: relative;

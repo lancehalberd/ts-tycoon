@@ -229,7 +229,7 @@ export function createAttackStats(attacker: Actor, attack: Action, target: Targe
         animation = projectileAnimations[animationType];
     }
     const gravity = ifdefor(attack.base.gravity,
-        ifdefor(attacker.equipment.weapon && attacker.equipment.weapon.base.gravity, 0.8));
+        ifdefor(attacker.equipment.weapon && attacker.equipment.weapon.base.gravity, 0.3));
     return {
         distance: 0,
         animation,
@@ -276,14 +276,14 @@ function createSpellImprintedAttackStats(attacker: Actor, attack: Action, spell:
         animation = projectileAnimations[animationType];
     }
     const gravity = ifdefor(attack.base.gravity,
-        ifdefor(attacker.equipment.weapon && attacker.equipment.weapon.base.gravity, 0.8));
+        ifdefor(attacker.equipment.weapon && attacker.equipment.weapon.base.gravity, 0.3));
     return {
         distance: 0,
         animation,
         sound,
         size: attack.base.size || (animation ? animation.frames[0][2] : 10),
         gravity,
-        speed: attack.base.speed || attack.base.speed || (attack.stats.range || 10),
+        speed: attack.base.speed || (attack.stats.range || 10),
         healthSacrificed: sacrificedHealth,
         source: attacker,
         attack,

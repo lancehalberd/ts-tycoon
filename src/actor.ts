@@ -10,6 +10,9 @@ export function updateActorFrame(actor: Actor): void {
     const content = actor.frame.content || actor.frame;
     actor.w = content.w * scale;
     actor.h = content.h * scale;
+    // Make sure to fall back to the frame depth if it isn't specified on content.
+    const d = (content.d || actor.frame.d);
+    actor.d = (d || content.w) * scale;
 }
 
 export function getActorAnimationFrame(actor: Actor): Frame {
@@ -48,7 +51,7 @@ export function getActorMouseTarget(actor: Actor): ShortRectangle {
         w: actor.w,
         h: actor.h,
         x: Math.round(actor.x - actor.w / 2 - actor.area.cameraX),
-        y: Math.round(GROUND_Y - actor.h - (actor.y || 0) - (actor.z || 0) / 2),
+        y: Math.round(GROUND_Y - actor.h - (actor.y || 0) - (actor.z || 0) / 2 + actor.d / 4),
     };
 }
 

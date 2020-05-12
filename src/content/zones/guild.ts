@@ -11,8 +11,7 @@ export const guildYard: AreaDefinition = {
     objects: {
         mapExit: {
             type: 'door',
-            z: -22,
-            flipped: true,
+            z: -22, flipped: true,
             exitKey: "worldMap",
             animation: "woodBridge",
         },
@@ -52,12 +51,11 @@ export const guildFoyer: AreaDefinition = {
         },
         trophyAltar: {
             type: 'trophyAltar',
-            x: 290,
+            x: 289,
         },
         bed: {
             type: 'bed',
-            xAlign: 'right', x: -32, zAlign: 'front',
-            flipped: true,
+            xAlign: 'right', x: -32, zAlign: 'front', flipped: true,
         },
         bookShelf: {
             type: 'obstacle',
@@ -67,8 +65,7 @@ export const guildFoyer: AreaDefinition = {
         },
         frontDoor: {
             type: 'door',
-            x: 8, z: -7,
-            flipped: true,
+            x: 8, z: -7, flipped: true,
             exitKey: "guildYard:frontDoor",
             animation: "closedDoor",
         },
@@ -156,8 +153,8 @@ export const guildFoyer: AreaDefinition = {
         },
     },
     monsters: [
-        {key: 'gremlin', level: 1, location: {x: 250, z: 40}},
-        {key: 'skeleton', level: 1, location: {x: 360}},
+        {key: 'gremlin', level: 1, location: {x: 211, z: -8}},
+        {key: 'skeleton', level: 1, location: {x: 381, z: -8}},
     ],
 };
 
@@ -191,8 +188,7 @@ export const guildFrontHall: AreaDefinition = {
         },
         foyerDoor: {
             type: 'door',
-            x: 8, z: -7,
-            flipped: true,
+            x: 8, z: -7, flipped: true,
             exitKey: "guildFoyer:hallDoor",
             animation: "openDoor",
         },
@@ -212,8 +208,8 @@ export const guildFrontHall: AreaDefinition = {
         },
     },
     monsters: [
-        {key: 'spider', level: 3, location: {x: 300, z: 40}},
-        {key: 'gnome', level: 3, location: {x: 500}},
+        {key: 'spider', level: 3, location: {x: 228, z: -60}},
+        {key: 'gnome', level: 3, location: {x: 494, z: -56}},
     ],
 };
 
@@ -230,8 +226,7 @@ export const guildGuestRoom: AreaDefinition = {
         },
         bedB: {
             type: 'bed',
-            x: 223, z: -44,
-            flipped: true,
+            x: 223, z: -44, flipped: true,
         },
         coinStashA: {
             type: 'coinStash',
@@ -296,8 +291,7 @@ export const guildBasement: AreaDefinition = {
     objects: {
         vaultDoor: {
             type: 'door',
-            z: -10,
-            flipped: true,
+            z: -10, flipped: true,
             animation: "caveDoorOpen",
             exitKey: "guildVault:door",
         },
@@ -311,9 +305,9 @@ export const guildBasement: AreaDefinition = {
         },
     },
     monsters: [
-        {key: 'vampireBat', level: 15, location: {xAlign: 'right', x: -150, zAlign: 'front'}},
-        {key: 'vampireBat', level: 15, location: {x: 100, z: 40}},
-        {key: 'vampireBat', level: 15, location: {x: 100, z: -40}},
+        {key: 'vampireBat', level: 15, location: {xAlign: 'right', x: -218, zAlign: 'front', flipped: true}},
+        {key: 'vampireBat', level: 15, location: {x: 95, z: 60, flipped: true}},
+        {key: 'vampireBat', level: 15, location: {x: 77, z: -60, flipped: true}},
     ],
 };
 

@@ -556,7 +556,6 @@ function addShrine(area: Area, ability: Ability) {
     };
     area.objects.push(shrine);
     area.width = shrine.definition.x + RANGE_UNIT * 20;
-    console.log(shrine.definition.x, area.width);
 }
 
 export const areaTypes = {

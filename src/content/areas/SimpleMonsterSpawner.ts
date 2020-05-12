@@ -1,4 +1,3 @@
-import { addMonstersToArea } from 'app/adventure';
 import {
     initializeActorForAdventure,
 } from 'app/character';

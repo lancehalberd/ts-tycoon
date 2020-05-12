@@ -1,6 +1,6 @@
 import _ from 'lodash';
-import { enterArea } from 'app/adventure';
-import { monsters } from 'app/content/monsters';
+import { addMonstersFromAreaDefinition, enterArea } from 'app/adventure';
+import { getMonsterDefinitionAreaEntity, monsters } from 'app/content/monsters';
 import { serializeZone, zones } from 'app/content/zones';
 import {
     applyDefinitionToArea,
@@ -18,8 +18,9 @@ import { getMousePosition } from 'app/utils/mouse';
 
 
 import {
-    Actor, Area, AreaDefinition, AreaEntity, AreaObject, AreaObjectDefinition, AreaObjectTarget, Frame,
-    MenuOption, MonsterData, MonsterDefinition, ShortRectangle, ZoneType,
+    Actor, Area, AreaDefinition, AreaEntity, AreaObject, AreaObjectDefinition, AreaObjectTarget,
+    Frame, FrameDimensions,
+    LocationDefinition, MenuOption, MonsterData, MonsterDefinition, ShortRectangle, ZoneType,
 } from 'app/types';
 
 interface EditingAreaState {
@@ -66,18 +67,6 @@ class MonsterDefinitionAreaObject implements AreaObject {
     isPointOver(x: number, y: number): boolean {
         return isPointOverAreaTarget(this.getAreaTarget(), x, y);
     }
-}
-
-function getMonsterDefinitionAreaEntity(this: void, area: Area, monsterDefinition: MonsterDefinition): AreaEntity {
-    const data: MonsterData = monsters[monsterDefinition.key];
-    const frame: Frame = data.source.idleAnimation.frames[0];
-    let {w, h, d} = (frame.content || frame);
-    d = d || w;
-    return {
-        area,
-        ...getPositionFromLocationDefinition(area, {w, h, d}, monsterDefinition.location),
-        w, h, d,
-    };
 }
 
 // Note this actually fires on mousedown, not on click.
@@ -134,10 +123,20 @@ export function handleEditAreaClick(x: number, y: number): void {
 }
 
 export function handleEditMouseDragged(dx: number, dy: number): void {
-    const { selectedObject } = editingAreaState;
+    moveSelectedTarget(dx, dy);
+}
+
+function moveSelectedTarget(dx: number, dy: number): boolean {
+    const { selectedMonsterIndex, selectedObject } = editingAreaState;
     if (selectedObject && selectedObject.definition) {
         moveObject(selectedObject, dx, dy);
+        return true;
     }
+    if (selectedMonsterIndex !== null) {
+        moveMonsterDefinition(getAreaDefinition().monsters[selectedMonsterIndex], dx, dy);
+        return true;
+    }
+    return false;
 }
 
 export function uniqueObjectId(base: string, area: Area): string {
@@ -183,18 +182,41 @@ export function createObjectAtMouse(definition: AreaObjectDefinition, objectKey:
     // Select the most recently created object.
     editingAreaState.selectedObject = area.objectsByKey[objectKey];
     return area.objectsByKey[objectKey];
-    /*const object: AreaObject = createAreaObjectFromDefinition(definition);
-    object.area = area;
-    object.key = objectKey;
-    area.objectsByKey[objectKey] = object;
-    if (isWallDecoration) {
-        area.wallDecorations.push(object);
-    } else {
-        area.objects.push(object);
-    }*/
 }
 
-function moveObject(object: AreaObject, dx: number, dy: number) {
+function moveLocationDefinition(definition: LocationDefinition, dx: number, dy: number, dz: number, {w, h, d}: FrameDimensions): void {
+    // TODO: These values aren't rounded because the scaling on the canvas causes a 1 pixel mouse movement to become 1/3, and movement
+    // can therefor be lost when rounded. To fix this (and other drag issues), we should just record the offset of the mouse relative to
+    // the object and pass in dx/y/z values that will preserve this offset instead of the actual mouse dx/y/z values.
+    definition.x = (definition.x || 0 ) + dx;
+    definition.y = (definition.y || 0 ) + dy;
+    definition.z = (definition.z || 0 ) + dz;
+    // For items aligned to the area, add some common sense restrictions for positioning them.
+    if (!definition.parentKey) {
+        if (definition.zAlign === 'back') {
+            definition.z = Math.max(2 * MIN_Z + d, Math.min(0, definition.z));
+        } else if (definition.zAlign === 'front') {
+            definition.z = Math.max(0, Math.min(2 * MAX_Z - d, definition.z));
+        } else {
+            definition.z = Math.max(MIN_Z + d / 2, Math.min(MAX_Z - d / 2, definition.z));
+        }
+        if (definition.yAlign === 'middle') {
+            // Not going to worry about these for now, they aren't used so far.
+        } else if (definition.yAlign === 'top') {
+            // Not going to worry about these for now, they aren't used so far.
+        } else {
+            // Don't let them move objects beneath the floor.
+            definition.y = Math.max(0, definition.y);
+        }
+    }
+}
+
+function moveMonsterDefinition(definition: MonsterDefinition, dx: number, dy: number): void {
+    moveLocationDefinition(definition.location, dx, 0, -2 * dy, getMonsterDefinitionAreaEntity(getArea(), definition));
+    refreshEnemies();
+}
+
+function moveObject(object: AreaObject, dx: number, dy: number): void {
     const area = getState().selectedCharacter.hero.area;
     let dz = 0;
     if (area.wallDecorations.includes(object)) {
@@ -209,29 +231,8 @@ function moveObject(object: AreaObject, dx: number, dy: number) {
     if (!object.definition) {
         return;
     }
-    object.definition.x = (object.definition.x || 0 ) + dx;
-    object.definition.y = (object.definition.y || 0 ) + dy;
-    object.definition.z = (object.definition.z || 0 ) + dz;
-    // For items aligned to the area, add some common sense restrictions for positioning them.
-    if (!object.definition.parentKey) {
-        const target = object.getAreaTarget();
-        const depth = target.d;
-        if (object.definition.zAlign === 'back') {
-            object.definition.z = Math.max(2 * MIN_Z + depth, Math.min(0, object.definition.z));
-        } else if (object.definition.zAlign === 'front') {
-            object.definition.z = Math.max(0, Math.min(2 * MAX_Z - depth, object.definition.z));
-        } else {
-            object.definition.z = Math.max(MIN_Z + depth / 2, Math.min(MAX_Z - depth / 2, object.definition.z));
-        }
-        if (object.definition.yAlign === 'middle') {
-            // Not going to worry about these for now, they aren't used so far.
-        } else if (object.definition.yAlign === 'top') {
-            // Not going to worry about these for now, they aren't used so far.
-        } else {
-            // Don't let them move objects beneath the floor.
-            object.definition.y = Math.max(0, object.definition.y);
-        }
-    }
+    const target = object.getAreaTarget();
+    moveLocationDefinition(object.definition, dx, dy, dz, target);
     refreshDefinition(object);
 }
 
@@ -251,7 +252,7 @@ export function refreshDefinition(object: AreaObject) {
 }
 
 export function handleEditAreaKeyDown(keyCode: number): boolean {
-    const { isEditing, selectedObject } = editingAreaState;
+    const { isEditing, selectedMonsterIndex, selectedObject } = editingAreaState;
     if (!isEditing) {
         return false;
     }
@@ -266,12 +267,10 @@ export function handleEditAreaKeyDown(keyCode: number): boolean {
         dx *= 10;
         dy *= 10;
     }
-    if (selectedObject) {
-        moveObject(selectedObject, dx, dy);
+    if (moveSelectedTarget(dx, dy)) {
+        return true;
     }
-    if (!selectedObject) {
-        adjustCamera(10 * dx);
-    }
+    adjustCamera(10 * dx);
     return true;
 }
 
@@ -412,13 +411,122 @@ export function getEditingContextMenu(): MenuOption[] {
                 return Object.keys(areaObjectFactories).map(getAddObjectMenuItem).filter(o => o);
             }
         },
+        ...(!isWallDecoration ? [{
+            getLabel() {
+                return 'Add monster...';
+            },
+            getChildren() {
+                return getMonsterTypeMenuItems(monsterKey => {
+                    const areaDefinition = getAreaDefinition();
+                    const [x, y] = editingAreaState.contextCoords;
+                    areaDefinition.monsters = areaDefinition.monsters || [];
+                    areaDefinition.monsters.push({
+                        key: monsterKey,
+                        level: areaDefinition.monsters[0]?.level || 1,
+                        location: {x: editingAreaState.cameraX + x, y: 0, z: (GROUND_Y - y) * 2}
+                    });
+                    // Select the newly created monster.
+                    editingAreaState.selectedMonsterIndex = areaDefinition.monsters.length - 1;
+                    refreshEnemies();
+                });
+            }
+        }]: []),
         getAreaContextMenuOption(),
         getZoneContextMenuOption(),
         ...getSelectedObjectContextMenu(),
+        ...getSelectedMonsterContextMenu(),
     ];
 }
 
+export function getSelectedMonsterContextMenu(): MenuOption[] {
+    const {contextCoords, selectedMonsterIndex} = editingAreaState;
+    const area = getArea();
+    const areaDefinition = getAreaDefinition();
+    const monsterDefinition: MonsterDefinition = (areaDefinition.monsters || [])[selectedMonsterIndex];
+    if (!monsterDefinition
+        || !new MonsterDefinitionAreaObject(area, selectedMonsterIndex).isPointOver(contextCoords[0], contextCoords[1])
+    ) {
+        return [];
+    }
+    const monsterData = monsters[monsterDefinition.key];
+    const name = monsterData.name || monsterDefinition.key;
+    return [
+        {
+            label: 'Change type...',
+            getChildren() {
+                return getMonsterTypeMenuItems(monsterKey => {
+                    monsterDefinition.key = monsterKey;
+                    refreshEnemies();
+                });
+            }
+        },
+        {
+            label: 'Set level...',
+            getChildren() {
+                return [
+                    ...[-10, -5, -3, -1, 1, 3, 5, 10].map(n => monsterDefinition.level + n).filter(n => n >= 1 && n <= 100).map(level => ({
+                        label: 'Level ' + level,
+                        onSelect() {
+                            monsterDefinition.level = level;
+                            refreshEnemies();
+                        }
+                    })),
+                    {
+                        label: 'Custom...',
+                        onSelect() {
+                            const level = parseInt(prompt('Enter level'));
+                            if (level >= 1 && level <= 100) {
+                                monsterDefinition.level = level;
+                                refreshEnemies();
+                            }
+                        }
+                    },
+               ];
+            }
+        },
+        {
+            label: 'Flip ' + name,
+            onSelect() {
+                monsterDefinition.location.flipped = !monsterDefinition.location.flipped;
+                refreshEnemies();
+            }
+        },
+        {},
+        {
+            label: 'Delete ' + name,
+            onSelect() {
+                areaDefinition.monsters.splice(selectedMonsterIndex, 1);
+                editingAreaState.selectedMonsterIndex = null;
+                refreshEnemies();
+            }
+        },
+    ]
+}
+
+export function getMonsterTypeMenuItems(callback: (monsterKey: string) => void): MenuOption[] {
+    return Object.keys(monsters).map(monsterKey => ({
+        getLabel() {
+            return monsters[monsterKey].name || monsterKey;
+        },
+        onSelect() {
+            callback(monsterKey);
+        }
+    }));
+}
+
+function refreshEnemies() {
+    const area = getArea();
+    if (area.zoneKey !== 'guild' || !getState().savedState.unlockedGuildAreas[area.key]) {
+        addMonstersFromAreaDefinition(area);
+        // The above call replaces the enemies array, so we need to reassign it to the character.
+        getState().selectedCharacter.hero.enemies = area.enemies;
+    } else {
+        getState().selectedCharacter.hero.enemies = area.enemies = [];
+    }
+}
+
 export function getAreaContextMenuOption(): MenuOption {
+    const area = getArea();
     return {
         getLabel() {
             return 'Area...';
@@ -430,9 +538,23 @@ export function getAreaContextMenuOption(): MenuOption {
                         return 'New';
                     },
                     onSelect() {
-                        promptToCreateNewArea(getArea().zoneKey);
+                        promptToCreateNewArea(area.zoneKey);
                     }
                 },
+                ...(area.zoneKey === 'guild' ? [{
+                    getLabel() {
+                        return getState().savedState.unlockedGuildAreas[area.key] ? 'Restore Monsters' : 'Unlock Guild Area';
+                    },
+                    onSelect() {
+                        const unlockedGuildAreas = getState().savedState.unlockedGuildAreas;
+                        if (unlockedGuildAreas[area.key]) {
+                            delete unlockedGuildAreas[area.key];
+                        } else {
+                            unlockedGuildAreas[area.key] = true;
+                        }
+                        refreshEnemies();
+                    }
+                }] : []),
                 {
                     getLabel() {
                         return 'Goto...';

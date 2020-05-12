@@ -209,7 +209,7 @@ export function makeAdventurerFromData({
     const personCanvas = createCanvas(personFrames * 96, 64);
     const personContext = personCanvas.getContext("2d");
     personContext.imageSmoothingEnabled = false;
-    const heroFrame = {w: 64, h: 48, content: {x: 20, y: 16, w: 16, h: 31}};
+    const heroFrame = {w: 64, h: 48, content: {x: 20, y: 16, w: 16, h: 31, d: 8}};
     const hero: Hero = {
         area: null,
         targetType: 'actor',

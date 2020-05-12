@@ -93,7 +93,9 @@ export interface HUDElement extends ShortRectangle {
 }
 
 export interface MenuOption {
+    // getLabel will be used instead of label if defined.
     getLabel?: () => string,
+    label?: string,
     onSelect?: () => void,
     getChildren?: () => MenuOption[],
 }

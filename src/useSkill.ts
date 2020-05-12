@@ -730,10 +730,16 @@ reactionDefinitions.sideStep = {
         if (dodgeSkill.stats.distance) {
             var attacker = attackStats.source;
             actor.pull = {'time': actor.time + (dodgeSkill.stats.moveDuration || 0.3), 'damage': 0};
-            if (attacker.x > actor.x) actor.pull.x = Math.min(actor.x + actor.heading[0] * dodgeSkill.stats.distance, attacker.x - (attacker.w + actor.w) / 2);
-            else actor.pull.x = Math.max(actor.x + actor.heading[0] * dodgeSkill.stats.distance, attacker.x + (attacker.w + actor.w) / 2);
-            if (attacker.z > actor.z) actor.pull.z = Math.min(actor.z + actor.heading[2] * dodgeSkill.stats.distance, attacker.z - (attacker.w + actor.w) / 2);
-            else actor.pull.z = Math.max(actor.z + actor.heading[2] * dodgeSkill.stats.distance, attacker.z + (attacker.w + actor.w) / 2);
+            if (attacker.x > actor.x) {
+                actor.pull.x = Math.min(actor.x + actor.heading[0] * dodgeSkill.stats.distance, attacker.x - (attacker.w + actor.w) / 2);
+            } else {
+                actor.pull.x = Math.max(actor.x + actor.heading[0] * dodgeSkill.stats.distance, attacker.x + (attacker.w + actor.w) / 2);
+            }
+            if (attacker.z > actor.z) {
+                actor.pull.z = Math.min(actor.z + actor.heading[2] * dodgeSkill.stats.distance, attacker.z - (attacker.d + actor.d) / 2);
+            } else {
+                actor.pull.z = Math.max(actor.z + actor.heading[2] * dodgeSkill.stats.distance, attacker.z + (attacker.d + actor.d) / 2);
+            }
         }
         if (dodgeSkill.stats.buff) {
             addTimedEffect(actor, dodgeSkill.stats.buff, 0);

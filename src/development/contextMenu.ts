@@ -39,7 +39,7 @@ class ContextMenu {
         this.container = container;
         this.domElement = tagElement('div', 'contextMenu');
         for (const option of this.menuOptions) {
-            const label = option.getLabel ? option.getLabel() : ' ';
+            const label = option.getLabel ? option.getLabel() : (option.label || ' ');
             const optionElement = tagElement('div', 'contextOption', label);
             if (option.onSelect) {
                 optionElement.onclick = function () {
@@ -106,10 +106,23 @@ export function getContextMenu(): MenuOption[] {
     ];
 }
 
-export function showContextMenu(menu: MenuOption[], x: number, y: number): void {
+export function showContextMenu(this: void, menu: MenuOption[], x: number, y: number): void {
     hideContextMenu();
+    const container = document.body;
     contextMenuState.contextMenu = new ContextMenu(menu);
-    contextMenuState.contextMenu.render(document.body, x, y);
+    contextMenuState.contextMenu.render(container, x, y);
+    const limits = getElementRectangle(mainCanvas, container);
+    const r = getElementRectangle(contextMenuState.contextMenu.domElement, container);
+    const bottom = limits.y + limits.h;
+    const right = limits.x + limits.w;
+    if (r.y + r.h > bottom) {
+        contextMenuState.contextMenu.domElement.style.top = `${bottom - r.h}px`;
+    }
+    // If the menu is too far to the right, display it entirely to the left
+    // of the parent element.
+    if (r.x + r.w > right) {
+        contextMenuState.contextMenu.domElement.style.left = `${right - r.w}px`;
+    }
 }
 
 export function hideContextMenu(): void {

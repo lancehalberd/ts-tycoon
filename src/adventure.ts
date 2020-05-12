@@ -8,11 +8,11 @@ import {
     baseDivinity, damageActor, healActor,
     initializeActorForAdventure, refreshStatsPanel
 } from 'app/character';
-import { createAreaFromDefinition } from 'app/content/areas';
+import { createAreaFromDefinition, getPositionFromLocationDefinition } from 'app/content/areas';
 import { addAreaFurnitureBonuses } from 'app/content/furniture';
 import { instantiateLevel } from 'app/content/levels';
 import { map } from 'app/content/mapData';
-import { makeMonster } from 'app/content/monsters';
+import { getMonsterDefinitionAreaEntity, makeMonster } from 'app/content/monsters';
 import { zones } from 'app/content/zones';
 import { setContext, showContext } from 'app/context';
 import { editingMapState, stopTestingLevel } from 'app/development/editLevel';
@@ -43,7 +43,7 @@ import { isMouseDown } from 'app/utils/mouse';
 import { playSound } from 'app/utils/sounds';
 
 import {
-    Actor, Area, AreaEntity, AreaTarget, BonusSource, Character, Exit, Frame,
+    Actor, Area, AreaDefinition, AreaEntity, AreaTarget, BonusSource, Character, Exit, Frame,
     Hero, Level, LevelData, LevelDifficulty, MonsterData, MonsterSpawn, Target,
     ZoneType,
 } from 'app/types';
@@ -101,8 +101,22 @@ export function getArea(zoneKey: ZoneType, areaKey: string): Area {
         // debugger;
         return;
     }
-    activeAreas[fullKey] = createAreaFromDefinition(areaKey, zones[zoneKey][areaKey]);
-    return activeAreas[fullKey];
+    const area: Area = activeAreas[fullKey] = createAreaFromDefinition(areaKey, zones[zoneKey][areaKey]);
+    addMonstersFromAreaDefinition(area);
+    return area;
+}
+
+export function addMonstersFromAreaDefinition(area: Area) {
+    const areaDefinition: AreaDefinition = zones[area.zoneKey][area.key];
+    const monsters: MonsterSpawn[] =(areaDefinition.monsters || []).map(monster => {
+        return {
+            ...monster,
+            location: getPositionFromLocationDefinition(area, getMonsterDefinitionAreaEntity(area, monster), monster.location),
+            // By default monsters face left, but they can be flipped to face right.
+            heading: [monster.location.flipped ? 1 : -1, 0, 0],
+        };
+    });
+    addMonstersToArea(area, monsters);
 }
 
 export function enterArea(actor: Actor, {x, z, areaKey, objectKey, zoneKey}: Exit) {
@@ -141,9 +155,14 @@ export function enterArea(actor: Actor, {x, z, areaKey, objectKey, zoneKey}: Exi
                 showContext('guild');
             }
         }
-        // If this is the first hero entering an area in the guild that isn't locked, refresh the monsters.
-        if (!area.allies.length && !state.savedState.unlockedGuildAreas[area.key]) {
-            addMonstersToArea(area, area.monsters, [], 0);
+        if (!state.savedState.unlockedGuildAreas[area.key]) {
+            // If no allies are in a locked guild area, refresh the monsters.
+            if (!area.allies.length) {
+                addMonstersFromAreaDefinition(area);
+            }
+        } else {
+            // If the area is unlocked, make sure we don't include any enemies.
+            area.enemies = [];
         }
     }
     // This can be uncommented to allow minions to follow you through areas.
@@ -177,6 +196,8 @@ export function enterArea(actor: Actor, {x, z, areaKey, objectKey, zoneKey}: Exi
         area.cameraX = Math.round(Math.max(0, Math.min(area.width - ADVENTURE_WIDTH, actor.x - ADVENTURE_WIDTH / 2)));
     }
     editingAreaState.cameraX = area.cameraX;
+    editingAreaState.selectedObject = null;
+    editingAreaState.selectedMonsterIndex = null;
     if (isNaN(actor.x) || isNaN(actor.z)) {
         debugger;
     }
@@ -198,7 +219,7 @@ export function addMonstersToArea(
         const bonusSources = [...(monsterData.bonusSources || []), ...extraBonuses];
         const rarity = monsterData.rarity || specifiedRarity;
         const newMonster = makeMonster(area, monsterData.key, monsterData.level, bonusSources, rarity);
-        newMonster.heading = [-1, 0, 0]; // Monsters move right to left
+        newMonster.heading = monsterData.heading;
         newMonster.x = monsterData.location.x;
         newMonster.y = monsterData.location.y;
         newMonster.z = monsterData.location.z;
