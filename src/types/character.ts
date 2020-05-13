@@ -1,5 +1,5 @@
 import {
-    Action, Actor, Board, BonusSource, FixedObject, Hero, HUDElement,
+    Action, Actor, Board, BonusSource, GameContext, FixedObject, Hero, HUDElement,
     JobKey, LevelDifficulty, SavedActor, SavedBoard,
 } from 'app/types';
 import { JobIcon } from 'app/content/jobs';
@@ -23,7 +23,7 @@ export interface Character {
     // This is the set of shortcuts displayed on the screen for activating/managing actions.
     actionShortcuts: ActionShortcut[],
 
-    context: string,
+    context: GameContext,
     // Selected level key in the map
     selectedLevelKey?: string,
     // Most recent level key actually played (including currently)
@@ -61,7 +61,7 @@ export interface SavedCharacter {
     gameSpeed: number, // Used for fast forward
     loopSkip: number, // Used to skip update loops for slow motion
 
-    context: string,
+    context: GameContext,
     selectedLevelKey: string,
 
     divinityScores: {[key in string]: number},

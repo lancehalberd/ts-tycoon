@@ -11,7 +11,10 @@ import { removePopup, setCanvasPopupTarget } from 'app/popup';
 import { getState, guildYardEntrance } from 'app/state';
 import { hideChooseBlessing, showChooseBlessing} from 'app/ui/chooseBlessing';
 
-export function setContext(context) {
+import { GameContext } from 'app/types';
+
+
+export function setContext(context: GameContext): void {
     // Changing context while editing can cause errors, so prevent it from happening.
     if (editingAreaState.isEditing) {
         return;
@@ -35,7 +38,9 @@ export function setContext(context) {
     }
     showContext(context);
 }
-export function showContext(context) {
+window['setContext'] = setContext;
+
+export function showContext(context: GameContext): void {
     hidePointsPreview();
     hideAreaMenu();
     setCanvasPopupTarget(null);
@@ -45,7 +50,10 @@ export function showContext(context) {
     if (context === 'jewel') {
         drawBoardJewels(state.selectedCharacter, jewelsCanvas);
     }
-    toggleElements(queryAll('.js-adventureContext, .js-jewelContext, .js-itemContext, .js-guildContext, .js-mapContext'), false);
+    // Fade the black bars for the cutscene in/out
+    const overlay = document.getElementsByClassName('js-cutsceneOverlay')[0] as HTMLElement;
+    overlay.style.opacity = (context === 'cutscene' ? '1' : '0');
+    toggleElements(queryAll('.js-adventureContext, .js-jewelContext, .js-itemContext, .js-guildContext, .js-mapContext, .js-cutsceneContext'), false);
     toggleElements(queryAll(`.js-${context}Context`), true);
     if (context === 'adventure' && state.selectedCharacter.activeShrine) {
         showChooseBlessing();

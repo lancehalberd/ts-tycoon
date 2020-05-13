@@ -79,7 +79,7 @@
         </div>
         // -->
         <div class="js-jewelContext js-itemContext pointsBarPadding"> </div>
-        <div class="js-mainCanvasContainer mainCanvasContainer js-adventureContext js-guildContext js-mapContext">
+        <div class="js-mainCanvasContainer mainCanvasContainer js-adventureContext js-guildContext js-mapContext js-cutsceneContext">
             <canvas
                 class="js-mainCanvas mainCanvas"
                 width="320" height="180"
@@ -124,7 +124,6 @@
                 </div>
             </div>
         </div>
-        <div class="js-adventureContext" style="height: 300px;"></div>
         <div class="js-heroApplication heroApplication singleHeroApplication" style="display: none;">
             <div class="heroApplicationBody"><div class="js-stats stats playerBox">
                     <div style="position: absolute; left: 35px; top: 0px;"><span class="js-playerName controlBarEntry">X</span></div>
@@ -319,6 +318,11 @@
                 Beware! The venom from the spiders in these woods will suppress your health regeneration.
             </div>
         </div>
+        <div class="js-cutsceneOverlay cutsceneOverlay fullGameRectangle">
+            <div class="cutsceneOverlayTopBar"></div>
+            <div class="cutsceneOverlayBottomBar"></div>
+        </div>
+        <div class="js-cutsceneContext cutsceneControls fullGameRectangle"></div>
     </div>
 </div>
 </body>

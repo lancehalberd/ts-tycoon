@@ -14,6 +14,8 @@ export class Renderable {
     }
 }
 
+export type GameContext = 'item' | 'jewel' | 'adventure' | 'guild' | 'map' | 'cutscene';
+
 export interface FullRectangle {
     left: number,
     top: number,

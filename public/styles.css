@@ -1553,3 +1553,32 @@ p {
 .contextOption:hover, .contextOption.open {
     background-color: #EEE;
 }
+
+.fullGameRectangle {
+    position: absolute;
+    width: 960px;
+    height: 540px;
+}
+
+.cutsceneOverlay {
+    opacity: 0;
+    transition: opacity 1s;
+    /* Don't block clicking underneath this element*/
+    pointer-events: none;
+}
+.cutsceneOverlayTopBar, .cutsceneOverlayBottomBar {
+    position: absolute;
+    left: 0;
+    background-color: black;
+    width: 100%;
+}
+.cutsceneOverlayTopBar {
+    top: 0;
+    /* This should be exactly tall enough to cover the top hud */
+    height: 30px;
+}
+.cutsceneOverlayBottomBar {
+    bottom: 0;
+    /* This should be exactly tall enough to cover the bottom hud */
+    height: 96px;
+}

@@ -33,7 +33,6 @@ export function createNewArea(areaKey: string): Area {
         width: 600,
         objects: [],
         wallDecorations: [],
-        monsters: [],
         allies: [],
         enemies: [],
         cameraX: 0,
