@@ -25,6 +25,10 @@ export interface BaseAreaObjectDefinition extends LocationDefinition {
     scale?: number,
 }
 
+export interface TreasureChestDefinition extends BaseAreaObjectDefinition {
+    chestType: string,
+};
+
 export interface UpgradeableObjectDefinition extends BaseAreaObjectDefinition {
     // This will default to 0
     level?: number,
@@ -32,8 +36,10 @@ export interface UpgradeableObjectDefinition extends BaseAreaObjectDefinition {
 
 export type AreaObjectDefinition = BaseAreaObjectDefinition
     | AreaDecorationDefinition
+    | AreaDoorDefinition
+    | TreasureChestDefinition
     | UpgradeableObjectDefinition
-    | AreaDoorDefinition;
+    ;
 
 export interface AreaObject {
     update?: () => void,

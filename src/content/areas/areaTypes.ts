@@ -534,6 +534,7 @@ function addChest(area: Area, loot: LootGenerator[]) {
     chest.loot = loot;
     chest.definition = {
         type: "treasureChest",
+        chestType: 'silverChest',
         x: area.width + SRandom.addSeed(area.seed).range(0, RANGE_UNIT * 4),
         y: 0,
         z: SRandom.addSeed(area.seed).range(MIN_Z + 16, MIN_Z + 32),
