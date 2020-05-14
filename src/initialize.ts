@@ -27,10 +27,12 @@ import {
     guildYardEntrance, getState,
     implicitGuildBonusSource, initializeState,
 } from 'app/state';
+import { DialogueBox } from 'app/ui/DialogueBox';
 import { removeElementFromArray } from 'app/utils/index';
 import { bindMouseListeners } from 'app/utils/mouse';
 import Random from 'app/utils/Random';
 import { playTrack } from 'app/utils/sounds';
+import { IntroScene } from 'app/content/cutscenes/intro';
 
 import { GuildStats } from 'app/types';
 
@@ -46,7 +48,6 @@ export function initializeGuildAreas() {
     Bed.instances = [];
     for (let areaKey in zones.guild) {
         getArea('guild', areaKey);
-
     }
 }
 export function initializeGame() {
@@ -73,7 +74,6 @@ export function initializeGame() {
     initializeGuildAreas();
     if (loadSavedData()) {
         const state = getState();
-        showContext(state.selectedCharacter.context);
     } else {
         const state = getState();
         state.guildVariableObject = createVariableObject({'variableObjectType': 'guild'});
@@ -99,12 +99,6 @@ export function initializeGame() {
         enterArea(state.selectedCharacter.hero, guildYardEntrance);
     }
     const state = getState();
-    if (window.location.search.substr(1) === 'test') {
-        setContext('adventure');
-        state.selectedCharacter.autoplay = state.selectedCharacter.replay = true;
-        state.selectedCharacter.currentLevelKey = 'testLevelData';
-        startLevel(state.selectedCharacter, 'testLevelData');
-    }
     state.visibleLevels['guild'] = true;
     if (state.savedState.skipShrinesEnabled) {
         query('.js-shrineButton').style.display = '';
@@ -119,4 +113,18 @@ export function initializeGame() {
         throw new Error('No selected character found');
     }
     playTrack('map', 0);
+    showInitialContext();
+}
+
+function showInitialContext() {
+    const state = getState();
+    if (!state.savedState.completedCutscenes[IntroScene.key]) {
+        new IntroScene().run();
+        /*showContext(state.selectedCharacter.context);
+        const db = new DialogueBox();
+        db.message = 'Welcome back!';
+        db.run(state.selectedCharacter.hero);*/
+    } else {
+        showContext(state.selectedCharacter.context);
+    }
 }

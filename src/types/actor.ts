@@ -8,6 +8,7 @@ import {
 import { Ability, Action, ActorEffect, Effect } from 'app/types/abilities';
 import { Character } from 'app/types/Character';
 import { Equipment } from 'app/types/items';
+import { DialogueBox } from 'app/ui/DialogueBox';
 
 export type ActorActivity = {
     type: 'none',
@@ -145,6 +146,8 @@ export interface BaseActor extends AreaTarget {
 
     // This may be unset when an object has not been assigned to an area yet.
     area: Area,
+
+    dialogueBox?: DialogueBox,
 }
 export interface Hero extends BaseActor {
     type: 'hero',

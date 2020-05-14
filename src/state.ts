@@ -19,6 +19,8 @@ import {
 } from 'app/saveGame';
 import { Polygon } from 'app/utils/polygon';
 
+import { IntroScene } from 'app/content/cutscenes/intro';
+
 import {
     Area, Character, Exit, GuildStats,
     Jewel, SavedItem, SavedTrophy, VariableObject,
@@ -52,6 +54,7 @@ export type SavedState = {
     fame: number,
     characters: SavedCharacter[],
     applicants: SavedCharacter[],
+    completedCutscenes: {[key: string]: true},
     completedLevels: {[key: string]: true},
     // bitmask, 0x1 is normal craft 0x10 is unique craft
     craftedItems: {[key: string]: number},
@@ -84,6 +87,7 @@ export interface GameState {
     altarTrophies: Trophies,
     availableBeds: FixedObject[],
     time: number,
+    cutscene: IntroScene,
 }
 
 export const guildYardEntrance: Exit = {zoneKey: 'guild', areaKey: 'guildYard', objectKey: 'mapExit'};
@@ -98,6 +102,7 @@ function getDefaultSavedState(): SavedState {
         fame: 0,
         characters: [],
         applicants: [],
+        completedCutscenes: {},
         completedLevels: {},
         craftedItems: {},
         craftingItems: [],
@@ -130,6 +135,7 @@ function getDefaultState(): GameState {
         altarTrophies: getDefaultAltarTrophies(),
         availableBeds: [],
         time: 0,
+        cutscene: null,
     };
 }
 

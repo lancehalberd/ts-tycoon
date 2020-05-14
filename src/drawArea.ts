@@ -4,7 +4,7 @@ import { effectAnimations } from 'app/content/effectAnimations';
 import { upgradeButton } from 'app/content/upgradeButton';
 import { editingMapState } from 'app/development/editLevel'
 import { editingAreaState } from 'app/development/editArea';
-import { createCanvas, mainCanvas, mainContext } from 'app/dom';
+import { createCanvas } from 'app/dom';
 import { getHoverAction, getSelectedAction } from 'app/render/drawActionShortcuts';
 import {
     ADVENTURE_HEIGHT, ADVENTURE_WIDTH, BACKGROUND_HEIGHT, BOTTOM_HUD_HEIGHT, FIELD_HEIGHT,
@@ -24,7 +24,7 @@ import { arrMod, isPointInShortRect, rectangle, toR } from 'app/utils/index';
 
 import { Actor, ActorEffect, FrameAnimation, Area, AreaObject, AreaType } from 'app/types';
 
-export const bufferCanvas: HTMLCanvasElement = createCanvas(mainCanvas.width, mainCanvas.height);
+export const bufferCanvas: HTMLCanvasElement = createCanvas(ADVENTURE_WIDTH, ADVENTURE_HEIGHT);
 export const bufferContext = bufferCanvas.getContext('2d');
 bufferContext.imageSmoothingEnabled = false;
 // document.body.append(bufferCanvas);
@@ -35,10 +35,10 @@ export function getGlobalHud() {
         upgradeButton,
     ];
 }
-export function drawHud() {
+export function drawHud(context: CanvasRenderingContext2D) {
     for (const element of getGlobalHud()) {
         if (element.isVisible && !element.isVisible()) continue;
-        element.render(mainContext);
+        element.render(context);
     }
 }
 
@@ -51,14 +51,13 @@ export function drawOnGround(context: CanvasRenderingContext2D, render: (context
     );
 }
 
-export function drawArea(area: Area) {
+export function drawArea(context: CanvasRenderingContext2D, area: Area) {
     // Rather than replace all the cameraX update logic, we just override the value here.
     if (editingAreaState.isEditing) {
         area.cameraX = editingAreaState.cameraX;
     }
-    const context = mainContext;
     const cameraX = area.cameraX;
-    context.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+    context.clearRect(0, 0, ADVENTURE_WIDTH, ADVENTURE_HEIGHT);
     const areaTypeKey: string = area.areaType;
     const areaType: AreaType = areaTypes[areaTypeKey] || areaTypes.field;
     areaType.drawFloor(context, area);
@@ -110,7 +109,7 @@ export function drawArea(area: Area) {
         context.textAlign = 'center'
         context.fillText(textPopup.value, textPopup.x - cameraX, GROUND_Y - textPopup.y - textPopup.z / 2);
     }
-    if (area.areas) drawMinimap(area);
+    if (area.areas) drawMinimap(context, area);
 }
 function drawRune(context: CanvasRenderingContext2D, actor: Actor, animation: FrameAnimation, frameIndex: number) {
     context.save();
@@ -142,10 +141,9 @@ function drawActorGroundEffects(context, actor: Actor) {
         }
     }
 }
-function drawMinimap(area: Area) {
+function drawMinimap(context: CanvasRenderingContext2D, area: Area) {
     const height = 3;
     const width = ADVENTURE_WIDTH - 20;
-    const context = mainContext;
     const numberOfAreas = area.areas.size;
     let areaIndex = 0;
     let i = 0;
@@ -189,14 +187,14 @@ function drawMinimap(area: Area) {
 
 function drawHudElement(context, element) {
     if (getCanvasPopupTarget() === element) {
-        drawWhiteOutlinedFrame(mainContext, element.frame, element);
+        drawWhiteOutlinedFrame(context, element.frame, element);
     } else if (element.flashColor) {
-        drawTintedFrame(mainContext,
+        drawTintedFrame(context,
             {...element.frame, color: element.flashColor, amount: .5 + .2 * Math.sin(Date.now() / 150)},
             element
         );
     } else {
-        drawFrame(mainContext, element.frame, element);
+        drawFrame(context, element.frame, element);
     }
 }
 

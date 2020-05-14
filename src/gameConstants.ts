@@ -11,6 +11,11 @@ export const RANGE_UNIT = 10;
 
 export const MAX_LEVEL = 100;
 
+// Dimensions of the game in document pixels.
+export const DOM_WIDTH = 960;
+export const DOM_HEIGHT = 540;
+
+// Dimensions of the map canvas in canvas pixels.
 export const MAP_WIDTH = 320;
 export const MAP_HEIGHT = 180;
 export const MAP_LEFT = -MAP_WIDTH / 2;
@@ -25,8 +30,10 @@ export const equipmentSlots: EquipmentSlot[] = ['weapon', 'body', 'feet', 'head'
 
 export const TROPHY_SIZE = 20;
 
+// Dimensions of the adventure canvas in canvas pixels.
 export const ADVENTURE_WIDTH = 320;
 export const ADVENTURE_HEIGHT = 180;
+// Scale of adventure canvas pixels relative to document pixels.
 export const ADVENTURE_SCALE = 3;
 
 export const TOP_HUD_HEIGHT = 16;

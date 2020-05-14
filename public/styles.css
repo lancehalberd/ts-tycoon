@@ -1562,7 +1562,7 @@ p {
 
 .cutsceneOverlay {
     opacity: 0;
-    transition: opacity 1s;
+    transition: opacity 0.5s;
     /* Don't block clicking underneath this element*/
     pointer-events: none;
 }
@@ -1581,4 +1581,58 @@ p {
     bottom: 0;
     /* This should be exactly tall enough to cover the bottom hud */
     height: 96px;
+}
+.cutsceneFadeBox {
+    background-color: black;
+    opacity: 0;
+    /* Don't block clicking underneath this element*/
+    pointer-events: none;
+}
+
+.textBubble {
+    position: absolute;
+    top: 100px;
+    left: 20px;
+    width: 200px;
+    min-height: 25px;
+    background-color: white;
+    border-radius: 10px;
+    padding: 5px 10px;
+    letter-spacing: 1px;
+    text-align: center;
+    white-space: normal;
+}
+.textBubble .revealedText {
+    color: black;
+}
+.textBubble .fadedText {
+    color: #DDD;
+}
+.textBubble .hiddenText {
+    color: transparent;
+}
+.arrow {
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+    border-top: 10px solid transparent;
+}
+.arrow-up {
+    top: -20px;
+    border-bottom: 10px solid white;
+}
+.arrow-down {
+    bottom: -20px;
+    border-top: 10px solid white;
+}
+.arrow-left {
+    left: -20px;
+    border-right: 10px solid white;
+}
+.arrow-right {
+    right: -20px;
+    border-left: 10px solid white;
 }

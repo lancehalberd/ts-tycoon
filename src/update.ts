@@ -96,6 +96,9 @@ export function update() {
     if (context === 'item') {
         updateCraftingCanvas();
     }
+    if (context === 'cutscene') {
+        state.cutscene.update();
+    }
     checkToRemovePopup();
     updateTrophyPopups();
     } catch (e) {

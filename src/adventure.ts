@@ -513,6 +513,9 @@ export function getAllInRange(x: number, range: number, targets: Actor[]) {
 }
 function runActorLoop(actor: Actor) {
     const area = actor.area;
+    if (actor.dialogueBox) {
+        actor.dialogueBox.update();
+    }
     if (actor.isDead || actor.stunned || actor.pull || actor.chargeEffect) {
         actor.skillInUse = null;
         return;

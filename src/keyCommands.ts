@@ -64,13 +64,16 @@ document.addEventListener('keyup', function(event) {
     delete keysDown[keyCode];
 });
 document.addEventListener('keydown', function(event) {
+    const state = getState();
+    if (state.selectedCharacter.context === 'cutscene') {
+        return;
+    }
     const keyCode: number = event.which;
     keysDown[keyCode] = true;
     // console.log(keyCode);
     if (handleSkillKeyInput(keyCode)) return;
     if (handleEditMapKeyDown(keyCode)) return;
     if (handleEditAreaKeyDown(keyCode)) return;
-    const state = getState();
     if (keyCode === KEY.ESCAPE) {
         event.preventDefault();
         if (state.selectedCharacter.context === 'map') {

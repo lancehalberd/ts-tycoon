@@ -14,7 +14,7 @@ import { hideChooseBlessing, showChooseBlessing} from 'app/ui/chooseBlessing';
 import { GameContext } from 'app/types';
 
 
-export function setContext(context: GameContext): void {
+export function setContext(context: GameContext): GameContext {
     // Changing context while editing can cause errors, so prevent it from happening.
     if (editingAreaState.isEditing) {
         return;
@@ -31,12 +31,14 @@ export function setContext(context: GameContext): void {
         stopJewelDrag();
         removePopup();
     }
+    const currentContext = state.selectedCharacter.context;
     state.selectedCharacter.context = context;
     // If the player is not already in the guild when we return to the guild context, move them to the foyer.
     if (context === 'guild' && (!state.selectedCharacter.hero.area || state.selectedCharacter.hero.area.zoneKey !== 'guild')) {
         enterArea(state.selectedCharacter.hero, guildYardEntrance);
     }
     showContext(context);
+    return currentContext;
 }
 window['setContext'] = setContext;
 

@@ -35,6 +35,8 @@ export function createCanvas(width, height, classes = ''):HTMLCanvasElement {
 export const jewelInventoryContainer:HTMLElement = query('.js-jewelInventory');
 export const craftingOptionsContainer:HTMLElement = query('.js-craftingSelectOptions');
 export const mouseContainer:HTMLElement = query('.js-mouseContainer');
+export const mainContent: HTMLElement = query('.js-gameContent');
+export const cutsceneFadeBox: HTMLElement = query('.js-cutsceneFadeBox');
 
 export function tag(type: string, classes: string = '', content: string | number = '') {
     return '<' + type + ' class="' + classes + '">' + content + '</' + type + '>';

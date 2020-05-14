@@ -74,7 +74,7 @@ export function render() {
     }
     if (state.selectedCharacter.context === 'adventure' || state.selectedCharacter.context === 'guild') {
         if (editingLevel && !testingLevel) {
-            drawArea(editingLevel);
+            drawArea(mainContext, editingLevel);
             if (editingLevel && editingLevel.board) {
                 let board = boards[editingLevel.board];
                 board = readBoardFromData(board, state.selectedCharacter, abilities[editingLevel.skill], true);
@@ -83,9 +83,11 @@ export function render() {
                 drawBoardJewelsProper(mainContext, [0, 0], board);
             }
         } else {
-            drawArea(state.selectedCharacter.hero.area);
+            drawArea(mainContext, state.selectedCharacter.hero.area);
         }
         drawActionShortcuts(mainContext, state.selectedCharacter);
+    } else if (state.selectedCharacter.context === 'cutscene') {
+        state.cutscene.render(mainContext);
     }
     if (state.selectedCharacter.context === 'adventure' && state.selectedCharacter.activeShrine) {
         renderChooseBlessing();
@@ -96,7 +98,7 @@ export function render() {
     if (getChoosingTrophyAltar()) drawTrophySelection();
     if (getUpgradingObject()) drawUpgradeBox();
     if (mainCanvas.style.display === '') {
-        drawHud();
+        drawHud(mainContext);
     }
     drawTrophyPopups();
     renderEditAreaOverlay(mainContext);

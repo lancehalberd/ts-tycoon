@@ -1,6 +1,6 @@
-import { tagElement } from 'app/dom';
+import { cutscenes } from 'app/content/cutscenes';
 import { getEditingContextMenu } from 'app/development/editArea';
-import { mainCanvas } from 'app/dom';
+import { mainCanvas, tagElement } from 'app/dom';
 import { getState } from 'app/state';
 import { getElementRectangle } from 'app/utils/index';
 
@@ -103,6 +103,25 @@ class ContextMenu {
 export function getContextMenu(): MenuOption[] {
     return [
         ...getEditingContextMenu(),
+        ...getCutsceneMenu(),
+    ];
+}
+
+function getCutsceneMenu(): MenuOption[] {
+    return [
+        {
+            label: 'Cutscene...',
+            getChildren() {
+                return Object.keys(cutscenes).map(key => {
+                    return {
+                        label: key,
+                        onSelect() {
+                            new cutscenes[key]().run();
+                        }
+                    }
+                })
+            }
+        }
     ];
 }
 
