@@ -77,7 +77,7 @@ export interface BaseActor extends AreaTarget {
         distance: number,
         target: Target,
     },
-    time?: number,
+    time: number,
     isDead?: boolean,
     timeOfDeath?: number,
     skillInUse?: Action,
@@ -147,11 +147,11 @@ export interface BaseActor extends AreaTarget {
     // This may be unset when an object has not been assigned to an area yet.
     area: Area,
 
+    activity: ActorActivity,
     dialogueBox?: DialogueBox,
 }
 export interface Hero extends BaseActor {
     type: 'hero',
-    activity: ActorActivity,
     colors: HeroColors,
     personCanvas: HTMLCanvasElement,
     personContext: CanvasRenderingContext2D,

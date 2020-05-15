@@ -16,25 +16,34 @@ export class DialogueBox {
     // How long to leave the text on screen after it finishes.
     duration: number = 2000;
     persistTimer: number = 0;
+    // If this is set, the text won't disappear until a user advances dialogue.
+    waitForInput: boolean = false;
     // The element used to display this dialogue box.
     domElement: HTMLElement;
     revealedTextElement: HTMLElement;
     hiddenTextElement: HTMLElement;
     bubbleArrowElement: HTMLElement;
+    promptArrowElement: HTMLElement;
     run(actor: Actor) {
         this.actor = actor;
         this.domElement = tagElement('div', 'textBubble');
         this.revealedTextElement = tagElement('span', 'revealedText');
         this.hiddenTextElement = tagElement('span', 'hiddenText', this.message);
         this.bubbleArrowElement = tagElement('div', 'arrow arrow-down');
+        this.promptArrowElement = tagElement('div', 'promptArrow');
         this.domElement.append(this.revealedTextElement);
         this.domElement.append(this.hiddenTextElement);
         this.domElement.append(this.bubbleArrowElement);
+        this.domElement.append(this.promptArrowElement);
         this.bubbleArrowElement.style.left = '10px';
         actor.dialogueBox = this;
         mainContent.append(this.domElement);
         this.frameCount = 0;
         this.updatePosition();
+    }
+    finish() {
+        this.hiddenTextElement.innerText = '';
+        this.revealedTextElement.innerText = this.message;
     }
     // During dialogue, when someone else responds, we leave the current bubble on screen
     // but fade it out to indicate it is older dialogue.
@@ -43,6 +52,10 @@ export class DialogueBox {
         this.revealedTextElement.innerText = this.message;
         this.revealedTextElement.classList.remove('revealedText');
         this.revealedTextElement.classList.add('fadedText');
+    }
+    remove() {
+        this.actor.dialogueBox = null;
+        this.domElement.remove();
     }
     updatePosition() {
         // These are in canvas coords so they need to be multiplied by ADVENTURE_SCALE.
@@ -61,10 +74,18 @@ export class DialogueBox {
     update() {
         this.updatePosition();
         if (!this.hiddenTextElement.innerText.length) {
-            if ((this.persistTimer += FRAME_LENGTH) > this.duration) {
-                this.actor.dialogueBox = null;
-                this.domElement.remove();
+            if (this.persistTimer  > this.duration && !this.waitForInput) {
+                this.remove();
             }
+            // Use the persist timer to make the prompt arrow blink.
+            if (this.waitForInput && this.persistTimer % 400 === 0) {
+                if (this.promptArrowElement.style.display === 'none') {
+                    this.promptArrowElement.style.display = 'block';
+                } else {
+                    this.promptArrowElement.style.display = 'none';
+                }
+            }
+            this.persistTimer += FRAME_LENGTH;
             return;
         }
         this.frameCount++;
@@ -78,5 +99,8 @@ export class DialogueBox {
         // This needs to be added after removing it above, otherwise if it is a space,
         // the DOM deletes the following space automatically.
         this.revealedTextElement.append(nextLetter);
+    }
+    isFinished(): boolean {
+        return !this.waitForInput && !this.hiddenTextElement.innerText.length;
     }
 }

@@ -30,12 +30,12 @@ export function moveActor(actor: Actor) {
     let speedBonus = 1;
     if (actor.chargeEffect) {
         goalTarget = actor.chargeEffect.target;
-    } else if (actor.type === 'hero' ) {
+    } else{
         const activity = actor.activity;
         switch (activity.type) {
             case 'move':
                 if (getDistanceBetweenPointsSquared(actor, activity) < 10
-                    || (actor.character && actor.character.paused && !isMouseDown())
+                    || (actor.type === 'hero' && actor.character.paused && !isMouseDown())
                 ) {
                     actor.activity = {type: 'none'};
                     break;

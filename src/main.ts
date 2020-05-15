@@ -90,6 +90,16 @@ mainCanvas.onmousedown = function (event) {
             break;
     }
 }
+
+const cutsceneControls = query('.js-cutsceneControls');
+cutsceneControls.addEventListener('click', event => {
+    const cutscene = getState().cutscene;
+    const [x, y] = getMousePosition(cutsceneControls);
+    if (cutscene) {
+        cutscene.handleClick(x, y);
+    }
+});
+
 mainCanvas.addEventListener('mouseout', function (event) {
     canvasCoords = null;
 });
@@ -148,18 +158,18 @@ export function getTargetLocation(area: Area, canvasX: number, canvasY: number):
     z = limitZ(z);
     return {targetType: 'location', area, x: area.cameraX + canvasX, y: 0, z, w: 0, h: 0, d: 0};
 }
-function setActorDestination(hero: Hero, target: Target) {
+export function setActorDestination(actor: Actor, target: Target) {
     const activity: ActorActivity = {
         type: 'move',
         x: target.x,
         y: 0,
-        z: limitZ(target.z, hero.d / 2)
+        z: limitZ(target.z, actor.d / 2)
     };
-    if (getDistanceBetweenPointsSquared(hero, activity) > 200) {
-        if (hero.activity.type === 'none' && !hero.isMoving) {
-            hero.walkFrame = 1;
+    if (getDistanceBetweenPointsSquared(actor, activity) > 200) {
+        if (actor.activity.type === 'none' && !actor.isMoving) {
+            actor.walkFrame = 1;
         }
-        hero.activity = activity;
+        actor.activity = activity;
     }
 }
 export function setActorAttackTarget(hero: Hero, target: Actor) {

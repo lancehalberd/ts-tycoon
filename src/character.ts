@@ -102,9 +102,7 @@ export function initializeActorForAdventure(actor: Actor) {
     actor.skillInUse = null;
     actor.slow = 0;
     actor.rotation = 0;
-    if (actor.type === 'hero') {
-        actor.activity = {type: 'none'};
-    }
+    actor.activity = {type: 'none'};
     actor.imprintedSpell = null;
     actor.minions = actor.minions || [];
     actor.boundEffects = actor.boundEffects || [];
@@ -280,6 +278,7 @@ export function makeAdventurerFromData({
         heading: [1, 0, 0], // Character moves left to right by default.
         render: drawActor,
         consideredObjects: new Set(),
+        time: 0,
     };
     hero.variableObject = createVariableObject({'variableObjectType': 'actor'});
     hero.stats = hero.variableObject.stats as ActorStats;

@@ -4,7 +4,7 @@ import { AreaDefinition } from 'app/types';
 
 export const guildYard: AreaDefinition = {
     type: 'forest',
-    width: 340,
+    width: 420,
     leftWallType: 'river',
     rightWallType: 'guildWall',
     seed: 1,

@@ -143,6 +143,8 @@ export function makeMonster(
         // It can change if the monsters gains/loses affixes.
         image: null,
         render: drawActor,
+        activity: {type: 'none'},
+        time: 0,
     };
 
     const rarity = (specifiedRarity !== null)
