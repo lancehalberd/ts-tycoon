@@ -107,6 +107,9 @@ function handleAdventureClick(x: number, y: number, event) {
     const hero = state.selectedCharacter.hero;
     const canvasPopupTarget = getCanvasPopupTarget();
     const selectedAction = getSelectedAction();
+    if (hero.character.mission && !hero.character.mission.started) {
+        return;
+    }
     if (editingAreaState.isEditing) {
         return;
     }
@@ -126,7 +129,7 @@ function handleAdventureClick(x: number, y: number, event) {
             setActorAttackTarget(hero, canvasPopupTarget as Actor);
         }
     } else if (!getUpgradingObject() && !getChoosingTrophyAltar()) {
-        var targetLocation = getTargetLocation(hero.area, x, y);
+        const targetLocation = getTargetLocation(hero.area, x, y);
         if (!targetLocation) return;
         if (selectedAction && canUseSkillOnTarget(hero, selectedAction, targetLocation)) {
             setActionTarget(hero, selectedAction, targetLocation);
@@ -138,9 +141,12 @@ function handleAdventureClick(x: number, y: number, event) {
     }
 }
 export function handleAdventureMouseIsDown(x: number, y: number) {
-    var hero = getState().selectedCharacter.hero;
+    const hero = getState().selectedCharacter.hero;
+    if (hero.character.mission && !hero.character.mission.started) {
+        return;
+    }
     if (hero.area && clickedToMove) {
-        var targetZ = -(y - GROUND_Y) * 2;
+        const targetZ = -(y - GROUND_Y) * 2;
         if (targetZ >= -200 || targetZ <= 200) {
             setActorDestination(hero, {
                 targetType: 'location',
@@ -206,8 +212,8 @@ handleChildEvent('click', document.body, '.js-retire', function (retireButton) {
     const panel = retireButton.closest('.js-playerPanel');
     panel.remove();
     leaveCurrentArea(state.selectedCharacter.hero, true);
-    var removedCharacter = state.selectedCharacter;
-    var index = state.characters.indexOf(removedCharacter);
+    const removedCharacter = state.selectedCharacter;
+    const index = state.characters.indexOf(removedCharacter);
     state.characters.splice(index, 1);
     state.selectedCharacter = state.characters[Math.min(index, state.characters.length)];
     setSelectedCharacter(state.characters[Math.min(index, state.characters.length - 1)]);
