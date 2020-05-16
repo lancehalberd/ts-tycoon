@@ -1,8 +1,44 @@
-
+import { setStat } from 'app/bonuses';
 import { GROUND_Y } from 'app/gameConstants';
+import { findActionByTag } from 'app/performAttack';
 import { arrMod, isPointInShortRect } from 'app/utils/index';
 
 import { Actor, Frame, ShortRectangle } from 'app/types';
+
+export function initializeActorForAdventure(actor: Actor) {
+    setStat(actor.variableObject, 'bonusMaxHealth', 0);
+    setActorHealth(actor, actor.stats.maxHealth);
+    actor.maxReflectBarrier = actor.reflectBarrier = 0;
+    actor.stunned = 0;
+    actor.pull = null;
+    actor.chargeEffect = null;
+    actor.time = 0;
+    actor.isDead = false;
+    actor.timeOfDeath = undefined;
+    actor.skillInUse = null;
+    actor.slow = 0;
+    actor.rotation = 0;
+    actor.activity = {type: 'none'};
+    actor.imprintedSpell = null;
+    actor.minions = actor.minions || [];
+    actor.boundEffects = actor.boundEffects || [];
+    var stopTimeAction = findActionByTag(actor.reactions, 'stopTime');
+    actor.temporalShield = actor.maxTemporalShield = (stopTimeAction ? stopTimeAction.stats.duration : 0);
+    updateActorFrame(actor);
+}
+
+export function damageActor(actor: Actor, damage: number) {
+    actor.targetHealth -= damage;
+}
+
+export function healActor(actor: Actor, healAmount: number) {
+    actor.targetHealth += healAmount;
+}
+
+export function setActorHealth(actor: Actor, health: number) {
+    actor.targetHealth = actor.health = health;
+    actor.percentHealth = actor.percentTargetHealth = health / actor.stats.maxHealth;
+}
 
 export function updateActorFrame(actor: Actor): void {
     const scale = (actor.stats.scale || 1);

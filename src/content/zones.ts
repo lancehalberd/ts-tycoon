@@ -5,6 +5,7 @@ import { zones } from 'app/content/zones/zoneHash';
 export * from 'app/content/zones/zoneHash';
 // All zones need to be imported here as they are not otherwise referenced in the code directly.
 export * from 'app/content/zones/guild';
+export * from 'app/content/zones/mission1';
 
 // Set zoneKey in each areaDefinition.
 for (let zoneKey in zones) {
@@ -13,6 +14,16 @@ for (let zoneKey in zones) {
         const areaDefinition: AreaDefinition = zone[areaKey];
         areaDefinition.zoneKey = zoneKey as ZoneType;
     }
+}
+
+
+export function getZone(zoneKey: string): Zone {
+    const zone = zones[zoneKey];
+    if (!zone) {
+        console.log('No zone with key', zoneKey);
+        debugger;
+    }
+    return zone;
 }
 
 export function serializeZone(zoneKey: ZoneType): string {

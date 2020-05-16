@@ -1,5 +1,6 @@
 import _ from 'lodash';
-import { addMonstersFromAreaDefinition, enterArea } from 'app/adventure';
+import { addMonstersFromAreaDefinition, enterArea, getArea } from 'app/adventure';
+import { missions, setupMission } from 'app/content/missions';
 import { getMonsterDefinitionAreaEntity, monsters } from 'app/content/monsters';
 import { serializeZone, zones } from 'app/content/zones';
 import {
@@ -40,11 +41,11 @@ export const editingAreaState: EditingAreaState = {
 }
 window['editingAreaState'] = editingAreaState;
 
-function getArea(): Area {
+function getCurrentArea(): Area {
     return getState().selectedCharacter.hero.area;
 }
 function getAreaDefinition(): AreaDefinition {
-    const area: Area = getArea();
+    const area: Area = getCurrentArea();
     return zones[area.zoneKey][area.key];
 }
 
@@ -147,7 +148,7 @@ export function uniqueObjectId(base: string, area: Area): string {
     return id;
 }
 function uniqueAreaId(): string {
-    let zoneKey = getArea().zoneKey;
+    let zoneKey = getCurrentArea().zoneKey;
     let i = 2, id: string = zoneKey;
     while (zones[zoneKey][id]) {
         id = 'newArea' + (i++);
@@ -212,7 +213,7 @@ function moveLocationDefinition(definition: LocationDefinition, dx: number, dy: 
 }
 
 function moveMonsterDefinition(definition: MonsterDefinition, dx: number, dy: number): void {
-    moveLocationDefinition(definition.location, dx, 0, -2 * dy, getMonsterDefinitionAreaEntity(getArea(), definition));
+    moveLocationDefinition(definition.location, dx, 0, -2 * dy, getMonsterDefinitionAreaEntity(getCurrentArea(), definition));
     refreshEnemies();
 }
 
@@ -304,7 +305,7 @@ export function renderEditAreaOverlay(context: CanvasRenderingContext2D): void {
     if (!isEditing) {
         return;
     }
-    const area = getArea();
+    const area = getCurrentArea();
     const areaDefinition = getAreaDefinition();
     context.save();
         context.globalAlpha = 0.5;
@@ -365,7 +366,7 @@ function updateAreaDefinition(updatedProps: Partial<AreaDefinition>) {
 }
 
 export function getEditingContextMenu(): MenuOption[] {
-    const area = getArea();
+    const area = getCurrentArea();
     if (!editingAreaState.isEditing) {
         if (!area.zoneKey || !zones[area.zoneKey][area.key]) {
             return [
@@ -398,8 +399,7 @@ export function getEditingContextMenu(): MenuOption[] {
                 return 'Stop Editing';
             },
             onSelect() {
-                editingAreaState.isEditing = false;
-                editingAreaState.selectedObject = null;
+                stopEditing();
             }
         },
         {
@@ -438,9 +438,15 @@ export function getEditingContextMenu(): MenuOption[] {
     ];
 }
 
+export function stopEditing() {
+    editingAreaState.isEditing = false;
+    editingAreaState.selectedObject = null;
+    editingAreaState.selectedMonsterIndex = null;
+}
+
 export function getSelectedMonsterContextMenu(): MenuOption[] {
     const {contextCoords, selectedMonsterIndex} = editingAreaState;
-    const area = getArea();
+    const area = getCurrentArea();
     const areaDefinition = getAreaDefinition();
     const monsterDefinition: MonsterDefinition = (areaDefinition.monsters || [])[selectedMonsterIndex];
     if (!monsterDefinition
@@ -515,7 +521,7 @@ export function getMonsterTypeMenuItems(callback: (monsterKey: string) => void):
 }
 
 function refreshEnemies() {
-    const area = getArea();
+    const area = getCurrentArea();
     if (area.zoneKey !== 'guild' || !getState().savedState.unlockedGuildAreas[area.key]) {
         addMonstersFromAreaDefinition(area);
         // The above call replaces the enemies array, so we need to reassign it to the character.
@@ -526,7 +532,7 @@ function refreshEnemies() {
 }
 
 export function getAreaContextMenuOption(): MenuOption {
-    const area = getArea();
+    const area = getCurrentArea();
     return {
         getLabel() {
             return 'Area...';
@@ -560,11 +566,11 @@ export function getAreaContextMenuOption(): MenuOption {
                         return 'Goto...';
                     },
                     getChildren() {
-                        return Object.keys(zones[getArea().zoneKey]).map((areaKey: string): MenuOption => {
+                        return Object.keys(zones[getCurrentArea().zoneKey]).map((areaKey: string): MenuOption => {
                             return {
                                 getLabel: () => areaKey,
                                 onSelect() {
-                                    enterArea(getState().selectedCharacter.hero, {x: 0, z: 0, areaKey});
+                                    enterArea(getState().selectedCharacter.hero, {x: 60, z: 0, areaKey});
                                 }
                             }
                         });
@@ -623,7 +629,7 @@ export function getAreaContextMenuOption(): MenuOption {
                     getChildren() {
                         return [
                             ADVENTURE_WIDTH,
-                            ...[-200, -100, -50, -20, 20, 50, 100, 200].map(s => getArea().width + s)
+                            ...[-200, -100, -50, -20, 20, 50, 100, 200].map(s => getCurrentArea().width + s)
                         ].filter(size => size >= ADVENTURE_WIDTH).map(size => ({
                             getLabel() {
                                 return `${size}`;
@@ -640,7 +646,7 @@ export function getAreaContextMenuOption(): MenuOption {
 }
 
 function promptToCreateNewArea(zoneKey: ZoneType): void {
-    const areaKey = window.prompt('New zone key', uniqueAreaId());
+    const areaKey = window.prompt('New area key', uniqueAreaId());
     let areaDefinition = zones[zoneKey][areaKey];
     if (!areaDefinition) {
         const areaDefinition: AreaDefinition = {
@@ -668,7 +674,7 @@ export function getZoneContextMenuOption(): MenuOption {
                         return 'New';
                     },
                     onSelect() {
-                        const zoneKey = window.prompt('New zone key', uniqueAreaId());
+                        const zoneKey = window.prompt('New zone key', '');
                         if (!zoneKey || zones[zoneKey]) {
                             return;
                         }
@@ -679,6 +685,19 @@ export function getZoneContextMenuOption(): MenuOption {
                         promptToCreateNewArea(zoneKey as ZoneType);
                     }
                 },
+                ...(area.zoneKey !== 'guild' ? [{
+                        getLabel() {
+                            return 'Reset zone';
+                        },
+                        onSelect() {
+                            for (let areaKey in zones[area.zoneKey]) {
+                                getArea(area.zoneKey, areaKey, true);
+                            }
+                            // This makes a new instance of the current area, so move the hero to that new instance.
+                            const hero = getState().selectedCharacter.hero;
+                            enterArea(hero, {x: hero.x, z: hero.z, zoneKey: area.zoneKey, areaKey: area.key});
+                        }
+                    }] : []),
                 {
                     getLabel() {
                         return 'Goto...';
@@ -692,7 +711,7 @@ export function getZoneContextMenuOption(): MenuOption {
                                         return {
                                             getLabel: () => areaKey,
                                             onSelect() {
-                                                enterArea(getState().selectedCharacter.hero, {x: 0, z: 0, zoneKey, areaKey});
+                                                enterArea(getState().selectedCharacter.hero, {x: 60, z: 0, zoneKey, areaKey});
                                             }
                                         }
                                     });
@@ -782,7 +801,7 @@ function importZone(zoneFileContents: string) {
     }
     // Enter the first area found in the imported zone.
     for (let areaKey in zones[zoneKey]) {
-        enterArea(getState().selectedCharacter.hero, {x: 0, z: 0, zoneKey, areaKey});
+        enterArea(getState().selectedCharacter.hero, {x: 60, z: 0, zoneKey, areaKey});
         break;
     }
 }

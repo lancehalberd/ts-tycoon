@@ -1,7 +1,7 @@
 // Load any graphic assets needed by the game here.
 import { enterArea, getArea, startLevel } from 'app/adventure';
 import { addBonusSourceToObject, createVariableObject } from 'app/bonuses';
-import { newCharacter,updateAdventurer } from 'app/character';
+import { newCharacter,updateHero } from 'app/character';
 import { Bed, HeroApplication } from 'app/content/areas';
 import { zones } from 'app/content/zones';
 import { addAllItems } from 'app/content/equipment/index';
@@ -34,7 +34,7 @@ import Random from 'app/utils/Random';
 import { playTrack } from 'app/utils/sounds';
 import { IntroScene } from 'app/content/cutscenes/intro';
 
-import { GuildStats } from 'app/types';
+import { Applicant, GuildStats } from 'app/types';
 
 
 let gameHasBeenInitialized = false;
@@ -89,8 +89,8 @@ export function initializeGame() {
         const jobKey = Random.element(jobRanks[0]);
         // jobKey = testJob || jobKey;
         const startingCharacter = newCharacter(characterClasses[jobKey]);
-        updateAdventurer(startingCharacter.adventurer);
-        hireCharacter(startingCharacter);
+        updateHero(startingCharacter.hero);
+        hireCharacter(startingCharacter as Applicant);
         const otherKeys = jobRanks[0].slice();
         removeElementFromArray(otherKeys, jobKey, true);
         for (let i = 0; i < HeroApplication.instances.length && otherKeys.length; i++) {
@@ -105,7 +105,7 @@ export function initializeGame() {
     }
     updateItemsThatWillBeCrafted();
     updateEnchantmentOptions();
-    centerMapOnLevel(map[state.selectedCharacter.currentLevelKey], true);
+    centerMapOnLevel(map[state.selectedCharacter.currentLevelKey] || map.guild, true);
     drawMap();
     // The main loop will throw errors constantly if an error prevented selectedCharacter
     // from being set, so instead, just throw an error before running setInterval.

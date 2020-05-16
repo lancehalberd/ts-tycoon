@@ -238,7 +238,7 @@ export function drawMap(): void {
         if (skill) {
             // Draw the shrine only if the level grants a skill.
             context.save();
-            var skillLearned = state.selectedCharacter.adventurer.unlockedAbilities[skill.key];
+            var skillLearned = state.selectedCharacter.hero.unlockedAbilities[skill.key];
             var canAffordSkill = state.selectedCharacter.divinity >= totalCostForNextLevel(state.selectedCharacter, levelData);
             // Draw she shrine partially tansparent if the character needs more divinity to learn this skill.
             if (!skillLearned && !canAffordSkill) context.globalAlpha = .5;
@@ -249,7 +249,7 @@ export function drawMap(): void {
             if (skillLearned) drawFrame(context, checkSource, pad(levelData.shrine, -4));
             context.restore();
         }
-        if (state.selectedCharacter.currentLevelKey === levelKey) {
+        if ((state.selectedCharacter.currentLevelKey || 'guild') === levelKey) {
             const frame = state.selectedCharacter.hero.source.idleAnimation.frames[0];
             drawFrame(context, frame, {...frame, x: levelData.x + 12 - frame.w / 2, y: levelData.y - 40});
         }

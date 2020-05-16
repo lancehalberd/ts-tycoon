@@ -215,7 +215,7 @@ function generateLevelLoot(
     loot.push(coinsLoot([pointsFactor * maxCoinsPerNormalEnemy * 10, pointsFactor * maxCoinsPerNormalEnemy * 15]));
 
     if (!difficultyCompleted) {
-        // Special Loot drops are given only the first time an adventurer complets an area on a given difficulty.
+        // Special Loot drops are given only the first time a hero complets an area on a given difficulty.
         // This is the minimum distance the level is from one of the main str/dex/int leylines.
         // Levels within 30 degrees of these leylines use 'basic'(triangle based) shapes for the jewels, other levels
         // will likely have non-triangle based shapes.

@@ -47,3 +47,5 @@ export const MAX_Z = FIELD_HEIGHT;
 export const MIN_Z = -MAX_Z;
 
 export const BOTTOM_HUD_RECT = {x: 0, y: ADVENTURE_HEIGHT - BOTTOM_HUD_HEIGHT, w: ADVENTURE_WIDTH, h: BOTTOM_HUD_HEIGHT};
+
+export const MISSION_ANIMATION_LENGTH = 2000;

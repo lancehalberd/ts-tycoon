@@ -29,7 +29,7 @@ export function drawBoardJewels(character: Character, canvas: HTMLCanvasElement)
     context.drawImage(character.boardCanvas, 0, 0, character.boardCanvas.width, character.boardCanvas.height);
     // Show open spaces as green or red when the player is dragging a jewel, indicating the character can equip the jewel or not.
     if (jewelInventoryState.draggedJewel && !jewelInventoryState.overVertex) {
-        const fillColor = (jewelTierLevels[jewelInventoryState.draggedJewel.tier] > character.adventurer.level) ? '#FF0000' : '#00FF00';
+        const fillColor = (jewelTierLevels[jewelInventoryState.draggedJewel.tier] > character.hero.level) ? '#FF0000' : '#00FF00';
         context.fillStyle = fillColor;
         context.globalAlpha = .5;
         drawShapesPath(context, board.spaces, true, false);

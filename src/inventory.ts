@@ -61,7 +61,7 @@ export function makeItem(base: ItemData, level: number): Item {
     item.domElement.setAttribute('itemId', item.id);
     updateItem(item);
     if (state && state.selectedCharacter) {
-        item.domElement.classList.toggle('equipable', canEquipItem(state.selectedCharacter.adventurer, item));
+        item.domElement.classList.toggle('equipable', canEquipItem(state.selectedCharacter.hero, item));
     }
     return item;
 }
@@ -182,9 +182,9 @@ function unequipRestrictedGear() {
     }
 }
 export function updateOffhandDisplay() {
-    var adventurer = getState().selectedCharacter.adventurer;
+    const hero = getState().selectedCharacter.hero;
     // Don't show the offhand slot if equipped with a two handed weapon unless they have a special ability to allow off hand with two handed weapons.
-    query('.js-offhand').style.display = !isTwoHandedWeapon(adventurer.equipment.weapon) || adventurer.stats.twoToOneHanded ?
+    query('.js-offhand').style.display = !isTwoHandedWeapon(hero.equipment.weapon) || hero.stats.twoToOneHanded ?
         '' : 'none';
 }
 export function isTwoHandedWeapon(item: Item) {
@@ -451,7 +451,7 @@ function applyDragResults() {
     }
     for (const slotElement of queryAll('.js-equipment .js-' + item.base.slot)) {
         if (collision(inventoryState.dragHelper, slotElement)) {
-            equipItem(getState().selectedCharacter.adventurer, item);
+            equipItem(getState().selectedCharacter.hero, item);
             return;
         }
     }

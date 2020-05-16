@@ -92,6 +92,10 @@ export function makeMonster(
     extraSkills: (Ability | BonusSource)[],
     specifiedRarity: number = null,
 ): Monster {
+    if (!(level > 0)) {
+        debugger;
+        level = 1;
+    }
     extraSkills = extraSkills || [];
     let baseMonster: MonsterData;
     if (typeof(monsterData) == 'string') {
@@ -124,7 +128,7 @@ export function makeMonster(
         prefixes: [],
         suffixes: [],
         extraSkills,
-        aggroRadius: ADVENTURE_WIDTH * 3 / 4,
+        aggroRadius: ADVENTURE_WIDTH * 1 / 2,
         percentHealth: 1,
         percentTargetHealth: 1,
         helpMethod: actorHelpText,
@@ -549,7 +553,6 @@ export function initializeMonsters() {
     }, monsters.wolf);
     addMonster('packLeader', {
         'name': 'Pack Leader', 'source': wolfSource,
-        'implicitBonuses': {'+weaponRange': 2},
         'abilities': [abilities.majorDexterity, abilities.majorStrength, abilities.majorIntelligence,
                       abilities.howl, abilities.howl, abilities.attackSong, abilities.defenseSong, abilities.sicem, abilities.howlSingAttack]
     }, monsters.alphaWolf);
@@ -634,8 +637,15 @@ export function initializeMonsters() {
         'abilities': [abilities.fireball, abilities.freeze, abilities.wizard], 'tags': ['ranged']
     });
     addMonster('skeleton', {'name': 'Skeleton', 'source': skeletonSource,
+        // Slightly fast+evasive, weak to magic.
+        'implicitBonuses': {'+accuracy': 2, '*attackSpeed': 1.2, '*weaponMagicDamage': 0,
+                            '*evasion': 1.2, '*magicBlock': 0.5, '*magicResist': 0.5,
+                            '*speed': 1.2},
+        onDeath: addSkeletonExplosion,
+    });
+    addMonster('skeletonSamurai', {'name': 'Skeleton', 'source': skeletonSource,
         // Fast to counter ranged heroes, low range+damage + fast attacks to be weak to armored heroes.
-        'implicitBonuses': {'+weaponRange': -.5, '+accuracy': 2, '*attackSpeed': 2, '*weaponMagicDamage': 0,
+        'implicitBonuses': {'+accuracy': 2, '*attackSpeed': 2, '*weaponMagicDamage': 0,
                             '*evasion': 1.3, '*magicBlock': 0.1, '*magicResist': 0.1,
                             '*speed': 1.5},
         'abilities': [abilities.sideStep],
@@ -643,7 +653,7 @@ export function initializeMonsters() {
     });
     addMonster('skeletalBuccaneer', {'name': 'Skeletal Buccaneer', 'source': skeletonSource,
         // Deflect to counter ranged champions.
-        'implicitBonuses': {'+weaponRange': -.5, '*minPhysicalDamage': .4, '*maxPhysicalDamage': .4, '+accuracy': 2, '*attackSpeed': 2, '*weaponMagicDamage': 0,
+        'implicitBonuses': {'*minPhysicalDamage': .4, '*maxPhysicalDamage': .4, '+accuracy': 2, '*attackSpeed': 2, '*weaponMagicDamage': 0,
                             '*block': 0, '+armor': 2, '*magicBlock': 0.1, '*magicResist': 0.1,
                             '*speed': 1, 'scale': 1.5},
         'abilities': [abilities.deflect, abilities.deflectDamage, abilities.sage, abilities.majorDexterity],

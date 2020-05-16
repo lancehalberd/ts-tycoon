@@ -191,7 +191,7 @@ function updateMonsters() {
         //TODO
         /*$enemySkill.attr('helpText', '-');
         $enemySkill.data('helpMethod', function () {
-            return abilityHelpText(abilities[skillKey], state.selectedCharacter.adventurer);
+            return abilityHelpText(abilities[skillKey], state.selectedCharacter.hero);
         })*/
         monstersContainer.appendChild(monsterElement);
     }
@@ -229,7 +229,7 @@ function updateEnemySkills() {
         enemySkillElement.setAttribute('helpText', '-');
         //TODO
         /*enemySkillElement.data('helpMethod', function () {
-            return abilityHelpText(abilities[skillKey], state.selectedCharacter.adventurer);
+            return abilityHelpText(abilities[skillKey], state.selectedCharacter.hero);
         })*/
         enemySkillsContainer.appendChild(enemySkillElement);
     });
@@ -247,8 +247,8 @@ export function startEditingLevel(level) {
     editingMapState.editingLevelInstance = instantiateLevel(editingLevel, 'normal', false);
     state.selectedCharacter.hero.x = 120;
     editingMapState.editingLevelInstance.cameraX = 0;
-    state.selectedCharacter.adventurer.isDead = false;
-    state.selectedCharacter.adventurer.timeOfDeath = undefined;
+    state.selectedCharacter.hero.isDead = false;
+    state.selectedCharacter.hero.timeOfDeath = undefined;
     toggleElements(queryAll('.js-editingControls'), true);
     levelSelect.selectedIndex = editingLevel.level - 1;
     const selectedBackgroundOption = query('.js-levelBackgroundSelect option[value="' + editingLevel.background + '"]') as HTMLOptionElement;

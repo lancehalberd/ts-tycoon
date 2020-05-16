@@ -37,6 +37,7 @@ export const craftingOptionsContainer:HTMLElement = query('.js-craftingSelectOpt
 export const mouseContainer:HTMLElement = query('.js-mouseContainer');
 export const mainContent: HTMLElement = query('.js-gameContent');
 export const cutsceneFadeBox: HTMLElement = query('.js-cutsceneFadeBox');
+export const autoplayControls: HTMLElement = query('.js-adventureControls');
 
 export function tag(type: string, classes: string = '', content: string | number = '') {
     return '<' + type + ' class="' + classes + '">' + content + '</' + type + '>';
@@ -76,7 +77,11 @@ export function getClosestElement(element: HTMLElement, elements: Array<HTMLElem
 }
 
 export function toggleElements(elements: NodeListOf<HTMLElement>, show: boolean) {
-    elements.forEach(element => element.style.display = show ? '' : 'none');
+    elements.forEach(element => toggleElement(element, show));
+}
+
+export function toggleElement(element: HTMLElement, show: boolean) {
+    element.style.display = show ? '' : 'none';
 }
 
 export function handleChildEvent(

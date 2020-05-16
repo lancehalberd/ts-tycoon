@@ -109,7 +109,6 @@ export function drawArea(context: CanvasRenderingContext2D, area: Area) {
         context.textAlign = 'center'
         context.fillText(textPopup.value, textPopup.x - cameraX, GROUND_Y - textPopup.y - textPopup.z / 2);
     }
-    if (area.areas) drawMinimap(context, area);
 }
 function drawRune(context: CanvasRenderingContext2D, actor: Actor, animation: FrameAnimation, frameIndex: number) {
     context.save();
@@ -141,7 +140,7 @@ function drawActorGroundEffects(context, actor: Actor) {
         }
     }
 }
-function drawMinimap(context: CanvasRenderingContext2D, area: Area) {
+export function drawMinimap(context: CanvasRenderingContext2D, area: Area) {
     const height = 3;
     const width = ADVENTURE_WIDTH - 20;
     const numberOfAreas = area.areas.size;
@@ -201,7 +200,8 @@ function drawHudElement(context, element) {
 const returnToMapButton = {
     frame: {'image': requireImage('gfx/worldIcon.png'), x: 0, y: 0, w: 72, h: 72},
     isVisible() {
-        return getState().selectedCharacter.context === 'adventure';
+        const character = getState().selectedCharacter;
+        return character.context === 'field' && !character.hero.area?.zoneKey;
     },
     isPointOver(x, y) {
         return isPointInShortRect(x, y, this);

@@ -1,7 +1,7 @@
 import { getDistance, playAreaSound } from 'app/adventure';
 import { pause } from 'app/adventureButtons';
 import { getEndlessLevel } from 'app/areaMenu';
-import { damageActor, healActor, setActorHealth } from 'app/character';
+import { damageActor, healActor, setActorHealth } from 'app/actor';
 import { map } from 'app/content/mapData';
 import { makeMonster } from 'app/content/monsters';
 import { projectileAnimations } from 'app/content/projectileAnimations';
@@ -89,13 +89,13 @@ export function updateDamageInfo(character: Character, statsPanelElement: HTMLEl
 
     // Expected damage against an 'average' monster of the hero.stats's level.
     const level = map[character.currentLevelKey];
-    if (!monsterLevel && level) {
-        if (character.currentLevelKey === 'guild') {
-            monsterLevel = 1;
+    if (!monsterLevel) {
+        if (!level) {
+            monsterLevel = hero.stats.level;
         } else if (character.levelDifficulty === 'endless') {
             monsterLevel = getEndlessLevel(character, level);
         } else {
-            monsterLevel = level ? level.level : hero.stats.level;
+            monsterLevel = level.level || hero.stats.level;
         }
     }
     const dummy = makeMonster(hero.area, 'dummy', monsterLevel, [], 0);

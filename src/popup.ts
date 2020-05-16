@@ -342,7 +342,7 @@ function getHelpText(popupTarget: HTMLElement) {
             console.log("Invalid ability key", abilityKey);
             debugger;
         }
-        return abilityHelpText(ability, state.selectedCharacter.adventurer);
+        return abilityHelpText(ability, state.selectedCharacter.hero);
     }
     if (!helpText) {
         debugger;

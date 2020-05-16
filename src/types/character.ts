@@ -1,12 +1,11 @@
 import {
-    Action, Actor, Board, BonusSource, GameContext, FixedObject, Hero, HUDElement,
+    Action, ActiveMission, Actor, Board, BonusSource, GameContext, FixedObject, Hero, HUDElement,
     JobKey, LevelDifficulty, SavedActor, SavedBoard,
 } from 'app/types';
 import { JobIcon } from 'app/content/jobs';
 import { ActionShortcut } from 'app/render/drawActionShortcuts';
 
 export interface Character {
-    adventurer: Hero,
     fame: number,
     hero: Hero,
     board: Board,
@@ -14,7 +13,6 @@ export interface Character {
     characterContext: CanvasRenderingContext2D,
     boardCanvas: HTMLCanvasElement,
     boardContext: CanvasRenderingContext2D,
-    time: number,
     divinityScores: {[key in string]: number},
     levelTimes: {[key in string]: {[key in string]: number}},
     divinity: number,
@@ -27,7 +25,7 @@ export interface Character {
     // Selected level key in the map
     selectedLevelKey?: string,
     // Most recent level key actually played (including currently)
-    currentLevelKey: string,
+    currentLevelKey?: string,
     levelDifficulty?: LevelDifficulty,
     activeShrine?: FixedObject,
     boardPreviewChoices?: Board[],
@@ -45,9 +43,14 @@ export interface Character {
     manualActions: {[key in string]: boolean},
     autoActions: {[key in string]: boolean},
 
+    // Current mission this character is on.
+    mission?: ActiveMission,
+}
+
+export interface Applicant extends Character {
     // This is only used for characters in the context of applications.
     // As age increases, the application is cheaper to replace with a new application.
-    applicationAge?: number,
+    applicationAge: number,
 }
 
 export interface SavedCharacter {
@@ -61,7 +64,6 @@ export interface SavedCharacter {
     gameSpeed: number, // Used for fast forward
     loopSkip: number, // Used to skip update loops for slow motion
 
-    context: GameContext,
     selectedLevelKey: string,
 
     divinityScores: {[key in string]: number},
@@ -72,6 +74,10 @@ export interface SavedCharacter {
 
     manualActions: {[key in string]: boolean},
     autoActions: {[key in string]: boolean},
+}
 
+export interface SavedApplicant extends SavedCharacter {
+    // This is only used for characters in the context of applications.
+    // As age increases, the application is cheaper to replace with a new application.
     applicationAge: number,
 }

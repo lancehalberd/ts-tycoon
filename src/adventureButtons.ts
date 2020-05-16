@@ -1,4 +1,4 @@
-import { query } from 'app/dom';
+import { autoplayControls, toggleElement, query } from 'app/dom';
 import { getState } from 'app/state';
 
 const autoplayButton = query('.js-autoplayButton');
@@ -58,6 +58,8 @@ shrineButton.onclick = function () {
 
 export function updateAdventureButtons() {
     const state = getState();
+    // Hide autoplay controls entirely if not in an area that supports them.
+    toggleElement(autoplayControls, !state.selectedCharacter.hero.area?.zoneKey);
     var character = state.selectedCharacter;
     autoplayButton.classList.toggle('disabled', !character.autoplay);
     if (character.autoplay) {

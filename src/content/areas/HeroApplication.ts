@@ -11,7 +11,7 @@ import { getState } from 'app/state';
 import { fillRect, pad } from 'app/utils/index';
 
 import {
-    Area, AreaObject, AreaObjectDefinition, AreaObjectTarget, Character,
+    Applicant, Area, AreaObject, AreaObjectDefinition, AreaObjectTarget,
     Frame, Hero, ShortRectangle,
 } from 'app/types';
 
@@ -19,7 +19,7 @@ export class HeroApplication extends EditableAreaObject {
     static instances: HeroApplication[];
 
     name = 'Application';
-    character: Character;
+    applicant: Applicant;
     // This is just used for the dimensions of the application, we don't actually
     // draw this so we can leave image empty.
     getFrame(): Frame {
@@ -39,24 +39,24 @@ export class HeroApplication extends EditableAreaObject {
         }
         context.fillStyle = '#fc8';
         fillRect(context, rectangle);
-        if (!this.character) {
+        if (!this.applicant) {
             this.setApplicant(createNewHeroApplicant());
         }
         // Draw a faded job icon on the this application.
         context.save();
             context.globalAlpha = 0.6;
-            this.character.hero.job.iconSource.render(
+            this.applicant.hero.job.iconSource.render(
                 context,
                 {x: rectangle.x + 2, y: rectangle.y + 5, w: 16, h: 16}
             );
         context.restore();
     }
 
-    setApplicant(applicant: Character) {
-        this.character = applicant;
+    setApplicant(applicant: Applicant) {
+        this.applicant = applicant;
         const index = HeroApplication.instances.indexOf(this);
         if (index >= 0) {
-            getState().applicants[index] = this.character;
+            getState().applicants[index] = this.applicant;
         }
     }
 }

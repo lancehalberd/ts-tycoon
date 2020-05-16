@@ -94,7 +94,7 @@ export class CoinStash extends EditableAreaObject implements UpgradeableObject {
     helpMethod() {
         const coinStashTier = coinStashTiers[this.level - 1];
         const parts = [];
-        parts.push(bonusSourceHelpText(coinStashTier, getState().selectedCharacter.adventurer));
+        parts.push(bonusSourceHelpText(coinStashTier, getState().selectedCharacter.hero));
         if (coinStashTier.upgradeCost) {
             previewCost(coinStashTier.upgradeCost);
             parts.push('Upgrade for ' + costHelpText(coinStashTier.upgradeCost));

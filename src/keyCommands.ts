@@ -80,17 +80,12 @@ document.addEventListener('keydown', function(event) {
             hideAreaMenu();
             if (!state.selectedCharacter.hero.area) {
                 enterArea(state.selectedCharacter.hero, guildYardEntrance);
-            } else {
-                setContext('guild');
             }
+            setContext('field');
         } else if (state.selectedCharacter.context === 'jewel' || state.selectedCharacter.context === 'item') {
-            if (state.selectedCharacter.hero.area && state.selectedCharacter.hero.area.zoneKey !== 'guild') {
-                setContext('adventure');
-            } else {
-                setContext('guild');
-            }
+            setContext('field');
         }
-        if (state.selectedCharacter.context === 'adventure' || state.selectedCharacter.context === 'guild') {
+        if (state.selectedCharacter.context === 'field') {
             hideHeroApplication();
             setChoosingTrophyAltar(null);
             setUpgradingObject(null);
@@ -109,12 +104,16 @@ document.addEventListener('keydown', function(event) {
         }
     }
     if ((keyCode === KEY.C || keyCode === KEY.I) && (true || state.guildStats.hasItemCrafting)) {
-        if (state.selectedCharacter.context === 'item') setContext('guild');
-        else if (state.selectedCharacter.context !== 'adventure') setContext('item');
+        if (state.selectedCharacter.context === 'item') setContext('field');
+        else if (state.selectedCharacter.hero.area?.zoneKey === 'guild') {
+            setContext('item');
+        }
     }
     if (keyCode === KEY.J && (true || state.guildStats.hasJewelCrafting)) {
-        if (state.selectedCharacter.context === 'jewel') setContext('guild');
-        else if (state.selectedCharacter.context !== 'adventure') setContext('jewel');
+        if (state.selectedCharacter.context === 'jewel') setContext('field');
+        else if (state.selectedCharacter.hero.area?.zoneKey === 'guild') {
+            setContext('jewel');
+        }
     }
     if (keyCode === KEY.M && state.guildStats.hasMap) {
         // console.log(state.selectedCharacter.context);
@@ -125,10 +124,9 @@ document.addEventListener('keydown', function(event) {
         if (state.selectedCharacter.context === 'map') {
             if (!state.selectedCharacter.hero.area) {
                 enterArea(state.selectedCharacter.hero, guildYardEntrance);
-            } else {
-                setContext('guild');
             }
-        } else if (state.selectedCharacter.context !== 'adventure') {
+            setContext('field');
+        } else if (state.selectedCharacter.hero.area?.zoneKey === 'guild') {
             openWorldMap();
         }
     }
@@ -175,7 +173,7 @@ document.addEventListener('keydown', function(event) {
         if (!popup || !popup.target || !popup.target.closest('.js-inventory')) {
             return;
         }
-        const actor = state.selectedCharacter.adventurer;
+        const actor = state.selectedCharacter.hero;
         const item = getItemForElement(popup.target);
         if (item) equipItem(actor, item);
         return;

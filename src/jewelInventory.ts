@@ -581,8 +581,8 @@ function appendJewelToElement(jewel: Jewel, element: HTMLElement) {
     element.append(jewel.domElement);
     jewel.canvas.style.position = '';
 }
-export function equipJewel(character: Character, replace = false, updateAdventurer = false): boolean {
-    if (jewelTierLevels[jewelInventoryState.draggedJewel.tier] <= character.adventurer.level
+export function equipJewel(character: Character, replace = false, updateHero = false): boolean {
+    if (jewelTierLevels[jewelInventoryState.draggedJewel.tier] <= character.hero.level
         && snapToBoard(jewelInventoryState.draggedJewel, character.board, replace)) {
         jewelInventoryState.draggedJewel.character = character;
         jewelInventoryState.draggedJewel.domElement.remove();
@@ -592,7 +592,7 @@ export function equipJewel(character: Character, replace = false, updateAdventur
         updateAdjacentJewels(jewelInventoryState.draggedJewel);
         jewelInventoryState.draggedJewel = null;
         inventoryState.dragHelper = null;
-        if (updateAdventurer) {
+        if (updateHero) {
             const hero = character.hero;
             removeBonusSourceFromObject(hero.variableObject, character.jewelBonuses, false);
             updateJewelBonuses(character);
@@ -602,7 +602,7 @@ export function equipJewel(character: Character, replace = false, updateAdventur
         return true;
     }
     updateAdjacentJewels(jewelInventoryState.draggedJewel);
-    if (updateAdventurer) {
+    if (updateHero) {
         const hero = character.hero;
         removeBonusSourceFromObject(hero.variableObject, character.jewelBonuses, false);
         updateJewelBonuses(character);

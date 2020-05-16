@@ -70,7 +70,7 @@ function selectDifficulty(difficulty: LevelDifficulty) {
     hideAreaMenu();
     const state = getState();
     state.selectedCharacter.levelDifficulty = difficulty;
-    setContext('adventure');
+    setContext('field');
     startLevel(state.selectedCharacter, state.selectedCharacter.selectedLevelKey);
 }
 

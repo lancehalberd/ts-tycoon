@@ -1,19 +1,17 @@
+import { damageActor, healActor, initializeActorForAdventure, updateActorFrame } from 'app/actor';
 import { pause, updateAdventureButtons } from 'app/adventureButtons';
 import { getEndlessLevel, showAreaMenu } from 'app/areaMenu';
 import {
     addVariableChildToObject,
     recomputeDirtyStats, removeBonusSourceFromObject, setStat,
 } from 'app/bonuses';
-import {
-    baseDivinity, damageActor, healActor,
-    initializeActorForAdventure, refreshStatsPanel
-} from 'app/character';
+import { baseDivinity, refreshStatsPanel} from 'app/character';
 import { createAreaFromDefinition, getPositionFromLocationDefinition } from 'app/content/areas';
 import { addAreaFurnitureBonuses } from 'app/content/furniture';
 import { instantiateLevel } from 'app/content/levels';
 import { map } from 'app/content/mapData';
 import { getMonsterDefinitionAreaEntity, makeMonster } from 'app/content/monsters';
-import { zones } from 'app/content/zones';
+import { getZone } from 'app/content/zones';
 import { setContext, showContext } from 'app/context';
 import { editingMapState, stopTestingLevel } from 'app/development/editLevel';
 import { editingAreaState } from 'app/development/editArea';
@@ -27,6 +25,7 @@ import { animaLootDrop, coinsLootDrop } from 'app/loot';
 import { setActorInteractionTarget } from 'app/main';
 import { unlockMapLevel } from 'app/map';
 import { moveActor } from 'app/moveActor';
+import { updateActorHelpText } from 'app/popup';
 import { updateActorAnimationFrame } from 'app/render/drawActor';
 import { appendTextPopup, applyAttackToTarget, findActionByTag, getBasicAttack, performAttackProper } from 'app/performAttack';
 import { gain } from 'app/points';
@@ -86,28 +85,28 @@ export function startLevel(character: Character, index: string) {
 }
 
 const activeAreas: {[key: string]: Area} = {};
-export function getArea(zoneKey: ZoneType, areaKey: string): Area {
+export function getArea(zoneKey: ZoneType, areaKey: string, reset: boolean = false): Area {
     const fullKey = `${zoneKey}:${areaKey}`;
-    if (activeAreas[fullKey]) {
+    if (!reset && activeAreas[fullKey]) {
         return activeAreas[fullKey];
     }
-    if (!zones[zoneKey]) {
-        console.log('Missing zone', zoneKey);
-        debugger;
+    const zone = getZone(zoneKey);
+    if (!zone) {
         return;
     }
-    if (!zones[zoneKey][areaKey]) {
-        console.log('Missing area', areaKey, zones[zoneKey]);
+    if (!zone[areaKey]) {
+        console.log('Missing area', areaKey, zone);
         // debugger;
         return;
     }
-    const area: Area = activeAreas[fullKey] = createAreaFromDefinition(areaKey, zones[zoneKey][areaKey]);
+    const area: Area = activeAreas[fullKey] = createAreaFromDefinition(areaKey, zone[areaKey]);
     addMonstersFromAreaDefinition(area);
     return area;
 }
 
 export function addMonstersFromAreaDefinition(area: Area) {
-    const areaDefinition: AreaDefinition = zones[area.zoneKey][area.key];
+    const zone = getZone(area.zoneKey);
+    const areaDefinition: AreaDefinition = zone[area.key];
     const monsters: MonsterSpawn[] =(areaDefinition.monsters || []).map(monster => {
         return {
             ...monster,
@@ -148,11 +147,7 @@ export function enterArea(actor: Actor, {x, z, areaKey, objectKey, zoneKey}: Exi
         });
         if (actor.type === 'hero') {
             const character = actor.character;
-            character.context = 'guild'
-            character.currentLevelKey = 'guild';
             if (character === state.selectedCharacter) {
-                updateAdventureButtons();
-                showContext('guild');
             }
         }
         if (!state.savedState.unlockedGuildAreas[area.key]) {
@@ -192,8 +187,10 @@ export function enterArea(actor: Actor, {x, z, areaKey, objectKey, zoneKey}: Exi
     actor.x = x;
     actor.y = 0;
     actor.z = z;
+    // state.selectedCharacter is not set when initializing or loading a save file.
     if (state.selectedCharacter && actor === state.selectedCharacter.hero) {
         area.cameraX = Math.round(Math.max(0, Math.min(area.width - ADVENTURE_WIDTH, actor.x - ADVENTURE_WIDTH / 2)));
+        updateAdventureButtons();
     }
     editingAreaState.cameraX = area.cameraX;
     editingAreaState.selectedObject = null;
@@ -353,12 +350,18 @@ function unlockGuildArea(guildArea: Area) {
     saveGame();
 }
 
+function updateAllActorDetails(area: Area): void {
+    const everybody = area.allies.concat(area.enemies);
+    everybody.forEach(updateActorFrame);
+    everybody.forEach(updateActorHelpText);
+}
 
 export function updateArea(area: Area) {
     if (area.zoneKey === 'guild' && !getState().savedState.unlockedGuildAreas[area.key] && !area.enemies.length && area.allies.some(actor => !actor.isDead)) {
         unlockGuildArea(area);
     }
     if (timeStopLoop(area)) {
+        updateAllActorDetails(area);
         return;
     }
     const delta = FRAME_LENGTH / 1000;
@@ -419,14 +422,15 @@ export function updateArea(area: Area) {
         textPopup.vy += ifdefor(textPopup.gravity, -.5);
         if (textPopup.duration-- < 0) area.textPopups.splice(i--, 1);
     }
-    everybody.forEach(function (actor) {
+    for (const actor of everybody) {
         if (actor.timeOfDeath < actor.time - 1) {
             removeActor(actor);
-            return;
+            continue;
         }
         capHealth(actor);
-    });
+    }
     everybody.forEach(updateActorAnimationFrame);
+    updateAllActorDetails(area);
 }
 function processStatusEffects(target: Actor) {
     if (target.isDead ) return;
@@ -702,6 +706,12 @@ function defeatedEnemy(hero: Hero, enemy: Actor) {
     const loot = [];
     if (enemy.stats.coins) loot.push(coinsLootDrop(enemy.stats.coins));
     if (enemy.stats.anima) loot.push(animaLootDrop(enemy.stats.anima));
+
+    // Any non-minion kill counts towards the defeated enemies total for missions.
+    if (hero.character.mission && !enemy.owner) {
+        hero.character.mission.defeatedEnemies++;
+    }
+
     loot.forEach(function (loot, index) {
         loot.gainLoot(hero);
         loot.addTreasurePopup(hero, enemy.x + index * 20, enemy.h, index * 10);
@@ -779,7 +789,7 @@ export function returnToMap(character: Character) {
     (character.hero.minions || []).forEach(removeActor);
     character.hero.boundEffects = [];
     updateAdventureButtons();
-    if (character.autoplay && character.replay) {
+    if (character.autoplay && character.replay && character.currentLevelKey) {
         startLevel(character, character.currentLevelKey);
     } else if (editingMapState.testingLevel) {
         stopTestingLevel();
@@ -788,6 +798,23 @@ export function returnToMap(character: Character) {
         refreshStatsPanel(character, query('.js-characterColumn .js-stats'));
     } else {
         character.context = 'map';
+    }
+}
+
+export function returnToGuild(character: Character) {
+    character.mission = null;
+    removeAdventureEffects(character.hero);
+    character.hero.goalTarget = null;
+    character.activeShrine = null;
+    enterArea(character.hero, guildYardEntrance);
+    // Minions despawn when returning to the guild.
+    (character.hero.minions || []).forEach(removeActor);
+    character.hero.boundEffects = [];
+    if (getState().selectedCharacter === character) {
+        setContext('field');
+        refreshStatsPanel(character, query('.js-characterColumn .js-stats'));
+    } else {
+        character.context = 'field';
     }
 }
 

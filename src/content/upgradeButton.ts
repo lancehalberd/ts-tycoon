@@ -91,8 +91,8 @@ export function drawUpgradeBox() {
     mainContext.fillText(nextTier.name, upgradeRectangle.x + 30, upgradeRectangle.y + 70);
     mainContext.fillStyle = toolTipColor;
     const state = getState();
-    mainContext.fillText(bonusSourceHelpText(currentTier, state.selectedCharacter.adventurer).replace(/<br ?\/?>/g, "\n"), upgradeRectangle.x + 30, upgradeRectangle.y + 20);
-    mainContext.fillText(bonusSourceHelpText(nextTier, state.selectedCharacter.adventurer).replace(/<br ?\/?>/g, "\n"), upgradeRectangle.x + 30, upgradeRectangle.y + 80);
+    mainContext.fillText(bonusSourceHelpText(currentTier, state.selectedCharacter.hero).replace(/<br ?\/?>/g, "\n"), upgradeRectangle.x + 30, upgradeRectangle.y + 20);
+    mainContext.fillText(bonusSourceHelpText(nextTier, state.selectedCharacter.hero).replace(/<br ?\/?>/g, "\n"), upgradeRectangle.x + 30, upgradeRectangle.y + 80);
 }
 
 function setFontSize(context, size) {

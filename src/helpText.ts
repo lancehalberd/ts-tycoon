@@ -19,7 +19,7 @@ export function getNameWithAffixes(name: string, prefixes: Affix[], suffixes: Af
 export function getItemHelpText(this: void, item: Item) {
     const sections = [];
     const state = getState();
-    const actor = state.selectedCharacter.adventurer;
+    const actor = state.selectedCharacter.hero;
     // Unique items have a distinct display name that is used instead of the affix generated name.
     let title;
     if (item.displayName) title = item.displayName;
@@ -36,22 +36,22 @@ export function getItemHelpText(this: void, item: Item) {
         sections.push(tagParts.join(', '));
     }
 
-    if (item.requiredLevel > state.selectedCharacter.adventurer.level) {
+    if (item.requiredLevel > state.selectedCharacter.hero.level) {
         sections.push('<span style="color: #c00;">Requires level ' + item.requiredLevel + '</span>');
     } else {
         sections.push('Requires level ' + item.requiredLevel);
     }
     sections.push('Crafting level ' + item.itemLevel);
     sections.push('');
-    sections.push(bonusSourceHelpText(item.base, state.selectedCharacter.adventurer));
+    sections.push(bonusSourceHelpText(item.base, state.selectedCharacter.hero));
 
     if (item.prefixes.length || item.suffixes.length) {
         sections.push('');
         item.prefixes.forEach(function (affix) {
-            sections.push(bonusSourceHelpText(affix, state.selectedCharacter.adventurer));
+            sections.push(bonusSourceHelpText(affix, state.selectedCharacter.hero));
         });
         item.suffixes.forEach(function (affix) {
-            sections.push(bonusSourceHelpText(affix, state.selectedCharacter.adventurer));
+            sections.push(bonusSourceHelpText(affix, state.selectedCharacter.hero));
         });
     }
     sections.push('');

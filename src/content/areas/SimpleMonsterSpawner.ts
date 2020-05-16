@@ -1,6 +1,6 @@
 import {
     initializeActorForAdventure,
-} from 'app/character';
+} from 'app/actor';
 import { isPointOverAreaTarget } from 'app/content/areas';
 import { makeMonster } from 'app/content/monsters';
 import {

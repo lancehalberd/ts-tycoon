@@ -7,7 +7,7 @@ import { boards } from 'app/content/boards';
 import { editingMapState } from 'app/development/editLevel';
 import { renderEditAreaOverlay } from 'app/development/editArea';
 import { jewelsCanvas, mainCanvas, mainContext, previewContext, query } from 'app/dom';
-import { drawArea, drawHud } from 'app/drawArea';
+import { drawArea, drawHud, drawMinimap } from 'app/drawArea';
 import { drawBoardBackground, drawBoardJewels, drawBoardJewelsProper } from 'app/drawBoard';
 import { drawMap } from 'app/drawMap';
 import { drawActionShortcuts } from 'app/render/drawActionShortcuts';
@@ -16,6 +16,7 @@ import { FRAME_LENGTH } from 'app/gameConstants';
 import { drawImage, requireImage } from 'app/images';
 import { isGameInitialized } from 'app/initialize';
 import { redrawInventoryJewels } from 'app/jewelInventory';
+import { drawMissionHUD } from 'app/render/drawMission';
 import { getState } from 'app/state';
 import { renderChooseBlessing } from 'app/ui/chooseBlessing';
 import { arrMod, ifdefor, rectangle } from 'app/utils/index';
@@ -42,7 +43,8 @@ export function render() {
         playTrack('map', 0);
     }
     lastTimeRendered = state.time;
-    if (state.selectedCharacter.context === 'jewel') {
+    const gameContext = state.selectedCharacter.context;
+    if (gameContext === 'jewel') {
         redrawInventoryJewels();
     }
     const { editingLevel, testingLevel } = editingMapState;
@@ -69,10 +71,11 @@ export function render() {
         character.characterContext.globalAlpha = 1;
         if (state.selectedCharacter !== character) {
             if (character.activeShrine) drawImage(character.characterContext, shrineSource.image, shrineSource, rectangle(0, 0, 16, 16));
-            else if (!character.adventurer.area) drawImage(character.characterContext, homeSource.image, homeSource, rectangle(0, 0, 16, 16));
+            else if (!character.hero.area) drawImage(character.characterContext, homeSource.image, homeSource, rectangle(0, 0, 16, 16));
         }
     }
-    if (state.selectedCharacter.context === 'adventure' || state.selectedCharacter.context === 'guild') {
+    if (gameContext === 'field') {
+        const area = state.selectedCharacter.hero.area;
         if (editingLevel && !testingLevel) {
             drawArea(mainContext, editingLevel);
             if (editingLevel && editingLevel.board) {
@@ -83,18 +86,24 @@ export function render() {
                 drawBoardJewelsProper(mainContext, [0, 0], board);
             }
         } else {
-            drawArea(mainContext, state.selectedCharacter.hero.area);
+            drawArea(mainContext, area);
+        }
+        if (area.areas) {
+            drawMinimap(mainContext, area);
+        }
+        if (state.selectedCharacter.mission) {
+            drawMissionHUD(mainContext, state.selectedCharacter.mission);
         }
         drawActionShortcuts(mainContext, state.selectedCharacter);
-    } else if (state.selectedCharacter.context === 'cutscene') {
+    } else if (gameContext === 'cutscene') {
         state.cutscene.render(mainContext);
     }
-    if (state.selectedCharacter.context === 'adventure' && state.selectedCharacter.activeShrine) {
+    if (gameContext === 'field' && state.selectedCharacter.activeShrine) {
         renderChooseBlessing();
     }
-    if (state.selectedCharacter.context === 'map') drawMap();
-    if (state.selectedCharacter.context === 'item') drawCraftingCanvas();
-    if (state.selectedCharacter.context === 'jewel') drawBoardJewels(state.selectedCharacter, jewelsCanvas);
+    if (gameContext === 'map') drawMap();
+    if (gameContext === 'item') drawCraftingCanvas();
+    if (gameContext === 'jewel') drawBoardJewels(state.selectedCharacter, jewelsCanvas);
     if (getChoosingTrophyAltar()) drawTrophySelection();
     if (getUpgradingObject()) drawUpgradeBox();
     if (mainCanvas.style.display === '') {

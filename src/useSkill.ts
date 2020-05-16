@@ -1,12 +1,12 @@
 import _ from 'lodash';
 
+import { healActor, initializeActorForAdventure, setActorHealth } from 'app/actor';
 import { actorCanOverHeal, getDistance, playAreaSound, removeActor } from 'app/adventure';
 import {
     addBonusSourceToObject, recomputeDirtyStats, removeBonusSourceFromObject, updateTags,
 } from 'app/bonuses';
 import {
-    addActions, healActor, initializeActorForAdventure,
-    makeAdventurerFromJob, setActorHealth, updateAdventurer,
+    addActions, makeHeroFromJob, updateHero,
 } from 'app/character';
 import { abilities } from 'app/content/abilities';
 import { effectAnimations } from 'app/content/effectAnimations';
@@ -377,10 +377,10 @@ interface ReactionDefinition {
     // Actually use the skill, called after preparation finishes.
     use: (actor: Actor, skill: Action, attackStats: AttackData) => void,
 }
-const actionDefinitions: {
+export const actionDefinitions: {
     [key: string]: ActionDefinition
 } = {};
-const reactionDefinitions: {
+export const reactionDefinitions: {
     [key: string]: ReactionDefinition
 } = {};
 
@@ -509,10 +509,10 @@ actionDefinitions.minion = {
 function cloneActor(actor: Actor, skill: Action): Actor {
     let clone;
     if (actor.type === 'hero') {
-        clone = makeAdventurerFromJob(actor.job, actor.level, {});
+        clone = makeHeroFromJob(actor.job, actor.level, {});
         clone.colors = actor.colors;
         clone.equipment = actor.equipment;
-        updateAdventurer(clone);
+        updateHero(clone);
         // Add bonuses from source character's abilities/jewel board.
         // Note that we don't give the clone the source character's actions.
         for (const ability of actor.abilities) {

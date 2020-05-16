@@ -251,11 +251,11 @@ export function drawCraftingCanvas() {
                 break
         }
         context.fillStyle = '#8F8';
-        context.fillRect(0, craftingHeaderSize + offset * craftingSlotTotal, 4 + 2 * craftingSlotTotal * Math.min(state.selectedCharacter.adventurer.level, savedState.craftingLevel), 3 + rows * craftingSlotTotal);
-        const levelsOverCurrent = savedState.craftingLevel - state.selectedCharacter.adventurer.level;
+        context.fillRect(0, craftingHeaderSize + offset * craftingSlotTotal, 4 + 2 * craftingSlotTotal * Math.min(state.selectedCharacter.hero.level, savedState.craftingLevel), 3 + rows * craftingSlotTotal);
+        const levelsOverCurrent = savedState.craftingLevel - state.selectedCharacter.hero.level;
         if (levelsOverCurrent > 0) {
             context.fillStyle = '#F88';
-            context.fillRect(2 + 2 * craftingSlotTotal * state.selectedCharacter.adventurer.level, craftingHeaderSize + offset * craftingSlotTotal, 2 * craftingSlotTotal * levelsOverCurrent, 3 + rows * craftingSlotTotal);
+            context.fillRect(2 + 2 * craftingSlotTotal * state.selectedCharacter.hero.level, craftingHeaderSize + offset * craftingSlotTotal, 2 * craftingSlotTotal * levelsOverCurrent, 3 + rows * craftingSlotTotal);
         }
     }
 
@@ -454,7 +454,7 @@ function checkToShowCraftingToopTip() {
         }
         sections.push('Requires level ' + overCraftingItem.level);
         sections.push('');
-        sections.push(bonusSourceHelpText(overCraftingItem, state.selectedCharacter.adventurer));
+        sections.push(bonusSourceHelpText(overCraftingItem, state.selectedCharacter.hero));
         if (state.savedState.craftedItems[overCraftingItem.key] & CRAFTED_UNIQUE) {
             sections.push(tag('div', 'uniqueText', 'Unique Variant:'
                 + titleDiv(overCraftingItem.unique.displayName)

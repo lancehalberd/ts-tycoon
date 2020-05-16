@@ -1,5 +1,8 @@
+import { initializeActorForAdventure } from 'app/actor';
+import { enterArea } from 'app/adventure';
 import { cutscenes } from 'app/content/cutscenes';
-import { getEditingContextMenu } from 'app/development/editArea';
+import { missions, setupMission } from 'app/content/missions';
+import { getEditingContextMenu, stopEditing } from 'app/development/editArea';
 import { mainCanvas, tagElement } from 'app/dom';
 import { getState } from 'app/state';
 import { getElementRectangle } from 'app/utils/index';
@@ -104,6 +107,7 @@ export function getContextMenu(): MenuOption[] {
     return [
         ...getEditingContextMenu(),
         ...getCutsceneMenu(),
+        ...getMissionMenu(),
     ];
 }
 
@@ -123,6 +127,29 @@ function getCutsceneMenu(): MenuOption[] {
             }
         }
     ];
+}
+
+function getMissionMenu(): MenuOption[] {
+    const character = getState().selectedCharacter;
+    return [{
+        getLabel() {
+            return 'Mission...';
+        },
+        getChildren() {
+            return Object.keys(missions).map(missionKey => {
+                const mission = missions[missionKey];
+                return {
+                    label: `Start ${missionKey}: ${mission.name}`,
+                    onSelect() {
+                        setupMission(character, missionKey);
+                        initializeActorForAdventure(character.hero)
+                        enterArea(character.hero, {zoneKey: mission.zoneKey, areaKey: mission.areaKey, x: 60, z: 0});
+                        stopEditing();
+                    }
+                }
+            });
+        }
+    }];
 }
 
 export function showContextMenu(this: void, menu: MenuOption[], x: number, y: number): void {

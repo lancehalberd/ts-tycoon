@@ -1,6 +1,5 @@
-import {
-    makeAdventurerFromData, setActorHealth, updateAdventurer
-} from 'app/character';
+import { setActorHealth } from 'app/actor';
+import { makeHeroFromData, updateHero } from 'app/character';
 import { abilities } from 'app/content/abilities';
 import { affixesByKey } from 'app/content/enchantments';
 import { map } from 'app/content/mapData';
@@ -15,8 +14,8 @@ import { exportState, getState, importState, SavedState } from 'app/state';
 import { makeShape, Polygon, shapeDefinitions } from 'app/utils/polygon';
 
 import {
-    Actor, Affix, Board, Character, EquipmentAffix, Hero, Item, Jewel, JewelComponents,
-    SavedActor, SavedAffix, SavedBoard, SavedCharacter,
+    Actor, Affix, Applicant, Board, Character, EquipmentAffix, Hero, Item, Jewel, JewelComponents,
+    SavedActor, SavedAffix, SavedApplicant, SavedBoard, SavedCharacter,
     SavedItem, SavedFixedJewel, SavedJewel, SavedShape
 } from 'app/types';
 
@@ -39,10 +38,9 @@ export function saveGame() {
 export function eraseSave() {
     window.localStorage.clear()
 }
-export function exportCharacter(character: Character): SavedCharacter {
+export function exportCharacter(character: Character | Applicant): SavedCharacter {
     return {
         hero: exportHero(character.hero),
-        context: character.context,
         selectedLevelKey: character.selectedLevelKey,
         autoActions: character.autoActions,
         manualActions: character.manualActions,
@@ -52,7 +50,6 @@ export function exportCharacter(character: Character): SavedCharacter {
         fame: character.fame,
         divinity: character.divinity,
         currentLevelKey: character.currentLevelKey,
-        applicationAge: character.applicationAge || 0,
         paused: character.paused,
         autoplay: character.autoplay,
         skipShrines: character.skipShrines,
@@ -61,34 +58,37 @@ export function exportCharacter(character: Character): SavedCharacter {
         loopSkip: character.loopSkip,
     };
 }
+export function exportApplicant(applicant: Applicant): SavedApplicant {
+    return {
+        ...exportCharacter(applicant),
+        applicationAge: applicant.applicationAge,
+    }
+}
 export function importCharacter(characterData: SavedCharacter) {
     const characterCanvas = createCanvas(40, 20);
     characterCanvas.setAttribute('helpText', '$character$');
     characterCanvas.classList.add('js-character', 'character');
     const boardCanvas = createCanvas(jewelsCanvas.width, jewelsCanvas.height);
-    const hero = importAdventurer(characterData.hero);
+    // Old saves used adventurer instead of hero.
+    const hero = importHero(characterData.hero || (characterData as any).adventurer);
     hero.heading = [1, 0, 0]; // Character moves left to right.
     const character: Character = {
-    // Old saves used adventurer instead of hero.
         actionShortcuts: [],
         board: null,
         hero,
-        context: characterData.context,
+        context: 'field',
         selectedLevelKey: characterData.selectedLevelKey,
-        adventurer: hero,
         autoActions: characterData.autoActions || {},
         manualActions: characterData.manualActions || {},
         characterCanvas,
         characterContext: characterCanvas.getContext("2d"),
         boardCanvas,
         boardContext: boardCanvas.getContext("2d"),
-        time: Date.now(),
         divinityScores: characterData.divinityScores || {},
         levelTimes: characterData.levelTimes || {},
         divinity: characterData.divinity || 0,
-        currentLevelKey: characterData.currentLevelKey || 'guild',
+        currentLevelKey: characterData.currentLevelKey,
         fame: characterData.fame || Math.ceil(characterData.divinity / 10),
-        applicationAge: characterData.applicationAge || 0,
         // This will get populated when updateJewelBonuses is called.
         jewelBonuses: {bonuses: {}},
         // Equiping the jewels cannot be done until character.board is actually set.
@@ -111,12 +111,17 @@ export function importCharacter(characterData: SavedCharacter) {
     }
     setActorHealth(hero, hero.stats.maxHealth);
     if (!map[character.currentLevelKey]) {
-        character.currentLevelKey = 'guild';
+        character.currentLevelKey = null;
     }
     // centerShapesInRectangle(character.board.fixed.map(j => j.shape).concat(character.board.spaces), rectangle(0, 0, character.boardCanvas.width, character.boardCanvas.height));
     drawBoardBackground(character.boardContext, character.board);
-    updateAdventurer(character.adventurer);
+    updateHero(character.hero);
     return character;
+}
+export function importApplicant(applicantData: SavedApplicant): Applicant {
+    const applicant = importCharacter(applicantData) as Applicant;
+    applicant.applicationAge = applicantData.applicationAge;
+    return applicant;
 }
 function exportHero(hero: Hero): SavedActor {
     const data = {
@@ -132,11 +137,11 @@ function exportHero(hero: Hero): SavedActor {
     }
     return data;
 }
-function importAdventurer(heroData: SavedActor): Hero {
-    const hero = makeAdventurerFromData(heroData);
+function importHero(heroData: SavedActor): Hero {
+    const hero = makeHeroFromData(heroData);
     /*if (window.location.search.substr(1) === 'test') {
         for (const ability of (window.testAbilities || [])) {
-            adventurer.abilities.push(ability);
+            hero.abilities.push(ability);
         }
     }*/
     for (let key in heroData.equipment) {
@@ -187,7 +192,7 @@ function importJewelBoard(jewelBoardData: SavedBoard, character: Character): Boa
     for (const fixedJewelData of jewelBoardData.fixed) {
         const ability = abilities[fixedJewelData.abilityKey];
         if (fixedJewelData.confirmed) {
-            character.adventurer.unlockedAbilities[fixedJewelData.abilityKey] = true;
+            character.hero.unlockedAbilities[fixedJewelData.abilityKey] = true;
         }
         if (!ability) {
             return;
@@ -197,7 +202,7 @@ function importJewelBoard(jewelBoardData: SavedBoard, character: Character): Boa
         fixedJewel.confirmed = fixedJewelData.confirmed;
         fixedJewel.disabled = fixedJewelData.disabled || false;
         if (fixedJewel.confirmed && !fixedJewel.disabled) {
-            character.adventurer.abilities.push(ability);
+            character.hero.abilities.push(ability);
         }
         jewelBoard.fixed.push(fixedJewel);
     }

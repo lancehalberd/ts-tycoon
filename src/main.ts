@@ -81,8 +81,7 @@ mainCanvas.onmousedown = function (event) {
         return;
     }
     switch (getState().selectedCharacter.context) {
-        case 'adventure':
-        case 'guild':
+        case 'field':
             handleAdventureClick(x, y, event);
             break;
         case 'map':
@@ -105,7 +104,7 @@ mainCanvas.addEventListener('mouseout', function (event) {
 });
 function handleAdventureClick(x: number, y: number, event) {
     const state = getState();
-    const hero = state.selectedCharacter.adventurer;
+    const hero = state.selectedCharacter.hero;
     const canvasPopupTarget = getCanvasPopupTarget();
     const selectedAction = getSelectedAction();
     if (editingAreaState.isEditing) {
@@ -201,7 +200,7 @@ handleChildEvent('click', document.body, '.js-retire', function (retireButton) {
     if (state.characters.length < 2) {
         return;
     }
-    if (!confirm('Are you sure you want to retire ' + state.selectedCharacter.adventurer.name + '?')) {
+    if (!confirm('Are you sure you want to retire ' + state.selectedCharacter.hero.name + '?')) {
         return;
     }
     const panel = retireButton.closest('.js-playerPanel');

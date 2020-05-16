@@ -1,5 +1,7 @@
 import * as _ from 'lodash';
-import { isPointOverActor, updateActorFrame } from 'app/actor';
+import {
+    initializeActorForAdventure, isPointOverActor, setActorHealth, updateActorFrame
+} from 'app/actor';
 import { updateAdventureButtons } from 'app/adventureButtons';
 import {
     addBonusSourceToObject, addVariableChildToObject,
@@ -89,28 +91,6 @@ export const coreStatBonusSource: BonusSource = {'bonuses': {
     '$lifeBarColor': 'red'
 }};
 
-export function initializeActorForAdventure(actor: Actor) {
-    setStat(actor.variableObject, 'bonusMaxHealth', 0);
-    setActorHealth(actor, actor.stats.maxHealth);
-    actor.maxReflectBarrier = actor.reflectBarrier = 0;
-    actor.stunned = 0;
-    actor.pull = null;
-    actor.chargeEffect = null;
-    actor.time = 0;
-    actor.isDead = false;
-    actor.timeOfDeath = undefined;
-    actor.skillInUse = null;
-    actor.slow = 0;
-    actor.rotation = 0;
-    actor.activity = {type: 'none'};
-    actor.imprintedSpell = null;
-    actor.minions = actor.minions || [];
-    actor.boundEffects = actor.boundEffects || [];
-    // actor.heading = [1, 0, 0];
-    var stopTimeAction = findActionByTag(actor.reactions, 'stopTime');
-    actor.temporalShield = actor.maxTemporalShield = (stopTimeAction ? stopTimeAction.stats.duration : 0);
-    updateActorFrame(actor);
-}
 function setText(element: HTMLElement, text: string) {
     if (!element) {
         return;
@@ -138,7 +118,7 @@ export function refreshStatsPanel(
     updateDamageInfo(character, statsPanelElement);
 }
 export function newCharacter(job: Job): Character {
-    const hero = makeAdventurerFromJob(job, 1, job.startingEquipment || {});
+    const hero = makeHeroFromJob(job, 1, job.startingEquipment || {});
     setActorHealth(hero, hero.stats.maxHealth);
     const characterCanvas = createCanvas(40, 20);
     const characterContext = characterCanvas.getContext('2d');
@@ -150,9 +130,8 @@ export function newCharacter(job: Job): Character {
     const abilityKey = abilities[job.key] ? job.key : 'heal';
     hero.abilities.push(abilities[abilityKey]);
     const character: Character = {
-        adventurer: hero,
         actionShortcuts: [],
-        context: 'guild',
+        context: 'field',
         autoplay: false,
         hero,
         characterCanvas,
@@ -164,12 +143,10 @@ export function newCharacter(job: Job): Character {
         divinityScores: {},
         levelTimes: {},
         divinity: 0,
-        currentLevelKey: 'guild',
         fame: 1,
         autoActions: {},
         manualActions: {},
         board: null,
-        time: Date.now(),
     };
     hero.character = character;
     character.board = readBoardFromData(job.startingBoard, character, abilities[abilityKey], true)
@@ -198,7 +175,7 @@ export function newCharacter(job: Job): Character {
 const heroShadow = createAnimation(
     requireImage('gfx2/character/c1shadow.png'), {w: 64, h: 48, content: {x: 17, y: 44, w: 20, h: 4}},
 );
-export function makeAdventurerFromData({
+export function makeHeroFromData({
         jobKey,
         level,
         name,
@@ -287,8 +264,8 @@ export function makeAdventurerFromData({
     });
     return hero;
 }
-export function makeAdventurerFromJob(job: Job, level: number, equipment: EquipmentData): Hero {
-    const hero = makeAdventurerFromData({
+export function makeHeroFromJob(job: Job, level: number, equipment: EquipmentData): Hero {
+    const hero = makeHeroFromData({
         jobKey: job.key,
         level,
         name: Random.element(names),
@@ -299,7 +276,7 @@ export function makeAdventurerFromJob(job: Job, level: number, equipment: Equipm
         state.savedState.craftedItems[item.key] = (state.savedState.craftedItems[item.key] || 0) | CRAFTED_NORMAL;
         equipItemProper(hero, makeItem(item, 1), false);
     }
-    updateAdventurer(hero);
+    updateHero(hero);
     return hero;
 }
 export function readBoardFromData(boardData: BoardData, character, ability: Ability, confirmed = false): Board {
@@ -388,7 +365,7 @@ export function setHeroColors(hero, colors: HeroColors) {
 }
 window['setHeroColors'] = setHeroColors;
 
-export function updateAdventurer(hero: Hero) {
+export function updateHero(hero: Hero) {
     // Clear the character's bonuses and graphics.
     hero.colors = hero.colors || createHeroColors(hero.job.key);
     hero.variableObject = createVariableObject({variableObjectType: 'actor'});
@@ -559,22 +536,12 @@ export function gainLevel(hero: Hero) {
     // that uses the character level as input. Then if we called setStat(hero, 'level', hero.level + 1);
     // All the other stats would be updated as a result. A similar approach could be used to set the base monster bonuses.
     // The formulate for monster health is too complicated for the bonus system to support at the moment though.
-    updateAdventurer(hero);
+    updateHero(hero);
     refreshStatsPanel();
     updateEquipableItems();
     // Enable the skipShrines option only once an hero levels the first time.
     getState().savedState.skipShrinesEnabled = true;
     query('.js-shrineButton').style.display = '';
-}
-export function damageActor(actor: Actor, damage: number) {
-    actor.targetHealth -= damage;
-}
-export function healActor(actor: Actor, healAmount: number) {
-    actor.targetHealth += healAmount;
-}
-export function setActorHealth(actor: Actor, health: number) {
-    actor.targetHealth = actor.health = health;
-    actor.percentHealth = actor.percentTargetHealth = health / actor.stats.maxHealth;
 }
 
 function divinityToLevelUp(currentLevel: number): number {
@@ -585,12 +552,12 @@ export function baseDivinity(level: number): number {
 }
 
 export function totalCostForNextLevel(character: Character, level: {level: number}): number {
-    let totalDivinityCost = divinityToLevelUp(character.adventurer.level);
-    if (character.adventurer.level > 1) {
+    let totalDivinityCost = divinityToLevelUp(character.hero.level);
+    if (character.hero.level > 1) {
         // Could add a cost coefficient to make certain skills more expensive/cheaper
         totalDivinityCost += Math.ceil(baseDivinity(level.level));
     }
-    return Math.ceil((1 - (character.adventurer.stats.reducedDivinityCost || 0)) * totalDivinityCost);
+    return Math.ceil((1 - (character.hero.stats.reducedDivinityCost || 0)) * totalDivinityCost);
 }
 export function setSelectedCharacter(character: Character) {
     const state = getState();
@@ -618,7 +585,7 @@ export function setSelectedCharacter(character: Character) {
     // character.boardCanvas = jewelsCanvas;
     const jewelBonusContainer = query('.js-jewelBonuses .js-content');
     jewelBonusContainer.innerHTML = bonusSourceHelpText(character.jewelBonuses, character.hero);
-    centerMapOnLevel(map[character.currentLevelKey]);
+    centerMapOnLevel(map[character.currentLevelKey] || map.guild);
     updateAdventureButtons();
     updateSkillConfirmationButtons();
     updateEquipableItems();

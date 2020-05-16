@@ -14,21 +14,19 @@ import { getElementJewel, setMaxAnimaJewelBonus } from 'app/jewels';
 import { updateRetireButtons } from 'app/main';
 import { changedPoints } from 'app/points';
 import {
-    exportCharacter, exportJewel,
-    importCharacter, importJewel,
+    exportApplicant, exportCharacter, exportJewel,
+    importApplicant, importCharacter, importJewel,
 } from 'app/saveGame';
 import { Polygon } from 'app/utils/polygon';
 
-import { IntroScene } from 'app/content/cutscenes/intro';
+import { CutScene } from 'app/content/cutscenes/CutScene';
 
 import {
-    Area, Character, Exit, GuildStats,
-    Jewel, SavedItem, SavedTrophy, VariableObject,
+    Applicant, Area, BonusSource, Character, Exit,
+    FixedObject, GuildStats, Item, Jewel, JobAchievement,
+    SavedItem, SavedTrophy, VariableObject,
+    SavedApplicant, SavedCharacter, SavedJewel, ShapeType
 } from 'app/types';
-import { ShapeType } from 'app/types/board';
-import { BonusSource } from 'app/types/bonuses';
-import { Item } from 'app/types/items';
-import { FixedObject, JobAchievement, SavedCharacter, SavedJewel } from 'app/types';
 
 // Types used for saving data in local storage.
 interface SavedGuildArea {
@@ -53,9 +51,10 @@ export type SavedState = {
     divinity: number,
     fame: number,
     characters: SavedCharacter[],
-    applicants: SavedCharacter[],
+    applicants: SavedApplicant[],
     completedCutscenes: {[key: string]: true},
     completedLevels: {[key: string]: true},
+    completedMissions: {[key: string]: true},
     // bitmask, 0x1 is normal craft 0x10 is unique craft
     craftedItems: {[key: string]: number},
     // These three fields are needed to save state in the middle of item crafting.
@@ -82,12 +81,12 @@ export interface GameState {
     lastSelectedCharacter?: any,
     visibleLevels: {[key: string]: true},
     characters: Character[],
-    applicants: Character[],
+    applicants: Applicant[],
     guildBonusSources: BonusSource[];
     altarTrophies: Trophies,
     availableBeds: FixedObject[],
     time: number,
-    cutscene: IntroScene,
+    cutscene: CutScene,
 }
 
 export const guildYardEntrance: Exit = {zoneKey: 'guild', areaKey: 'guildYard', objectKey: 'mapExit'};
@@ -104,6 +103,7 @@ function getDefaultSavedState(): SavedState {
         applicants: [],
         completedCutscenes: {},
         completedLevels: {},
+        completedMissions: {},
         craftedItems: {},
         craftingItems: [],
         craftingLevel: null,
@@ -161,7 +161,7 @@ export function exportState(state: GameState): SavedState {
     ];
     return {
         ...state.savedState,
-        applicants: state.applicants.map(exportCharacter),
+        applicants: state.applicants.map(exportApplicant),
         characters: state.characters.map(exportCharacter),
         completedLevels: {...state.savedState.completedLevels},
         inventoryItems: [...queryAll('.js-inventory .js-item')].map(getItemForElement).map(exportItem),
@@ -243,13 +243,13 @@ export function importState(savedState: SavedState) {
             }
         }
     }
-    state.applicants = (savedState.applicants || []).map(importCharacter);
+    state.applicants = (savedState.applicants || []).map(importApplicant);
     for (let i = 0; i < state.applicants.length; i++) {
         if (!HeroApplication.instances[i]) {
             console.error(`No hero application available for applicant ${i}`);
             continue;
         }
-        HeroApplication.instances[i].character = state.applicants[i];
+        HeroApplication.instances[i].applicant = state.applicants[i];
     }
     setMaxAnimaJewelBonus(savedState.maxAnimaJewelMultiplier || 1);
     // Read trophy data before characters so that their bonuses will be applied when
@@ -291,7 +291,7 @@ export function importState(savedState: SavedState) {
     // This might happen if we changed how much each holder contains during an update.
     state.characters = savedState.characters.map(importCharacter);
     state.characters.forEach((character, index) => {
-        updateTrophy('level-' + character.adventurer.job.key, character.adventurer.level);
+        updateTrophy('level-' + character.hero.job.key, character.hero.level);
         for (var levelKey of Object.keys(character.divinityScores)) {
             var level = map[levelKey];
             if (!level) {

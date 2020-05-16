@@ -83,7 +83,7 @@ export function showChooseBlessing() {
 
 export function renderChooseBlessing() {
     const character = getState().selectedCharacter;
-    if (character.context !== 'adventure') {
+    if (character.context !== 'field') {
         return;
     }
     const boardChoices = character.boardPreviewChoices;
@@ -115,8 +115,8 @@ query('.js-confirmSkill').onclick = function () {
     const level = map[character.currentLevelKey];
     const skill = character.board.boardPreview.fixed[0].ability;
     character.divinity -= totalCostForNextLevel(character, level);
-    character.adventurer.abilities.push(skill);
-    character.adventurer.unlockedAbilities[skill.key] = true;
+    character.hero.abilities.push(skill);
+    character.hero.unlockedAbilities[skill.key] = true;
     character.board.spaces = character.board.spaces.concat(character.board.boardPreview.spaces);
     character.board.fixed = character.board.fixed.concat(character.board.boardPreview.fixed);
     character.board.boardPreview.fixed.forEach(function (jewel) {
@@ -128,16 +128,16 @@ query('.js-confirmSkill').onclick = function () {
     });
     character.board.boardPreview = null;
     drawBoardBackground(character.boardContext, character.board);
-    gainLevel(character.adventurer);
+    gainLevel(character.hero);
     updateSkillConfirmationButtons();
     saveGame();
     // Let them look at the confirmed position for a moment before going back to the adventure screen.
     setTimeout(function () {
-        setContext('adventure');
+        setContext('field');
         finishShrine(character);
     }, 500);
 }
-query('.js-cancelSkill').onclick = () => setContext('adventure');
+query('.js-cancelSkill').onclick = () => setContext('field');
 
 export function activateShrine(this: FixedObject, hero: Hero) {
     const character = hero.character;
@@ -145,11 +145,11 @@ export function activateShrine(this: FixedObject, hero: Hero) {
     if (character.activeShrine) return;
     const area = hero.area;
     const level: LevelData = map[character.currentLevelKey];
-    if (character.adventurer.level >= MAX_LEVEL) {
-        messageCharacter(character, character.adventurer.name + ' is already max level');
+    if (character.hero.level >= MAX_LEVEL) {
+        messageCharacter(character, character.hero.name + ' is already max level');
         return;
     }
-    if (character.adventurer.unlockedAbilities[level.skill]) {
+    if (character.hero.unlockedAbilities[level.skill]) {
         messageCharacter(character, 'Ability already learned');
         return;
     }

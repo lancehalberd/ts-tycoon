@@ -287,7 +287,7 @@ export function updateJewelBonuses(character) {
     });
     if (character === getState().selectedCharacter) {
         query('.js-jewelBonuses .js-content').innerHTML
-            = bonusSourceHelpText(character.jewelBonuses, character.adventurer);
+            = bonusSourceHelpText(character.jewelBonuses, character.hero);
     }
 }
 export function makeFixedJewel(shape: Polygon, character: Character, ability: Ability): Jewel {
@@ -306,8 +306,8 @@ export function makeFixedJewel(shape: Polygon, character: Character, ability: Ab
         character,
         ability,
         helpMethod() {
-            let coreHelpText = abilityHelpText(ability, character.adventurer);
-            const bonusText = bonusSourceHelpText({'bonuses': this.adjacencyBonuses}, getState().selectedCharacter.adventurer);
+            let coreHelpText = abilityHelpText(ability, character.hero);
+            const bonusText = bonusSourceHelpText({'bonuses': this.adjacencyBonuses}, getState().selectedCharacter.hero);
             if (bonusText) coreHelpText += '<br/><br/>' + bonusText;
             if (!this.confirmed) return coreHelpText;
             if (this.disabled) {
@@ -400,9 +400,9 @@ function jewelHelpText(this: Jewel): string {
     // sections.push('Color ' + this.shape.color);
     const state = getState();
     sections.push('');
-    sections.push(bonusSourceHelpText(this, state.selectedCharacter.adventurer));
+    sections.push(bonusSourceHelpText(this, state.selectedCharacter.hero));
     sections.push('');
-    var adjacencyBonusText = bonusSourceHelpText({'bonuses': this.adjacencyBonuses}, state.selectedCharacter.adventurer);
+    var adjacencyBonusText = bonusSourceHelpText({'bonuses': this.adjacencyBonuses}, state.selectedCharacter.hero);
     if (adjacencyBonusText.length) {
         sections.push(adjacencyBonusText);
         sections.push('');

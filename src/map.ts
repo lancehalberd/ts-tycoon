@@ -1,3 +1,4 @@
+import { enterArea } from 'app/adventure';
 import { showAreaMenu } from 'app/areaMenu';
 import { addBonusSourceToObject, removeBonusSourceFromObject} from 'app/bonuses';
 import { gainLevel, totalCostForNextLevel } from 'app/character';
@@ -27,7 +28,7 @@ import { updateAdjacentJewels, updateJewelBonuses } from 'app/jewels';
 import { updateDamageInfo } from 'app/performAttack';
 import { hidePointsPreview, previewPointsChange } from 'app/points';
 import { saveGame } from 'app/saveGame';
-import { getState } from 'app/state';
+import { getState, guildYardEntrance } from 'app/state';
 import { isPointInRect, isPointInShortRect } from 'app/utils/index';
 import { getMousePosition, isMouseDown } from 'app/utils/mouse';
 import SphereVector from 'app/utils/SphereVector';
@@ -127,7 +128,7 @@ function getMapPopupTargetProper(x: number, y: number): MapTarget {
         newMapTarget.helpMethod = getMapShrineHelpText;
         const skill = abilities[newMapTarget.level.skill];
         const { selectedCharacter } = getState();
-        if (!selectedCharacter.adventurer.unlockedAbilities[skill.key]) {
+        if (!selectedCharacter.hero.unlockedAbilities[skill.key]) {
             const totalCost = totalCostForNextLevel(selectedCharacter, newMapTarget.level);
             previewPointsChange('divinity', -totalCost);
         }
@@ -162,7 +163,7 @@ function getMapLevelHelpText(this: LevelData): string {
     helpText += '<br/><p style="font-weight: bold">Teaches:</p>';
     const skill = abilities[this.skill];
     if (skill) {
-        helpText += abilityHelpText(skill, getState().selectedCharacter.adventurer);
+        helpText += abilityHelpText(skill, getState().selectedCharacter.hero);
     } else {
         helpText += '<p>No Skill</p>';
     }
@@ -173,16 +174,16 @@ function getMapShrineHelpText(this: Shrine): string {
     var skill = abilities[this.level.skill];
     var totalCost = totalCostForNextLevel(state.selectedCharacter, this.level);
     var helpText = ''
-    var skillAlreadyLearned = state.selectedCharacter.adventurer.unlockedAbilities[skill.key];
-    if (!skillAlreadyLearned && state.selectedCharacter.adventurer.level >= MAX_LEVEL) {
-        helpText += '<p style="font-size: 12">' + state.selectedCharacter.adventurer.name + ' has reached the maximum level and can no longer learn new abilities.</p><br/>';
+    var skillAlreadyLearned = state.selectedCharacter.hero.unlockedAbilities[skill.key];
+    if (!skillAlreadyLearned && state.selectedCharacter.hero.level >= MAX_LEVEL) {
+        helpText += '<p style="font-size: 12">' + state.selectedCharacter.hero.name + ' has reached the maximum level and can no longer learn new abilities.</p><br/>';
     } else if (!skillAlreadyLearned && state.selectedCharacter.divinity < totalCost) {
-        helpText += '<p style="font-size: 12">' + state.selectedCharacter.adventurer.name + ' does not have enough divinity to learn the skill from this shrine.</p><br/>';
+        helpText += '<p style="font-size: 12">' + state.selectedCharacter.hero.name + ' does not have enough divinity to learn the skill from this shrine.</p><br/>';
     }
     if (!skillAlreadyLearned) {
-        helpText += '<p style="font-weight: bold">Spend ' + totalCost + ' divinity at this shrine to level up and learn:</p>' + abilityHelpText(skill, state.selectedCharacter.adventurer);
+        helpText += '<p style="font-weight: bold">Spend ' + totalCost + ' divinity at this shrine to level up and learn:</p>' + abilityHelpText(skill, state.selectedCharacter.hero);
     } else {
-        helpText += '<p style="font-size: 12px">' + state.selectedCharacter.adventurer.name + ' has already learned:</p>' + abilityHelpText(skill, state.selectedCharacter.adventurer);
+        helpText += '<p style="font-size: 12px">' + state.selectedCharacter.hero.name + ' has already learned:</p>' + abilityHelpText(skill, state.selectedCharacter.hero);
     }
     return helpText;
 }
@@ -234,7 +235,11 @@ export function handleMapMouseDown(x: number, y: number, event) {
             return;
         } else if (newMapTarget.levelKey === 'guild') {
             mapState.currentMapTarget = null;
-            setContext('guild');
+            // If the character is not presently in the guild, set them in the yard entrance.
+            if (state.selectedCharacter.hero.area?.zoneKey !== 'guild') {
+                enterArea(state.selectedCharacter.hero, guildYardEntrance);
+            }
+            setContext('field');
             return;
         } else if (newMapTarget.levelKey) {
             state.selectedCharacter.selectedLevelKey = newMapTarget.levelKey;

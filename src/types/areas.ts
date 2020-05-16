@@ -1,15 +1,36 @@
 import {
     ActiveEffect, Actor, AreaObject, AreaObjectDefinition,
-    BonusSource,
-    FrameAnimation,
+    BonusSource, Character, FrameAnimation,
     MonsterDefinition, MonsterSpawn,
 } from 'app/types';
 
-export type ZoneType = 'guild';
+export type ZoneType = 'guild' | 'mission1';
 
 export type Zones = {[key: string]: Zone};
 
 export type Zone = {[key: string]: AreaDefinition};
+
+export interface MissionParameters {
+    key: string,
+    name: string,
+    zoneKey: ZoneType,
+    areaKey: string,
+    type: 'clearZone' | 'defeatTarget' | 'survive',
+    timeLimit?: number,
+}
+
+export interface ActiveMission {
+    parameters: MissionParameters,
+    zone: Zone,
+    character: Character,
+    totalEnemies: number,
+    defeatedEnemies: number,
+    time: number,
+    animationTime: number,
+    started: boolean,
+    completed: boolean,
+    failed: boolean,
+}
 
 export interface AreaDefinition {
     zoneKey?: ZoneType,

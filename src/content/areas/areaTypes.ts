@@ -1,7 +1,7 @@
 import { addMonstersToArea, enterArea } from 'app/adventure';
 import {
     initializeActorForAdventure,
-} from 'app/character';
+} from 'app/actor';
 import {
     areaWalls, AreaDecoration, AreaDoor, AreaObstacle,
     SimpleMonsterSpawner, SkillShrine, TreasureChest,

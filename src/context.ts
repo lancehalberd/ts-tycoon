@@ -1,8 +1,9 @@
 import { enterArea } from 'app/adventure';
+import { updateAdventureButtons } from 'app/adventureButtons';
 import { hideAreaMenu } from 'app/areaMenu';
 import { refreshStatsPanel } from 'app/character';
 import { editingAreaState } from 'app/development/editArea';
-import { jewelsCanvas, query, queryAll, toggleElements } from 'app/dom';
+import { autoplayControls, jewelsCanvas, query, queryAll, toggleElement, toggleElements } from 'app/dom';
 import { drawBoardJewels } from 'app/drawBoard';
 import { stopDrag } from 'app/inventory';
 import { jewelInventoryState, stopJewelDrag } from 'app/jewelInventory';
@@ -33,8 +34,9 @@ export function setContext(context: GameContext): GameContext {
     }
     const currentContext = state.selectedCharacter.context;
     state.selectedCharacter.context = context;
-    // If the player is not already in the guild when we return to the guild context, move them to the foyer.
-    if (context === 'guild' && (!state.selectedCharacter.hero.area || state.selectedCharacter.hero.area.zoneKey !== 'guild')) {
+    // If the player has no area, move them to the guild yard by default.
+    if (context === 'field' && !state.selectedCharacter.hero.area) {
+        debugger;
         enterArea(state.selectedCharacter.hero, guildYardEntrance);
     }
     showContext(context);
@@ -57,9 +59,13 @@ export function showContext(context: GameContext): void {
     overlay.style.opacity = (context === 'cutscene' ? '1' : '0');
     toggleElements(queryAll('.js-adventureContext, .js-jewelContext, .js-itemContext, .js-guildContext, .js-mapContext, .js-cutsceneContext'), false);
     toggleElements(queryAll(`.js-${context}Context`), true);
-    if (context === 'adventure' && state.selectedCharacter.activeShrine) {
+    if (context === 'field' && state.selectedCharacter.activeShrine) {
         showChooseBlessing();
     } else {
         hideChooseBlessing();
+    }
+    // This will hide the adventure buttons for except for skill areas. (formerly called 'adventure' context).
+    if (context === 'field') {
+        updateAdventureButtons();
     }
 }

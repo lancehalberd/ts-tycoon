@@ -85,7 +85,7 @@ export default class JobAchievement {
             const textColor = (this.level > i) ? 'white' : '#888';
             const levelData = this.bonusesArray[i];
             const levelText = '<div style="color: ' + textColor + ';">Level ' + levelData.target + ':<div>'
-                + bonusSourceHelpText(levelData, state.selectedCharacter.adventurer)
+                + bonusSourceHelpText(levelData, state.selectedCharacter.hero)
                 + '</div></div>';
             parts.push(levelText);
         }
