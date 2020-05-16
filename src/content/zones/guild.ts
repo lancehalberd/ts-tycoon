@@ -21,6 +21,10 @@ export const guildYard: AreaDefinition = {
             exitKey: "guildFoyer:frontDoor",
             animation: "closedDoor",
         },
+        guildGate: {
+            type: 'guildGate',
+            x: 295.66666666666663, z: 58,
+        },
     },
     wallDecorations: {
     },

@@ -2,6 +2,7 @@ import _ from 'lodash';
 import { getArea } from 'app/adventure';
 import { createVariableObject } from 'app/bonuses';
 import { abilities } from 'app/content/abilities';
+import { GuildGate } from 'app/content/areas';
 import { CutScene } from 'app/content/cutscenes/CutScene';
 import { Mission1Intro } from 'app/content/cutscenes/mission1Intro';
 import { makeMonster, monsters } from 'app/content/monsters';
@@ -80,7 +81,7 @@ export class IntroScene extends CutScene {
         this.sprite.z = -20;
         this.sprite.heading = [1, 0, 0];
 
-        this.setActors([this.guildSpirit, this.ruthven, this.hero, this.sprite])
+        this.setActors([this.guildSpirit, this.ruthven, this.hero, this.sprite]);
 
         // This pause is to wait for the black bars to fade in fully before fading the scene in.
         await this.pause(500);
@@ -94,10 +95,10 @@ export class IntroScene extends CutScene {
             this.moveActor(this.ruthven, {x: this.area.width - 160, z: 0}),
             this.moveActor(this.hero, {x: this.area.width - 180, z: -20}),
         ]).catch(_.noop);
-        await this.panCamera(60, 500),
+        await this.panCamera(60, 500);
         await this.pause(500);
         await this.speak(this.guildSpirit, `Ashley! And who's that with you?`);
-        await this.speak(this.ruthven, `This is ${this.hero.name}, they've volunteered refound your guild.`);
+        await this.speak(this.ruthven, `This is ${this.hero.name}, they've volunteered to refound your guild.`);
         this.guildSpirit.heading = [1, 0, 0];
         await this.speak(this.guildSpirit, `This again? You know I won't risk opening the guild-`);
         let speechAction = this.speak(this.ruthven, `Oh I remember, but take a look at this.`);
@@ -110,10 +111,10 @@ export class IntroScene extends CutScene {
             this.moveActor(this.ruthven, {x: this.area.width - 130, z: 0}),
         ]);
         await this.speak(this.ruthven, `It's an official decree revoking the ban on guilds.`);
-        await this.speak(this.guildSpirit, `Truly? Has the monarchy finally changed its mind about the guilds?`);
+        await this.speak(this.guildSpirit, `Truly? Has the monarchy finally changed its mind?`);
         await this.speak(this.ruthven, `Oh I wouldn't go that far, but they are desperate enough to risk it.`);
         await this.speak(this.guildSpirit, `Desperate... I'm not sure that is good enough.`);
-        this.moveActor(this.hero, {x: this.hero.x + 20, z: this.hero.z});
+        this.moveActor(this.hero, {x: this.hero.x + 20, z: this.hero.z}).catch(_.noop);
         await this.speak(this.hero, `Please! The monarchy doesn't speak for all the people.`);
         await this.speak(this.hero, `I'm just one of hundreds without a home to return to now.`);
         await this.speak(this.hero, `We need something to keep us going, doesn't what we want count?`);
@@ -164,7 +165,7 @@ export class IntroScene extends CutScene {
         await this.pause(500);
         await this.speak(this.sprite, `Of course, one moment...`);
         await this.pause(500);
-        // TODO: Set the guild portal to mission1 zone.
+        (this.area.objectsByKey.guildGate as GuildGate).setMission('mission1');
         await this.speak(this.sprite, `Here is the outpost.`),
         await this.speak(this.ruthven, `When my grandfather was young he sponsored this outpost before it was abandoned by the monarchy.`),
         await this.speak(this.ruthven, `It's broken down and full of beasts and other... things, but I still hold title to all the lands.`),

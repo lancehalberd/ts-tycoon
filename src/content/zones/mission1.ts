@@ -3,7 +3,7 @@ import { zones } from 'app/content/zones';
 import { AreaDefinition } from 'app/types';
 
 export const villageWest: AreaDefinition = {
-    type: 'field',
+    type: 'cave',
     width: 450,
     leftWallType: 'caveWall',
     rightWallType: 'river',
@@ -24,7 +24,7 @@ export const villageWest: AreaDefinition = {
         },
     },
     monsters: [
-        {key: 'gremlin', level: 1, location: {x: 175.33333333333334}},
+        {key: 'gremlin', level: 1, location: {x: 277.6666666666667, z: -5.333333333333343}},
         {key: 'gremlin', level: 1, location: {x: 390.3333333333333, z: -44.66666666666666}},
     ],
 };
@@ -51,7 +51,7 @@ export const villageWestHouse: AreaDefinition = {
 };
 
 export const villageSquare: AreaDefinition = {
-    type: 'field',
+    type: 'town',
     width: 600,
     leftWallType: 'river',
     rightWallType: 'river',

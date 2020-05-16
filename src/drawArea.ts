@@ -112,10 +112,10 @@ export function drawArea(context: CanvasRenderingContext2D, area: Area) {
 }
 function drawRune(context: CanvasRenderingContext2D, actor: Actor, animation: FrameAnimation, frameIndex: number) {
     context.save();
-    context.translate((actor.x - actor.area.cameraX), GROUND_Y - actor.z / 2);
-    const frame = animation.frames[frameIndex];
-    const size = [frame.w, frame.h];
-    drawFrame(context, frame, {x: -size[0] / 2, y: -size[1] / 2, w: size[0], h: size[1]});
+        context.translate((actor.x - actor.area.cameraX), GROUND_Y - actor.z / 2);
+        const frame = animation.frames[frameIndex];
+        const size = [frame.w, frame.h];
+        drawFrame(context, frame, {x: -size[0] / 2, y: -size[1] / 2, w: size[0], h: size[1]});
     context.restore();
 }
 function drawActorGroundEffects(context, actor: Actor) {
@@ -234,22 +234,22 @@ export function drawGroundCircle(context, area: Area, x, z, radius) {
     var centerY = GROUND_Y - z / 2;
     var centerX = x - area.cameraX;
     context.save();
-    context.translate(centerX, centerY);
-    context.scale(1, .5);
-    context.beginPath();
-    context.arc(0, 0, radius, 0, 2 * Math.PI);
+        context.translate(centerX, centerY);
+        context.scale(1, .5);
+        context.beginPath();
+        context.arc(0, 0, radius, 0, 2 * Math.PI);
     context.restore();
 }
 function drawTargetCircle(context, area: Area, x, z, radius, alpha) {
     drawGroundCircle(context, area, x, z, radius * RANGE_UNIT);
     context.save();
-    context.globalAlpha = alpha;
-    context.fillStyle = '#0FF';
-    context.fill();
-    context.globalAlpha = 1;
-    context.lineWidth = 2;
-    context.strokeStyle = '#0FF';
-    context.stroke();
+        context.globalAlpha = alpha;
+        context.fillStyle = '#0FF';
+        context.fill();
+        context.globalAlpha = 1;
+        context.lineWidth = 2;
+        context.strokeStyle = '#0FF';
+        context.stroke();
     context.restore();
 }
 

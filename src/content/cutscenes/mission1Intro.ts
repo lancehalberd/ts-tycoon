@@ -41,7 +41,7 @@ export class Mission1Intro extends CutScene {
         );
         this.sprite.x = -100;
         this.sprite.z = -20;
-        this.sprite.heading = [1, 0, 0];
+        this.sprite.heading = [-1, 0, 0];
 
         this.setActors([this.hero, this.sprite])
 
@@ -62,8 +62,8 @@ export class Mission1Intro extends CutScene {
         await this.pause(500);
         await this.speak(this.sprite, `I'll be coming along as well.`);
         await this.speak(this.sprite, `The power from the guild weakens when you are far away,`);
-        await this.speak(this.sprite, `but I can keep the connection strong as long as I'm with you.`);
-        await this.speak(this.sprite, `I can also help you stay in communication with the guild and keep track of your mission parameters for you.`);
+        await this.speak(this.sprite, `but I can keep the connection strong when I'm with you.`);
+        await this.speak(this.sprite, `I can also help you communicate with the guild and keep track of your mission parameters for you.`);
         await this.speak(this.sprite, `For example...`);
         // TODO: Add some effect here like a sonar wave coming out of the Sprite.
         await this.pause(500);
