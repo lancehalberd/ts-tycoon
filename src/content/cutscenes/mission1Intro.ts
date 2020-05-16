@@ -18,7 +18,7 @@ export class Mission1Intro extends CutScene {
     sprite: Actor;
     hero: Hero;
 
-    async run() {
+    async runScript() {
         const character = getState().selectedCharacter;
         getState().cutscene = this;
         setContext('cutscene');
@@ -72,9 +72,13 @@ export class Mission1Intro extends CutScene {
         this.endScene();
     }
 
-    async endScene() {
+    async runEndScript() {
         const hero = this.hero;
         this.cleanupScene();
+        // Explicitly set the correct end state in case the scene was skipped.
+        hero.x = 60;
+        this.sprite.x = 90;
+        await this.fadeIn();
         // In case the hero was moved around in the cutscene, make sure they are properly inserted into their area.
         if (hero.area.allies.indexOf(hero) < 0) {
             hero.area.allies.push(hero);

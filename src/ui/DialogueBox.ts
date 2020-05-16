@@ -1,9 +1,11 @@
 import { getActorMouseTarget } from 'app/actor';
-import { mainContent, tagElement } from 'app/dom';
+import { query, tagElement } from 'app/dom';
 import { ADVENTURE_WIDTH, ADVENTURE_SCALE, DOM_WIDTH, FRAME_LENGTH } from 'app/gameConstants';
 import { getElementRectangle } from 'app/utils/index';
 
 import { Actor } from 'app/types';
+
+const textContainer = query('.js-textLayer');
 
 export class DialogueBox {
     // Indicates number of frames used to draw each character.
@@ -37,7 +39,7 @@ export class DialogueBox {
         this.domElement.append(this.promptArrowElement);
         this.bubbleArrowElement.style.left = '10px';
         actor.dialogueBox = this;
-        mainContent.append(this.domElement);
+        textContainer.append(this.domElement);
         this.frameCount = 0;
         this.updatePosition();
     }

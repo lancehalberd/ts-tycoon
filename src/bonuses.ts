@@ -354,7 +354,7 @@ export function recomputeDirtyStats(object: VariableObject) {
     }
 }
 
-function recomputeStat(object: VariableObject, statKey: string) {
+export function recomputeStat(object: VariableObject, statKey: string) {
     //console.log('recomputing ', statKey, object);
     const statOps = object.operations[statKey] || {'stat': statKey};
     let newValue: any = 0;

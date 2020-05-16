@@ -1,6 +1,6 @@
 import { updateActorFrame } from 'app/actor';
 import { getArea } from 'app/adventure';
-import { createVariableObject } from 'app/bonuses';
+import { createVariableObject, recomputeStat } from 'app/bonuses';
 import { abilities } from 'app/content/abilities';
 import { makeMonster, monsters } from 'app/content/monsters';
 import { setContext } from 'app/context';
@@ -21,6 +21,7 @@ import { Action, ActionStats, Actor, Area, GameContext, Hero } from 'app/types';
 interface Operation {
     update: () => void,
     resolve: () => void,
+    reject: () => void,
     done: boolean,
 }
 
@@ -36,6 +37,8 @@ export class CutScene {
     fadeLevel: number = 0;
     stashedAllies: Actor[];
     stashedEnemies: Actor[];
+    skipped: boolean = false;
+    finished: boolean = false;
 
     setArea(newArea: Area): void {
         this.restoreArea();
@@ -55,9 +58,10 @@ export class CutScene {
     }
 
     setActors(actors: Actor[]): void {
-        console.log(actors);
         for (const actor of actors) {
             this.actors.push(actor);
+            actor.dialogueBox = null;
+            actor.activity = {type: 'none'};
             actor.area = this.area;
             actor.allies = this.area.allies;
             actor.enemies = this.area.enemies;
@@ -67,11 +71,56 @@ export class CutScene {
     }
 
     async run(): Promise<void> {
+        try {
+            await this.runScript();
+            this.endScene();
+        } catch (e) {
+        }
+    }
+    async runScript(): Promise<void> {
 
     }
 
     async endScene(): Promise<void> {
+        try {
+            this.finished = true;
+            this.runEndScript();
+        } catch (e) {
+        }
+    }
+    async runEndScript(): Promise<void> {
 
+    }
+
+    skip(): void {
+        // Cannot skip the final sequence, which transitions to the next context.
+        if (this.finished) {
+            return;
+        }
+        this.skipped = true;
+        for(const operation of this.activeOperations) {
+            operation.reject();
+        }
+        this.activeOperations = [];
+        if (this.cameraPanOperation) {
+            this.cameraPanOperation.reject();
+            this.cameraPanOperation = null;
+        }
+        if (this.fadeOperation) {
+            this.fadeOperation.reject();
+            this.fadeOperation = null;
+        }
+        if (this.waitForClickOperation) {
+            this.waitForClickOperation.reject();
+            this.waitForClickOperation = null;
+        }
+        this.endScene();
+    }
+
+    throwErrorIfSkipped() {
+        if (this.skipped) {
+            throw new Error('Cutscene is skipped');
+        }
     }
 
     cleanupScene(): void {
@@ -80,6 +129,8 @@ export class CutScene {
             if (actor.dialogueBox) {
                 actor.dialogueBox.remove();
             }
+            // The move action overrides the actor speed setting, so fix it here.
+            recomputeStat(actor.variableObject, 'speed');
         }
         this.restoreArea();
     }
@@ -101,11 +152,12 @@ export class CutScene {
     }
 
     fadeIn(): Promise<void> {
-        return new Promise(resolve => {
+        return new Promise((resolve, reject) => {
             const operation = {
                 cutscene: this,
                 done: false,
                 resolve,
+                reject,
                 update() {
                     this.cutscene.fadeLevel = Math.max(0, this.cutscene.fadeLevel - 0.05);
                     if (this.cutscene.fadeLevel === 0) {
@@ -119,11 +171,12 @@ export class CutScene {
     }
 
     fadeOut(): Promise<void> {
-        return new Promise(resolve => {
+        return new Promise((resolve, reject) => {
             const operation = {
                 cutscene: this,
                 done: false,
                 resolve,
+                reject,
                 update() {
                     this.cutscene.fadeLevel = Math.min(1, this.cutscene.fadeLevel + 0.05);
                     if (this.cutscene.fadeLevel === 1) {
@@ -137,13 +190,14 @@ export class CutScene {
     }
 
     panCamera(targetX: number, milliseconds: number): Promise<void> {
-        return new Promise(resolve => {
+        return new Promise((resolve, reject) => {
             const operation = {
                 area: this.area,
                 initialX: this.area.cameraX,
                 time: 0,
                 done: false,
                 resolve,
+                reject,
                 update() {
                     this.time += FRAME_LENGTH;
                     // TODO: Change this to a cubic interpolation.
@@ -168,10 +222,11 @@ export class CutScene {
             x, y: 0, z,
             w: 0, h: 0, d: 0,
         });
-        return new Promise(resolve => {
+        return new Promise((resolve, reject) => {
             const operation = {
                 done: false,
                 resolve,
+                reject,
                 update() {
                     if (!actor.isMoving && actor.activity.type !== 'move') {
                         this.done = true;
@@ -184,10 +239,11 @@ export class CutScene {
     }
 
     waitForClick(): Promise<void> {
-        return new Promise(resolve => {
+        return new Promise((resolve, reject) => {
             const operation = {
                 done: false,
                 resolve,
+                reject,
                 update() {
                 }
             };
@@ -197,8 +253,17 @@ export class CutScene {
 
 
     pause(milliseconds: number): Promise<void> {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             setTimeout(() => resolve(), milliseconds);
+            // Although this doesn't use update, we need to include this
+            // so this operation can be skipped.
+            this.activeOperations.push({
+                done: false,
+                resolve,
+                reject,
+                update() {
+                }
+            })
         });
     }
 
@@ -219,10 +284,11 @@ export class CutScene {
         db.duration = 5000;
         db.waitForInput = true;
         db.run(actor);
-        return new Promise(resolve => {
+        return new Promise((resolve, reject) => {
             const operation = {
                 done: false,
                 resolve,
+                reject,
                 update() {
                     if (actor.dialogueBox !== db || db.isFinished()) {
                         this.done = true;
@@ -254,16 +320,18 @@ export class CutScene {
         for (const actor of this.actors) {
             this.updateActor(actor);
         }
-        for (let i = 0; i < this.area.effects.length; i++) {
-            const effect = this.area.effects[i];
-            effect.update();
-            // If the effect was removed from the array already (when a song follows its owner between areas)
-            // we need to decrement i to not skip the next effect.
-            if (effect !== this.area.effects[i]) {
-                i--;
-            } else {
-                if (this.area.effects[i].done) {
-                    this.area.effects.splice(i--, 1);
+        if (this.area) {
+            for (let i = 0; i < this.area.effects.length; i++) {
+                const effect = this.area.effects[i];
+                effect.update();
+                // If the effect was removed from the array already (when a song follows its owner between areas)
+                // we need to decrement i to not skip the next effect.
+                if (effect !== this.area.effects[i]) {
+                    i--;
+                } else {
+                    if (this.area.effects[i].done) {
+                        this.area.effects.splice(i--, 1);
+                    }
                 }
             }
         }

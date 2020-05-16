@@ -239,3 +239,7 @@ mainCanvas.addEventListener('contextmenu', function (event) {
     const menu = getContextMenu();
     showContextMenu(menu, x, y);
 });
+
+query('.js-cutsceneSkipButton').onclick = function () {
+    getState().cutscene.skip();
+}
