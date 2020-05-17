@@ -144,6 +144,7 @@ function getMissionMenu(): MenuOption[] {
                         setupMission(character, missionKey);
                         initializeActorForAdventure(character.hero)
                         enterArea(character.hero, {zoneKey: mission.zoneKey, areaKey: mission.areaKey, x: 60, z: 0});
+                        initializeActorForAdventure(character.hero);
                         stopEditing();
                     }
                 }

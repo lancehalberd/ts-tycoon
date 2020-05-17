@@ -6,6 +6,7 @@ import {
     recomputeDirtyStats, removeBonusSourceFromObject, setStat,
 } from 'app/bonuses';
 import { baseDivinity, refreshStatsPanel} from 'app/character';
+import { getSprite } from 'app/content/actors';
 import { createAreaFromDefinition, getPositionFromLocationDefinition } from 'app/content/areas';
 import { addAreaFurnitureBonuses } from 'app/content/furniture';
 import { instantiateLevel } from 'app/content/levels';
@@ -76,7 +77,9 @@ export function startLevel(character: Character, index: string) {
     } else {
         hero.levelInstance = instantiateLevel(map[index], character.levelDifficulty, difficultyCompleted);
     }
-    for (const action of hero.actions.concat(hero.reactions)) action.readyAt = 0;
+    for (const action of hero.actions.concat(hero.reactions)) {
+        action.readyAt = 0;
+    }
     enterArea(hero, hero.levelInstance.entrance);
     if (getState().selectedCharacter === character) {
         updateAdventureButtons();
@@ -139,12 +142,14 @@ export function enterArea(actor: Actor, {x, z, areaKey, objectKey, zoneKey}: Exi
     leaveCurrentArea(actor);
     const state = getState();
 
+    // If the player enters an area that is not part of their current mission, end the mission.
+    // This will only happen if they exit the mission or use the editor to jump to a new zone.
+    if (actor.type === 'hero' && actor.character.mission && actor.character.mission.parameters.zoneKey !== area.zoneKey) {
+        actor.character.mission = null;
+    }
     if (area.zoneKey === 'guild') {
         // Heal+restore cooldowns on switching guild areas.
         initializeActorForAdventure(actor);
-        actor.actions.concat(actor.reactions).forEach(function (action) {
-            action.readyAt = 0;
-        });
         if (actor.type === 'hero') {
             const character = actor.character;
             if (character === state.selectedCharacter) {
@@ -356,16 +361,58 @@ function updateAllActorDetails(area: Area): void {
     everybody.forEach(updateActorHelpText);
 }
 
+// Special update logic for the sprite which just follow the hero around.
+function updateSprite(area: Area, hero: Hero, delta: number) {
+    if (area.timeStopEffect && area.timeStopEffect.actor !== hero) {
+        return;
+    }
+    const sprite = getSprite();
+    const targetX = (hero.heading[0] > 0) ? (hero.x - hero.w - sprite.w / 2) : (hero.x + hero.w + sprite.w / 2);
+    if (sprite.area !== area) {
+        sprite.area = area;
+        sprite.x = targetX;
+        sprite.z = hero.z;
+    }
+    if (sprite.x < targetX) {
+        sprite.x = Math.min(targetX, sprite.x + 2);
+    } else  if (sprite.x > targetX) {
+        sprite.x = Math.max(targetX, sprite.x - 2);
+    }
+    // Only change heading if the sprite is still not at the target location.
+    // This keeps the sprite from flipping rapidly when the hero backs up slightly.
+    if (sprite.x < targetX) {
+        sprite.heading = [1, 0, 0];
+    } else if (sprite.x > targetX) {
+        sprite.heading = [-1, 0, 0];
+    } else {
+        sprite.heading = hero.heading;
+    }
+    if (sprite.z < hero.z) {
+        sprite.z = Math.min(hero.z, sprite.z + 2);
+    } else if (sprite.z > hero.z) {
+        sprite.z = Math.max(hero.z, sprite.z - 2);
+    }
+    sprite.time += delta;
+    updateActorAnimationFrame(sprite);
+    updateActorFrame(sprite);
+}
+
 export function updateArea(area: Area) {
     if (area.zoneKey === 'guild' && !getState().savedState.unlockedGuildAreas[area.key] && !area.enemies.length && area.allies.some(actor => !actor.isDead)) {
         unlockGuildArea(area);
+    }
+    const delta = FRAME_LENGTH / 1000;
+    let everybody = area.allies.concat(area.enemies);
+    // The sprite follows the selected character to any area.
+    const hero = getState().selectedCharacter.hero;
+    // Sprite continues updating during time stop effects if they belong to the hero
+    if (area.allies.indexOf(hero) >= 0) {
+        updateSprite(area, hero, delta);
     }
     if (timeStopLoop(area)) {
         updateAllActorDetails(area);
         return;
     }
-    const delta = FRAME_LENGTH / 1000;
-    let everybody = area.allies.concat(area.enemies);
     // Advance subjective time of area and each actor.
     area.time += delta;
     // Speed up time for actors when no enemies are around to heal+reduce cool downs
@@ -825,7 +872,11 @@ export function leaveCurrentArea(actor: Actor, leavingZone = false) {
     // If the current area is a safe guild area, it becomes the actors 'escape exit',
     // where they will respawn next if they die.
     if (actor.type === 'hero' && actor.area.zoneKey === 'guild' && !actor.area.enemies.length) {
-        actor.escapeExit = {x: actor.x, z: actor.z, areaKey: actor.area.key, zoneKey: 'guild'};
+        // Only set escape exit from the field context, the cutscene context may put the actor in
+        // invalid locations while moving them between areas.
+        if (actor.character.context === 'field') {
+            actor.escapeExit = {x: actor.x, z: actor.z, areaKey: actor.area.key, zoneKey: 'guild'};
+        }
     }
     var allyIndex = actor.area.allies.indexOf(actor);
     if (allyIndex >= 0) actor.area.allies.splice(allyIndex, 1);

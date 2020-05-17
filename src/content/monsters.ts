@@ -282,13 +282,13 @@ function getMonsterBonuses(monster: Monster): Bonuses {
     const levelCoefficient = Math.pow(1.07, monster.level);
     return {
         // Health scales linearly to level 10, then 10% a level.
-        '+maxHealth': (10 + 25 * growth),
+        '+maxHealth': (15 + 25 * growth),
         '+tenacity': 1 + growth / 100,
         '+level': monster.level,
         '+levelCoefficient': levelCoefficient,
         '+range': 1,
-        '+minWeaponPhysicalDamage': Math.round(.9 * (5 + 5 * growth)) * levelCoefficient,
-        '+maxWeaponPhysicalDamage': Math.round(1.1 * (5 + 5 * growth)) * levelCoefficient,
+        '+minWeaponPhysicalDamage': Math.round(.9 * (10 + 5 * growth)) * levelCoefficient,
+        '+maxWeaponPhysicalDamage': Math.round(1.1 * (10 + 5 * growth)) * levelCoefficient,
         '+minWeaponMagicDamage': Math.round(.9 * (1 + 1.5 * growth)) * levelCoefficient,
         '+maxWeaponMagicDamage': Math.round(1.1 * (1 + 1.5 * growth)) * levelCoefficient,
         '+critChance': .05,
@@ -345,6 +345,20 @@ function createMonsterSource(image: HTMLImageElement | HTMLCanvasElement, dimens
         spellRecoveryAnimation: createAnimation(image, dimensions, {cols: 7, frameMap: [5]}),
         deathAnimation: hurtAnimation,
         hurtAnimation,
+        shadowAnimation,
+    };
+}
+function createFairySource(image: HTMLImageElement | HTMLCanvasElement, dimensions: FrameDimensions, shadowAnimation: FrameAnimation = monsterShadow): ActorSource {
+    const flyAnimation = createAnimation(image, dimensions, {cols: 4, duration: 4});
+    return {
+        idleAnimation: flyAnimation,
+        walkAnimation: flyAnimation,
+        attackPreparationAnimation: flyAnimation,
+        attackRecoveryAnimation: flyAnimation,
+        spellPreparationAnimation: flyAnimation,
+        spellRecoveryAnimation: flyAnimation,
+        deathAnimation: flyAnimation,
+        hurtAnimation: flyAnimation,
         shadowAnimation,
     };
 }
@@ -491,6 +505,12 @@ export function initializeMonsters() {
         createAnimation(plainSkeletonDeathSheet, {...frameRectangle, content: {x: 12, y: 25, w: 10, h: 7, d: 8}}, {x: 6, cols: 1}),
     ];
 
+    const fairySource = createFairySource(
+        requireImage('gfx2/fairysheet.png'),
+        {w: 32, h: 32, content: {x: 17, y: 8, w: 10, h: 20, d: 4}},
+        airMonsterShadow
+    );
+
     const skeletonSwordSource = createMonsterSource(requireImage('gfx2/enemies/skeletonswordsheet.png'), skeletonDimensions);
     const gremlinRectangle = {x: 0, y: 0, w: 36, h: 36, content: {x: 0, y: 20, w: 21, h: 16, d: 8}};
     const orangeGremlinSheet = createTintedImage(gremlinSheet, {x: 0, y: 0, w: 252, h: 36, d: 8}, 'orange');
@@ -521,6 +541,10 @@ export function initializeMonsters() {
         ),
     });
 
+    addMonster('fairy', {
+        'name': 'Sprite', 'source': fairySource,
+        'implicitBonuses': {}
+    });
     addMonster('dummy', {
         'name': 'Dummy', 'source': caterpillarSource,
         'implicitBonuses': {}

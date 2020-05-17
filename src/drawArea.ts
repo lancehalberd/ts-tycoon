@@ -1,4 +1,5 @@
 import { returnToMap } from 'app/adventure';
+import { getSprite } from 'app/content/actors';
 import { areaTypes } from 'app/content/areas';
 import { effectAnimations } from 'app/content/effectAnimations';
 import { upgradeButton } from 'app/content/upgradeButton';
@@ -74,10 +75,21 @@ export function drawArea(context: CanvasRenderingContext2D, area: Area) {
         ...area.treasurePopups,
         ...area.effects
     ];
+    const allActors = area.allies.concat(area.enemies);
+    const fairy = getSprite();
+    // Usually fairy is not in the list of enemies/allies so she doesn't effect combat,
+    // but during cutscenes she will be in the list of allies.
+    if (fairy.area === area && allSprites.indexOf(fairy) < 0) {
+        allSprites.push(fairy);
+        allActors.push(fairy);
+    }
     // Draw effects that appear underneath sprites. Do not sort these, rather, just draw them in
     // the order they are present in the arrays.
-    for (const sprite of allSprites) if (sprite.drawGround) sprite.drawGround(context);
-    for (const actor of area.allies.concat(area.enemies)) {
+    for (const sprite of allSprites) {
+        sprite.drawGround?.(context);
+    }
+
+    for (const actor of allActors) {
         drawActorShadow(context, actor);
         drawActorGroundEffects(context, actor);
     }
@@ -100,7 +112,7 @@ export function drawArea(context: CanvasRenderingContext2D, area: Area) {
     }
     //for (var effect of ifdefor(area.effects, [])) effect.render(context, effect);
     // Draw actor lifebar/status effects on top of effects/projectiles
-    area.allies.concat(area.enemies).forEach(actor => drawActorEffects(context, actor));
+    allActors.forEach(actor => drawActorEffects(context, actor));
     // Draw text popups such as damage dealt, item points gained, and so on.
     for (const textPopup of (area.textPopups || [])) {
         context.fillStyle = (textPopup.color|| "red");

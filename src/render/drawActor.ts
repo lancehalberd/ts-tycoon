@@ -36,7 +36,7 @@ export function updateActorAnimationFrame(actor: Actor) {
         actor.idleFrame = 0;
     } else {
         actor.walkFrame = 0;
-        actor.idleFrame += 1 / 40;
+        actor.idleFrame += 1 / actor.source.idleAnimation.frameDuration;
     }
 }
 export function drawActorShadow(context: CanvasRenderingContext2D, actor: Actor) {
@@ -53,7 +53,7 @@ export function drawActorShadow(context: CanvasRenderingContext2D, actor: Actor)
         }
         const shadowTarget = {
             x: Math.round(actor.x - actor.area.cameraX - (shadowFrame.content.x + shadowFrame.content.w / 2) * scale),
-            y: Math.round(GROUND_Y - (actor.y || 0) - (actor.z || 0) / 2 + actor.d / 4 - (shadowFrame.content.y + shadowFrame.content.h / 2) * scale),
+            y: Math.round(GROUND_Y - (actor.z || 0) / 2 + actor.d / 4 - (shadowFrame.content.y + shadowFrame.content.h / 2) * scale),
             w: shadowFrame.w * scale, h: shadowFrame.h * scale
         };
         drawFrame(context, shadowFrame, shadowTarget);
@@ -152,7 +152,7 @@ export function drawActorEffects(context: CanvasRenderingContext2D, actor: Actor
     } */
     let actorTop = Math.round(GROUND_Y - actor.y - actor.z / 2 - actor.h);
     let y = actorTop - 10;
-    if (!isCutscene) {
+    if (!isCutscene && actor.health > 0) {
         drawBar(context, x, y, barWidth, 3, 'white', (actor.stats.lifeBarColor || 'red'), actor.health / actor.stats.maxHealth);
         if (actor.stats.bonusMaxHealth >= 1 && actor.health >= actor.stats.maxHealth - actor.stats.bonusMaxHealth) {
             // This logic is kind of a mess but it is to make sure the % of the bar that is due to bonusMaxHealth

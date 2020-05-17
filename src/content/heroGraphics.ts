@@ -1,8 +1,9 @@
 import { drawComplexCompositeTintedFrame, drawCompositeTintedFrame, requireImage } from 'app/images';
 import { createAnimation, drawFrame } from 'app/utils/animations';
 import Random from 'app/utils/Random';
+import { jobColors } from 'app/content/characterOutfit';
 
-import { Hero, JobKey, TintedFrame } from 'app/types';
+import { Hero, JobKey, Person, TintedFrame } from 'app/types';
 
 const outfit = {
     skinColor: '#AA724B',
@@ -27,48 +28,6 @@ const midSkin = '#DFC183';
 const brownSkin = '#AA724B';
 const darkSkin = '#573719';
 const skinTone = Random.element([paleSkin, pinkSkin, midSkin, brownSkin, darkSkin]);
-const forestCostume = {
-        bandanaColor: null,
-        shoeColor: '#81746c',
-        shortsColor: '#994539',
-        shirtColor: '#475732',
-        scarfColor: '#cdc6a5',
-};
-const sportyCostume = {
-        bandanaColor: '#d8cbc7',
-        shoeColor: '#34b233',
-        shortsColor: '#000000',
-        shirtColor: '#4aacd3',
-        scarfColor: '#f4660e',
-};
-const raspberryCostume = {
-        bandanaColor: null,
-        shoeColor: '#003049',
-        shortsColor: '#06bee1',
-        shirtColor: '#d12a98',
-        scarfColor: '#fcbf49',
-};
-const happyCostume = {
-        bandanaColor: null,
-        shoeColor: '#e2414c',
-        shortsColor: '#f76c6c',
-        shirtColor: '#d8c90e',
-        scarfColor: '#a5ca23',
-};
-const skyCostume = {
-        bandanaColor: '#c3d6f2',
-        shoeColor: '#789cce',
-        shortsColor: '#c6bcf2',
-        shirtColor: '#000092',
-        scarfColor: '#3bcbdc',
-};
-const tropicalIslandCostume = {
-        bandanaColor: null,
-        shoeColor: '#2f97c1',
-        shortsColor: '#31d1e0',
-        shirtColor: '#077c28',
-        scarfColor: '#f2ea60',
-};
 /*setHeroColors(Hero, {
         skinColor: '#4DBBEB',
         hairColor: 'white',
@@ -135,6 +94,9 @@ function crect(source: string, color: string = '0', row: number = 0): TintedFram
     };
 }
 export function createHeroColors(jobKey: JobKey) {
+
+    const myColors = Random.element(jobColors[jobKey]) || {};
+
     return {
         skinColor: pinkSkin,
         hairColor: 'yellow',
@@ -144,9 +106,10 @@ export function createHeroColors(jobKey: JobKey) {
         shortsColor: 'green',
         shirtColor: '#888',
         scarfColor: 'orange',
+        ...myColors,
     };
 }
-export function updateHeroGraphics(hero: Hero) {
+export function updateHeroGraphics(hero: Hero | Person) {
     //document.body.appendChild(hero.personCanvas);
     hero.personCanvas.width = totalWidth;
     hero.personCanvas.height = totalHeight;

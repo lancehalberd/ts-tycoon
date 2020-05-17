@@ -1,5 +1,5 @@
 import { updateActorFrame } from 'app/actor';
-import { getArea } from 'app/adventure';
+import { getArea, leaveCurrentArea } from 'app/adventure';
 import { createVariableObject, recomputeStat } from 'app/bonuses';
 import { abilities } from 'app/content/abilities';
 import { makeMonster, monsters } from 'app/content/monsters';
@@ -53,12 +53,16 @@ export class CutScene {
         if (this.area && this.stashedAllies) {
             this.area.allies = this.stashedAllies;
             this.area.enemies = this.stashedEnemies;
+            for (const actor of [...this.area.allies, ...this.area.enemies]) {
+                actor.area = this.area;
+            }
             this.area = null;
         }
     }
 
     setActors(actors: Actor[]): void {
         for (const actor of actors) {
+            leaveCurrentArea(actor);
             this.actors.push(actor);
             actor.dialogueBox = null;
             actor.activity = {type: 'none'};
@@ -72,9 +76,14 @@ export class CutScene {
 
     async run(): Promise<void> {
         try {
+            getState().cutscene = this;
+            setContext('cutscene');
             await this.runScript();
             this.endScene();
         } catch (e) {
+            if (e && e.message) {
+                console.error(e);
+            }
         }
     }
     async runScript(): Promise<void> {
@@ -84,11 +93,16 @@ export class CutScene {
     async endScene(): Promise<void> {
         try {
             this.finished = true;
-            this.runEndScript();
+            await this.runEndScript();
+            getState().cutscene = null;
+            await this.setupNextScene();
         } catch (e) {
         }
     }
     async runEndScript(): Promise<void> {
+
+    }
+    async setupNextScene(): Promise<void> {
 
     }
 

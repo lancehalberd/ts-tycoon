@@ -150,18 +150,24 @@ export interface BaseActor extends AreaTarget {
     activity: ActorActivity,
     dialogueBox?: DialogueBox,
 }
-export interface Hero extends BaseActor {
-    type: 'hero',
+export interface BasePerson extends BaseActor {
     colors: HeroColors,
     personCanvas: HTMLCanvasElement,
     personContext: CanvasRenderingContext2D,
-    character: Character,
     job: Job,
     unlockedAbilities: {[key: string]: true},
     abilities: Ability[],
+}
+export interface Hero extends BasePerson {
+    type: 'hero',
+    character: Character,
     consideredObjects: Set<AreaObject>,
 }
-export type Actor = Hero | Monster;
+export interface Person extends BasePerson {
+    type: 'person',
+}
+
+export type Actor = Hero | Monster | Person;
 export interface SavedActor {
     equipment: SavedEquipment,
     colors: HeroColors,

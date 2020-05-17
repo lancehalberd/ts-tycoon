@@ -17,7 +17,7 @@ import {
     areAnyCraftedItemsVisible, equipItem, getItemForElement, inventoryState, sellItem,
 } from 'app/inventory';
 import { jewelInventoryState, sellJewel } from 'app/jewelInventory';
-import { mapState } from 'app/map';
+import { mapState, unlockInitialLevels } from 'app/map';
 import { gain } from 'app/points';
 import { getPopup } from 'app/popup';
 import { getState, guildYardEntrance } from 'app/state';
@@ -116,11 +116,7 @@ document.addEventListener('keydown', function(event) {
         }
     }
     if (keyCode === KEY.M && state.guildStats.hasMap) {
-        // console.log(state.selectedCharacter.context);
-        // Unlock the first areas on the map if they aren't unlocked yet.
-        for (const levelKey of map.guild.unlocks) {
-            state.visibleLevels[levelKey] = true;
-        }
+        unlockInitialLevels();
         if (state.selectedCharacter.context === 'map') {
             if (!state.selectedCharacter.hero.area) {
                 enterArea(state.selectedCharacter.hero, guildYardEntrance);

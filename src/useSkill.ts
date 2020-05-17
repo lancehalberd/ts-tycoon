@@ -508,7 +508,7 @@ actionDefinitions.minion = {
 
 function cloneActor(actor: Actor, skill: Action): Actor {
     let clone;
-    if (actor.type === 'hero') {
+    if (actor.type === 'hero' || actor.type === 'person') {
         clone = makeHeroFromJob(actor.job, actor.level, {});
         clone.colors = actor.colors;
         clone.equipment = actor.equipment;
@@ -518,7 +518,11 @@ function cloneActor(actor: Actor, skill: Action): Actor {
         for (const ability of actor.abilities) {
             if (ability.bonuses) addBonusSourceToObject(clone, ability);
         }
-        if (actor.character) addBonusSourceToObject(clone, actor.character.jewelBonuses);
+        if (actor.type === 'hero') {
+            if (actor.character) {
+                addBonusSourceToObject(clone, actor.character.jewelBonuses);
+            }
+        }
     } else {
         clone = makeMonster(actor.area, {'key': actor.base.key}, actor.level, [], 0);
     }

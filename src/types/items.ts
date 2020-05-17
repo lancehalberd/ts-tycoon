@@ -1,4 +1,4 @@
-import { Actor, BasicFrame, Bonuses, EquipmentAffix, Hero, SavedAffix, Tags } from 'app/types';
+import { Actor, BasicFrame, Bonuses, EquipmentAffix, Hero, Person, SavedAffix, Tags } from 'app/types';
 
 type AttackAnimationType = 'bowAttack' | 'throwingAttack' | 'wandAttack';
 
@@ -87,7 +87,7 @@ export interface Item {
     prefixes: EquipmentAffix[],
     suffixes: EquipmentAffix[],
     unique: boolean,
-    actor?: Hero,
+    actor?: Person | Hero,
     // This can override the default display name.
     displayName?: string,
 }

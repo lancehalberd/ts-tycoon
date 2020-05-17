@@ -12,10 +12,10 @@ export function initializeActorForAdventure(actor: Actor) {
     actor.stunned = 0;
     actor.pull = null;
     actor.chargeEffect = null;
-    actor.time = 0;
     actor.isDead = false;
     actor.timeOfDeath = undefined;
     actor.skillInUse = null;
+    actor.skillTarget = null;
     actor.slow = 0;
     actor.rotation = 0;
     actor.activity = {type: 'none'};
@@ -24,6 +24,11 @@ export function initializeActorForAdventure(actor: Actor) {
     actor.boundEffects = actor.boundEffects || [];
     var stopTimeAction = findActionByTag(actor.reactions, 'stopTime');
     actor.temporalShield = actor.maxTemporalShield = (stopTimeAction ? stopTimeAction.stats.duration : 0);
+    // Any time we reset actor.time we need to reset action.readyAt, otherwise the cooldowns may be unavailable for a long time.
+    actor.time = 0;
+    for (const action of actor.actions.concat(actor.reactions)) {
+        action.readyAt = 0;
+    }
     updateActorFrame(actor);
 }
 

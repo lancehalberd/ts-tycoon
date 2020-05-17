@@ -1,6 +1,7 @@
 import { getArea } from 'app/adventure';
 import { createVariableObject } from 'app/bonuses';
 import { abilities } from 'app/content/abilities';
+import { getSprite } from 'app/content/actors';
 import { CutScene } from 'app/content/cutscenes/CutScene';
 import { setupMission } from 'app/content/missions';
 import { makeMonster, monsters } from 'app/content/monsters';
@@ -20,28 +21,18 @@ export class Mission1Intro extends CutScene {
 
     async runScript() {
         const character = getState().selectedCharacter;
-        getState().cutscene = this;
-        setContext('cutscene');
         setupMission(character, 'mission1');
         this.setArea(getArea('mission1', 'villageWest'));
         this.area.cameraX = 0;
         this.fadeLevel = 1;
-
+        // Both sprite and the hero start off screen and teleport in.
         this.hero = character.hero;
         this.hero.x = -100;
         this.hero.z = -30;
         this.hero.heading = [1, 0, 0];
-
-        this.sprite = makeMonster(
-            this.area,
-            monsters.bat,
-            1,
-            [],
-            0,
-        );
+        this.sprite = getSprite();
         this.sprite.x = -100;
         this.sprite.z = -20;
-        this.sprite.heading = [-1, 0, 0];
 
         this.setActors([this.hero, this.sprite])
 
@@ -59,6 +50,7 @@ export class Mission1Intro extends CutScene {
         await this.pause(500);
         await this.speak(this.hero, `Amazing, I wonder how far that gate can take us?`);
         this.sprite.x = 90;
+        this.sprite.heading = [-1, 0, 0];
         await this.pause(500);
         await this.speak(this.sprite, `I'll be coming along as well.`);
         await this.speak(this.sprite, `The power from the guild weakens when you are far away,`);
@@ -74,11 +66,11 @@ export class Mission1Intro extends CutScene {
 
     async runEndScript() {
         const hero = this.hero;
-        this.cleanupScene();
         // Explicitly set the correct end state in case the scene was skipped.
         hero.x = 60;
         this.sprite.x = 90;
         await this.fadeIn();
+        this.cleanupScene();
         // In case the hero was moved around in the cutscene, make sure they are properly inserted into their area.
         if (hero.area.allies.indexOf(hero) < 0) {
             hero.area.allies.push(hero);
@@ -87,7 +79,9 @@ export class Mission1Intro extends CutScene {
         hero.enemies = hero.area.enemies;
         getState().savedState.completedCutscenes[Mission1Intro.key] = true;
         saveGame();
+    }
+
+    async setupNextScene() {
         setContext('field');
-        getState().cutscene = null;
     }
 }

@@ -46,7 +46,7 @@ import Random from 'app/utils/Random';
 
 import {
     Ability, Action, ActionStats, Actor, ActorStats,
-    Board, BoardData, Bonuses, BonusSource, Character,
+    Person, Board, BoardData, Bonuses, BonusSource, Character,
     Effect, Equipment, EquipmentData, Hero, HeroColors, Item,
     Job, Monster, ShortRectangle, Tags, VariableObject
 } from 'app/types';
@@ -175,22 +175,17 @@ export function newCharacter(job: Job): Character {
 const heroShadow = createAnimation(
     requireImage('gfx2/character/c1shadow.png'), {w: 64, h: 48, content: {x: 17, y: 44, w: 20, h: 4}},
 );
-export function makeHeroFromData({
-        jobKey,
-        level,
-        name,
-        colors,
-}): Hero {
+
+export function makePersonFromData({jobKey, level, name, colors}): Person {
     const personCanvas = createCanvas(personFrames * 96, 64);
     const personContext = personCanvas.getContext("2d");
     personContext.imageSmoothingEnabled = false;
     const heroFrame = {w: 64, h: 48, content: {x: 20, y: 16, w: 16, h: 31, d: 8}};
-    const hero: Hero = {
+    const person: Person = {
         area: null,
         targetType: 'actor',
-        type: 'hero',
+        type: 'person',
         activity: {type: 'none'},
-        character: null,
         x: 0,
         y: 0,
         z: 0,
@@ -206,7 +201,7 @@ export function makeHeroFromData({
             ),
             idleAnimation: createAnimation(
                 personCanvas, heroFrame,
-                {cols: 17, frameMap: [0, 1]},
+                {cols: 17, frameMap: [0, 1], duration: 40},
             ),
             hurtAnimation: createAnimation(
                 personCanvas, heroFrame,
@@ -254,14 +249,27 @@ export function makeHeroFromData({
         isPointOver: isPointOverActor,
         heading: [1, 0, 0], // Character moves left to right by default.
         render: drawActor,
-        consideredObjects: new Set(),
         time: 0,
     };
-    hero.variableObject = createVariableObject({'variableObjectType': 'actor'});
-    hero.stats = hero.variableObject.stats as ActorStats;
+    person.variableObject = createVariableObject({'variableObjectType': 'actor'});
+    person.stats = person.variableObject.stats as ActorStats;
     equipmentSlots.forEach(function (type) {
-        hero.equipment[type] = null;
+        person.equipment[type] = null;
     });
+    return person;
+}
+export function makeHeroFromData({jobKey, level, name, colors}): Hero {
+    const hero: Hero = {
+        ...makePersonFromData({
+                jobKey,
+                level,
+                name,
+                colors,
+        }),
+        type: 'hero',
+        character: null,
+        consideredObjects: new Set(),
+    };
     return hero;
 }
 export function makeHeroFromJob(job: Job, level: number, equipment: EquipmentData): Hero {
@@ -365,7 +373,7 @@ export function setHeroColors(hero, colors: HeroColors) {
 }
 window['setHeroColors'] = setHeroColors;
 
-export function updateHero(hero: Hero) {
+export function updateHero(hero: Hero | Person) {
     // Clear the character's bonuses and graphics.
     hero.colors = hero.colors || createHeroColors(hero.job.key);
     hero.variableObject = createVariableObject({variableObjectType: 'actor'});
@@ -412,7 +420,7 @@ export function updateHero(hero: Hero) {
             addBonusSourceToObject(hero.variableObject, ability);
         }
     });
-    if (hero.character) {
+    if (hero.type === 'hero' && hero.character) {
         updateJewelBonuses(hero.character);
         addBonusSourceToObject(hero.variableObject, hero.character.jewelBonuses);
     }

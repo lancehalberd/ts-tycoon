@@ -13,8 +13,11 @@ import { ItemData, RawItemData } from 'app/types/items';
 
 // const nonWeapons = ['body', 'feet', 'head', 'offhand', 'arms', 'legs', 'back', 'ring'];
 export const items: ItemData[][] = [[]];
+window['items'] = items;
 export const itemsByKey: {[key: string]: ItemData} = {};
+window['itemsByKey'] = itemsByKey;
 export const itemsBySlotAndLevel: {[key: string]: ItemData[][] } = {};
+window['itemsBySlotAndLevel'] = itemsBySlotAndLevel;
 equipmentSlots.forEach(function (slot) {
     itemsBySlotAndLevel[slot] = [];
 });

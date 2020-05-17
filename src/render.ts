@@ -3,6 +3,7 @@ import { readBoardFromData } from 'app/character';
 import { drawTrophyPopups, drawTrophySelection, getChoosingTrophyAltar } from 'app/content/achievements';
 import { drawUpgradeBox, getUpgradingObject } from 'app/content/upgradeButton';
 import { abilities } from 'app/content/abilities';
+import { getSprite } from 'app/content/actors';
 import { boards } from 'app/content/boards';
 import { editingMapState } from 'app/development/editLevel';
 import { renderEditAreaOverlay } from 'app/development/editArea';

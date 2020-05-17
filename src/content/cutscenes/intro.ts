@@ -2,6 +2,7 @@ import _ from 'lodash';
 import { getArea } from 'app/adventure';
 import { createVariableObject } from 'app/bonuses';
 import { abilities } from 'app/content/abilities';
+import { getAshleyRuthven, getGuildSpirit, getSprite } from 'app/content/actors';
 import { GuildGate } from 'app/content/areas';
 import { CutScene } from 'app/content/cutscenes/CutScene';
 import { Mission1Intro } from 'app/content/cutscenes/mission1Intro';
@@ -39,50 +40,29 @@ export class IntroScene extends CutScene {
     hero: Hero;
 
     async runScript() {
-        getState().cutscene = this;
-        setContext('cutscene');
         this.setArea(getArea('guild', 'guildYard'));
         this.area.cameraX = this.area.width - ADVENTURE_WIDTH;
         this.fadeLevel = 1;
-
-        this.guildSpirit = makeMonster(
-            this.area,
-            monsters.skeleton,
-            1,
-            [],
-            0,
-        );
+        // The guild spirit is the only actor in frame initially.
+        this.guildSpirit = getGuildSpirit();
         this.guildSpirit.x = this.area.width - 80;
         this.guildSpirit.z = -20;
         this.guildSpirit.heading = [1, 0, 0];
-
-        this.ruthven = makeMonster(
-            this.area,
-            monsters.gremlin,
-            1,
-            [],
-            0,
-        );
+        // Ruthven and the hero will walk onto screen from the left.
+        this.ruthven = getAshleyRuthven();
         this.ruthven.z = 0;
         this.ruthven.x = 50;
-
         this.hero = getState().selectedCharacter.hero;
         this.hero.x = 30;
         this.hero.z = -30;
-
-        this.sprite = makeMonster(
-            this.area,
-            monsters.bat,
-            1,
-            [],
-            0,
-        );
+        // Sprite will teleport into the scene.
+        this.sprite = getSprite();
         this.sprite.x = -100;
         this.sprite.z = -20;
-        this.sprite.heading = [1, 0, 0];
 
         this.setActors([this.guildSpirit, this.ruthven, this.hero, this.sprite]);
-
+        // Make sure the guild gate doesn't show a mission initially.
+        (this.area.objectsByKey.guildGate as GuildGate).clearMission();
         // This pause is to wait for the black bars to fade in fully before fading the scene in.
         await this.pause(500);
         await this.fadeIn();
@@ -110,28 +90,29 @@ export class IntroScene extends CutScene {
             speechAction,
             this.moveActor(this.ruthven, {x: this.area.width - 130, z: 0}),
         ]);
-        await this.speak(this.ruthven, `It's an official decree revoking the ban on guilds.`);
+        await this.speak(this.ruthven, `It's a royal decree revoking the ban on guilds.`);
         await this.speak(this.guildSpirit, `Truly? Has the monarchy finally changed its mind?`);
         await this.speak(this.ruthven, `Oh I wouldn't go that far, but they are desperate enough to risk it.`);
         await this.speak(this.guildSpirit, `Desperate... I'm not sure that is good enough.`);
         this.moveActor(this.hero, {x: this.hero.x + 20, z: this.hero.z}).catch(_.noop);
-        await this.speak(this.hero, `Please! The monarchy doesn't speak for all the people.`);
+        await this.speak(this.hero, `Please! The monarchy doesn't speak for all of us.`);
         await this.speak(this.hero, `I'm just one of hundreds without a home to return to now.`);
-        await this.speak(this.hero, `We need something to keep us going, doesn't what we want count?`);
+        await this.speak(this.hero, `We can't keep going on like this, doesn't what we want count?`);
         await this.speak(this.guildSpirit, `Wait, this feeling...`);
         await this.speak(this.guildSpirit, `The will of your people, their hopes riding on you.`);
         await this.pause(500);
         //await this.speak(this.hero, `You can feel them?`);
-        // await this.speak(this.guildSpirit, `I can.`);
+        //await this.speak(this.guildSpirit, `I can.`);
         await this.speak(this.guildSpirit, `After all these years, I can hardly believe I'm saying this,`);
         await this.speak(this.guildSpirit, `but this could actually work.`);
-        await this.speak(this.ruthven, `It better because we're running out of time. I'm worried it might already be too late.`);
+        await this.speak(this.ruthven, `It better work because we're running out of time. It might already be too late.`);
         await this.speak(this.guildSpirit, `Then let's not waste time.`);
         //await this.speak(this.guildSpirit, `${this.hero.name}, hold that desire to help your people in your heart and take my hand.`);
-        await this.speak(this.guildSpirit, `${this.hero.name}, focus on your determination and take my hand.`);
+        //await this.speak(this.guildSpirit, `${this.hero.name}, focus on your purpose and take my hand.`);
+        await this.speak(this.guildSpirit, `${this.hero.name}, channel your resolve and take my hand.`);
         await this.pause(500);
         await this.moveActor(this.hero, {x: this.guildSpirit.x - this.guildSpirit.w - this.hero.w, z: this.guildSpirit.z});
-        await this.speak(this.guildSpirit, `Your will and the power of this guild will now be as one.`);
+        await this.speak(this.guildSpirit, `Your will and the power of this guild are now as one.`);
         // Make a fake heal action to cast on the player. Originally I wanted the hero to glow, but this is fine for now.
         const variableObject = createVariableObject(abilities.heal.action, this.guildSpirit.variableObject);
         const heal: Action = {
@@ -159,7 +140,7 @@ export class IntroScene extends CutScene {
             this.speak(this.ruthven, `I've got dozens of refugees at my estate with more coming each day, but we can't keep them forever.`),
         ]);
         await this.speak(this.ruthven, `Sprite, if you please.`),
-        this.sprite.x = this.ruthven.x + 60;
+        this.sprite.x = 340;
         this.sprite.z = this.ruthven.z;
         this.sprite.heading = [-1, 0, 0];
         await this.pause(500);
@@ -187,6 +168,9 @@ export class IntroScene extends CutScene {
         this.cleanupScene();
         getState().savedState.completedCutscenes[IntroScene.key] = true;
         saveGame();
+    }
+
+    async setupNextScene() {
         new Mission1Intro().run();
     }
 }

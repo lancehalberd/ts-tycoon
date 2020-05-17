@@ -20,6 +20,7 @@ import {
 } from 'app/types';
 
 export function loadSavedData() {
+    //return false;
     if (window.location.search.substr(1) === 'reset' && confirm("Clear your saved data?")) {
         return false;
     }

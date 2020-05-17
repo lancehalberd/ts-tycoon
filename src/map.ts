@@ -286,3 +286,13 @@ export function unlockMapLevel(levelKey: string) {
     getState().visibleLevels[levelKey] = true;
 }
 
+export function unlockInitialLevels() {
+    const state = getState();
+    if (state.guildStats.hasMap) {
+        // console.log(state.selectedCharacter.context);
+        // Unlock the first areas on the map if they aren't unlocked yet.
+        for (const levelKey of map.guild.unlocks) {
+            state.visibleLevels[levelKey] = true;
+        }
+    }
+}

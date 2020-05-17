@@ -21,7 +21,7 @@ import { collision, getCollisionArea, ifdefor } from 'app/utils/index';
 import { getMousePosition } from 'app/utils/mouse';
 import { exportAffix, importAffix } from 'app/saveGame';
 
-import { Actor, EquipmentSlot, Hero, Item, ItemData, SavedItem } from 'app/types';
+import { Actor, Person, EquipmentSlot, Hero, Item, ItemData, SavedItem } from 'app/types';
 
 // Div containing items
 const inventoryElement = query('.js-inventory');
@@ -98,7 +98,7 @@ export function importItem(itemData: SavedItem): Item {
     return item;
 }
 
-export function equipItemProper(actor: Hero, item: Item, update) {
+export function equipItemProper(actor: Hero | Person, item: Item, update) {
     const selectedCharacter = getState().selectedCharacter;
     const isSelectedHero = (actor === (selectedCharacter && selectedCharacter.hero));
     //console.log("equip " + item.base.slot);
@@ -138,7 +138,7 @@ export function equipItemProper(actor: Hero, item: Item, update) {
         updateEquipableItems();
     }
 }
-function unequipSlot(hero: Hero, slotKey: EquipmentSlot, update: boolean = false) {
+function unequipSlot(hero: Hero | Person, slotKey: EquipmentSlot, update: boolean = false) {
     if (hero.equipment[slotKey]) {
         const item = hero.equipment[slotKey];
         item.domElement.remove();

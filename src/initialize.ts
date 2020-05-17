@@ -20,7 +20,7 @@ import { createNewHeroApplicant, hireCharacter, jobRanks } from 'app/heroApplica
 import { makeJewel } from 'app/jewels'
 import { addKeyCommands } from 'app/keyCommands';
 import { gainJewel } from 'app/loot';
-import { centerMapOnLevel } from 'app/map';
+import { centerMapOnLevel, unlockInitialLevels } from 'app/map';
 import { gain } from 'app/points';
 import { eraseSave, loadSavedData } from 'app/saveGame';
 import {
@@ -105,6 +105,7 @@ export function initializeGame() {
     }
     updateItemsThatWillBeCrafted();
     updateEnchantmentOptions();
+    unlockInitialLevels();
     centerMapOnLevel(map[state.selectedCharacter.currentLevelKey] || map.guild, true);
     drawMap();
     // The main loop will throw errors constantly if an error prevented selectedCharacter

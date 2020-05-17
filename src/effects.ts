@@ -566,15 +566,19 @@ export function projectile(
                     projectile.hitTargets = [];
                     // reduce the speed. This seems realistic and make it easier to
                     // distinguish bounced attacks from new attacks.
-                    projectile.vx = -projectile.vx / 2;
-                    projectile.vz = -projectile.vz / 2;
-                    var targets = projectile.attackStats.source.enemies.slice();
+                    projectile.vx = -3 * projectile.vx /  4;
+                    projectile.vz = 3 * projectile.vz / 4;
+                    const targets = projectile.attackStats.source.enemies.slice();
                     targets.push(attackStats.source);
                     while (targets.length) {
-                        var index = Math.floor(Math.random() * targets.length);
-                        var newTarget = targets[index];
+                        let index = Math.floor(Math.random() * targets.length);
+                        const newTarget = targets[index];
+                        const distance = getDistance(projectile.target, newTarget);
                         if (newTarget.health <= 0 || newTarget === projectile.target || newTarget.cloaked
-                            || getDistance(projectile.target, newTarget) > projectile.attackStats.attack.stats.range * RANGE_UNIT
+                            || distance > projectile.attackStats.attack.stats.range * RANGE_UNIT
+                            // It looks bad and is confusing if the projectile bounces to very close targets,
+                            // so we disable this.
+                            || distance < 3 * RANGE_UNIT
                         ) {
                             targets.splice(index--, 1);
                             continue;
