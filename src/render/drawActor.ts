@@ -45,6 +45,8 @@ export function drawActorShadow(context: CanvasRenderingContext2D, actor: Actor)
     context.save();
     if (actor.cloaked) {
         context.globalAlpha = .2;
+    } else {
+        context.globalAlpha = Math.max(0.2, 0.5 - actor.y / 200);
     }
     if (!actor.isDead) {
         const shadowFrame = getFrame(source.shadowAnimation, actor.time);
