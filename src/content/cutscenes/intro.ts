@@ -165,6 +165,8 @@ export class IntroScene extends CutScene {
     async runEndScript() {
         const hero = getState().selectedCharacter.hero;
         await this.fadeOut();
+        // Make sure the guild gate ends up set to mission 1 even if the intro is skipped.
+        (this.area.objectsByKey.guildGate as GuildGate).setMission('mission1');
         this.cleanupScene();
         getState().savedState.completedCutscenes[IntroScene.key] = true;
         saveGame();

@@ -196,6 +196,9 @@ export function enterArea(actor: Actor, {x, z, areaKey, objectKey, zoneKey}: Exi
     if (state.selectedCharacter && actor === state.selectedCharacter.hero) {
         area.cameraX = Math.round(Math.max(0, Math.min(area.width - ADVENTURE_WIDTH, actor.x - ADVENTURE_WIDTH / 2)));
         updateAdventureButtons();
+        // Have the sprite immediately follow the actor to new areas so that she appears
+        // at the start of missions.
+        updateSprite(area, actor, 0);
     }
     editingAreaState.cameraX = area.cameraX;
     editingAreaState.selectedObject = null;
@@ -362,7 +365,7 @@ function updateAllActorDetails(area: Area): void {
 }
 
 // Special update logic for the sprite which just follow the hero around.
-function updateSprite(area: Area, hero: Hero, delta: number) {
+export function updateSprite(area: Area, hero: Hero, delta: number) {
     if (area.timeStopEffect && area.timeStopEffect.actor !== hero) {
         return;
     }
