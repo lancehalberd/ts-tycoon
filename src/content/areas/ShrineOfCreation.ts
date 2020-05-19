@@ -15,14 +15,12 @@ const shrineFrame:Frame = {
 
 export class ShrineOfCreation extends EditableAreaObject {
     name = 'Shrine of Creation';
+    bonusSource = {'bonuses': {'$hasJewelCrafting': true}};
     getFrame(): Frame {
         return shrineFrame;
     }
     onInteract(hero: Hero): void {
         setContext('jewel');
-    }
-    getActiveBonusSources() {
-        return [{'bonuses': {'$hasJewelCrafting': true}}];
     }
 }
 areaObjectFactories.shrineOfCreation = ShrineOfCreation;

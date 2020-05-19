@@ -12,8 +12,8 @@ import { drawFrame } from 'app/utils/animations';
 import { isPointInRect } from 'app/utils/index';
 
 import {
-    Area, AreaObject, AreaObjectDefinition, AreaObjectTarget, Exit, Frame, Hero,
-    ShortRectangle,
+    Area, AreaObject, AreaObjectDefinition, AreaObjectTarget, BonusSource,
+    Exit, Frame, Hero, ShortRectangle,
 } from 'app/types';
 
 export class EditableAreaObject implements AreaObject {
@@ -33,6 +33,7 @@ export class EditableAreaObject implements AreaObject {
     name: string;
     key: string;
     shapeType: 'oval' | 'rectangle' = 'rectangle';
+    bonusSource: BonusSource;
 
     applyDefinition(definition: AreaObjectDefinition): this {
         this._areaTarget = null;
@@ -58,6 +59,10 @@ export class EditableAreaObject implements AreaObject {
             this._areaTarget.shapeType = this.shapeType;
         }
         return this._areaTarget;
+    }
+
+    getActiveBonusSources() {
+        return this.bonusSource ? [this.bonusSource] : [];
     }
 
     render(context: CanvasRenderingContext2D): void {

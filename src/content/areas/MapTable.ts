@@ -9,7 +9,7 @@ import { unlockInitialLevels } from 'app/map';
 import { getState } from 'app/state';
 
 import {
-    Area, AreaObject, AreaObjectDefinition, AreaObjectTarget, BonusSource,
+    Area, AreaObject, AreaObjectDefinition, AreaObjectTarget,
     Exit, Frame, Hero, ShortRectangle,
 } from 'app/types';
 const guildImage = requireImage('gfx/guildhall.png');
@@ -22,14 +22,12 @@ export function openWorldMap() {
 
 export class MapTable extends EditableAreaObject {
     name = 'World Map';
+    bonusSource = {'bonuses': {'$hasMap': true}};
     getFrame(): Frame {
         return mapTableFrame;
     }
     onInteract(hero: Hero): void {
         openWorldMap();
-    }
-    getActiveBonusSources(): BonusSource[] {
-        return [{'bonuses': {'$hasMap': true}}];
     }
 }
 areaObjectFactories.mapTable = MapTable;

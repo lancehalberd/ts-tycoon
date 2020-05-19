@@ -58,3 +58,8 @@ export function addAreaFurnitureBonuses(guildArea: Area, recompute = false) {
     for (const object of guildArea.objects) addFurnitureBonuses(object, false);
     if (recompute) recomputeAllCharacterDirtyStats();
 }
+
+export function removeAreaFurnitureBonuses(guildArea: Area, recompute = false) {
+    for (const object of guildArea.objects) removeFurnitureBonuses(object, false);
+    if (recompute) recomputeAllCharacterDirtyStats();
+}

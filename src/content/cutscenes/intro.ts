@@ -3,9 +3,9 @@ import { getArea } from 'app/adventure';
 import { createVariableObject } from 'app/bonuses';
 import { abilities } from 'app/content/abilities';
 import { getAshleyRuthven, getGuildSpirit, getSprite } from 'app/content/actors';
-import { GuildGate } from 'app/content/areas';
 import { CutScene } from 'app/content/cutscenes/CutScene';
 import { Mission1Intro } from 'app/content/cutscenes/mission1Intro';
+import { setGuildGateMission } from 'app/content/missions';
 import { makeMonster, monsters } from 'app/content/monsters';
 import { setContext } from 'app/context';
 import { ADVENTURE_WIDTH, ADVENTURE_HEIGHT, FRAME_LENGTH, MAX_Z } from 'app/gameConstants';
@@ -62,7 +62,7 @@ export class IntroScene extends CutScene {
 
         this.setActors([this.guildSpirit, this.ruthven, this.hero, this.sprite]);
         // Make sure the guild gate doesn't show a mission initially.
-        (this.area.objectsByKey.guildGate as GuildGate).clearMission();
+        setGuildGateMission(null);
         // This pause is to wait for the black bars to fade in fully before fading the scene in.
         await this.pause(500);
         await this.fadeIn();
@@ -146,7 +146,7 @@ export class IntroScene extends CutScene {
         await this.pause(500);
         await this.speak(this.sprite, `Of course, one moment...`);
         await this.pause(500);
-        (this.area.objectsByKey.guildGate as GuildGate).setMission('mission1');
+        setGuildGateMission('mission1');
         await this.speak(this.sprite, `Here is the outpost.`),
         await this.speak(this.ruthven, `When my grandfather was young he sponsored this outpost before it was abandoned by the monarchy.`),
         await this.speak(this.ruthven, `It's broken down and full of beasts and other... things, but I still hold title to all the lands.`),
@@ -166,7 +166,7 @@ export class IntroScene extends CutScene {
         const hero = getState().selectedCharacter.hero;
         await this.fadeOut();
         // Make sure the guild gate ends up set to mission 1 even if the intro is skipped.
-        (this.area.objectsByKey.guildGate as GuildGate).setMission('mission1');
+        setGuildGateMission('mission1');
         this.cleanupScene();
         getState().savedState.completedCutscenes[IntroScene.key] = true;
         saveGame();

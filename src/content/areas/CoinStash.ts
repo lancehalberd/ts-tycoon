@@ -4,12 +4,13 @@ import {
     getAreaObjectTargetFromDefinition, isPointOverAreaTarget,
     EditableAreaObject,
 } from 'app/content/areas';
+import { addFurnitureBonuses, removeFurnitureBonuses } from 'app/content/furniture';
 import { setUpgradingObject } from 'app/content/upgradeButton';
-import { editingAreaState } from 'app/development/editArea';
-import { titleDiv } from 'app/dom';
+import { editingAreaState, refreshDefinition } from 'app/development/editArea';
+import { titleDiv, bodyDiv } from 'app/dom';
 import { ADVENTURE_WIDTH, GROUND_Y } from 'app/gameConstants';
 import { bonusSourceHelpText } from 'app/helpText';
-import { drawWhiteOutlinedFrame, drawTintedFrame, requireImage } from 'app/images';
+import { drawWhiteOutlinedFrame, drawTintedFrame } from 'app/images';
 import { isKeyDown, KEY } from 'app/keyCommands';
 import { canAffordCost, costHelpText, hidePointsPreview, previewCost } from 'app/points';
 import { getCanvasPopupTarget, removePopup } from 'app/popup';
@@ -18,28 +19,27 @@ import { createAnimation, frame, getFrame, drawFrame, frameAnimation } from 'app
 import { r, fillRect, isPointInRect } from 'app/utils/index';
 
 import {
-    Area, AreaObject, AreaObjectTarget, Exit, Frame, Hero,
+    Area, AreaObject, AreaObjectTarget, Exit, Frame, Hero, MenuOption,
     ShortRectangle, UpgradeableObject, UpgradeableObjectDefinition, UpgradeableObjectTier
 } from 'app/types';
-const guildImage = requireImage('gfx/guildhall.png');
-const chestImage = requireImage('gfx/chest-closed.png');
-
-const potFrame:Frame = {image: guildImage, x: 300, y: 150, w: 30, h: 30, d: 20};
-const jarFrame:Frame = {image: guildImage, x: 330, y: 150, w: 30, h: 30, d: 20};
-const piggyFrame:Frame = {image: guildImage, x: 300, y: 180, w: 30, h: 30, d: 20};
-const chestFrame:Frame = {image: chestImage, x: 0, y: 0, w: 32, h: 32, d: 20};
-const safeFrame:Frame = {image: guildImage, x: 330, y: 180, w: 30, h: 30, d: 20};
-const magicBagFrame:Frame = {image: guildImage, x: 300, y: 210, w: 30, h: 30, d: 20};
+// Technically these should each have their own geometry, but since you can upgrade one to the other, it is simplest
+// for now if we just treat them as all having the geometry of the largest version.
+const [
+    smallBag, largeBag,
+    smallBank, largeBank,
+    smallChest, largeChest,
+    smallSafe, largeSafe,
+] = createAnimation('gfx2/objects/coinstash.png', {w: 32, h: 40, content: {x: 6, y: 20, w: 20, h: 20, d: 18}}, {cols: 8}).frames;
 
 const coinStashTiers: UpgradeableObjectTier[] = [
-    {'name': 'Cracked Pot', 'bonuses': {'+maxCoins': 500}, 'upgradeCost': 500, frame: potFrame},
-    {'name': 'Large Jar', 'bonuses': {'+maxCoins': 4000}, 'upgradeCost': 10000, frame: jarFrame},
-    {'name': 'Piggy Bank', 'bonuses': {'+maxCoins': 30000}, 'upgradeCost': 150000, 'requires': 'workshop', frame: piggyFrame},
-    {'name': 'Chest', 'bonuses': {'+maxCoins': 200000}, 'upgradeCost': 1.5e6, 'requires': 'workshop', frame: chestFrame},
-    {'name': 'Safe', 'bonuses': {'+maxCoins': 1e6}, 'upgradeCost': 10e6, 'requires': 'magicWorkshop', frame: safeFrame},
-    {'name': 'Bag of Holding', 'bonuses': {'+maxCoins': 30e6}, 'upgradeCost': 500e6, 'requires': 'magicWorkshop', frame: magicBagFrame},
-    {'name': 'Chest of Holding', 'bonuses': {'+maxCoins': 500e6}, 'upgradeCost': 15e9, 'requires': 'magicWorkshop', frame: chestFrame},
-    {'name': 'Safe of Hoarding', 'bonuses': {'+maxCoins': 10e9}, frame: safeFrame},
+    {'name': 'Coin Bag', 'bonuses': {'+maxCoins': 500}, 'upgradeCost': 500, frame: smallBag},
+    {'name': 'Large Coin Bag', 'bonuses': {'+maxCoins': 4000}, 'upgradeCost': 10000, frame: largeBag},
+    {'name': 'Coin Bank', 'bonuses': {'+maxCoins': 30000}, 'upgradeCost': 150000, 'requires': 'workshop', frame: smallBank},
+    {'name': 'Large Coin Bank', 'bonuses': {'+maxCoins': 200000}, 'upgradeCost': 1.5e6, 'requires': 'workshop', frame: largeBank},
+    {'name': 'Coin Chest', 'bonuses': {'+maxCoins': 1e6}, 'upgradeCost': 10e6, 'requires': 'magicWorkshop', frame: smallChest},
+    {'name': 'Fine Coin Chest', 'bonuses': {'+maxCoins': 30e6}, 'upgradeCost': 500e6, 'requires': 'magicWorkshop', frame: largeChest},
+    {'name': 'Coin Safe', 'bonuses': {'+maxCoins': 500e6}, 'upgradeCost': 15e9, 'requires': 'magicWorkshop', frame: smallSafe},
+    {'name': 'Large Coin Safe', 'bonuses': {'+maxCoins': 10e9}, frame: largeSafe},
 ];
 
 function drawFlashing(context: CanvasRenderingContext2D, frame: Frame, target: ShortRectangle): void {
@@ -48,6 +48,7 @@ function drawFlashing(context: CanvasRenderingContext2D, frame: Frame, target: S
 
 export class CoinStash extends EditableAreaObject implements UpgradeableObject {
     level: number = 1;
+    definition: UpgradeableObjectDefinition;
 
     applyDefinition(definition: UpgradeableObjectDefinition): this {
         this._areaTarget = null;
@@ -60,7 +61,9 @@ export class CoinStash extends EditableAreaObject implements UpgradeableObject {
 
     onInteract(hero: Hero) {
         removePopup();
-        setUpgradingObject(this);
+        if (this.getNextTier()) {
+            setUpgradingObject(this);
+        }
     }
 
     getFrame(): Frame {
@@ -99,10 +102,40 @@ export class CoinStash extends EditableAreaObject implements UpgradeableObject {
             previewCost(coinStashTier.upgradeCost);
             parts.push('Upgrade for ' + costHelpText(coinStashTier.upgradeCost));
         }
-        return titleDiv(coinStashTier.name) + parts.join('<br/><br/>');
+        return titleDiv(coinStashTier.name) + bodyDiv(parts.join('<br/><br/>'));
     }
     onMouseOut() {
         hidePointsPreview();
+    }
+
+    static getEditMenu(object: CoinStash): MenuOption[] {
+        return [{
+            getLabel: () => 'Level',
+            getChildren() {
+                const zoneKey = object.area.zoneKey;
+                return coinStashTiers.map((stashTier: UpgradeableObjectTier, index: number): MenuOption => {
+                    return {
+                        getLabel: () => `${(index + 1)} ${stashTier.name}`,
+                        onSelect() {
+                            object.definition.level = index + 1;
+                            // We also have to set the level directly on the object because
+                            // the definition won't override it if it is already higher.
+                            if (getState().savedState.unlockedGuildAreas[object.area.key]) {
+                                removeFurnitureBonuses(object);
+                                object.level = index + 1;
+                                addFurnitureBonuses(object, true);
+                            } else {
+                                object.level = index + 1;
+                            }
+                            if (getState().savedState.unlockedGuildAreas[object.area.key]) {
+                                removeFurnitureBonuses(object);
+                                addFurnitureBonuses(object);
+                            }
+                        }
+                    };
+                });
+            }
+        }]
     }
 }
 areaObjectFactories.coinStash = CoinStash;

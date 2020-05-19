@@ -1,3 +1,4 @@
+import { GuildGate } from 'app/content/areas';
 import { getZone } from 'app/content/zones';
 import { getArea } from 'app/adventure';
 import { ActiveMission, Character, MissionParameters, Zone } from 'app/types';
@@ -52,6 +53,15 @@ export function setupMission(character: Character, missionKey: string): ActiveMi
 
 export function startMission(missionKey: string): void {
 
+}
+
+export function setGuildGateMission(missionKey: string): void {
+    const guildYard = getArea('guild', 'guildYard');
+    if (!missionKey) {
+        (guildYard.objectsByKey.guildGate as GuildGate).clearMission();
+    } else {
+        (guildYard.objectsByKey.guildGate as GuildGate).setMission(missionKey);
+    }
 }
 
 export function getEnemiesRemaining(mission: ActiveMission): number {

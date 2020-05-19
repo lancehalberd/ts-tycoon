@@ -6,7 +6,7 @@ import {
 } from 'app/content/areas';
 import { setUpgradingObject } from 'app/content/upgradeButton';
 import { editingAreaState } from 'app/development/editArea';
-import { titleDiv } from 'app/dom';
+import { titleDiv, bodyDiv } from 'app/dom';
 import { ADVENTURE_WIDTH, GROUND_Y } from 'app/gameConstants';
 import { bonusSourceHelpText } from 'app/helpText';
 import { drawWhiteOutlinedFrame, drawTintedFrame, requireImage } from 'app/images';
@@ -52,7 +52,9 @@ export class AnimaOrb extends EditableAreaObject implements UpgradeableObject {
 
     onInteract(hero: Hero) {
         removePopup();
-        setUpgradingObject(this);
+        if (this.getNextTier()) {
+            setUpgradingObject(this);
+        }
     }
 
     getFrame(): Frame {
@@ -90,7 +92,7 @@ export class AnimaOrb extends EditableAreaObject implements UpgradeableObject {
             previewCost(coinStashTier.upgradeCost);
             parts.push('Upgrade for ' + costHelpText(coinStashTier.upgradeCost));
         }
-        return titleDiv(coinStashTier.name) + parts.join('<br/><br/>');
+        return titleDiv(coinStashTier.name) + bodyDiv(parts.join('<br/><br/>'));
     }
     onMouseOut() {
         hidePointsPreview();

@@ -11,14 +11,12 @@ const shrineFrame:Frame = {image: requireImage('gfx/guildhall.png'), x: 450, y: 
 
 export class ShrineOfFortune extends EditableAreaObject {
     name = 'Shrine of Fortune';
+    bonusSource = {'bonuses': {'$hasItemCrafting': true}};
     getFrame(): Frame {
         return shrineFrame;
     }
     onInteract(hero: Hero): void {
         setContext('item');
-    }
-    getActiveBonusSources() {
-        return [{'bonuses': {'$hasItemCrafting': true}}];
     }
 }
 areaObjectFactories.shrineOfFortune = ShrineOfFortune;

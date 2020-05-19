@@ -4,7 +4,7 @@ export type BonusOperator = '+' | '-' | '%' | '*' | '/' | '&' | '$';
 
 type BonusTag = string;
 type StatVariable = string;
-export type BonusValue = true | number | string |
+export type BonusValue = boolean | number | string |
     Effect |
     [BonusValue] | [BonusOperator, BonusValue] | [BonusValue, BonusOperator, BonusValue];
 type BonusDependencies = {[key in string]: true};
@@ -13,7 +13,7 @@ export interface Bonuses {
     [key: string]: BonusValue,
 }
 export interface BonusesRange {
-    [key: string]: true | string | number | [number, number] | [number, number, number],
+    [key: string]: boolean | string | number | [number, number] | [number, number, number],
 }
 
 export type VariableObjectType = 'actor' | 'action' | 'effect' | 'guild' | 'trigger';

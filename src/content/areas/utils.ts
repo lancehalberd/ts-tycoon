@@ -4,7 +4,8 @@ import {
 } from 'app/types'
 
 import { areaObjectFactories, getPositionFromLocationDefinition } from 'app/content/areas';
-
+import { addAreaFurnitureBonuses, removeAreaFurnitureBonuses } from 'app/content/furniture';
+import { getState } from 'app/state';
 import { createAnimation, frame } from 'app/utils/animations';
 import { r } from 'app/utils/index';
 
@@ -65,6 +66,15 @@ export function applyDefinitionToArea(area: Area, areaDefinition: AreaDefinition
     } else {
         area.rightWall = null;
     }
+    const state = getState();
+    // Only update the bonuses if the guildVariableObject is ready to receive bonuses. If it isn't, bonuses will be applied
+    // after it is created.
+    const updatedBonuses = area.zoneKey === 'guild' && state.guildVariableObject && state.savedState.unlockedGuildAreas[area.key];
+    // Since the objects get remade in this operation, the only consistent way to apply the bonuses correctly
+    // is to remove the existing ones and then add them again after they are recreated.
+    if (updatedBonuses) {
+        removeAreaFurnitureBonuses(area, false);
+    }
     area.objectsByKey = {};
     area.objects = [];
     for (const objectKey in areaDefinition.objects) {
@@ -81,6 +91,9 @@ export function applyDefinitionToArea(area: Area, areaDefinition: AreaDefinition
         object.key = objectKey;
         area.objectsByKey[objectKey] = object;
         area.wallDecorations.push(object);
+    }
+    if (updatedBonuses) {
+        addAreaFurnitureBonuses(area, true);
     }
     return area;
 }

@@ -2,6 +2,7 @@ import { updateActorFrame } from 'app/actor';
 import { getArea, returnToGuild, updateArea } from 'app/adventure';
 import { refreshStatsPanel } from 'app/character';
 import { updateTrophyPopups } from 'app/content/achievements';
+import { setGuildGateMission } from 'app/content/missions';
 import { areSoundsPreloaded, preloadSounds } from 'app/content/sounds';
 import { updateEditArea } from 'app/development/editArea';
 import { mainCanvas, query } from 'app/dom';
@@ -108,6 +109,8 @@ export function update() {
                     if (mission.completed) {
                         getState().savedState.completedMissions[mission.parameters.key] = true;
                         saveGame();
+                        // Remove the portal to the mission now that it is completed.
+                        setGuildGateMission(null);
                     }
                     returnToGuild(character);
                 }

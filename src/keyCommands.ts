@@ -103,13 +103,13 @@ document.addEventListener('keydown', function(event) {
             }
         }
     }
-    if ((keyCode === KEY.C || keyCode === KEY.I) && (true || state.guildStats.hasItemCrafting)) {
+    if ((keyCode === KEY.C || keyCode === KEY.I) && state.guildStats.hasItemCrafting) {
         if (state.selectedCharacter.context === 'item') setContext('field');
         else if (state.selectedCharacter.hero.area?.zoneKey === 'guild') {
             setContext('item');
         }
     }
-    if (keyCode === KEY.J && (true || state.guildStats.hasJewelCrafting)) {
+    if (keyCode === KEY.J && state.guildStats.hasJewelCrafting) {
         if (state.selectedCharacter.context === 'jewel') setContext('field');
         else if (state.selectedCharacter.hero.area?.zoneKey === 'guild') {
             setContext('jewel');

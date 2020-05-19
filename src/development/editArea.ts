@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import { addMonstersFromAreaDefinition, enterArea, getArea } from 'app/adventure';
+import { addAreaFurnitureBonuses, removeAreaFurnitureBonuses } from 'app/content/furniture';
 import { missions, setupMission } from 'app/content/missions';
 import { getMonsterDefinitionAreaEntity, monsters } from 'app/content/monsters';
 import { serializeZone, zones } from 'app/content/zones';
@@ -555,8 +556,10 @@ export function getAreaContextMenuOption(): MenuOption {
                         const unlockedGuildAreas = getState().savedState.unlockedGuildAreas;
                         if (unlockedGuildAreas[area.key]) {
                             delete unlockedGuildAreas[area.key];
+                            removeAreaFurnitureBonuses(area, true);
                         } else {
                             unlockedGuildAreas[area.key] = true;
+                            addAreaFurnitureBonuses(area, true);
                         }
                         refreshEnemies();
                     }

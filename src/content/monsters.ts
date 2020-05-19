@@ -349,7 +349,7 @@ function createMonsterSource(image: HTMLImageElement | HTMLCanvasElement, dimens
     };
 }
 function createFairySource(image: HTMLImageElement | HTMLCanvasElement, dimensions: FrameDimensions, shadowAnimation: FrameAnimation = monsterShadow): ActorSource {
-    const flyAnimation = createAnimation(image, dimensions, {cols: 4, duration: 4});
+    const flyAnimation = createAnimation(image, dimensions, {cols: 4, duration: 4, frameMap: [0, 1, 2, 3, 2, 1]});
     return {
         idleAnimation: flyAnimation,
         walkAnimation: flyAnimation,

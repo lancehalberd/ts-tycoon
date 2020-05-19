@@ -36,10 +36,6 @@ export class TrophyAltar extends EditableAreaObject {
         setChoosingTrophyAltar(this);
     }
 
-    getActiveBonusSources() {
-        return [{'bonuses': {'$hasItemCrafting': true}}];
-    }
-
     getTrophyRectangle(): ShortRectangle {
         const target = this.getAreaTarget();
         if (!this.trophy) {

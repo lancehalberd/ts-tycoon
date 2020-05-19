@@ -69,7 +69,8 @@ const bootsSheet = requireImage('gfx2/character/c1bootssheet.png');
 const bowSheet = requireImage('gfx2/character/c1bowsheet.png');
 const earsLines = crect('gfx2/character/c1ears.png');
 const earsColors = crect('gfx2/character/c1ears.png', skinTone, 1);
-const capeSheet = requireImage('gfx2/character/c1capesheet.png');
+const capeSheetTop = requireImage('gfx2/character/c1capesheettop.png');
+const capeSheetBottom = requireImage('gfx2/character/c1capesheetbottom.png');
 const gloveSheet = requireImage('gfx2/character/c1glovesheet.png');
 const hairLines = crect('gfx2/character/c1hairsheet.png');
 const hairColors = crect('gfx2/character/c1hairsheet.png', 'blue', 1);
@@ -127,6 +128,10 @@ export function updateHeroGraphics(hero: Hero | Person) {
      );
     // BASE HEAD
     drawCompositeTintedFrame(context, {...headColor, color: hero.colors.skinColor}, headLines, characterRectangle);
+    // CAPE BOTTOM
+    if (hero.equipment.back && hero.equipment.back.base.type === 'cloak') {
+        drawFrame(context, {image: capeSheetBottom, ...characterRectangle}, characterRectangle);
+    }
     // RACE DECORATION
     if (hero.colors.earColor) {
         drawCompositeTintedFrame(context, {...earsColors, color: hero.colors.earColor}, earsLines, characterRectangle);
@@ -146,10 +151,6 @@ export function updateHeroGraphics(hero: Hero | Person) {
     if (hero.equipment.feet) {
         drawFrame(context, {image: bootsSheet, ...characterRectangle}, characterRectangle);
     }
-    // CAPE
-    if (hero.equipment.back && hero.equipment.back.base.type === 'cloak') {
-        drawFrame(context, {image: capeSheet, ...characterRectangle}, characterRectangle);
-    }
     // LEGGINGS
     if (hero.equipment.legs) {
         // Currently using the belt for leggings...
@@ -158,6 +159,10 @@ export function updateHeroGraphics(hero: Hero | Person) {
     // ARMOUR
     if (hero.equipment.body) {
         drawFrame(context, {image: jacketSheet, ...characterRectangle}, characterRectangle);
+    }
+    // CAPE TOP
+    if (hero.equipment.back && hero.equipment.back.base.type === 'cloak') {
+        drawFrame(context, {image: capeSheetTop, ...characterRectangle}, characterRectangle);
     }
     // WEAPON
     const weapon = hero.equipment.weapon;
