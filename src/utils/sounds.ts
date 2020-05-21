@@ -304,7 +304,7 @@ window['playTrack'] = playTrack;
 window['stopTrack'] = stopTrack;
 window['requireSound'] = requireSound;
 
-
+// Safari uses webkitAudioContext instead of AudioContext.
 var audioContext = new (window.AudioContext || window['webkitAudioContext'])();
 
 function makeDistortionCurve(amount) {

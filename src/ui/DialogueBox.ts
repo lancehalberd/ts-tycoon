@@ -11,6 +11,8 @@ export class DialogueBox {
     // Indicates number of frames used to draw each character.
     textSpeed: number = 2;
     frameCount: number = 0;
+    // Letters up to this index are revealed.
+    revealedTextIndex: number = 0;
     // The message to display in the box.
     message: string = '...';
     // The actor the text is attached to.
@@ -44,6 +46,7 @@ export class DialogueBox {
         this.updatePosition();
     }
     finish() {
+        this.revealedTextIndex = this.message.length;
         this.hiddenTextElement.innerText = '';
         this.revealedTextElement.innerText = this.message;
     }
@@ -75,7 +78,7 @@ export class DialogueBox {
     }
     update() {
         this.updatePosition();
-        if (!this.hiddenTextElement.innerText.length) {
+        if (this.revealedTextIndex >= this.message.length) {
             if (this.persistTimer  > this.duration && !this.waitForInput) {
                 this.remove();
             }
@@ -95,14 +98,17 @@ export class DialogueBox {
             return;
         }
         this.frameCount = 0;
+        this.revealedTextIndex++;
+        this.revealedTextElement.innerText = this.message.slice(0, this.revealedTextIndex);
+        this.hiddenTextElement.innerText = this.message.slice(this.revealedTextIndex);
         // Move a character from the hidden text element to the revealed text element.
-        const nextLetter = this.hiddenTextElement.innerText[0];
-        this.hiddenTextElement.innerText = this.hiddenTextElement.innerText.slice(1);
+        //const nextLetter = this.hiddenTextElement.innerText[0];
+        //this.hiddenTextElement.innerText = this.hiddenTextElement.innerText.slice(1);
         // This needs to be added after removing it above, otherwise if it is a space,
         // the DOM deletes the following space automatically.
-        this.revealedTextElement.append(nextLetter);
+
     }
     isFinished(): boolean {
-        return !this.waitForInput && !this.hiddenTextElement.innerText.length;
+        return !this.waitForInput && this.revealedTextIndex >= this.message.length;
     }
 }
