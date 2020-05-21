@@ -110,14 +110,14 @@ export function update() {
                     if (mission.completed) {
                         getState().savedState.completedMissions[mission.parameters.key] = true;
                         saveGame();
-                        // Remove the portal to the mission now that it is completed.
-                        setGuildGateMission(null);
                         // Once we have more mission conclusions, we will need to come up with
                         // a better solution for this. Maybe have onFail/onComplete methods on the
                         // missions with default behavior that we can override for each mission parameters.
                         if (mission.parameters.key === 'mission1') {
                             new Mission1Outro().run();
                         } else {
+                            // Remove the portal to the mission now that it is completed.
+                            setGuildGateMission(null);
                             returnToGuild(character);
                         }
                     } else {

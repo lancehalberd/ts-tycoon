@@ -3,7 +3,7 @@ import { createVariableObject } from 'app/bonuses';
 import { abilities } from 'app/content/abilities';
 import { getAshleyRuthven, getGuildSpirit, getSprite } from 'app/content/actors';
 import { CutScene } from 'app/content/cutscenes/CutScene';
-import { setupMission } from 'app/content/missions';
+import { setGuildGateMission, setupMission } from 'app/content/missions';
 import { makeMonster, monsters } from 'app/content/monsters';
 import { setContext } from 'app/context';
 import { ADVENTURE_WIDTH, ADVENTURE_HEIGHT, FRAME_LENGTH, MAX_Z } from 'app/gameConstants';
@@ -119,6 +119,9 @@ export class Mission1Outro extends CutScene {
         hero.allies = hero.area.allies;
         hero.enemies = hero.area.enemies;
         getState().savedState.completedCutscenes[Mission1Outro.key] = true;
+        // Close the gate to mission one and end the current mission.
+        hero.character.mission = null;
+        setGuildGateMission(null);
         saveGame();
     }
 
