@@ -343,7 +343,7 @@ const [stoneWallMid, stoneWallLeft, stoneWallRight, ...caveBackFrames] = createA
 const caveThingFrames = createAnimation('gfx2/areas/cavethings.png',
     {w: 32, h: 32}, {cols: 2}).frames;
 
-const [caveWall, caveDoorOpen, caveDoorClosed] = createAnimation('gfx2/areas/cavebridge.png',
+const [caveWall, caveDoorOpen, caveDoorClosed] = createAnimation('gfx2/areas/cavebridge2.png',
     frame(0, 0, 39, 148, r(16, 92, 23, 35)), {cols: 3}).frames;
 
 const CaveArea: AreaType = {

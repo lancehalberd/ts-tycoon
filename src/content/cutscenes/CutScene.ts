@@ -40,13 +40,15 @@ export class CutScene {
     skipped: boolean = false;
     finished: boolean = false;
 
-    setArea(newArea: Area): void {
+    setArea(newArea: Area, stashActors: boolean = true): void {
         this.restoreArea();
         this.area = newArea;
-        this.stashedAllies = this.area.allies;
-        this.stashedEnemies = this.area.enemies;
-        this.area.allies = this.actors;
-        this.area.enemies = [];
+        if (stashActors) {
+            this.stashedAllies = this.area.allies;
+            this.stashedEnemies = this.area.enemies;
+            this.area.allies = this.actors;
+            this.area.enemies = [];
+        }
     }
 
     restoreArea(): void {
@@ -61,6 +63,9 @@ export class CutScene {
     }
 
     setActors(actors: Actor[]): void {
+        while (this.actors.length) {
+            this.actors.pop();
+        }
         for (const actor of actors) {
             leaveCurrentArea(actor);
             this.actors.push(actor);
@@ -97,6 +102,9 @@ export class CutScene {
             getState().cutscene = null;
             await this.setupNextScene();
         } catch (e) {
+            if (e && e.message) {
+                console.error(e);
+            }
         }
     }
     async runEndScript(): Promise<void> {
@@ -106,9 +114,9 @@ export class CutScene {
 
     }
 
-    skip(): void {
+    async skip(): Promise<void> {
         // Cannot skip the final sequence, which transitions to the next context.
-        if (this.finished) {
+        if (this.finished || this.skipped) {
             return;
         }
         this.skipped = true;
@@ -128,6 +136,7 @@ export class CutScene {
             this.waitForClickOperation.reject();
             this.waitForClickOperation = null;
         }
+        await this.fadeOut();
         this.endScene();
     }
 
@@ -352,7 +361,7 @@ export class CutScene {
     }
 
     updateActor(actor: Actor) {
-        moveActor(actor);
+        moveActor(actor, true);
         // This updates the counter used to animate the actor.
         updateActorAnimationFrame(actor);
         // This sets the frame of the actor based on its current state.

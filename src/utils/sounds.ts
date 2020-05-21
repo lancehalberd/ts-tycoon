@@ -305,7 +305,7 @@ window['stopTrack'] = stopTrack;
 window['requireSound'] = requireSound;
 
 
-var audioContext = new AudioContext();
+var audioContext = new (window.AudioContext || window['webkitAudioContext'])();
 
 function makeDistortionCurve(amount) {
   var k = typeof amount === 'number' ? amount : 50,

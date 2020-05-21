@@ -253,12 +253,69 @@ export function refreshDefinition(object: AreaObject) {
     }
 }
 
+function changeObjectOrder(object: AreaObject, dz: number ): void {
+    if (!object) {
+        return;
+    }
+    const area = getCurrentArea();
+    const areaDefinition = getAreaDefinition();
+    const hewHash = {};
+    if (area.wallDecorations.indexOf(object) >= 0) {
+        areaDefinition.wallDecorations
+            = changeOrderInHash(object.definition, areaDefinition.wallDecorations, dz);
+    } else if (area.objects.indexOf(object) >= 0) {
+        areaDefinition.objects
+            = changeOrderInHash(object.definition, areaDefinition.objects, dz);
+    } else {
+        console.error('Object not found in area', object, area);
+    }
+    applyDefinitionToArea(area, areaDefinition);
+    // Update the selected object as it gets replaced when we refresh the area.
+    editingAreaState.selectedObject = area.objectsByKey[object.key];
+}
+
+function changeOrderInHash<T>(item: T, hash: {[key:string]: T}, dz: number): {[key:string]: T} {
+    const newHash: {[key:string]: T}  = {};
+    const keys = [];
+    let index = -1;
+    for (const key in hash) {
+        if (hash[key] === item) {
+            index = keys.length;
+        }
+        keys.push(key);
+    }
+    if (index < 0) {
+        console.error('Could not find item in hash', item, hash);
+        return hash;
+    }
+    const newIndex = Math.max(0, Math.min(keys.length - 1, index + dz));
+    const key = keys.splice(index, 1);
+    keys.splice(newIndex, 0, key);
+    for (const key of keys) {
+        newHash[key] = hash[key];
+    }
+    return newHash;
+}
+window['changeOrderInHash'] = changeOrderInHash;
+
 export function handleEditAreaKeyDown(keyCode: number): boolean {
     const { isEditing, selectedMonsterIndex, selectedObject } = editingAreaState;
     if (!isEditing) {
         return false;
     }
     const area = getState().selectedCharacter.hero.area;
+    if (isKeyDown(KEY.COMMAND) || isKeyDown(KEY.CONTROL)) {
+        if (keyCode === KEY.UP) {
+            changeObjectOrder(selectedObject, -10);
+        } else if (keyCode === KEY.DOWN) {
+            changeObjectOrder(selectedObject, 10);
+        } else if (keyCode === KEY.LEFT) {
+            changeObjectOrder(selectedObject, -1);
+        } else if (keyCode === KEY.RIGHT) {
+            changeObjectOrder(selectedObject, 1);
+        }
+        return true;
+    }
     let dx = 0;
     let dy = 0;
     if (keyCode === KEY.UP) dy--;

@@ -33,6 +33,8 @@ export const KEY = {
     SHIFT: 16,
     ENTER: 13,
     BACK_SPACE: 8,
+    COMMAND: 91,
+    CONTROL: 17,
     E: 'E'.charCodeAt(0),
     I: 'I'.charCodeAt(0),
     J: 'J'.charCodeAt(0),
@@ -65,15 +67,24 @@ document.addEventListener('keyup', function(event) {
 });
 document.addEventListener('keydown', function(event) {
     const state = getState();
+    const keyCode: number = event.which;
+    keysDown[keyCode] = true;
+    //console.log(keyCode);
     if (state.selectedCharacter.context === 'cutscene') {
         return;
     }
-    const keyCode: number = event.which;
-    keysDown[keyCode] = true;
-    // console.log(keyCode);
-    if (handleSkillKeyInput(keyCode)) return;
-    if (handleEditMapKeyDown(keyCode)) return;
-    if (handleEditAreaKeyDown(keyCode)) return;
+    if (handleSkillKeyInput(keyCode)){
+        event.preventDefault();
+        return;
+    }
+    if (handleEditMapKeyDown(keyCode)) {
+        event.preventDefault();
+        return;
+    }
+    if (handleEditAreaKeyDown(keyCode)) {
+        event.preventDefault();
+        return;
+    }
     if (keyCode === KEY.ESCAPE) {
         event.preventDefault();
         if (state.selectedCharacter.context === 'map') {

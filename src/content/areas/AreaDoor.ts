@@ -19,7 +19,7 @@ const [
     , guildRightDoorEmpty, guildRightDoor, guildRightBoardedDoor
 ] = createAnimation('gfx2/areas/guildbridge.png',
     {w: 39, h: 148, content: r(11, 50, 20, 70)}, {cols: 4}).frames;
-const [, caveDoorOpen, caveDoorClosed] = createAnimation('gfx2/areas/cavebridge.png',
+const [, caveDoorOpen, caveDoorClosed] = createAnimation('gfx2/areas/cavebridge2.png',
     {w: 39, h: 148, content: r(16, 92, 23, 35)}, {cols: 3}).frames;
 const woodBridge = createAnimation('gfx2/areas/meadowbridge.png',
     {w: 39, h: 148, content: r(16, 92, 23, 35)}, {x: 1, cols: 1});

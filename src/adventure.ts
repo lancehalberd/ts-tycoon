@@ -442,7 +442,7 @@ export function updateArea(area: Area) {
     area.enemies.forEach(runActorLoop);
     // A skill may have removed an actor from one of the allies/enemies array, so remake everybody.
     everybody = area.allies.concat(area.enemies);
-    everybody.forEach(moveActor);
+    everybody.forEach(actor => moveActor(actor, false));
     // This may have changed if actors left the area.
     everybody = area.allies.concat(area.enemies);
     for (let i = 0; i < area.projectiles.length; i++) {
@@ -742,11 +742,10 @@ export function getDistanceOverlap(spriteA: AreaEntity, spriteB: AreaEntity) {
     }
     return distance;
 }
-export function getDistanceBetweenPointsSquared(pointA, pointB) {
+export function getPlanarDistanceSquared(pointA, pointB) {
     const dx = pointA.x - pointB.x;
-    const dy = pointA.y - pointB.y;
     const dz = pointA.z - pointB.z;
-    return dx*dx + dy*dy + dz*dz;
+    return dx * dx + dz * dz;
 }
 
 function defeatedEnemy(hero: Hero, enemy: Actor) {

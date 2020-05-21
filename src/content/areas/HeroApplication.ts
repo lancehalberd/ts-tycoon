@@ -6,14 +6,18 @@ import {
 import { map } from 'app/content/mapData';
 import { setContext } from 'app/context';
 import { createNewHeroApplicant, hideHeroApplication, showHeroApplication } from 'app/heroApplication';
+import { drawWhiteOutlinedFrame } from 'app/images';
 import { getCanvasPopupTarget } from 'app/popup';
 import { getState } from 'app/state';
+import { createAnimation, drawFrame, getFrame } from 'app/utils/animations';
 import { fillRect, pad } from 'app/utils/index';
 
 import {
     Applicant, Area, AreaObject, AreaObjectDefinition, AreaObjectTarget,
     Frame, Hero, ShortRectangle,
 } from 'app/types';
+
+const paper = createAnimation('gfx2/objects/billboardpaper.png', {w: 24, h: 32, d: 0});
 
 export class HeroApplication extends EditableAreaObject {
     static instances: HeroApplication[];
@@ -23,7 +27,7 @@ export class HeroApplication extends EditableAreaObject {
     // This is just used for the dimensions of the application, we don't actually
     // draw this so we can leave image empty.
     getFrame(): Frame {
-        return {image: null, x: 0, y: 0, w: 20, h: 30, d: 0};
+        return getFrame(paper, this.area.time * 1000);
     }
 
     onInteract() {
@@ -33,12 +37,11 @@ export class HeroApplication extends EditableAreaObject {
     render(context: CanvasRenderingContext2D) {
         const target: AreaObjectTarget = this.getAreaTarget();
         const rectangle: ShortRectangle = areaTargetToScreenTarget(target);
+        let draw = drawFrame;
         if (getCanvasPopupTarget() === this) {
-            context.fillStyle = 'white';
-            fillRect(context, pad(rectangle, 1));
+            draw = drawWhiteOutlinedFrame;
         }
-        context.fillStyle = '#fc8';
-        fillRect(context, rectangle);
+        draw(context, this.getFrame(), rectangle);
         if (!this.applicant) {
             this.setApplicant(createNewHeroApplicant());
         }
@@ -47,7 +50,7 @@ export class HeroApplication extends EditableAreaObject {
             context.globalAlpha = 0.6;
             this.applicant.hero.job.iconSource.render(
                 context,
-                {x: rectangle.x + 2, y: rectangle.y + 5, w: 16, h: 16}
+                {x: rectangle.x + 3, y: rectangle.y + 8, w: 16, h: 16}
             );
         context.restore();
     }

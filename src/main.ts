@@ -1,4 +1,4 @@
-import { getDistanceBetweenPointsSquared, leaveCurrentArea, limitZ } from 'app/adventure';
+import { getPlanarDistanceSquared, leaveCurrentArea, limitZ } from 'app/adventure';
 import { setSelectedCharacter } from 'app/character';
 import {
     getIsAltarTrophyAvailable,
@@ -170,7 +170,7 @@ export function setActorDestination(actor: Actor, target: Target) {
         y: 0,
         z: limitZ(target.z, actor.d / 2)
     };
-    if (getDistanceBetweenPointsSquared(actor, activity) > 200) {
+    if (getPlanarDistanceSquared(actor, activity) > 200) {
         if (actor.activity.type === 'none' && !actor.isMoving) {
             actor.walkFrame = 1;
         }

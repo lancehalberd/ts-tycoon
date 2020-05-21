@@ -1,6 +1,6 @@
 import {
-    actorShouldAutoplay, getAllInRange, getDistance, getDistanceBetweenPointsSquared,
-    getDistanceOverlap, limitZ,
+    actorShouldAutoplay, getAllInRange, getDistance,
+    getDistanceOverlap, getPlanarDistanceSquared, limitZ,
 } from 'app/adventure';
 import { FRAME_LENGTH, MAX_Z, MIN_SLOW, RANGE_UNIT } from 'app/gameConstants';
 import { setActorAttackTarget, setActorInteractionTarget } from 'app/main';
@@ -13,7 +13,7 @@ import { Action, Actor, LocationTarget, Target } from 'app/types';
 const rotationA = Math.cos(Math.PI / 20);
 const rotationB = Math.sin(Math.PI / 20);
 
-export function moveActor(actor: Actor) {
+export function moveActor(actor: Actor, ignoreCollisions: boolean = false) {
     const area = actor.area;
     if (!area) {
         return;
@@ -34,7 +34,7 @@ export function moveActor(actor: Actor) {
         const activity = actor.activity;
         switch (activity.type) {
             case 'move':
-                if (getDistanceBetweenPointsSquared(actor, activity) < 10
+                if (getPlanarDistanceSquared(actor, activity) < 10
                     || (actor.type === 'hero' && actor.character.paused && !isMouseDown())
                 ) {
                     actor.activity = {type: 'none'};
@@ -192,6 +192,9 @@ export function moveActor(actor: Actor) {
         actor.z = currentZ + speedBonus * actor.stats.speed * actor.heading[2] * Math.max(MIN_SLOW, 1 - actor.slow) * delta;
         if (isNaN(actor.x) || isNaN(actor.z)) {
             debugger;
+        }
+        if (ignoreCollisions) {
+            break;
         }
         // Actor is not allowed to leave the path.
         actor.z = limitZ(actor.z, actor.d / 2);

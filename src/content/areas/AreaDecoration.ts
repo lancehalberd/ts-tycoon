@@ -45,6 +45,8 @@ export class AreaDecoration extends EditableAreaObject {
             niche: createAnimation('gfx2/objects/niche.png', {w: 25, h: 36, d: 0}),
             candle: createAnimation('gfx2/objects/candlesheet.png', {w: 9, h: 14, d: 0}),
             candleFlame: createAnimation('gfx2/objects/candlesheet.png', {w: 9, h: 14, d: 0}, {x: 1, cols: 3}),
+            billBoard: createAnimation('gfx2/objects/billboard.png', {w: 66, h: 49, d: 0}),
+            paper: createAnimation('gfx2/objects/billboardpaper.png', {w: 24, h: 32, d: 0}),
         },
     };
 

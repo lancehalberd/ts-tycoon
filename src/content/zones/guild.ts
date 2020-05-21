@@ -81,13 +81,19 @@ export const guildFoyer: AreaDefinition = {
         },
     },
     wallDecorations: {
+        decoration: {
+            type: 'decoration',
+            x: 102.66666666666666, y: 2.000000000000007, zAlign: 'back',
+            animationGroup: "guildWall",
+            animationKey: "billBoard",
+        },
         applicationA: {
             type: 'application',
-            x: 90, y: 15, zAlign: 'back',
+            x: 110.00000000000001, y: 11, zAlign: 'back',
         },
         applicationB: {
             type: 'application',
-            x: 128, y: 15, zAlign: 'back',
+            x: 137.33333333333326, y: 11.333333333333336, zAlign: 'back',
         },
         nicheA: {
             type: 'decoration',

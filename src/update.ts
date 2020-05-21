@@ -2,6 +2,7 @@ import { updateActorFrame } from 'app/actor';
 import { getArea, returnToGuild, updateArea } from 'app/adventure';
 import { refreshStatsPanel } from 'app/character';
 import { updateTrophyPopups } from 'app/content/achievements';
+import { Mission1Outro } from 'app/content/cutscenes/mission1Outro';
 import { setGuildGateMission } from 'app/content/missions';
 import { areSoundsPreloaded, preloadSounds } from 'app/content/sounds';
 import { updateEditArea } from 'app/development/editArea';
@@ -111,8 +112,17 @@ export function update() {
                         saveGame();
                         // Remove the portal to the mission now that it is completed.
                         setGuildGateMission(null);
+                        // Once we have more mission conclusions, we will need to come up with
+                        // a better solution for this. Maybe have onFail/onComplete methods on the
+                        // missions with default behavior that we can override for each mission parameters.
+                        if (mission.parameters.key === 'mission1') {
+                            new Mission1Outro().run();
+                        } else {
+                            returnToGuild(character);
+                        }
+                    } else {
+                        returnToGuild(character);
                     }
-                    returnToGuild(character);
                 }
             } else {
                 if (mission.time > parameters.timeLimit) {
