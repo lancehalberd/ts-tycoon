@@ -40,15 +40,13 @@ export class CutScene {
     skipped: boolean = false;
     finished: boolean = false;
 
-    setArea(newArea: Area, stashActors: boolean = true): void {
+    setArea(newArea: Area): void {
         this.restoreArea();
         this.area = newArea;
-        if (stashActors) {
-            this.stashedAllies = this.area.allies;
-            this.stashedEnemies = this.area.enemies;
-            this.area.allies = this.actors;
-            this.area.enemies = [];
-        }
+        this.stashedAllies = this.area.allies;
+        this.stashedEnemies = this.area.enemies;
+        this.area.allies = this.actors;
+        this.area.enemies = [];
     }
 
     restoreArea(): void {
@@ -59,6 +57,8 @@ export class CutScene {
                 actor.area = this.area;
             }
             this.area = null;
+            this.stashedAllies = null;
+            this.stashedEnemies = null;
         }
     }
 
@@ -155,7 +155,6 @@ export class CutScene {
             // The move action overrides the actor speed setting, so fix it here.
             recomputeStat(actor.variableObject, 'speed');
         }
-        this.restoreArea();
     }
 
     handleClick(x: number, y: number): void {

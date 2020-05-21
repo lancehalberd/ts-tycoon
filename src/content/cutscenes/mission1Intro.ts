@@ -61,7 +61,6 @@ export class Mission1Intro extends CutScene {
         await this.pause(500);
         await this.speak(this.sprite, `I sense there are ${character.mission.totalEnemies} fiends to clear out of this outpost.`);
         await this.speak(this.sprite, `Once you clear them out I'll take you back through the gate to the guild.`);
-        this.endScene();
     }
 
     async runEndScript() {
@@ -69,8 +68,9 @@ export class Mission1Intro extends CutScene {
         // Explicitly set the correct end state in case the scene was skipped.
         hero.x = 60;
         this.sprite.x = 90;
-        await this.fadeIn();
         this.cleanupScene();
+        await this.fadeIn();
+        this.restoreArea();
         // In case the hero was moved around in the cutscene, make sure they are properly inserted into their area.
         if (hero.area.allies.indexOf(hero) < 0) {
             hero.area.allies.push(hero);

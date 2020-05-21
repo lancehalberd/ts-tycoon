@@ -159,7 +159,6 @@ export class IntroScene extends CutScene {
         // Make the hero "teleport" away. Want to add a teleport effect here eventually.
         this.hero.x = 40;
         await this.pause(500);
-        this.endScene();
     }
 
     async runEndScript() {
@@ -168,6 +167,7 @@ export class IntroScene extends CutScene {
         // Make sure the guild gate ends up set to mission 1 even if the intro is skipped.
         setGuildGateMission('mission1');
         this.cleanupScene();
+        this.restoreArea();
         getState().savedState.completedCutscenes[IntroScene.key] = true;
         saveGame();
     }

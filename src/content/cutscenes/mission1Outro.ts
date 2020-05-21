@@ -26,9 +26,9 @@ export class Mission1Outro extends CutScene {
     async runScript() {
         const character = getState().selectedCharacter;
         this.hero = character.hero;
+        this.sprite = getSprite();
         this.setArea(this.hero.area);
         this.fadeLevel = 0;
-        this.sprite = getSprite();
         this.setActors([this.hero, this.sprite]);
 
         // The scene continues directly off of whatever area the player is in, which will normally be
@@ -43,9 +43,10 @@ export class Mission1Outro extends CutScene {
         await this.pause(500);
         this.hero.x = -100;
         await this.fadeOut();
-        this.restoreArea();
 
-
+        // Make sure the portal to mission 1 is open during this scene, we will close it
+        // at the end.
+        setGuildGateMission('mission1');
         this.setArea(getArea('guild', 'guildYard'));
         // The guild spirit remains where they were standing in the intro.
         this.guildSpirit = getGuildSpirit();
@@ -67,7 +68,7 @@ export class Mission1Outro extends CutScene {
         await this.moveActor(this.sprite, {x: this.sprite.x + 20, z: this.sprite.z - 20});
         this.sprite.heading[0] = -1;
         await this.pause(500);
-        this.hero.heading[0] = 1;
+        this.hero.heading[0] = -1;
         this.hero.x = guildGateX;
         this.hero.z = MAX_Z - this.hero.d;
         await this.moveActor(this.hero, {x: this.hero.x - 20, z: this.hero.z - 20});
@@ -96,15 +97,17 @@ export class Mission1Outro extends CutScene {
         this.sprite.heading[0] = -1;
         await this.speak(this.ruthven, `That sounds promising. Clear out the foyer and seek a boon from Fortuna.`);
         await this.speak(this.ruthven, `Rest if you need to, and when you are ready, come back here to start.`);
-        this.endScene();
     }
 
     async runEndScript() {
         const hero = this.hero;
         // Explicitly set the correct end state in case the scene was skipped.
-        hero.area = getArea('guild', 'guildYard');
-        this.area = hero.area;
-        this.sprite.area = hero.area;
+        if (this.area.key !== 'guildYard') {
+            this.setArea(getArea('guild', 'guildYard'));
+            hero.area = this.area;
+            this.sprite.area = hero.area;
+        }
+        this.area.cameraX = this.area.width - ADVENTURE_WIDTH;
         const guildGateX = hero.area.objectsByKey.guildGate.getAreaTarget().x;
         hero.x = guildGateX - 20;
         hero.z = MAX_Z - this.hero.d - 20;
@@ -112,6 +115,7 @@ export class Mission1Outro extends CutScene {
         this.sprite.z = MAX_Z - this.sprite.d - 20;
         this.cleanupScene();
         await this.fadeIn();
+        this.restoreArea();
         // In case the hero was moved around in the cutscene, make sure they are properly inserted into their area.
         if (hero.area.allies.indexOf(hero) < 0) {
             hero.area.allies.push(hero);
