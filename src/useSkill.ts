@@ -19,7 +19,10 @@ import {
 } from 'app/performAttack';
 import Random from 'app/utils/Random';
 
-import { Action, Actor, AttackData, BonusSource, Monster, Target, TextPopup} from 'app/types';
+import {
+    Action, Actor, AttackData, BonusSource,
+    LocationTarget, Monster, Target, TextPopup
+} from 'app/types';
 
 /**
  * Checks whether an actor may use a skill on a given target.
@@ -208,9 +211,15 @@ export function prepareToUseSkillOnTarget(actor: Actor, skill: Action, target: T
         // attacker vulnerable to interrupt and because the attack animation looks bad slow during
         // the attack stage. Making the recovery stage be > .2s is fine because the user can still
         // move (slowly) and the recover animation doesn't look terrible slow.
-        skill.totalPreparationTime = Math.min(.2, (1 / skill.stats.attackSpeed) / 2);
+        skill.totalPreparationTime = Math.max(
+            skill.stats.prepTime || 0,
+            Math.min(.2, (1 / skill.stats.attackSpeed) / 2)
+        );
         // Whatever portion of the attack time isn't used by the prep time is designated as recoveryTime.
-        actor.totalRecoveryTime = 1 / skill.stats.attackSpeed - skill.totalPreparationTime;
+        actor.totalRecoveryTime = Math.max(
+            skill.stats.recoveryTime || 0,
+            1 / skill.stats.attackSpeed - skill.totalPreparationTime
+        );
     } else {
         // As of writing this, no skill uses prepTime, but we could use it to make certain spells
         // take longer to cast than others.
@@ -219,13 +228,47 @@ export function prepareToUseSkillOnTarget(actor: Actor, skill: Action, target: T
         actor.totalRecoveryTime = skill.stats.recoveryTime || .1;
     }
     actor.skillInUse = skill;
-    actor.skillTarget = target;
+    if (skill.variableObject.tags.targetsLocation) {
+        actor.skillTarget = targetLocation(target);
+    } else if (skill.variableObject.tags.targetsDirection) {
+        actor.skillTarget = targetDirection(actor, target, skill.stats.range);
+    } else {
+        actor.skillTarget = target;
+    }
     // These values will count up until completion. If a character is slowed, it will reduce how quickly these numbers accrue.
     actor.preparationTime = actor.recoveryTime = 0;
     const skillDefinition = actionDefinitions[skill.base.type];
     if (skillDefinition.prepareToUseSkillOnTarget) {
         skillDefinition.prepareToUseSkillOnTarget(actor, skill, target);
     }
+}
+
+// Create a location target based on where a Target currently is.
+// We use this to make enemy moves target a location when they have
+// a tell to give players more time to evade.
+function targetLocation(target: Target): LocationTarget {
+    return {
+        targetType: 'location',
+        area: target.area,
+        x: target.x, y: target.y, z: target.z,
+        w: 0, h: 0, d: 0,
+    };
+}
+
+// This changes the target to the location at maximum range in the direction
+// of a given target.
+function targetDirection(actor: Actor, target: Target, range: number): LocationTarget {
+    const dx = target.x - actor.x;
+    const dz = target.z - actor.z;
+    const mag = Math.sqrt(dx * dx + dz * dz);
+    return {
+        targetType: 'location',
+        area: target.area,
+        x: actor.x + RANGE_UNIT * range * dx / mag,
+        y: target.y,
+        z: actor.z + RANGE_UNIT * range * dz / mag,
+        w: 0, h: 0, d: 0,
+    };
 }
 
 /**
@@ -248,7 +291,7 @@ export function useSkill(actor: Actor) {
     if (skill.base.showName) {
         const hitText: TextPopup = {
             x: actor.x, y: actor.h, z: actor.z,
-            color: 'white', fontSize: 15, 'vx': 0, 'vy': 1, 'gravity': .1,
+            color: 'white', fontSize: 10, 'vx': 0, 'vy': 1, 'gravity': .1,
             value: skill.base.name,
         };
         appendTextPopup(actor.area, hitText, true);
@@ -272,7 +315,7 @@ export function useReaction(actor: Actor, reaction: Action, attackStats: AttackD
     if (reaction.base.showName) {
         const skillPopupText: TextPopup = {
             x: actor.x, y: actor.h, z: actor.z,
-            color: 'white', fontSize: 15, 'vx': 0, 'vy': 1, 'gravity': .1,
+            color: 'white', fontSize: 10, 'vx': 0, 'vy': 1, 'gravity': .1,
             value: reaction.base.name,
         };
         appendTextPopup(actor.area, skillPopupText, true);
@@ -1006,7 +1049,7 @@ actionDefinitions.charge = {
         actor.chargeEffect = {
             chargeSkill,
             'distance': 0,
-            target,
+            target: targetLocation(target),
         };
     }
 };

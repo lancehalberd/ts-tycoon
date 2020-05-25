@@ -17,6 +17,10 @@ export interface MissionParameters {
     areaKey: string,
     type: 'clearZone' | 'defeatTarget' | 'survive',
     timeLimit?: number,
+    // Optional cutscene to play when starting the mission.
+    introKey?: string,
+    // Optional cutscene to play on completing the mission.
+    outroKey?: string,
 }
 
 export interface ActiveMission {

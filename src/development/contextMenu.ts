@@ -120,7 +120,7 @@ function getCutsceneMenu(): MenuOption[] {
                     return {
                         label: key,
                         onSelect() {
-                            new cutscenes[key]().run();
+                            cutscenes[key].run();
                         }
                     }
                 })

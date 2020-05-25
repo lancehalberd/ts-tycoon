@@ -2,7 +2,7 @@ import { updateActorFrame } from 'app/actor';
 import { getArea, returnToGuild, updateArea } from 'app/adventure';
 import { refreshStatsPanel } from 'app/character';
 import { updateTrophyPopups } from 'app/content/achievements';
-import { Mission1Outro } from 'app/content/cutscenes/mission1Outro';
+import { cutscenes } from 'app/content/cutscenes';
 import { setGuildGateMission } from 'app/content/missions';
 import { areSoundsPreloaded, preloadSounds } from 'app/content/sounds';
 import { updateEditArea } from 'app/development/editArea';
@@ -110,11 +110,14 @@ export function update() {
                     if (mission.completed) {
                         getState().savedState.completedMissions[mission.parameters.key] = true;
                         saveGame();
-                        // Once we have more mission conclusions, we will need to come up with
-                        // a better solution for this. Maybe have onFail/onComplete methods on the
-                        // missions with default behavior that we can override for each mission parameters.
-                        if (mission.parameters.key === 'mission1') {
-                            new Mission1Outro().run();
+                        // A cutscene can be assigned to play at the end of a particular mission.
+                        const cutscene = cutscenes[mission.parameters.outroKey];
+                        if (mission.parameters.outroKey && !cutscene) {
+                            console.error(`Missing cutscene '${mission.parameters.outroKey}'`);
+                            debugger;
+                        }
+                        if (cutscene) {
+                            cutscene.run();
                         } else {
                             // Remove the portal to the mission now that it is completed.
                             setGuildGateMission(null);

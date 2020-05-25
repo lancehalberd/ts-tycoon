@@ -15,7 +15,6 @@ import { drawActionShortcuts } from 'app/render/drawActionShortcuts';
 import { drawCraftingCanvas } from 'app/equipmentCrafting';
 import { FRAME_LENGTH } from 'app/gameConstants';
 import { drawImage, requireImage } from 'app/images';
-import { isGameInitialized } from 'app/initialize';
 import { redrawInventoryJewels } from 'app/jewelInventory';
 import { drawMissionHUD } from 'app/render/drawMission';
 import { getState } from 'app/state';
@@ -31,7 +30,7 @@ const homeSource = {'image': requireImage('gfx/nielsenIcons.png'), 'left': 32, '
 export const shrineSource = {'image': requireImage('gfx/militaryIcons.png'), 'left': 102, 'top': 125, 'width': 16, 'height': 16};
 let lastTimeRendered;
 export function render() {
-    if (!isGameInitialized()) {
+    if (!getState()?.gameHasBeenInitialized) {
         return;
     }
     const state = getState();

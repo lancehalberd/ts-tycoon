@@ -31,7 +31,7 @@ import { updateActorAnimationFrame } from 'app/render/drawActor';
 import { appendTextPopup, applyAttackToTarget, findActionByTag, getBasicAttack, performAttackProper } from 'app/performAttack';
 import { gain } from 'app/points';
 import { saveGame } from 'app/saveGame';
-import { getState, guildYardEntrance } from 'app/state';
+import { getState, guildGateEntrance, guildYardEntrance } from 'app/state';
 import {
     canUseReaction, canUseSkillOnTarget, gainReflectionBarrier,
     isTargetInRangeOfSkill,
@@ -89,6 +89,9 @@ export function startLevel(character: Character, index: string) {
 
 const activeAreas: {[key: string]: Area} = {};
 export function getArea(zoneKey: ZoneType, areaKey: string, reset: boolean = false): Area {
+    if (!zoneKey || !areaKey) {
+        return;
+    }
     const fullKey = `${zoneKey}:${areaKey}`;
     if (!reset && activeAreas[fullKey]) {
         return activeAreas[fullKey];
@@ -515,7 +518,11 @@ function processStatusEffects(target: Actor) {
         const timeLeft = (target.pull.time - target.time);
         const radius = target.pull.duration / 2
         const parabolaValue = (radius**2 - (timeLeft - radius)**2) / (radius ** 2);
+        // Don't let the pull push actors out of bounds.
         target.pull.z = limitZ(target.pull.z);
+        const left = (target.area.leftWall ? 16 + target.pull.z / 4 : 0) + target.w / 2;
+        const right = (target.area.rightWall ? -16 - target.pull.z / 4 : 0) + target.area.width - target.w / 2;
+        target.pull.x = Math.max(left, Math.min(right, target.pull.x));
         if (timeLeft > 0) {
             const dx = (target.pull.x - target.x) * Math.min(1, delta / timeLeft);
             const dz = (target.pull.z - target.z) * Math.min(1, delta / timeLeft);
@@ -672,6 +679,10 @@ function runActorLoop(actor: Actor) {
         // This lines causes the actor to prefer to continue attacking the same enemy continuously
         // even if they aren't the closest target any longer.
         if (enemy === actor.skillTarget) enemy.priority -= 100;
+        // If the enemy is not in aggro range, do not target it.
+        if (actor.aggroRadius && actor.aggroRadius < enemy.priority) {
+            continue;
+        }
         targets.push(enemy);
     }
     // The main purpose of this is to prevent pulled actors from passing through their enemies.
@@ -743,6 +754,7 @@ export function getDistanceOverlap(spriteA: AreaEntity, spriteB: AreaEntity) {
     }
     return distance;
 }
+window['getDistanceOverlap'] = getDistanceOverlap;
 export function getPlanarDistanceSquared(pointA, pointB) {
     const dx = pointA.x - pointB.x;
     const dz = pointA.z - pointB.z;
@@ -810,7 +822,11 @@ export function completeLevel(hero: Hero, completionTime = 0) {
     const gainedDivinity = newDivinityScore - oldDivinityScore;
     if (gainedDivinity > 0) {
         character.divinity += gainedDivinity;
-        const textPopup = {value:'+' + abbreviate(gainedDivinity) + ' Divinity', x: hero.x, y: hero.h, z: hero.z, color: 'gold', fontSize: 15, 'vx': 0, 'vy': 1, 'gravity': .1};
+        const textPopup = {
+            value:'+' + abbreviate(gainedDivinity) + ' Divinity',
+            x: hero.x, y: hero.h, z: hero.z, color: 'gold', fontSize: 10,
+            'vx': 0, 'vy': 1, 'gravity': .1
+        };
         appendTextPopup(hero.area, textPopup, true);
     }
     character.divinityScores[character.currentLevelKey] = Math.max(oldDivinityScore, newDivinityScore);
@@ -829,7 +845,10 @@ export function completeLevel(hero: Hero, completionTime = 0) {
 
 export function messageCharacter(character: Character, text: string) {
     const hero = character.hero;
-    appendTextPopup(hero.area, {'value': text, 'duration': 70, 'x': hero.x + 32, y: hero.h, z: hero.z, color: 'white', fontSize: 15, 'vx': 0, 'vy': .5, 'gravity': .05}, true);
+    appendTextPopup(hero.area, {
+        'value': text, 'duration': 70, 'x': hero.x + 32, y: hero.h, z: hero.z,
+        color: 'white', fontSize: 10, 'vx': 0, 'vy': .5, 'gravity': .05
+    }, true);
 }
 
 export function returnToMap(character: Character) {
@@ -859,7 +878,7 @@ export function returnToGuild(character: Character) {
     removeAdventureEffects(character.hero);
     character.hero.goalTarget = null;
     character.activeShrine = null;
-    enterArea(character.hero, guildYardEntrance);
+    enterArea(character.hero, guildGateEntrance);
     // Minions despawn when returning to the guild.
     (character.hero.minions || []).forEach(removeActor);
     character.hero.boundEffects = [];

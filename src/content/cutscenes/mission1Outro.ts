@@ -2,7 +2,7 @@ import { getArea } from 'app/adventure';
 import { createVariableObject } from 'app/bonuses';
 import { abilities } from 'app/content/abilities';
 import { getAshleyRuthven, getGuildSpirit, getSprite } from 'app/content/actors';
-import { CutScene } from 'app/content/cutscenes/CutScene';
+import { Cutscene } from 'app/content/cutscenes/Cutscene';
 import { setGuildGateMission, setupMission } from 'app/content/missions';
 import { makeMonster, monsters } from 'app/content/monsters';
 import { setContext } from 'app/context';
@@ -13,7 +13,7 @@ import { actionDefinitions } from 'app/useSkill';
 
 import { Action, ActionStats, Actor, Area, GameContext, Hero } from 'app/types';
 
-export class Mission1Outro extends CutScene {
+export class Mission1Outro extends Cutscene {
     static key = 'mission1Outro';
 
     // These actors will already be on the screen during the mission and don't need to be added/moved.
@@ -88,7 +88,7 @@ export class Mission1Outro extends CutScene {
         this.hero.heading[0] = 1;
         this.sprite.heading[0] = 1;
         await this.speak(this.guildSpirit, `In the foyer there is a shrine to Fortuna.`);
-        await this.speak(this.guildSpirit, `If you give coins as an offering, he will grant you a gift.`);
+        await this.speak(this.guildSpirit, `If you give coins as an offering, she will grant you a gift.`);
         await this.speak(this.guildSpirit, `The results are a bit unpredictable but they can also be quite remarkable.`);
         await this.speak(this.hero, `So with these gifts I can defeat the bulls?`);
         await this.speak(this.guildSpirit, `I believe so. However, the guild is full of monsters as well.`);
@@ -107,6 +107,7 @@ export class Mission1Outro extends CutScene {
             hero.area = this.area;
             this.sprite.area = hero.area;
         }
+        setGuildGateMission('mission2');
         this.area.cameraX = this.area.width - ADVENTURE_WIDTH;
         const guildGateX = hero.area.objectsByKey.guildGate.getAreaTarget().x;
         hero.x = guildGateX - 20;
@@ -125,7 +126,6 @@ export class Mission1Outro extends CutScene {
         getState().savedState.completedCutscenes[Mission1Outro.key] = true;
         // Close the gate to mission one and end the current mission.
         hero.character.mission = null;
-        setGuildGateMission(null);
         saveGame();
     }
 

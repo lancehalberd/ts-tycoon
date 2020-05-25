@@ -32,15 +32,10 @@ import { removeElementFromArray } from 'app/utils/index';
 import { bindMouseListeners } from 'app/utils/mouse';
 import Random from 'app/utils/Random';
 import { playTrack } from 'app/utils/sounds';
-import { IntroScene } from 'app/content/cutscenes/intro';
+import { showInitialWorldState } from 'app/worldState';
 
 import { Applicant, GuildStats } from 'app/types';
 
-
-let gameHasBeenInitialized = false;
-export function isGameInitialized() {
-    return gameHasBeenInitialized;
-}
 export function initializeGuildAreas() {
     // We need to reset these each time this function is called, otherwise we will
     // double up on beds/applications.
@@ -51,7 +46,6 @@ export function initializeGuildAreas() {
     }
 }
 export function initializeGame() {
-    gameHasBeenInitialized = true;
     bindMouseListeners();
     addAllItems();
     // Depends on items being defined.
@@ -72,10 +66,11 @@ export function initializeGame() {
         }
     }
     initializeGuildAreas();
+    let state;
     if (loadSavedData()) {
-        const state = getState();
+        state = getState();
     } else {
-        const state = getState();
+        state = getState();
         state.guildVariableObject = createVariableObject({'variableObjectType': 'guild'});
         state.guildStats = state.guildVariableObject.stats as GuildStats;
         addBonusSourceToObject(state.guildVariableObject, implicitGuildBonusSource);
@@ -86,7 +81,7 @@ export function initializeGame() {
         gain('fame', 1);
         gain('coins', 50);
         gain('anima', 0);
-        const jobKey = Random.element(jobRanks[0]);
+        const jobKey = Random.element(jobRanks[0]); // 'blackbelt';
         // jobKey = testJob || jobKey;
         const startingCharacter = newCharacter(characterClasses[jobKey]);
         updateHero(startingCharacter.hero);
@@ -98,7 +93,7 @@ export function initializeGame() {
         }
         enterArea(state.selectedCharacter.hero, guildYardEntrance);
     }
-    const state = getState();
+    state.gameHasBeenInitialized = true;
     state.visibleLevels['guild'] = true;
     if (state.savedState.skipShrinesEnabled) {
         query('.js-shrineButton').style.display = '';
@@ -114,18 +109,5 @@ export function initializeGame() {
         throw new Error('No selected character found');
     }
     playTrack('map', 0);
-    showInitialContext();
-}
-
-function showInitialContext() {
-    const state = getState();
-    if (!state.savedState.completedCutscenes[IntroScene.key]) {
-        new IntroScene().run();
-        /*showContext(state.selectedCharacter.context);
-        const db = new DialogueBox();
-        db.message = 'Welcome back!';
-        db.run(state.selectedCharacter.hero);*/
-    } else {
-        showContext(state.selectedCharacter.context);
-    }
+    showInitialWorldState();
 }

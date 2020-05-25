@@ -556,9 +556,9 @@ export function initializeMonsters() {
     });
     addMonster('bullGremlin', {
         'name': 'Gremlin Bull', 'source': bullGremlinSource, 'implicitBonuses': {
-            '*maxHealth': 2, '*damage': 1.2,
+            '*maxHealth': 2, '*damage': 1.2, '*attackSpeed': 0.8,
         },
-        'abilities': [abilities.charge, abilities.overpower],
+        'abilities': [abilities.recklessCharge],
     });
     addMonster('turtle', {
         'name': 'Turtle', 'source': turtleSource, 'fpsMultiplier': 2,

@@ -402,7 +402,12 @@ export function getAttackY(target: Target): number {
     const frame = target.frame;
     return target.stats.scale * (frame.content ? frame.content.h / 2 : frame.h / 2);
 }
-export function applyAttackToTarget(attackStats: AttackData, actorOrLocation: Target = null): boolean {
+export function applyAttackToTarget(
+    attackStats: AttackData,
+    actorOrLocation: Target = null,
+    // This can be used to scale the damage of the attack.
+    damageMultiplier: number = 1
+): boolean {
     const attack = attackStats.attack;
     const imprintedSpell = attackStats.imprintedSpell;
     const attacker = attackStats.source;
@@ -410,15 +415,12 @@ export function applyAttackToTarget(attackStats: AttackData, actorOrLocation: Ta
     const effectiveness = (attackStats.effectiveness || 1);
     if (attackStats.strikes > 1) {
         attackStats.strikes--;
-        applyAttackToTarget(attackStats, actorOrLocation);
+        applyAttackToTarget(attackStats, actorOrLocation, damageMultiplier);
     }
 
     if (attackStats.cleave > 0) {
         const cleaveAttackStats: AttackData = {
             ...attackStats,
-            // Apply cleave damage by the coefficient.
-            damage: attackStats.damage * attackStats.cleave,
-            magicDamage: attackStats.magicDamage * attackStats.cleave,
             cleave: 0,
             distance: 0,
         };
@@ -433,13 +435,15 @@ export function applyAttackToTarget(attackStats: AttackData, actorOrLocation: Ta
             }
             const distance = getDistance(attacker, cleaveTarget);
             if (distance > (attack.stats.range + (attack.stats.cleaveRange || 0)) * RANGE_UNIT) continue;
-            applyAttackToTarget(cleaveAttackStats, cleaveTarget);
+            applyAttackToTarget(cleaveAttackStats, cleaveTarget, damageMultiplier * attackStats.cleave);
         }
     }
     const makeExplosions = () => {
         if (attackStats.explode > 0) {
             const explodeAttackStats: AttackData = {
                 ...attackStats,
+                damage: attackStats.damage * damageMultiplier,
+                magicDamage: attackStats.magicDamage * damageMultiplier,
                 distance: 0,
                 explode: attackStats.explode - 1,
             };
@@ -475,20 +479,21 @@ export function applyAttackToTarget(attackStats: AttackData, actorOrLocation: Ta
     const distance = attackStats.distance;
     const hitText: TextPopup = {
         x: target.x, y: target.h + 10, z: target.z,
-        color: 'grey', 'vx': -(Math.random() * 3 + 2) * target.heading[0], 'vy': 5
+        color: 'grey', 'vx': -(Math.random() + 1.5) * target.heading[0], 'vy': 4,
+        gravity: -0.3,
     };
     if (target.stats.invulnerable) {
         hitText.value = 'invulnerable';
-        hitText.fontSize = 15;
+        hitText.fontSize = 10;
         appendTextPopup(area, hitText);
         return false;
     }
     const multiplier = attack.stats.rangeDamage ? (1 + attack.stats.rangeDamage * distance / RANGE_UNIT) : 1;
     if (attackStats.isCritical) {
-        hitText.fontSize = 30;
+        hitText.fontSize = 15;
     }
-    let damage = Math.floor(attackStats.damage * multiplier * effectiveness);
-    let magicDamage = Math.floor(attackStats.magicDamage * multiplier * effectiveness);
+    let damage = Math.floor(attackStats.damage * damageMultiplier * multiplier * effectiveness);
+    let magicDamage = Math.floor(attackStats.magicDamage * damageMultiplier * multiplier * effectiveness);
     // Spell paradigm shift converts all magic damage to physical damage.
     if (attack.stats.magicToPhysical) {
         damage += magicDamage;
@@ -513,12 +518,12 @@ export function applyAttackToTarget(attackStats: AttackData, actorOrLocation: Ta
         if (effectiveAccuracy - evasionRoll < 0) {
             hitText.value = 'miss';
             if (attack.stats.damageOnMiss) {
-                const damageOnMiss = Math.round(attack.stats.damageOnMiss * effectiveness);
+                const damageOnMiss = Math.round(attack.stats.damageOnMiss * damageMultiplier * effectiveness);
                 damageActor(target, damageOnMiss);
                 hitText.value = 'miss (' + damageOnMiss + ')';
             }
             // Target has evaded the attack.
-            hitText.fontSize = 15;
+            hitText.fontSize = 10;
             appendTextPopup(area, hitText);
             attackStats.evaded = true;
         }
@@ -568,7 +573,7 @@ export function applyAttackToTarget(attackStats: AttackData, actorOrLocation: Ta
     // Attacks that always hit can still be avoided by a 'dodge' skill.
     if (attackStats.dodged && !attack.stats.undodgeable) {
         hitText.value = 'dodged';
-        hitText.fontSize = 15;
+        hitText.fontSize = 10;
         appendTextPopup(area, hitText);
         return false;
     }
@@ -579,7 +584,7 @@ export function applyAttackToTarget(attackStats: AttackData, actorOrLocation: Ta
         if (hitSound) playAreaSound(hitSound, area);
     }
     makeExplosions();
-    healActor(attacker, (attack.stats.healthGainOnHit || 0) * effectiveness);
+    healActor(attacker, (attack.stats.healthGainOnHit || 0) * damageMultiplier * effectiveness);
     target.slow += (attack.stats.slowOnHit || 0) * effectiveness;
     if (imprintedSpell) target.slow += (imprintedSpell.stats.slowOnHit || 0) * effectiveness;
     if (attack.stats.debuff) addTimedEffect(target, attack.stats.debuff, 0);
@@ -614,7 +619,7 @@ export function applyAttackToTarget(attackStats: AttackData, actorOrLocation: Ta
         } else {
             damageActor(target, totalDamage);
             hitText.value = abbreviate(totalDamage);
-            const speed = 1 + Math.log(totalDamage) / 10;
+            const speed = 0.5 + Math.log(totalDamage) / 20;
             hitText.vy *= speed;
             hitText.vx *= speed;
         }
@@ -657,7 +662,7 @@ export function applyAttackToTarget(attackStats: AttackData, actorOrLocation: Ta
         }
     } else {
         hitText.value = 'blocked';
-        hitText.fontSize = 15;
+        hitText.fontSize = 10;
     }
     appendTextPopup(area, hitText);
     return true;

@@ -3,7 +3,7 @@ import { getArea } from 'app/adventure';
 import { createVariableObject } from 'app/bonuses';
 import { abilities } from 'app/content/abilities';
 import { getAshleyRuthven, getGuildSpirit, getSprite } from 'app/content/actors';
-import { CutScene } from 'app/content/cutscenes/CutScene';
+import { Cutscene } from 'app/content/cutscenes/Cutscene';
 import { Mission1Intro } from 'app/content/cutscenes/mission1Intro';
 import { setGuildGateMission } from 'app/content/missions';
 import { makeMonster, monsters } from 'app/content/monsters';
@@ -31,7 +31,7 @@ async function foo() {
 foo();
 for (const promise of promises) promise('reject fast');*/
 
-export class IntroScene extends CutScene {
+export class IntroScene extends Cutscene {
     static key = 'intro';
 
     guildSpirit: Actor;

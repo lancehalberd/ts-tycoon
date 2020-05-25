@@ -2,7 +2,7 @@ import {
     actorShouldAutoplay, getAllInRange, getDistance,
     getDistanceOverlap, getPlanarDistanceSquared, limitZ,
 } from 'app/adventure';
-import { FRAME_LENGTH, MAX_Z, MIN_SLOW, RANGE_UNIT } from 'app/gameConstants';
+import { FRAME_LENGTH, MAX_Z, MIN_Z, MIN_SLOW, RANGE_UNIT } from 'app/gameConstants';
 import { setActorAttackTarget, setActorInteractionTarget } from 'app/main';
 import { applyAttackToTarget, createAttackStats, getBasicAttack } from 'app/performAttack';
 import { isMouseDown } from 'app/utils/mouse';
@@ -163,13 +163,17 @@ export function moveActor(actor: Actor, ignoreCollisions: boolean = false) {
         // Set the max distance to back away to to 10, otherwise they will back out of the range
         // of many activated abilities like fireball and meteor.
         const desiredDistanceFromTarget = (Math.max(0.5, Math.min(skillRange - 1.5, 10))) * RANGE_UNIT;
+        // Only back away from targets if desired distance is at least 1 range unit.
         if (
-            distanceToTarget < desiredDistanceFromTarget ||
-            (goalTarget.targetType === 'actor' && goalTarget.targetHealth < 0)
+            desiredDistanceFromTarget >= RANGE_UNIT &&
+            (
+                distanceToTarget < desiredDistanceFromTarget ||
+                (goalTarget.targetType === 'actor' && goalTarget.targetHealth < 0)
+            )
         ) {
             // Actors backing away from their targets will eventually corner themselves in the edge of the room.
             // This looks bad, so make them stop backing up within 130 pixels of the edge of the area.
-            if ((actor.heading[0] > 0 && actor.x > 130) || (actor.heading[0] < 0 && actor.x < actor.area.width - 130)) {
+            if ((actor.heading[0] > 0 && actor.x > 50) || (actor.heading[0] < 0 && actor.x < actor.area.width - 50)) {
                 // You back up more slowly when your skill is on cooldown. This allows you to back
                 // up quickly from enemies you aren't currently attacking.
                 if (skill.readyAt > actor.time) speedBonus *= -0.1;
@@ -179,14 +183,14 @@ export function moveActor(actor: Actor, ignoreCollisions: boolean = false) {
             speedBonus = 0;
         }
     }
-    var currentX = actor.x;
-    var currentZ = actor.z;
-    var collision = false;
-    var originalHeading = actor.heading.slice();
-    var tryingVertical = false;
-    var clockwiseFailed = false;
-    var blockedByEnemy = null;
-    var blockedByAlly = null;
+    let currentX = actor.x;
+    let currentZ = actor.z;
+    let collision = false;
+    let originalHeading = actor.heading.slice();
+    let tryingVertical = false;
+    let clockwiseFailed = false;
+    let blockedByEnemy = null;
+    let blockedByAlly = null;
     while (true) {
         actor.x = currentX + speedBonus * actor.stats.speed * actor.heading[0] * Math.max(MIN_SLOW, 1 - actor.slow) * delta;
         actor.z = currentZ + speedBonus * actor.stats.speed * actor.heading[2] * Math.max(MIN_SLOW, 1 - actor.slow) * delta;
@@ -197,25 +201,43 @@ export function moveActor(actor: Actor, ignoreCollisions: boolean = false) {
             break;
         }
         // Actor is not allowed to leave the path.
+        let hitWall = (actor.z + actor.d / 2 > MAX_Z) || (actor.z - actor.d / 2 <= MIN_Z);
         actor.z = limitZ(actor.z, actor.d / 2);
         if (area.leftWall) {
-            actor.x = Math.max(16 + actor.w / 2 + actor.z / 4, actor.x);
+            const limit = 16 + actor.w / 2 + actor.z / 4;
+            actor.x = Math.max(limit, actor.x);
+            hitWall = hitWall || actor.x === limit;
         } else {
+            const limit = actor.w / 2;
             actor.x = Math.max(actor.w / 2, actor.x);
+            hitWall = hitWall || actor.x === limit;
         }
         if (area.rightWall) {
-            actor.x = Math.min(area.width - 16 - actor.w / 2 - actor.z / 4, actor.x);
+            const limit = area.width - 16 - actor.w / 2 - actor.z / 4;
+            actor.x = Math.min(limit, actor.x);
+            hitWall = hitWall || actor.x === limit;
         } else {
-            actor.x = Math.min(area.width - actor.w / 2, actor.x);
+            const limit = area.width - actor.w / 2;
+            actor.x = Math.min(limit, actor.x);
+            hitWall = hitWall || actor.x === limit;
         }
-        let collision = false;
+        // Normally we don't stop movement entirely when hitting a wall
+        // so that the actor can slide against the wall instead of stopping,
+        // but for charge moves we want to apply the effect when they hit
+        // the bounds of the area.
+        if (hitWall && actor.chargeEffect) {
+            collision = true;
+            break;
+        }
+        collision = false;
         // Ignore ally collision during charge effects.
         if (!actor.chargeEffect) {
             for (const ally of actor.allies) {
                 if (!ally.isDead && actor !== ally &&
-                    getDistanceOverlap(actor, ally) <= -16 &&
+                    // Allies are allowed to overlap a bit.
+                    getDistanceOverlap(actor, ally) <= -4 &&
                     new Vector([speedBonus * actor.heading[0], speedBonus * actor.heading[2]])
-                        .dotProduct(new Vector([ally.x - actor.x, ally.z - actor.z])) > 0
+                        .dotProduct(new Vector([ally.x - actor.x, ally.z - actor.z])) >= 0
                 ) {
                     collision = true;
                     blockedByAlly = ally;
@@ -319,19 +341,23 @@ export function moveActor(actor: Actor, ignoreCollisions: boolean = false) {
     }
     // Return actor to their original heading so they don't change frames rapidly when navigating around objects.
     actor.heading = originalHeading.slice();
-    // If the actor hit something, complete the charge effect. The splash may still hit enemies,
-    // and if it had an animation, it should play.
+    // If the actor hit something, complete the charge effect, but have them hit themselves
+    // instead of enemies.
     if (collision && actor.chargeEffect) {
-        finishChargeEffect(actor, null);
+        finishChargeEffect(actor, actor);
     }
 }
 
 function finishChargeEffect(actor: Actor, target: Target) {
     const attackStats = createAttackStats(actor, actor.chargeEffect.chargeSkill, target);
     attackStats.distance = actor.chargeEffect.distance;
-    const hitTargets = getAllInRange(target ? target.x : actor.x, actor.chargeEffect.chargeSkill.stats.area, actor.enemies);
+    // If the target is the actor (occurs when they hit a wall),
+    // only apply the effect to them.
+    const hitTargets = actor === target
+        ? [actor]
+        : getAllInRange(target ? target.x : actor.x, actor.chargeEffect.chargeSkill.stats.area, actor.enemies);
     for (const hitTarget of hitTargets) {
-        applyAttackToTarget(attackStats, hitTarget);
+        applyAttackToTarget(attackStats, hitTarget, actor === target ? 0.5 : 1);
     }
     actor.chargeEffect = null;
 }

@@ -25,7 +25,7 @@ interface Operation {
     done: boolean,
 }
 
-export class CutScene {
+export class Cutscene {
     area: Area;
     actors: Actor[] = [];
     activeOperations: Operation[] = [];
@@ -81,6 +81,8 @@ export class CutScene {
 
     async run(): Promise<void> {
         try {
+            this.finished = false;
+            this.skipped = false;
             getState().cutscene = this;
             setContext('cutscene');
             await this.runScript();

@@ -19,7 +19,7 @@ import {
 } from 'app/saveGame';
 import { Polygon } from 'app/utils/polygon';
 
-import { CutScene } from 'app/content/cutscenes/CutScene';
+import { Cutscene } from 'app/content/cutscenes/Cutscene';
 
 import {
     Applicant, Area, BonusSource, Character, Exit,
@@ -86,10 +86,12 @@ export interface GameState {
     altarTrophies: Trophies,
     availableBeds: FixedObject[],
     time: number,
-    cutscene: CutScene,
+    cutscene: Cutscene,
+    gameHasBeenInitialized: boolean,
 }
 
 export const guildYardEntrance: Exit = {zoneKey: 'guild', areaKey: 'guildYard', objectKey: 'mapExit'};
+export const guildGateEntrance: Exit = {zoneKey: 'guild', areaKey: 'guildYard', objectKey: 'guildGate'};
 
 function getDefaultSavedState(): SavedState {
     return {
@@ -136,6 +138,7 @@ function getDefaultState(): GameState {
         availableBeds: [],
         time: 0,
         cutscene: null,
+        gameHasBeenInitialized: false,
     };
 }
 

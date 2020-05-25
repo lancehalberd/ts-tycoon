@@ -1,6 +1,6 @@
-import { returnToMap } from 'app/adventure';
+import { returnToGuild, returnToMap } from 'app/adventure';
 import { getSprite } from 'app/content/actors';
-import { areaTypes } from 'app/content/areas';
+import { areaTargetToScreenTarget, areaTypes } from 'app/content/areas';
 import { effectAnimations } from 'app/content/effectAnimations';
 import { upgradeButton } from 'app/content/upgradeButton';
 import { editingMapState } from 'app/development/editLevel'
@@ -23,7 +23,7 @@ import { canUseSkillOnTarget } from 'app/useSkill';
 import { drawFrame, getFrame } from 'app/utils/animations';
 import { arrMod, isPointInShortRect, rectangle, toR } from 'app/utils/index';
 
-import { Actor, ActorEffect, FrameAnimation, Area, AreaObject, AreaType } from 'app/types';
+import { ActionData, Actor, ActorEffect, FrameAnimation, Area, AreaObject, AreaType } from 'app/types';
 
 export const bufferCanvas: HTMLCanvasElement = createCanvas(ADVENTURE_WIDTH, ADVENTURE_HEIGHT);
 export const bufferContext = bufferCanvas.getContext('2d');
@@ -130,7 +130,7 @@ function drawRune(context: CanvasRenderingContext2D, actor: Actor, animation: Fr
         drawFrame(context, frame, {x: -size[0] / 2, y: -size[1] / 2, w: size[0], h: size[1]});
     context.restore();
 }
-function drawActorGroundEffects(context, actor: Actor) {
+function drawActorGroundEffects(context: CanvasRenderingContext2D, actor: Actor) {
     const usedEffects = new Set();
     for (const effect of actor.allEffects) {
         const base = effect.base as {drawGround?: Function};
@@ -149,6 +149,35 @@ function drawActorGroundEffects(context, actor: Actor) {
                     drawRune(groundContext, actor, castAnimation, castFrame);
                 });
             }
+        }
+    }
+    // Draw skill warnings for scary avoidable attacks.
+    if (actor.skillInUse &&
+        actor.area.enemies.indexOf(actor) >= 0 &&
+        // Don't bother showing warnings if the prep time isn't at least 0.5 seconds.
+        actor.skillInUse.totalPreparationTime >= 0.5
+    ) {
+        const data: ActionData = actor.skillInUse.source.action;
+        // Draw a line from the actor to the target for skills that
+        // target a direction like 'recklessCharge'.
+        if (actor.skillInUse.variableObject.tags.targetsDirection) {
+            const source = areaTargetToScreenTarget(actor);
+            const target = areaTargetToScreenTarget(actor.skillTarget);
+            context.strokeStyle = 'red';
+            context.lineWidth = actor.d;
+            context.save();
+                context.globalAlpha = 0.3;
+                context.beginPath();
+                context.moveTo(source.x + source.w / 2, source.y + source.h);
+                context.lineTo(target.x + target.w / 2, target.y + target.h);
+                context.stroke();
+            context.restore();
+            const p = Math.min(1, actor.preparationTime / actor.skillInUse.totalPreparationTime);
+            context.lineWidth = actor.d * p;
+            context.beginPath();
+            context.moveTo(source.x + source.w / 2, source.y + source.h);
+            context.lineTo(target.x + target.w / 2, target.y + target.h);
+            context.stroke();
         }
     }
 }
@@ -213,20 +242,38 @@ const returnToMapButton = {
     frame: {'image': requireImage('gfx/worldIcon.png'), x: 0, y: 0, w: 72, h: 72},
     isVisible() {
         const character = getState().selectedCharacter;
-        return character.context === 'field' && !character.hero.area?.zoneKey;
+        return character.context === 'field' && character.hero.area?.zoneKey !== 'guild';
     },
     isPointOver(x, y) {
         return isPointInShortRect(x, y, this);
     },
     render(context) {
-        this.flashColor = getState().selectedCharacter.hero.levelInstance.completed ? 'white' : null;
+        const character = getState().selectedCharacter;
+        if (!character.hero.area?.zoneKey) {
+            this.flashColor = getState().selectedCharacter.hero.levelInstance.completed ? 'white' : null;
+        } else {
+            this.flashColor = null;
+        }
         drawHudElement(context, this);
     },
-    x: ADVENTURE_HEIGHT - 25, y: 8, w: 18, h: 18, 'helpText': 'Return to Map', onClick() {
-        const state = getState();
-        state.selectedCharacter.replay = false;
-        returnToMap(state.selectedCharacter);
-}};
+    x: ADVENTURE_HEIGHT - 25, y: 8, w: 18, h: 18,
+    helpMethod() {
+        const character = getState().selectedCharacter;
+        if (!character.hero.area?.zoneKey) {
+            return 'Return to Map';
+        }
+        return 'Return to Guild';
+    },
+    onClick() {
+        const character = getState().selectedCharacter;
+        if (!character.hero.area?.zoneKey) {
+            character.replay = false;
+            returnToMap(character);
+        } else {
+            returnToGuild(character);
+        }
+    },
+};
 
 export function drawBar(context, x, y, w, h, background, color, percent) {
     x = x | 0;

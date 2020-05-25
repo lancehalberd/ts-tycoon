@@ -351,6 +351,7 @@ export const abilities: {[key: string]: Ability} = {
     'consumeRatio': {name: 'Consume Range', 'bonuses': {'+consume:consumeRatio': .5}},
     'howl': {name: 'Howl', 'action': skills.howl},
     'howlSingAttack': {name: 'Howl Sing Attack', 'bonuses': {'$howl:instantCooldown': 'attackSong', '$attackSong:instantCooldown': 'sicem'}},
+    'recklessCharge': {name: 'Reckless Charge', 'bonuses': {'+strength': 5}, 'action': skills.recklessCharge},
     secondWind: {name: 'Second Wind', reaction: skills.secondWind},
 };
 export const leapAndAct = action => ({name: 'Leap', action: skills.leap, 'bonuses': {'$leap:action': action}});

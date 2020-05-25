@@ -10,6 +10,8 @@ const allMissions: MissionParameters[] = [
         zoneKey: 'mission1',
         areaKey: 'villageWest',
         type: 'clearZone',
+        introKey: 'mission1Intro',
+        outroKey: 'mission1Outro',
     },
     {
         key: 'mission2',
@@ -17,6 +19,8 @@ const allMissions: MissionParameters[] = [
         zoneKey: 'mission2',
         areaKey: 'forestClearing',
         type: 'defeatTarget',
+        introKey: 'mission2Intro',
+        // outroKey: 'mission2Intro',
     }
 ];
 

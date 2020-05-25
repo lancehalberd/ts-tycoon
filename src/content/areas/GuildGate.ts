@@ -4,6 +4,7 @@ import {
     EditableAreaObject,
     areaObjectFactories,
 } from 'app/content/areas';
+import { cutscenes } from 'app/content/cutscenes';
 import { getMission, setupMission } from 'app/content/missions';
 import { zones } from 'app/content/zones';
 import { createObjectAtMouse, refreshDefinition, uniqueObjectId } from 'app/development/editArea';
@@ -36,6 +37,16 @@ export class GuildGate extends EditableAreaObject {
     onInteract(hero: Hero) {
         if (this.missionKey) {
             const mission = setupMission(hero.character, this.missionKey);
+            if (mission.parameters.introKey && !getState().savedState.completedCutscenes[mission.parameters.introKey]) {
+                const cutscene = cutscenes[mission.parameters.introKey];
+                if (cutscene) {
+                    cutscene.run();
+                    return;
+                } else {
+                    console.error(`Missing cutscene '${mission.parameters.introKey}'`);
+                    debugger;
+                }
+            }
             initializeActorForAdventure(hero);
             enterArea(hero, {zoneKey: mission.parameters.zoneKey, areaKey: mission.parameters.areaKey, x: 60, z: 0});
         }
