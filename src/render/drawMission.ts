@@ -15,6 +15,8 @@ export function drawMissionHUD(context: CanvasRenderingContext2D, mission: Activ
     const y = ADVENTURE_HEIGHT - BOTTOM_HUD_HEIGHT / 2;
     if (mission.parameters.type === 'clearZone') {
         context.fillText(`Targets Defeated: ${mission.defeatedEnemies} / ${mission.totalEnemies}`, 10, y);
+    } else if (mission.parameters.type === 'defeatTarget') {
+        context.fillText(`Targets Defeated: ${mission.defeatedTargets} / ${mission.totalTargets}`, 10, y);
     }
     if (mission.parameters.timeLimit > 0) {
         let secondsLeft = Math.max(0, Math.floor((mission.parameters.timeLimit - mission.time) / 1000));

@@ -101,3 +101,10 @@ export interface MenuOption {
     onSelect?: () => void,
     getChildren?: () => MenuOption[],
 }
+
+export interface EditorProperty {
+    name: string,
+    value: any,
+    editable?: boolean,
+}
+export type PropertyRow = (EditorProperty | string)[];

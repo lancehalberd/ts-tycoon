@@ -137,8 +137,8 @@ export function update() {
                 }
                 // These missions work the same except in `defeatTarget` not all enemis are targets.
                 if (
-                    (parameters.type === 'clearZone' || parameters.type === 'defeatTarget')
-                    && mission.defeatedEnemies >= mission.totalEnemies
+                    (parameters.type === 'clearZone' && mission.defeatedEnemies >= mission.totalEnemies)
+                    || (parameters.type === 'defeatTarget' && mission.defeatedTargets >= mission.totalTargets)
                 ) {
                     mission.completed = true;
                     mission.failed = false;

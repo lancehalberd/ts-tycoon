@@ -231,7 +231,9 @@ const returnToMapButton = {
 export function drawBar(context, x, y, w, h, background, color, percent) {
     x = x | 0;
     y = y | 0;
-    w = w | 0;
+    // Since this is used for health bars, I want to use ceil so that the bar
+    // is never empty unless the value is actually 0.
+    w = Math.ceil(w);
     h = h | 0;
     percent = Math.max(0, Math.min(1, percent));
     if (background) {

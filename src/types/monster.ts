@@ -18,6 +18,7 @@ export interface MonsterDefinition {
     key: string,
     level: number,
     location: LocationDefinition,
+    isTarget?: boolean,
     bonusSources?: BonusSource[],
     rarity?: number,
 }
@@ -28,6 +29,7 @@ export interface MonsterSpawn {
     level: number,
     location: {x: number, y: number, z: number},
     bonusSources?: BonusSource[],
+    isTarget?: boolean,
     rarity?: number,
 }
 

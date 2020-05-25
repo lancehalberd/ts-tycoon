@@ -10,6 +10,13 @@ const allMissions: MissionParameters[] = [
         zoneKey: 'mission1',
         areaKey: 'villageWest',
         type: 'clearZone',
+    },
+    {
+        key: 'mission2',
+        name: 'Defeat the Gremlin Bulls',
+        zoneKey: 'mission2',
+        areaKey: 'forestClearing',
+        type: 'defeatTarget',
     }
 ];
 
@@ -32,8 +39,10 @@ export function setupMission(character: Character, missionKey: string): ActiveMi
     const parameters = getMission(missionKey);
     const zone = getZone(parameters.zoneKey);
     let totalEnemies = 0;
+    let totalTargets = 0;
     for (let areaKey in zone) {
         totalEnemies += getArea(parameters.zoneKey, areaKey, true).enemies.length;
+        totalTargets += getArea(parameters.zoneKey, areaKey, true).enemies.filter(e => e.isTarget).length;
     }
     character.mission = {
         parameters,
@@ -41,6 +50,8 @@ export function setupMission(character: Character, missionKey: string): ActiveMi
         character,
         totalEnemies,
         defeatedEnemies: 0,
+        totalTargets,
+        defeatedTargets: 0,
         time: 0,
         // This timer is used for showing the start/completed/failed animations.
         animationTime: 0,

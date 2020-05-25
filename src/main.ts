@@ -209,8 +209,6 @@ handleChildEvent('click', document.body, '.js-retire', function (retireButton) {
     if (!confirm('Are you sure you want to retire ' + state.selectedCharacter.hero.name + '?')) {
         return;
     }
-    const panel = retireButton.closest('.js-playerPanel');
-    panel.remove();
     leaveCurrentArea(state.selectedCharacter.hero, true);
     const removedCharacter = state.selectedCharacter;
     const index = state.characters.indexOf(removedCharacter);

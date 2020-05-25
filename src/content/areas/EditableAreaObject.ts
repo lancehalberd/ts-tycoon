@@ -8,12 +8,12 @@ import { drawWhiteOutlinedFrame, requireImage } from 'app/images';
 import { isKeyDown, KEY } from 'app/keyCommands';
 import { getCanvasPopupTarget } from 'app/popup';
 import { getState } from 'app/state';
-import { drawFrame } from 'app/utils/animations';
+import { drawFrame, getFrame } from 'app/utils/animations';
 import { isPointInRect } from 'app/utils/index';
 
 import {
     Area, AreaObject, AreaObjectDefinition, AreaObjectTarget, BonusSource,
-    Exit, Frame, Hero, ShortRectangle,
+    Exit, Frame, FrameAnimation, Hero, ShortRectangle,
 } from 'app/types';
 
 export class EditableAreaObject implements AreaObject {
@@ -29,6 +29,7 @@ export class EditableAreaObject implements AreaObject {
 
     _areaTarget: AreaObjectTarget;
     definition: AreaObjectDefinition;
+    animation: FrameAnimation;
     area: Area;
     name: string;
     key: string;
@@ -46,7 +47,10 @@ export class EditableAreaObject implements AreaObject {
     }
 
     getFrame(): Frame {
-        console.log("Warning called getFrame unimplemented");
+        if (this.animation) {
+            return getFrame(this.animation, this.area.time * 1000);
+        }
+        console.log("Warning called unimplemented getFrame");
         debugger;
         return {image: null, x: 0, y: 0, w: 0, h: 0};
     }

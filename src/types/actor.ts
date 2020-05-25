@@ -149,6 +149,8 @@ export interface BaseActor extends AreaTarget {
 
     activity: ActorActivity,
     dialogueBox?: DialogueBox,
+    // This can be set on actors that are targets in missions.
+    isTarget?: boolean,
 }
 export interface BasePerson extends BaseActor {
     colors: HeroColors,
@@ -180,6 +182,7 @@ export interface HeroColors {
     skinColor: string,
     hairColor: string,
     earColor: string,
+    eyeColor: string,
     bandanaColor: string,
     shoeColor: string,
     shortsColor: string,

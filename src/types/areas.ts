@@ -4,7 +4,7 @@ import {
     MonsterDefinition, MonsterSpawn,
 } from 'app/types';
 
-export type ZoneType = 'guild' | 'mission1';
+export type ZoneType = 'guild' | 'mission1' | 'mission2';
 
 export type Zones = {[key: string]: Zone};
 
@@ -25,6 +25,8 @@ export interface ActiveMission {
     character: Character,
     totalEnemies: number,
     defeatedEnemies: number,
+    totalTargets: number,
+    defeatedTargets: number,
     time: number,
     animationTime: number,
     started: boolean,

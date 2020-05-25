@@ -1,9 +1,9 @@
-import { drawComplexCompositeTintedFrame, drawCompositeTintedFrame, requireImage } from 'app/images';
+import { drawComplexCompositeTintedFrame, drawCompositeTintedFrame, drawTintedFrame, requireImage } from 'app/images';
 import { createAnimation, drawFrame } from 'app/utils/animations';
 import Random from 'app/utils/Random';
 import { jobColors } from 'app/content/characterOutfit';
 
-import { Hero, JobKey, Person, TintedFrame } from 'app/types';
+import { Hero, HeroColors, JobKey, Person, TintedFrame } from 'app/types';
 
 const outfit = {
     skinColor: '#AA724B',
@@ -77,8 +77,10 @@ const hairColors = crect('gfx2/character/c1hairsheet.png', 'blue', 1);
 const hatHairLines = crect('gfx2/character/c1hathairsheet.png');
 const hatHairColors = crect('gfx2/character/c1hathairsheet.png', 'blue', 1);
 const witchHatSheet = requireImage('gfx2/character/c1witchhat.png');
-const headLines = crect('gfx2/character/c1headsheet.png');
-const headColor = crect('gfx2/character/c1headsheet.png', skinTone, 1);
+const headLines = crect('gfx2/character/c1headsheet1.png');
+const headColor = crect('gfx2/character/c1headsheet1.png', skinTone, 1);
+const eyeLines = crect('gfx2/character/c1headsheet1.png', 'red', 2);
+const eyeColor = crect('gfx2/character/c1headsheet1.png', 'blue', 3);
 const jacketSheet = requireImage('gfx2/character/c1jacketsheet.png');
 const shieldSheet = requireImage('gfx2/character/c1shieldsheet.png');
 const staffSheet = requireImage('gfx2/character/c1staffsheet.png');
@@ -94,12 +96,14 @@ function crect(source: string, color: string = '0', row: number = 0): TintedFram
         y: characterRectangle.h * row,
     };
 }
-export function createHeroColors(jobKey: JobKey) {
+export function createHeroColors(jobKey: JobKey): HeroColors {
 
     const myColors = Random.element(jobColors[jobKey]) || {};
+    const eyeColors = ['blue', '#844', '#800', 'green', 'black'];
 
     return {
         skinColor: pinkSkin,
+        eyeColor: Random.element(eyeColors),
         hairColor: 'yellow',
         earColor: pinkSkin,
         bandanaColor: 'red',
@@ -128,6 +132,9 @@ export function updateHeroGraphics(hero: Hero | Person) {
      );
     // BASE HEAD
     drawCompositeTintedFrame(context, {...headColor, color: hero.colors.skinColor}, headLines, characterRectangle);
+    //drawTintedFrame(context, {...eyeColor, color: hero.colors.eyeColor}, characterRectangle);
+    //drawTintedFrame(context, eyeColor, characterRectangle);
+    drawCompositeTintedFrame(context, {...eyeColor, color: hero.colors.eyeColor}, eyeLines, characterRectangle);
     // CAPE BOTTOM
     if (hero.equipment.back && hero.equipment.back.base.type === 'cloak') {
         drawFrame(context, {image: capeSheetBottom, ...characterRectangle}, characterRectangle);

@@ -1672,3 +1672,25 @@ p {
 .cutsceneSkipButton:hover .title {
     border-color: white;
 }
+
+.pp-container {
+    position: absolute;
+    right: 0px;
+    top: 0;
+    width: 300px;
+    padding: 4px;
+    background-color: #EEE;
+    font-size: 16px;
+    font-family: arial;
+}
+
+.pp-row {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 4px;
+}
+
+.pp-property {
+    display: inline-block;
+    margin-right: 4px;
+}

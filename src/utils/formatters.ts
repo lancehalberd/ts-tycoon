@@ -1,10 +1,10 @@
 import { tag } from 'app/dom';
 
-export function fixedDigits(number: number, digits: number): number {
+export function fixedDigits(number: number, digits: number = 1): number {
     return parseFloat(number.toFixed(digits));
 }
 
-export function formatValue(value: any, digits: number): string {
+export function formatValue(value: any, digits: number = 1): string {
     if (typeof value === 'boolean') {
         return value ? 'True' : 'False';
     }
@@ -44,7 +44,7 @@ export function abbreviate(number, digits: number = null) {
     return number;
 }
 
-export function percent(number: any, digits: number): string {
+export function percent(number: any, digits: number = 1): string {
     if (typeof number === 'number') {
         return (100 * number).toFixed(digits) + '%';
     }

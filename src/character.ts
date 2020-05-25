@@ -74,7 +74,8 @@ export const coreStatBonusSource: BonusSource = {'bonuses': {
     '%accuracy': [.002, '*', '{intelligence}'],
     '+magic:weaponMagicDamage': ['{intelligence}', '/', 10],
     // Note that magicResist/evasion/accuracy don't need to scale to keep up with exponential max health/damage, but block, magic block and armor do.
-    '*maxHealth': '{levelCoefficient}',
+    '*maxHealth': [2, '*', '{levelCoefficient}'],
+    '*damage': 2,
     '*armor': '{levelCoefficient}',
     '*block': '{levelCoefficient}',
     '*magicBlock': '{levelCoefficient}',
@@ -409,7 +410,7 @@ export function updateHero(hero: Hero | Person) {
         '+weaponless:attackSpeed': .5,
         // You are unarmed if you have no weapon or offhand equipped.
         '+unarmed:attackSpeed': .5,
-        '+weaponless:critChance': .01
+        '+weaponless:critChance': .01,
     };
     hero.variableObject.tags = recomputeActorTags(hero);
     updateHeroGraphics(hero);

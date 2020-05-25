@@ -6,6 +6,7 @@ export * from 'app/content/zones/zoneHash';
 // All zones need to be imported here as they are not otherwise referenced in the code directly.
 export * from 'app/content/zones/guild';
 export * from 'app/content/zones/mission1';
+export * from 'app/content/zones/mission2';
 
 // Set zoneKey in each areaDefinition.
 for (let zoneKey in zones) {
@@ -85,7 +86,9 @@ function serializeAreaDefinition(areaDefinition: AreaDefinition): string {
     if (areaDefinition.monsters && areaDefinition.monsters.length) {
         lines.push('    monsters: [');
         for (const monster of areaDefinition.monsters) {
-            lines.push(`        {key: '${monster.key}', level: ${monster.level}, location: {${serializeLocation(monster.location)}}},`);
+            const location = `location: {${serializeLocation(monster.location)}}, `;
+            const isTarget = monster.isTarget ? 'isTarget: true, ' : '';
+            lines.push(`        {key: '${monster.key}', level: ${monster.level}, ${isTarget}${location}},`);
         }
         lines.push('    ],')
     }

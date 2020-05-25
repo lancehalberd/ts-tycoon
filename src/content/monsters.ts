@@ -506,7 +506,7 @@ export function initializeMonsters() {
     ];
 
     const fairySource = createFairySource(
-        requireImage('gfx2/fairysheet2.png'),
+        requireImage('gfx2/fairysheet3.png'),
         {w: 32, h: 32, content: {x: 17, y: 8, w: 10, h: 20, d: 4}},
         airMonsterShadow
     );
@@ -515,6 +515,8 @@ export function initializeMonsters() {
     const gremlinRectangle = {x: 0, y: 0, w: 36, h: 36, content: {x: 0, y: 20, w: 21, h: 16, d: 8}};
     const orangeGremlinSheet = createTintedImage(gremlinSheet, {x: 0, y: 0, w: 252, h: 36, d: 8}, 'orange');
     const gremlinSource = createMonsterSource(orangeGremlinSheet, gremlinRectangle);
+    const redGremlinSheet = createTintedImage(gremlinSheet, {x: 0, y: 0, w: 252, h: 36, d: 8}, 'red');
+    const bullGremlinSource = createMonsterSource(redGremlinSheet, gremlinRectangle);
     const spiderSource = completeMonsterSource({
         walkAnimation: createAnimation(
             requireImage('gfx/spider.png'), {w: 48, h: 48, content: {x: 0, y: 10, w: 48, h: 38, d: 8}},
@@ -551,6 +553,12 @@ export function initializeMonsters() {
     });
     addMonster('gremlin', {
         'name': 'Gremlin', 'source': gremlinSource, 'implicitBonuses': {}
+    });
+    addMonster('bullGremlin', {
+        'name': 'Gremlin Bull', 'source': bullGremlinSource, 'implicitBonuses': {
+            '*maxHealth': 2, '*damage': 1.2,
+        },
+        'abilities': [abilities.charge, abilities.overpower],
     });
     addMonster('turtle', {
         'name': 'Turtle', 'source': turtleSource, 'fpsMultiplier': 2,
@@ -592,7 +600,7 @@ export function initializeMonsters() {
     });
     addMonster('bat', {
         'name': 'Bat', 'source': batSource,
-        'implicitBonuses': {'*evasion': 1.2, '*accuracy': 1.2, '*weaponDamage': .6, '*speed': 2}
+        'implicitBonuses': {'*evasion': 1.2, '*accuracy': 1.2, '*weaponDamage': .6, '*speed': 1.5}
     });
     addMonster('vampireBat', {
         'name': 'Vampire Bat', 'source': batSource,

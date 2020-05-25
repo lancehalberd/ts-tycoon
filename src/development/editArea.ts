@@ -2,7 +2,7 @@ import _ from 'lodash';
 import { addMonstersFromAreaDefinition, enterArea, getArea } from 'app/adventure';
 import { addAreaFurnitureBonuses, removeAreaFurnitureBonuses } from 'app/content/furniture';
 import { missions, setupMission } from 'app/content/missions';
-import { getMonsterDefinitionAreaEntity, monsters } from 'app/content/monsters';
+import { getMonsterDefinitionAreaEntity, makeMonster, monsters } from 'app/content/monsters';
 import { serializeZone, zones } from 'app/content/zones';
 import {
     applyDefinitionToArea,
@@ -10,19 +10,23 @@ import {
     createAreaObjectFromDefinition, createAreaFromDefinition,
     getPositionFromLocationDefinition, isPointOverAreaTarget,
 } from 'app/content/areas';
+import { displayPropertyPanel, hidePropertyPanel } from 'app/development/propertyPanel';
 import { mainCanvas } from 'app/dom';
 import { ADVENTURE_WIDTH, ADVENTURE_SCALE, BACKGROUND_HEIGHT, GROUND_Y, MAX_Z, MIN_Z } from 'app/gameConstants';
 import { isKeyDown, KEY } from 'app/keyCommands';
+import { getBasicAttack } from 'app/performAttack';
 import { renderMonsterFromDefinition } from 'app/render/drawActor';
 import { getState } from 'app/state';
+import { abbreviate, fixedDigits, percent } from 'app/utils/formatters';
 import { readFromFile, saveToFile } from 'app/utils/index';
 import { getMousePosition } from 'app/utils/mouse';
 
 
 import {
     Actor, Area, AreaDefinition, AreaEntity, AreaObject, AreaObjectDefinition, AreaObjectTarget,
-    Frame, FrameDimensions,
-    LocationDefinition, MenuOption, MonsterData, MonsterDefinition, ShortRectangle, ZoneType,
+    EditorProperty, Frame, FrameDimensions,
+    LocationDefinition, MenuOption, Monster, MonsterData, MonsterDefinition,
+    PropertyRow, ShortRectangle, ZoneType,
 } from 'app/types';
 
 interface EditingAreaState {
@@ -79,6 +83,7 @@ export function handleEditAreaClick(x: number, y: number): void {
     const areaDefinition = getAreaDefinition();
     editingAreaState.selectedMonsterIndex = null;
     editingAreaState.selectedObject = null;
+    hidePropertyPanel();
     const monsterObjects: MonsterDefinitionAreaObject[] = (areaDefinition.monsters || []).map((definition, index) => {
         return new MonsterDefinitionAreaObject(area, index);
     });
@@ -92,6 +97,7 @@ export function handleEditAreaClick(x: number, y: number): void {
         if (object.isPointOver(x, y)) {
             if (object instanceof MonsterDefinitionAreaObject) {
                 editingAreaState.selectedMonsterIndex = object.index;
+                displayPropertyPanel(getSelectedMonsterProperties());
                 return;
             } else {
                 if (isKeyDown(KEY.SHIFT) && object.onInteract) {
@@ -485,6 +491,7 @@ export function getEditingContextMenu(): MenuOption[] {
                     });
                     // Select the newly created monster.
                     editingAreaState.selectedMonsterIndex = areaDefinition.monsters.length - 1;
+                    displayPropertyPanel(getSelectedMonsterProperties());
                     refreshEnemies();
                 });
             }
@@ -500,6 +507,7 @@ export function stopEditing() {
     editingAreaState.isEditing = false;
     editingAreaState.selectedObject = null;
     editingAreaState.selectedMonsterIndex = null;
+    hidePropertyPanel();
 }
 
 export function getSelectedMonsterContextMenu(): MenuOption[] {
@@ -549,6 +557,13 @@ export function getSelectedMonsterContextMenu(): MenuOption[] {
             }
         },
         {
+            label: monsterDefinition.isTarget ? 'Remove From Targets' : 'Add to Targets',
+            onSelect() {
+                monsterDefinition.isTarget = !monsterDefinition.isTarget;
+                refreshEnemies();
+            }
+        },
+        {
             label: 'Flip ' + name,
             onSelect() {
                 monsterDefinition.location.flipped = !monsterDefinition.location.flipped;
@@ -561,10 +576,73 @@ export function getSelectedMonsterContextMenu(): MenuOption[] {
             onSelect() {
                 areaDefinition.monsters.splice(selectedMonsterIndex, 1);
                 editingAreaState.selectedMonsterIndex = null;
+                hidePropertyPanel();
                 refreshEnemies();
             }
         },
     ]
+}
+
+function fix(number: number, digits: number = 1): string {
+    return abbreviate(fixedDigits(number, digits));
+}
+
+export function getSelectedMonsterProperties(this: void): (EditorProperty | PropertyRow | string)[] {
+    const { selectedMonsterIndex } = editingAreaState;
+    const monsterDefinition = getAreaDefinition().monsters[selectedMonsterIndex];
+    const monster: Monster =  makeMonster(getCurrentArea(), monsterDefinition.key, monsterDefinition.level, [], monsterDefinition.rarity);
+    let attack = getBasicAttack(monster);
+    const props: (EditorProperty | PropertyRow | string)[] = [];
+    props.push(`Lvl ${monster.stats.level} ${monster.name}`);
+    props.push([{
+        name: 'Max Health',
+        value: monster.stats.maxHealth,
+    },{
+        name: 'MPow',
+        value: fix(monster.stats.magicPower),
+    }]);
+    props.push([{
+        name: 'Phys',
+        value: fix(attack.stats.minPhysicalDamage) + '-' + fix(attack.stats.maxPhysicalDamage),
+    },{
+        name: 'Mag',
+        value: fix(attack.stats.minMagicDamage) + '-' + fix(attack.stats.maxMagicDamage),
+    }]);
+    props.push([{
+        name: 'AtkSpd',
+        value: fix(attack.stats.attackSpeed),
+    },{
+        name: 'Range',
+        value: fix(attack.stats.range),
+    },{
+        name: 'Speed',
+        value: fix(monster.stats.speed),
+    }]);
+    props.push([{
+        name: 'Crt%',
+        value: percent(attack.stats.critChance),
+    },{
+        name: 'Dam*',
+        value: fix(1 + attack.stats.critDamage),
+    },{
+        name: 'Acc*',
+        value: fix(1 + attack.stats.critAccuracy),
+    }]);
+    props.push([{
+        name: 'Armor',
+        value: fix(monster.stats.armor),
+    },{
+        name: 'MRes',
+        value: fix(monster.stats.magicResist),
+    }]);
+    props.push([{
+        name: 'PBlock',
+        value: fix(monster.stats.block),
+    },{
+        name: 'MBlock',
+        value: fix(monster.stats.magicBlock),
+    }]);
+    return props;
 }
 
 export function getMonsterTypeMenuItems(callback: (monsterKey: string) => void): MenuOption[] {

@@ -234,6 +234,7 @@ export function addMonstersToArea(
         newMonster.allies = newMonster.area.enemies;
         newMonster.enemies = newMonster.area.allies;
         newMonster.allies.push(newMonster);
+        newMonster.isTarget = monsterData.isTarget;
     }
 }
 function checkIfActorDied(actor: Actor) {
@@ -759,6 +760,9 @@ function defeatedEnemy(hero: Hero, enemy: Actor) {
     // Any non-minion kill counts towards the defeated enemies total for missions.
     if (hero.character.mission && !enemy.owner) {
         hero.character.mission.defeatedEnemies++;
+    }
+    if (hero.character.mission && enemy.isTarget) {
+        hero.character.mission.defeatedTargets++;
     }
 
     loot.forEach(function (loot, index) {

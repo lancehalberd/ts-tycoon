@@ -269,7 +269,7 @@ export function moveActor(actor: Actor, ignoreCollisions: boolean = false) {
             for (const enemy of actor.enemies) {
                 if (enemy.isDead || actor === enemy) continue;
                 const distance = getDistanceOverlap(actor, enemy);
-                if (distance <= 0 && actor.chargeEffect) {
+                if (distance <= 6 && actor.chargeEffect) {
                     finishChargeEffect(actor, enemy);
                     // Although this is a collision, don't mark it as one so that the move will complete.
                     collision = false;
