@@ -1,3 +1,45 @@
+Test at http://localhost:81/ttt/public/
+
+Features:
+    [L] Split core job abilities into multiple jewels with different values. Better hires can have more fixed jewels. Some abilities are shared between job pools like +1 str/level or 5% magic resist.
+    [L] Help system where fairy floats on top of other UIs to give advice, during item/jewel crafting, world map, etc.
+    [L] Add option for Pantheon dialogue at quest shrines.
+    [L] Death recap for quests. Maybe not important with the more hands on gameplay.
+
+Editor Improvements:
+    [H] Add test characters grouped by mission
+        - Add average characters for each mission, they can be used as strong/weak versions for other missions
+        - Export to clipboard/import from clipboard
+        - Export jewelboard as bonuses object+abilities array (disable jewel board on test chars)
+        - Some way to swap back to other characters (probably just click their portrait)
+        - When removing test char, put the original selected char in place of test char.
+        - Could worry about deleting test char canvases to avoid memory leak, but not important. We do need to do this for Person enemies since they will get created/destroyed in the game.
+    [H] Add additional assets (decorations+objects) like rocks, bushes
+    [H] Add NPC placement (to be used with tracker in mission 2)
+    [H] Add Ally placement (to be used with villagers in mission 3)
+    [M] Add PositionQueue objects to editor that can be used for controlling where NPCs are positioned and where actors appear/move to in cutscenes.
+    [M] Object property panel
+        - text input (key, area key)
+        - update references when key changes
+        - dropdown menu for animation/monster type, etc uses context menu.
+        - number input for monster level, area width, x, y, z
+        - toggle for flipped
+    [M] Set parent key + alignment on objects/monsters
+    [L] Add library of object groups (like niche+candle+flame)
+
+Missions:
+    3: Defeat beasts attacking village
+    4: Find the beast den and clear out the matriarch/leader
+    5+ assist other villages/cities/the king
+
+Cutscenes:
+    [M] Return to guild after mission 2, Ruthven explains Quest Board and departs to assist movement of the refugees.
+    [M] Guild Spirit explains higher level gear is available after mission 2 but you need to be more powerful to equip so you should do Shrine Quests.
+    [M] Guild Spirit suggests clearing  Guild Hall at level 2.
+    [L] Guild Spirit moves to Guild Hall and explains the Shrine of Creation.
+    [L] Guild Spirit explains enchanting gear after mission 4.
+
+
 
         ********************************
                     Bug Fixes
@@ -29,7 +71,6 @@
                     New Features
         ********************************
 -Add NPCs + dialogue
--Add tutorial story
 -Jewel Crafting Leveling
 
 
@@ -38,13 +79,7 @@
               Feature Improvements
         ********************************
 -Get font for displaying formulas.
--Add ability to edit areas by setting ?edit flag and pressing shift + 'E' in areas.
-    -Add/remove monsters.
-    -Change background
-    -Increase length of area
-    -Add sections
 
--Add warnings for powerful enemy attacks to encourage players to manually evade them.
 -Fewer areas more monsters. Switch monsters to appear in groups and have up to 3 groups per area.
 -At some point implement monster group patterns and preset monster groups with leaders. Apply
     enchantments to entire groups, and imbued to only leaders, add aoe buffs to imbued monsters.
@@ -54,7 +89,7 @@
 -Don't reset character stats on entering areas
     - Dark Knight overheal should lose N% health per second when not aggrod
     - Permanent effects should be removed on entering a guild area or when their source disappears
-    - Restore cooldowns on entering a guild area?
+
 
 
 
