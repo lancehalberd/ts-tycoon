@@ -3,7 +3,7 @@ import { GROUND_Y } from 'app/gameConstants';
 import { findActionByTag } from 'app/performAttack';
 import { arrMod, isPointInShortRect } from 'app/utils/index';
 
-import { Actor, AreaObjectTarget, Frame, ShortRectangle } from 'app/types';
+import { Actor, Frame, ShortRectangle } from 'app/types';
 
 export function initializeActorForAdventure(actor: Actor) {
     setStat(actor.variableObject, 'bonusMaxHealth', 0);
