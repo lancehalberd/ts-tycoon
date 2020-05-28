@@ -57,8 +57,14 @@ export function moveActor(actor: Actor, ignoreCollisions: boolean = false) {
                 break;
             case 'interact':
                 if (getDistanceOverlap(actor, activity.target) <= 5) {
-                    if (activity.target.object.onInteract) {
-                        activity.target.object.onInteract(actor);
+                    if (activity.target.targetType === 'actor') {
+                        if (activity.target.onInteract) {
+                            activity.target.onInteract(actor);
+                        }
+                    } else if (activity.target.targetType === 'object') {
+                        if (activity.target.object.onInteract) {
+                            activity.target.object.onInteract(actor);
+                        }
                     }
                     actor.activity = {type: 'none'};
                     break;

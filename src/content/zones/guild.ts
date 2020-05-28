@@ -15,18 +15,18 @@ export const guildYard: AreaDefinition = {
             exitKey: "worldMap",
             animation: "woodBridge",
         },
-        frontDoor: {
-            type: 'door',
-            xAlign: 'right', x: -8, z: -8,
-            exitKey: "guildFoyer:frontDoor",
-            animation: "closedDoor",
-        },
         guildGate: {
             type: 'guildGate',
             x: 295.66666666666663, z: 58,
         },
     },
     wallDecorations: {
+        frontDoor: {
+            type: 'door',
+            xAlign: 'right', x: -8, z: -8,
+            exitKey: "guildFoyer:frontDoor",
+            animation: "closedDoor",
+        },
     },
 };
 
@@ -66,18 +66,6 @@ export const guildFoyer: AreaDefinition = {
             xAlign: 'right', x: -100, zAlign: 'back',
             animationGroup: "guildFurniture",
             animationKey: "bookShelf",
-        },
-        frontDoor: {
-            type: 'door',
-            x: 8, z: -7, flipped: true,
-            exitKey: "guildYard:frontDoor",
-            animation: "closedDoor",
-        },
-        hallDoor: {
-            type: 'door',
-            xAlign: 'right', x: -8, z: -7,
-            exitKey: "guildFrontHall:foyerDoor",
-            animation: "openDoor",
         },
     },
     wallDecorations: {
@@ -161,6 +149,18 @@ export const guildFoyer: AreaDefinition = {
             animationGroup: "guildWall",
             animationKey: "candleFlame",
         },
+        frontDoor: {
+            type: 'door',
+            x: 8, z: -7, flipped: true,
+            exitKey: "guildYard:frontDoor",
+            animation: "closedDoor",
+        },
+        hallDoor: {
+            type: 'door',
+            xAlign: 'right', x: -8, z: -7,
+            exitKey: "guildFrontHall:foyerDoor",
+            animation: "openDoor",
+        },
     },
     monsters: [
         {key: 'gremlin', level: 1, location: {x: 211, z: -8}},
@@ -196,12 +196,6 @@ export const guildFrontHall: AreaDefinition = {
             type: 'trophyAltar',
             xAlign: 'right', x: -180,
         },
-        foyerDoor: {
-            type: 'door',
-            x: 8, z: -7, flipped: true,
-            exitKey: "guildFoyer:hallDoor",
-            animation: "openDoor",
-        },
     },
     wallDecorations: {
         guestRoomDoor: {
@@ -215,6 +209,12 @@ export const guildFrontHall: AreaDefinition = {
             x: 489, y: 14, zAlign: 'back',
             animation: "downstairs",
             exitKey: "guildBasement:stairs",
+        },
+        foyerDoor: {
+            type: 'door',
+            x: 8, z: -7, flipped: true,
+            exitKey: "guildFoyer:hallDoor",
+            animation: "openDoor",
         },
     },
     monsters: [
@@ -299,12 +299,6 @@ export const guildBasement: AreaDefinition = {
     leftWallType: 'caveWall',
     rightWallType: 'caveWall',
     objects: {
-        vaultDoor: {
-            type: 'door',
-            z: -10, flipped: true,
-            animation: "caveDoorOpen",
-            exitKey: "guildVault:door",
-        },
     },
     wallDecorations: {
         stairs: {
@@ -312,6 +306,12 @@ export const guildBasement: AreaDefinition = {
             x: 528, y: 10, zAlign: 'back',
             animation: "upstairs",
             exitKey: "guildFrontHall:basementStairs",
+        },
+        vaultDoor: {
+            type: 'door',
+            z: -10, flipped: true,
+            animation: "caveDoorOpen",
+            exitKey: "guildVault:door",
         },
     },
     monsters: [
@@ -327,12 +327,6 @@ export const guildVault: AreaDefinition = {
     leftWallType: 'caveWall',
     rightWallType: 'caveWall',
     objects: {
-        door: {
-            type: 'door',
-            x: 296, z: -10,
-            animation: "caveDoorOpen",
-            exitKey: "guildBasement:vaultDoor",
-        },
         coinStashA: {
             type: 'coinStash',
             x: 28, z: 26,
@@ -379,6 +373,12 @@ export const guildVault: AreaDefinition = {
         },
     },
     wallDecorations: {
+        door: {
+            type: 'door',
+            x: 296, z: -10,
+            animation: "caveDoorOpen",
+            exitKey: "guildBasement:vaultDoor",
+        },
     },
 };
 

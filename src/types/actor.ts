@@ -1,5 +1,6 @@
 import {
-    ActiveEffect, ActorStats, Affix, FrameAnimation, Area, AreaObject, AreaTarget, AreaObjectTarget,
+    ActiveEffect, ActorStats, Affix, FrameAnimation,
+    Area, AreaEntity, AreaObject, AreaTarget, AreaObjectTarget,
     BonusSource, Exit, Frame,
     Job, JobKey, Level, LocationTarget, Monster,
     SavedEquipment, ShortRectangle, Target,
@@ -26,7 +27,7 @@ export type ActorActivity = {
     target: Target,
 } | {
     type: 'interact',
-    target: AreaObjectTarget,
+    target: AreaTarget,
 }
 
 export interface ActorSource {
@@ -49,7 +50,7 @@ export interface ActorSource {
     attackY?: number,
 };
 
-export interface BaseActor extends AreaTarget {
+export interface BaseActor extends AreaEntity {
     targetType: 'actor',
     type: string,
     equipment: Equipment,
@@ -142,15 +143,20 @@ export interface BaseActor extends AreaTarget {
 
     helpMethod: () => string,
     isPointOver: (x: number, y: number) => boolean,
-    render: (context: CanvasRenderingContext2D, actor: Actor) => void,
+    render: (this: Actor, context: CanvasRenderingContext2D) => void,
 
     // This may be unset when an object has not been assigned to an area yet.
     area: Area,
 
     activity: ActorActivity,
+    // Any time the actor no longer has a dialogue box, if this is not empty,
+    // a new dialogue will be opened with the next message.
+    dialogueMessages?: string[],
     dialogueBox?: DialogueBox,
     // This can be set on actors that are targets in missions.
     isTarget?: boolean,
+    // This is used when clicking on NPCs, for example to talk with them.
+    onInteract?: (actor: Actor) => void,
 }
 export interface BasePerson extends BaseActor {
     colors: HeroColors,

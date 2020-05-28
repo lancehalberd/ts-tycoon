@@ -32,6 +32,7 @@ import { appendTextPopup, applyAttackToTarget, findActionByTag, getBasicAttack, 
 import { gain } from 'app/points';
 import { saveGame } from 'app/saveGame';
 import { getState, guildGateEntrance, guildYardEntrance } from 'app/state';
+import { DialogueBox } from 'app/ui/DialogueBox';
 import {
     canUseReaction, canUseSkillOnTarget, gainReflectionBarrier,
     isTargetInRangeOfSkill,
@@ -575,6 +576,11 @@ export function getAllInRange(x: number, range: number, targets: Actor[]) {
 }
 function runActorLoop(actor: Actor) {
     const area = actor.area;
+    if (!actor.dialogueBox && actor.dialogueMessages?.length) {
+        const db = new DialogueBox();
+        db.message = actor.dialogueMessages.shift();
+        db.run(actor);
+    }
     if (actor.dialogueBox) {
         actor.dialogueBox.update();
     }
@@ -893,6 +899,19 @@ export function returnToGuild(character: Character) {
 export function leaveCurrentArea(actor: Actor, leavingZone = false) {
     if (!actor.area) {
         return;
+    }
+    // If this is the currently selected character, make sure to cleanup any dialog boxes
+    // associated with characters in this area.
+    if (actor === getState().selectedCharacter?.hero) {
+        for (const ally of actor.area.allies) {
+            // This removes the dialogue boxes from the screen.
+            if (ally.dialogueBox) {
+                ally.dialogueBox.remove();
+            }
+            // Clear out any remaining dialogue, otherwise the character will just
+            // start speaking the next time we enter the area.
+            ally.dialogueMessages = [];
+        }
     }
     // If the current area is a safe guild area, it becomes the actors 'escape exit',
     // where they will respawn next if they die.

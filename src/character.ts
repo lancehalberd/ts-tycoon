@@ -1,6 +1,7 @@
 import * as _ from 'lodash';
 import {
-    initializeActorForAdventure, isPointOverActor, setActorHealth, updateActorFrame
+    initializeActorForAdventure, isPointOverActor,
+    setActorHealth, updateActorFrame
 } from 'app/actor';
 import { updateAdventureButtons } from 'app/adventureButtons';
 import {

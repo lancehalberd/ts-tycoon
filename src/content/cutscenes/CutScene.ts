@@ -1,7 +1,10 @@
+import _ from 'lodash';
+
 import { updateActorFrame } from 'app/actor';
 import { getArea, leaveCurrentArea } from 'app/adventure';
 import { createVariableObject, recomputeStat } from 'app/bonuses';
 import { abilities } from 'app/content/abilities';
+import { cutscenes } from 'app/content/cutscenes';
 import { makeMonster, monsters } from 'app/content/monsters';
 import { setContext } from 'app/context';
 import { cutsceneFadeBox } from 'app/dom';
@@ -14,6 +17,7 @@ import { getState } from 'app/state';
 import { saveGame } from 'app/saveGame';
 import { DialogueBox } from 'app/ui/DialogueBox';
 import { actionDefinitions } from 'app/useSkill';
+import { updateNPCs } from 'app/content/updateNPCs';
 
 import { Action, ActionStats, Actor, Area, GameContext, Hero } from 'app/types';
 
@@ -103,11 +107,22 @@ export class Cutscene {
             await this.runEndScript();
             getState().cutscene = null;
             await this.setupNextScene();
+            const cutsceneKey = _.findKey(cutscenes, this);
+            if (cutsceneKey && this.shouldSaveSceneCompleted()) {
+                getState().savedState.completedCutscenes[cutsceneKey] = true;
+                saveGame();
+            } else {
+                console.error('Could not find key for cutscene');
+            }
+            updateNPCs();
         } catch (e) {
             if (e && e.message) {
                 console.error(e);
             }
         }
+    }
+    shouldSaveSceneCompleted(): boolean {
+        return true;
     }
     async runEndScript(): Promise<void> {
 

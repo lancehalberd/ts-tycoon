@@ -154,7 +154,7 @@ export function drawActorEffects(context: CanvasRenderingContext2D, actor: Actor
     } */
     let actorTop = Math.round(GROUND_Y - actor.y - actor.z / 2 - actor.h);
     let y = actorTop - 10;
-    if (!isCutscene && actor.health > 0) {
+    if (!isCutscene && actor.health > 0 && actor.health < actor.stats.maxHealth) {
         drawBar(context, x, y, barWidth, 3, 'white', (actor.stats.lifeBarColor || 'red'), actor.health / actor.stats.maxHealth);
         if (actor.stats.bonusMaxHealth >= 1 && actor.health >= actor.stats.maxHealth - actor.stats.bonusMaxHealth) {
             // This logic is kind of a mess but it is to make sure the % of the bar that is due to bonusMaxHealth

@@ -14,8 +14,6 @@ import { actionDefinitions } from 'app/useSkill';
 import { Action, ActionStats, Actor, Area, GameContext, Hero } from 'app/types';
 
 export class Mission2Intro extends Cutscene {
-    static key = 'mission2Intro';
-
     sprite: Actor;
     hero: Hero;
 
@@ -98,13 +96,12 @@ export class Mission2Intro extends Cutscene {
         }
         hero.allies = hero.area.allies;
         hero.enemies = hero.area.enemies;
-        const armorCount = this.getArmorCount();
-        // This cutscene will replay each time you start this mission unless you started
-        // with a full set of armor.
-        if (armorCount >= 6) {
-            getState().savedState.completedCutscenes[Mission2Intro.key] = true;
-        }
-        saveGame();
+    }
+
+    // This cutscene will replay each time you start this mission unless you started
+    // with a full set of armor.
+    shouldSaveSceneCompleted(): boolean {
+        return this.getArmorCount() >= 6;
     }
 
     async setupNextScene() {

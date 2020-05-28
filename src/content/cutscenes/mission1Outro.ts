@@ -14,8 +14,6 @@ import { actionDefinitions } from 'app/useSkill';
 import { Action, ActionStats, Actor, Area, GameContext, Hero } from 'app/types';
 
 export class Mission1Outro extends Cutscene {
-    static key = 'mission1Outro';
-
     // These actors will already be on the screen during the mission and don't need to be added/moved.
     sprite: Actor;
     hero: Hero;
@@ -123,10 +121,8 @@ export class Mission1Outro extends Cutscene {
         }
         hero.allies = hero.area.allies;
         hero.enemies = hero.area.enemies;
-        getState().savedState.completedCutscenes[Mission1Outro.key] = true;
-        // Close the gate to mission one and end the current mission.
+        // End the current mission.
         hero.character.mission = null;
-        saveGame();
     }
 
     async setupNextScene() {

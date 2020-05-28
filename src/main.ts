@@ -1,3 +1,5 @@
+import { cutscenes } from 'app/content/cutscenes';
+
 import { getPlanarDistanceSquared, leaveCurrentArea, limitZ } from 'app/adventure';
 import { setSelectedCharacter } from 'app/character';
 import {
@@ -30,12 +32,17 @@ import { toolTipColor } from 'app/utils/colors';
 import { isPointInShortRect } from 'app/utils/index';
 import { getMousePosition, isMouseDown } from 'app/utils/mouse';
 
-import { Action, Actor, ActorActivity, Area, AreaObject, AreaObjectTarget, Hero, LocationTarget, Target } from 'app/types';
+import {
+    Action, Actor, ActorActivity,
+    Area, AreaObject, AreaObjectTarget, AreaTarget,
+    Hero, LocationTarget, Target,
+} from 'app/types';
 
 let canvasCoords = null;
 export function getCanvasCoords() {
     return canvasCoords;
 }
+let dragStartCoords = null;
 mainCanvas.addEventListener('mousemove', function () {
     const [lastX, lastY] = canvasCoords || [-1, -1];
     const [x, y] = getMousePosition(mainCanvas, ADVENTURE_SCALE);
@@ -43,7 +50,12 @@ mainCanvas.addEventListener('mousemove', function () {
     if (editingAreaState.isEditing) {
         // lastX will be -1 if the mouse wasn't previously over this element.
         if (lastX > 0 && isMouseDown()) {
-            handleEditMouseDragged(x - lastX, y - lastY);
+            if (!dragStartCoords) {
+                dragStartCoords = {x: lastX, y: lastY};
+            }
+            handleEditMouseDragged(x, y, dragStartCoords.x, dragStartCoords.y);
+        } else {
+            dragStartCoords = null;
         }
         return;
     }
@@ -121,7 +133,10 @@ function handleAdventureClick(x: number, y: number, event) {
                 return;
             }
         }
-        if (canvasPopupTarget.getAreaTarget && canvasPopupTarget.onInteract) {
+        if (canvasPopupTarget.targetType === 'actor' && canvasPopupTarget.onInteract) {
+            const actor: Actor = canvasPopupTarget as Actor;
+            setActorInteractionTarget(hero, actor);
+        } else if (canvasPopupTarget.getAreaTarget && canvasPopupTarget.onInteract) {
             setActorInteractionTarget(hero, canvasPopupTarget.getAreaTarget());
         } else if (canvasPopupTarget.onClick) {
             canvasPopupTarget.onClick();
@@ -190,7 +205,7 @@ function setActionTarget(hero: Hero, action: Action, target: Target) {
         target
     };
 }
-export function setActorInteractionTarget(hero: Hero, target: AreaObjectTarget) {
+export function setActorInteractionTarget(hero: Hero, target: AreaTarget) {
     hero.activity = {
         type: 'interact',
         target

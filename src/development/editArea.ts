@@ -29,6 +29,10 @@ import {
     PropertyRow, ShortRectangle, ZoneType,
 } from 'app/types';
 
+interface Position {
+    x: number, y: number, z: number,
+}
+
 interface EditingAreaState {
     isEditing: boolean,
     selectedObject: AreaObject,
@@ -36,6 +40,7 @@ interface EditingAreaState {
     // This will override the cameraX for the area.
     cameraX: number,
     contextCoords: number[],
+    initialObjectPosition?: Position,
 }
 export const editingAreaState: EditingAreaState = {
     isEditing: false,
@@ -83,6 +88,7 @@ export function handleEditAreaClick(x: number, y: number): void {
     const areaDefinition = getAreaDefinition();
     editingAreaState.selectedMonsterIndex = null;
     editingAreaState.selectedObject = null;
+    editingAreaState.initialObjectPosition = null;
     hidePropertyPanel();
     const monsterObjects: MonsterDefinitionAreaObject[] = (areaDefinition.monsters || []).map((definition, index) => {
         return new MonsterDefinitionAreaObject(area, index);
@@ -130,8 +136,46 @@ export function handleEditAreaClick(x: number, y: number): void {
     }
 }
 
-export function handleEditMouseDragged(dx: number, dy: number): void {
-    moveSelectedTarget(dx, dy);
+export function handleEditMouseDragged(x: number, y: number, sx: number, sy: number): void {
+    const { selectedMonsterIndex, selectedObject } = editingAreaState;
+    const dx = x - sx, dy = y - sy;
+    if (selectedObject) {
+        const area = getCurrentArea();
+        dragLocationDefinition(selectedObject.definition, dx, dy);
+        // Objects on the wall aren't bound by the z limits.
+        if (!area.wallDecorations.includes(selectedObject)) {
+            boundZPosition(selectedObject.definition, selectedObject.getAreaTarget().d);
+            selectedObject.definition.y = 0;
+        }
+        refreshDefinition(selectedObject);
+    } else if (selectedMonsterIndex >= 0) {
+        const monster = getAreaDefinition().monsters[selectedMonsterIndex];
+        dragLocationDefinition(monster.location, dx, dy);
+        boundZPosition(monster.location, getMonsterDefinitionAreaEntity(getCurrentArea(), monster).d);
+        monster.location.y = 0;
+        refreshEnemies();
+    }
+}
+
+function dragLocationDefinition(definition: LocationDefinition, dx: number, dy: number) {
+    if (!editingAreaState.initialObjectPosition) {
+        editingAreaState.initialObjectPosition = {
+            x: definition.x || 0,
+            y: definition.y || 0,
+            z: definition.z || 0,
+        };
+    }
+    definition.x = Math.round(dx + editingAreaState.initialObjectPosition.x);
+    const targetY = Math.round(-dy
+        + editingAreaState.initialObjectPosition.y
+        - (MAX_Z - editingAreaState.initialObjectPosition.z) / 2);
+    if (targetY <= 0) {
+        definition.y = 0;
+        definition.z = MAX_Z + targetY * 2
+    } else {
+        definition.y = targetY;
+        definition.z = MAX_Z;
+    }
 }
 
 function moveSelectedTarget(dx: number, dy: number): boolean {
@@ -192,55 +236,55 @@ export function createObjectAtMouse(definition: AreaObjectDefinition, objectKey:
     return area.objectsByKey[objectKey];
 }
 
-function moveLocationDefinition(definition: LocationDefinition, dx: number, dy: number, dz: number, {w, h, d}: FrameDimensions): void {
-    // TODO: These values aren't rounded because the scaling on the canvas causes a 1 pixel mouse movement to become 1/3, and movement
-    // can therefor be lost when rounded. To fix this (and other drag issues), we should just record the offset of the mouse relative to
-    // the object and pass in dx/y/z values that will preserve this offset instead of the actual mouse dx/y/z values.
+function moveLocationDefinition(definition: LocationDefinition, dx: number, dy: number, dz: number): void {
     definition.x = (definition.x || 0 ) + dx;
     definition.y = (definition.y || 0 ) + dy;
     definition.z = (definition.z || 0 ) + dz;
-    // For items aligned to the area, add some common sense restrictions for positioning them.
+    // Move items from the wall to the floor and vice-versa if they are aligned to the area
+    // and hit the seam of the floor and back wall.
     if (!definition.parentKey) {
-        if (definition.zAlign === 'back') {
-            definition.z = Math.max(2 * MIN_Z + d, Math.min(0, definition.z));
-        } else if (definition.zAlign === 'front') {
-            definition.z = Math.max(0, Math.min(2 * MAX_Z - d, definition.z));
-        } else {
-            definition.z = Math.max(MIN_Z + d / 2, Math.min(MAX_Z - d / 2, definition.z));
-        }
-        if (definition.yAlign === 'middle') {
-            // Not going to worry about these for now, they aren't used so far.
-        } else if (definition.yAlign === 'top') {
-            // Not going to worry about these for now, they aren't used so far.
-        } else {
-            // Don't let them move objects beneath the floor.
-            definition.y = Math.max(0, definition.y);
+        if (definition.y < 0) {
+            // Rather than move the object into the floor, start moving it along
+            // the z-axis when it hits the floor.
+            definition.z += definition.y;
+            definition.y = 0;
+        } else if (definition.y > 0 && definition.z < MAX_Z) {
+            // Conversely, if something is moved up in the y direction, but isn't up against the back wall,
+            // move it back in the z-direction before moving it up the wall.
+            definition.z += definition.y;
+            // If they moved it all the way to the back wall, start moving up the wall.
+            definition.y = Math.max(0, definition.z - MAX_Z);
+            definition.z = Math.min(definition.z, MAX_Z);
         }
     }
 }
 
+function boundZPosition(definition: LocationDefinition, d: number): void {
+    if (definition.zAlign === 'back') {
+        definition.z = Math.max(2 * MIN_Z + d, Math.min(0, definition.z));
+    } else if (definition.zAlign === 'front') {
+        definition.z = Math.max(0, Math.min(2 * MAX_Z - d, definition.z));
+    } else {
+        definition.z = Math.max(MIN_Z + d / 2, Math.min(MAX_Z - d / 2, definition.z));
+    }
+}
+
 function moveMonsterDefinition(definition: MonsterDefinition, dx: number, dy: number): void {
-    moveLocationDefinition(definition.location, dx, 0, -2 * dy, getMonsterDefinitionAreaEntity(getCurrentArea(), definition));
+    moveLocationDefinition(definition.location, dx, 0, -2 * dy);
+    boundZPosition(definition.location, getMonsterDefinitionAreaEntity(getCurrentArea(), definition).d);
+    definition.location.y = 0;
     refreshEnemies();
 }
 
 function moveObject(object: AreaObject, dx: number, dy: number): void {
     const area = getState().selectedCharacter.hero.area;
-    let dz = 0;
     if (area.wallDecorations.includes(object)) {
-        dy = -dy;
+        moveLocationDefinition(object.definition, dx, -dy, 0);
     } else {
-        // For dragging an object, we need to multiply by 2 to make it follow the mouse
-        // since the z is scaled by 0.5.
-        dz = -dy * 2;
-        dy = 0;
+        moveLocationDefinition(object.definition, dx, 0, -dy * 2);
+        boundZPosition(object.definition, object.getAreaTarget().d);
+        object.definition.y = 0;
     }
-    // Only objects with definitions can be moved and saved.
-    if (!object.definition) {
-        return;
-    }
-    const target = object.getAreaTarget();
-    moveLocationDefinition(object.definition, dx, dy, dz, target);
     refreshDefinition(object);
 }
 
@@ -306,6 +350,14 @@ window['changeOrderInHash'] = changeOrderInHash;
 
 export function handleEditAreaKeyDown(keyCode: number): boolean {
     const { isEditing, selectedMonsterIndex, selectedObject } = editingAreaState;
+    if ((isKeyDown(KEY.COMMAND) || isKeyDown(KEY.CONTROL)) && keyCode === KEY.E) {
+        if (isEditing) {
+            stopEditing();
+        } else {
+            startEditing();
+        }
+        return true;
+    }
     if (!isEditing) {
         return false;
     }
@@ -447,8 +499,7 @@ export function getEditingContextMenu(): MenuOption[] {
                     return 'Start Editing';
                 },
                 onSelect() {
-                    editingAreaState.isEditing = true;
-                    editingAreaState.cameraX = getState().selectedCharacter.hero.area.cameraX;
+                    startEditing();
                 }
             },
         ];
@@ -501,6 +552,11 @@ export function getEditingContextMenu(): MenuOption[] {
         ...getSelectedObjectContextMenu(),
         ...getSelectedMonsterContextMenu(),
     ];
+}
+
+function startEditing() {
+    editingAreaState.isEditing = true;
+    editingAreaState.cameraX = getState().selectedCharacter.hero.area.cameraX;
 }
 
 export function stopEditing() {

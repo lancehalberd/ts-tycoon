@@ -3,8 +3,8 @@ import { getArea } from 'app/adventure';
 import { createVariableObject } from 'app/bonuses';
 import { abilities } from 'app/content/abilities';
 import { getAshleyRuthven, getGuildSpirit, getSprite } from 'app/content/actors';
+import { cutscenes } from 'app/content/cutscenes';
 import { Cutscene } from 'app/content/cutscenes/Cutscene';
-import { Mission1Intro } from 'app/content/cutscenes/mission1Intro';
 import { setGuildGateMission } from 'app/content/missions';
 import { makeMonster, monsters } from 'app/content/monsters';
 import { setContext } from 'app/context';
@@ -14,26 +14,8 @@ import { saveGame } from 'app/saveGame';
 import { actionDefinitions } from 'app/useSkill';
 
 import { Action, ActionStats, Actor, Area, GameContext, Hero } from 'app/types';
-/*let promises = [];
-function pause(message) {
-    return new Promise((resolve, reject) => {
-        promises.push(reject);
-        setTimeout(() => reject(message), 1000)
-    });
-}
-async function foo() {
-    try {
-        await Promise.all([pause('first'), pause('second')]);
-    } catch (e) {
-        console.log(e);
-    }
-}
-foo();
-for (const promise of promises) promise('reject fast');*/
 
 export class IntroScene extends Cutscene {
-    static key = 'intro';
-
     guildSpirit: Actor;
     ruthven: Actor;
     sprite: Actor;
@@ -168,11 +150,9 @@ export class IntroScene extends Cutscene {
         setGuildGateMission('mission1');
         this.cleanupScene();
         this.restoreArea();
-        getState().savedState.completedCutscenes[IntroScene.key] = true;
-        saveGame();
     }
 
     async setupNextScene() {
-        new Mission1Intro().run();
+        cutscenes.mission1Intro.run();
     }
 }

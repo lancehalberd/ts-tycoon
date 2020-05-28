@@ -21,6 +21,7 @@ import { saveGame } from 'app/saveGame';
 import { getState } from 'app/state';
 import { getMousePosition, isMouseDown } from 'app/utils/mouse';
 import { isPlayingTrack } from 'app/utils/sounds';
+import { updateNPCs } from 'app/content/updateNPCs';
 
 import { Actor, Area, Character, Hero } from 'app/types';
 
@@ -122,6 +123,7 @@ export function update() {
                             // Remove the portal to the mission now that it is completed.
                             setGuildGateMission(null);
                             returnToGuild(character);
+                            updateNPCs();
                         }
                     } else {
                         returnToGuild(character);
@@ -154,6 +156,21 @@ export function update() {
             updateArea(hero.area);
         }
     }
+    // Normally we play the ulocked foyer scene as soon as it is unlocked,
+    // but if the first mission isn't completed, it won't play until later.
+    // This code runs the scene when the player moves to an appropriate position
+    // in the foyer.
+    if (state.selectedCharacter.context === 'field'
+        && !state.savedState.completedCutscenes.unlockedFoyer
+        && state.savedState.unlockedGuildAreas.guildFoyer
+        && state.savedState.completedMissions.mission1
+        && state.selectedCharacter.hero.area?.key === 'guildFoyer'
+        && state.selectedCharacter.hero.x >= 175
+        && state.selectedCharacter.hero.x <= 250
+    ) {
+        cutscenes.unlockedFoyer.run();
+    }
+    // context might have changed if a cutscene started.
     const context = state.selectedCharacter.context;
     if (context === 'field' && isMouseDown()) {
         handleAdventureMouseIsDown(x, y);

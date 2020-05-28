@@ -27,7 +27,6 @@ import {
     guildYardEntrance, getState,
     implicitGuildBonusSource, initializeState,
 } from 'app/state';
-import { DialogueBox } from 'app/ui/DialogueBox';
 import { removeElementFromArray } from 'app/utils/index';
 import { bindMouseListeners } from 'app/utils/mouse';
 import Random from 'app/utils/Random';
@@ -81,7 +80,8 @@ export function initializeGame() {
         gain('fame', 1);
         gain('coins', 50);
         gain('anima', 0);
-        const jobKey = Random.element(jobRanks[0]); // 'blackbelt';
+        const jobKey = Random.element(jobRanks[0]);
+        //const jobKey = 'blackbelt';
         // jobKey = testJob || jobKey;
         const startingCharacter = newCharacter(characterClasses[jobKey]);
         updateHero(startingCharacter.hero);

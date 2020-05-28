@@ -221,12 +221,14 @@ export function createAttackStats(attacker: Actor, attack: Action, target: Targe
     }
     if (!animation && attacker.equipment.weapon) {
         const animationType = attacker.equipment.weapon.base.animation;
-        if (!projectileAnimations[animationType]) {
-            pause();
-            throw new Error('Missing animation for ' + animationType);
+        if (animationType) {
+            if (!projectileAnimations[animationType]) {
+                pause();
+                throw new Error('Missing animation for ' + animationType);
+            }
+            sound = attackSounds[animationType] || sound;
+            animation = projectileAnimations[animationType];
         }
-        sound = attackSounds[animationType] || sound;
-        animation = projectileAnimations[animationType];
     }
     const gravity = ifdefor(attack.base.gravity,
         ifdefor(attacker.equipment.weapon && attacker.equipment.weapon.base.gravity, 0.3));

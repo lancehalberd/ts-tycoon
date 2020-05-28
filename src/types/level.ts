@@ -35,7 +35,7 @@ export type LevelDifficulty = 'easy' | 'normal' | 'hard' | 'endless';
 export interface Shrine extends ShortRectangle {
     targetType: 'shrine',
     level: LevelData,
-    helpMethod?: Function,
+    helpMethod?: () => string,
     isPointOver?: (x: number, y: number) => boolean,
 }
 
@@ -56,7 +56,7 @@ export interface LevelData {
     shrine?: Shrine,
     x?: number, y?: number,
     w?: number, h?: number,
-    helpMethod?: Function,
+    helpMethod?: () => string,
     isPointOver?: (x: number, y: number) => boolean,
     // Only used during testing
     testArea?: boolean,
@@ -85,13 +85,12 @@ export interface AreaEntity {
     d: number,
 }
 
-export interface AreaTarget extends AreaEntity {
-    targetType: string,
-}
-export interface AreaObjectTarget extends AreaTarget {
+export interface AreaObjectTarget extends AreaEntity {
     targetType: 'object',
     object: AreaObject,
 }
-export interface LocationTarget extends AreaTarget {
+export interface LocationTarget extends AreaEntity {
     targetType: 'location',
 }
+export type AreaTarget = AreaObjectTarget | LocationTarget | Actor;
+

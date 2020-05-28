@@ -32,6 +32,7 @@ export function getAshleyRuthven(): Actor {
         updateHero(ruthven);
         // This does setup for entering an area.
         initializeActorForAdventure(ruthven);
+        ruthven.helpMethod = npcHelpMethod;
     }
     return ruthven;
 }
@@ -40,7 +41,9 @@ let sprite: Actor;
 export function getSprite(): Actor {
     if (!sprite) {
         sprite = makeMonster(null, monsters.fairy, 1, [], 0);
+        sprite.name = 'Sprite';
         sprite.y = 24;
+        sprite.helpMethod = npcHelpMethod;
     }
     return sprite;
 }
@@ -49,6 +52,12 @@ let guildSpirit: Actor;
 export function getGuildSpirit(): Actor {
     if (!guildSpirit) {
         guildSpirit = makeMonster(null, monsters.skeleton, 1, [], 0);
+        guildSpirit.name = 'Guild Spirit';
+        guildSpirit.helpMethod = npcHelpMethod;
     }
     return guildSpirit;
+}
+
+function npcHelpMethod(this: Actor): string {
+    return this.name;
 }

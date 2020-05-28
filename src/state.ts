@@ -3,6 +3,7 @@ import { addBonusSourceToObject, createVariableObject } from 'app/bonuses';
 import { setSelectedCharacter } from 'app/character';
 import { addTrophyToAltar, checkIfAltarTrophyIsAvailable, getDefaultAltarTrophies, updateTrophy } from 'app/content/achievements';
 import { createAreaFromDefinition, Bed, HeroApplication, TrophyAltar } from 'app/content/areas';
+import { cutscenes } from 'app/content/cutscenes';
 import { addAllUnlockedFurnitureBonuses } from 'app/content/furniture';
 import { map } from 'app/content/mapData';
 import { zones } from 'app/content/zones';
@@ -25,7 +26,8 @@ import {
     Applicant, Area, BonusSource, Character, Exit,
     FixedObject, GuildStats, Item, Jewel, JobAchievement,
     SavedItem, SavedTrophy, VariableObject,
-    SavedApplicant, SavedCharacter, SavedJewel, ShapeType
+    SavedApplicant, SavedCharacter, SavedJewel, ShapeType,
+    ZoneType
 } from 'app/types';
 
 // Types used for saving data in local storage.
@@ -52,9 +54,9 @@ export type SavedState = {
     fame: number,
     characters: SavedCharacter[],
     applicants: SavedApplicant[],
-    completedCutscenes: {[key: string]: true},
+    completedCutscenes: {[key in keyof typeof cutscenes]?: true},
     completedLevels: {[key: string]: true},
-    completedMissions: {[key: string]: true},
+    completedMissions: {[key in ZoneType]?: true},
     // bitmask, 0x1 is normal craft 0x10 is unique craft
     craftedItems: {[key: string]: number},
     // These three fields are needed to save state in the middle of item crafting.

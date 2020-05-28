@@ -133,8 +133,11 @@ query('.js-confirmSkill').onclick = function () {
     saveGame();
     // Let them look at the confirmed position for a moment before going back to the adventure screen.
     setTimeout(function () {
-        setContext('field');
+        // This needs to be done before setting context to field, otherwise the positioning of the
+        // newly placed board pieces gets messed up by an extra call to `renderChooseBlessing` as
+        // the field context briefly sees that the player is still selecting a shrine board augmentation.
         finishShrine(character);
+        setContext('field');
     }, 500);
 }
 query('.js-cancelSkill').onclick = () => setContext('field');

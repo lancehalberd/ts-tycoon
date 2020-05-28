@@ -14,8 +14,6 @@ import { actionDefinitions } from 'app/useSkill';
 import { Action, ActionStats, Actor, Area, GameContext, Hero } from 'app/types';
 
 export class Mission1Intro extends Cutscene {
-    static key = 'mission1Intro';
-
     sprite: Actor;
     hero: Hero;
 
@@ -77,8 +75,6 @@ export class Mission1Intro extends Cutscene {
         }
         hero.allies = hero.area.allies;
         hero.enemies = hero.area.enemies;
-        getState().savedState.completedCutscenes[Mission1Intro.key] = true;
-        saveGame();
     }
 
     async setupNextScene() {
