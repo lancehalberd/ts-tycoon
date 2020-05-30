@@ -514,8 +514,8 @@ export function applyAttackToTarget(
     attackStats.evaded = false;
     if (!attack.stats.alwaysHits) {
         const evasionRoll = (target.stats.maxEvasion ? 1 : Math.random()) * target.stats.evasion;
-        // Projectiles have up to 50% reduced accuracy at a distance of 10 * RANGE_UNIT pixels.
-        const effectiveAccuracy = attackStats.accuracy * Math.max(.5, 1 - (attackStats.distance || 0) / (20 * RANGE_UNIT));
+        // Projectiles have up to 20% reduced accuracy at a distance of 10 * RANGE_UNIT pixels.
+        const effectiveAccuracy = attackStats.accuracy * Math.max(.8, 1 - 0.2 * (attackStats.distance || 0) / (10 * RANGE_UNIT));
         // if(attacker.character) console.log([attackStats.distance, attackStats.accuracy, effectiveAccuracy, evasionRoll]);
         if (effectiveAccuracy - evasionRoll < 0) {
             hitText.value = 'miss';

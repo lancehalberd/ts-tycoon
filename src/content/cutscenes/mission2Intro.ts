@@ -70,7 +70,9 @@ export class Mission2Intro extends Cutscene {
         this.sprite.heading = [-1, 0, 0];
         await this.pause(500);
         const armorCount = this.getArmorCount();
-        if (armorCount < 4) {
+        if (armorCount < 1) {
+            await this.speak(this.sprite, `I think you made a mistake... what happened to your armor?`);
+        } else if (armorCount < 4) {
             await this.speak(this.sprite, `I don't think you'll be safe with that equipment.`);
         } else if (armorCount < 6) {
             await this.speak(this.sprite, `You're still missing a few pieces of gear...`);

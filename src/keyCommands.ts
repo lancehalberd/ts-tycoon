@@ -10,7 +10,6 @@ import { query, queryAll } from 'app/dom';
 import { handleSkillKeyInput } from 'app/render/drawActionShortcuts';
 import { handleEditAreaKeyDown } from 'app/development/editArea';
 import { handleEditMapKeyDown, isEditingAllowed } from 'app/development/editLevel';
-import { pasteCharacterToClipBoard } from 'app/development/testCharacters';
 import { reforgeItems } from 'app/equipmentCrafting';
 import { hideHeroApplication } from 'app/heroApplication';
 import {
@@ -103,9 +102,6 @@ document.addEventListener('keydown', function(event) {
         }
     }
     if (isEditingAllowed()) {
-        if (keyCode === KEY.C) {
-            pasteCharacterToClipBoard(state.selectedCharacter);
-        }
         if (keyCode === KEY.L) {
             const mapTarget = mapState.currentMapTarget;
             if (mapTarget && mapTarget.targetType === 'level') {

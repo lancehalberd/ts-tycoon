@@ -27,7 +27,7 @@ function drawFlashing(context: CanvasRenderingContext2D, frame: Frame, target: S
 }
 
 export class TrophyAltar extends EditableAreaObject {
-    name = 'Trophy Altar';
+    name = 'Trophy Pedestal';
     trophy: JobAchievement;
     animation = altar;
 
@@ -55,8 +55,10 @@ export class TrophyAltar extends EditableAreaObject {
     }
 
     helpMethod() {
-        if (this.trophy) return this.trophy.helpMethod();
-        return ('Trophy Altar');
+        if (this.trophy) {
+            return this.trophy.helpMethod();
+        }
+        return this.name;
     }
 
     render(context: CanvasRenderingContext2D) {

@@ -3,6 +3,7 @@ import {
     initializeActorForAdventure, isPointOverActor,
     setActorHealth, updateActorFrame
 } from 'app/actor';
+import { leaveCurrentArea } from 'app/adventure';
 import { updateAdventureButtons } from 'app/adventureButtons';
 import {
     addBonusSourceToObject, addVariableChildToObject,
@@ -569,8 +570,22 @@ export function totalCostForNextLevel(character: Character, level: {level: numbe
     }
     return Math.ceil((1 - (character.hero.stats.reducedDivinityCost || 0)) * totalDivinityCost);
 }
+// Clean up a character
+export function deleteCharacter(character: Character): void {
+    leaveCurrentArea(character.hero);
+    delete character.hero.personCanvas;
+    delete character.boardCanvas;
+    character.characterCanvas.remove();
+    delete character.characterCanvas;
+    delete character.hero.character;
+    delete character.hero;
+}
 export function setSelectedCharacter(character: Character) {
     const state = getState();
+    // Clean up test characters when they are no longer selected.
+    if (state.selectedCharacter && !state.characters.includes(state.selectedCharacter)) {
+        deleteCharacter(state.selectedCharacter);
+    }
     state.selectedCharacter = character;
     // For debug purposes, put selected hero on window.Hero.
     window['Hero'] = character.hero;

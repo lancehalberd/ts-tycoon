@@ -66,6 +66,12 @@ export function drawActorShadow(context: CanvasRenderingContext2D, actor: Actor)
 export function drawActor(this: Actor, context: CanvasRenderingContext2D) {
     const source = this.source;
     const scale = (this.stats.scale || 1);
+    const frame = this.frame;
+    if (!frame) {
+        console.error('Frame not set on actor', this);
+        debugger;
+        return;
+    }
     context.save();
     if (this.cloaked) {
         context.globalAlpha = .2;
@@ -96,7 +102,6 @@ export function drawActor(this: Actor, context: CanvasRenderingContext2D) {
     if (this.isDead) {
         context.globalAlpha = Math.max(0, 1 - (this.time - this.timeOfDeath));
     }
-    const frame = this.frame;
     const contentXCenterOffset = frame.content ? frame.content.x + frame.content.w / 2 : frame.w / 2;
     const contentYCenterOffset = frame.content ? frame.content.y + frame.content.h / 2 : frame.h / 2;
     // This is the rectangle we will draw the frame to. It is just the frame rectangle scaled and positions so that the

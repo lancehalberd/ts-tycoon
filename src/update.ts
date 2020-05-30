@@ -60,7 +60,11 @@ export function update() {
     try {
     const state = getState();
     //var characters = testingLevel ? [state.selectedCharacter] : state.characters;
-    const characters = state.characters;
+    let characters = [...state.characters];
+    // Add the test character to list of characters to process.
+    if (!characters.includes(state.selectedCharacter)) {
+        characters.push(state.selectedCharacter);
+    }
     const [x, y] = getMousePosition(mainCanvas, ADVENTURE_SCALE);
     const activeGuildAreaHash = {};
     for (const character of characters) {

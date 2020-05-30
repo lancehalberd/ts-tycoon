@@ -20,7 +20,7 @@ const allMissions: MissionParameters[] = [
         areaKey: 'forestClearing',
         type: 'defeatTarget',
         introKey: 'mission2Intro',
-        // outroKey: 'mission2Intro',
+        outroKey: 'mission2Outro',
     }
 ];
 

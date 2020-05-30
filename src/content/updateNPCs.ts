@@ -1,4 +1,4 @@
-import { enterArea, getArea } from 'app/adventure';
+import { enterArea, getArea, leaveCurrentArea } from 'app/adventure';
 import { getAshleyRuthven, getGuildSpirit } from 'app/content/actors';
 import { MAX_Z } from 'app/gameConstants';
 import { getState } from 'app/state';
@@ -11,7 +11,7 @@ export function updateNPCs() {
     const guildSpirit = getGuildSpirit();
     const completedMission2Outro = false;
     // Ruthven stands in the guild yard until the end of the second mission, where he leaves to help the refugees.
-    if (!completedMission2Outro) {
+    if (!state.savedState.completedCutscenes.mission2Outro) {
         const guildYard = getArea('guild', 'guildYard');
         enterArea(ruthven, {zoneKey: 'guild', areaKey: 'guildYard', x: guildYard.width - 130, z: MAX_Z - ruthven.d});
         ruthven.heading[0] = 1;
@@ -19,9 +19,11 @@ export function updateNPCs() {
             setDialogue(ruthven, ['We are counting on you.']);
         } else {
             setDialogue(ruthven, ['Take your time with this one.']);
-            ruthven.z = -40;
-            ruthven.x = guildYard.width - 140;
+            ruthven.z = -20;
+            ruthven.x = guildYard.width - 170;
         }
+    } else {
+        leaveCurrentArea(ruthven);
     }
     // The guild spirit stays in the yard until he moves into the foyer.
     // The cutscene where he moves into the foyer plays when you are in the

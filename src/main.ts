@@ -1,7 +1,7 @@
 import { cutscenes } from 'app/content/cutscenes';
 
 import { getPlanarDistanceSquared, leaveCurrentArea, limitZ } from 'app/adventure';
-import { setSelectedCharacter } from 'app/character';
+import { deleteCharacter, setSelectedCharacter } from 'app/character';
 import {
     getIsAltarTrophyAvailable,
     getChoosingTrophyAltar,
@@ -230,7 +230,7 @@ handleChildEvent('click', document.body, '.js-retire', function (retireButton) {
     state.characters.splice(index, 1);
     state.selectedCharacter = state.characters[Math.min(index, state.characters.length)];
     setSelectedCharacter(state.characters[Math.min(index, state.characters.length - 1)]);
-    removedCharacter.characterCanvas.remove();
+    deleteCharacter(removedCharacter);
     saveGame();
     updateRetireButtons();
 });

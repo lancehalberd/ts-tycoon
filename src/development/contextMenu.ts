@@ -3,6 +3,7 @@ import { enterArea } from 'app/adventure';
 import { cutscenes } from 'app/content/cutscenes';
 import { missions, setupMission } from 'app/content/missions';
 import { getEditingContextMenu, stopEditing } from 'app/development/editArea';
+import { getTestCharacterMenu } from 'app/development/testCharacterMenu';
 import { mainCanvas, tagElement } from 'app/dom';
 import { getState } from 'app/state';
 import { getElementRectangle } from 'app/utils/index';
@@ -106,8 +107,9 @@ class ContextMenu {
 export function getContextMenu(): MenuOption[] {
     return [
         ...getEditingContextMenu(),
-        ...getCutsceneMenu(),
         ...getMissionMenu(),
+        ...getTestCharacterMenu(),
+        ...getCutsceneMenu(),
     ];
 }
 

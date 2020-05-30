@@ -7,7 +7,6 @@ import { instantiateLevel } from 'app/content/levels';
 import { characterClasses } from 'app/content/jobs';
 import { map } from 'app/content/mapData';
 import { monsters } from 'app/content/monsters';
-import { testCharacters } from 'app/development/testCharacters';
 import { getElementIndex, handleChildEvent, mainCanvas, mainContext, query, queryAll, tagElement, toggleElements } from 'app/dom';
 import { ADVENTURE_SCALE, MAP_LEFT, MAP_TOP, MAP_WIDTH, MAP_HEIGHT, WORLD_RADIUS } from 'app/gameConstants';
 import { getMapTarget, mapLocation, mapState } from 'app/map';
@@ -255,17 +254,6 @@ export function startEditingLevel(level) {
     selectedBackgroundOption.selected = true;
 
     toggleElements(queryAll('.js-levelSkillSelect option'), true);
-    characterSelect.innerHTML = '';
-    for (const characterData of testCharacters) {
-        const job = characterClasses[characterData.hero.jobKey];
-        const label = ['Lv',characterData.hero.level, job.name, characterData.hero.name].join(' ');
-        characterSelect.appendChild(optionElement('', label, JSON.stringify(characterData)))
-    }
-    characterSelect.appendChild(optionElement('', '--Characters from Save--', null));
-    for (const character of state.characters) {
-        const label = ['Lv',character.hero.level, character.hero.job.name, character.hero.name].join(' ');
-        characterSelect.appendChild(optionElement('', label, JSON.stringify(exportCharacter(character))));
-    }
     // Hide skills already used by other levels.
     for (let otherLevelKey in map) {
         const otherLevel = map[otherLevelKey];

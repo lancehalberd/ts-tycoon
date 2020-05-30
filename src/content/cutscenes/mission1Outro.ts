@@ -53,8 +53,8 @@ export class Mission1Outro extends Cutscene {
         this.guildSpirit.heading = [-1, 0, 0];
         // Ruthven is now standing further down the screen.
         this.ruthven = getAshleyRuthven();
-        this.ruthven.z = -40;
-        this.ruthven.x = this.area.width - 140;
+        this.ruthven.z = -20;
+        this.ruthven.x = this.area.width - 170;
         this.setActors([this.hero, this.sprite, this.ruthven, this.guildSpirit]);
         this.area.cameraX = this.area.width - ADVENTURE_WIDTH;
         await this.fadeIn();

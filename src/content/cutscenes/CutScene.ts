@@ -111,7 +111,7 @@ export class Cutscene {
             if (cutsceneKey && this.shouldSaveSceneCompleted()) {
                 getState().savedState.completedCutscenes[cutsceneKey] = true;
                 saveGame();
-            } else {
+            } else if (!cutsceneKey) {
                 console.error('Could not find key for cutscene');
             }
             updateNPCs();

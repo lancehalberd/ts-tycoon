@@ -6,14 +6,10 @@ Features:
     [L] Add option for Pantheon dialogue at quest shrines.
     [L] Death recap for quests. Maybe not important with the more hands on gameplay.
 
+Abilities:
+    [M] Try making ricochet bounce off walls if any are in the correct range.
+
 Editor Improvements:
-    [H] Add test characters grouped by mission
-        - Add average characters for each mission, they can be used as strong/weak versions for other missions
-        - Export to clipboard/import from clipboard
-        - Export jewelboard as bonuses object+abilities array (disable jewel board on test chars)
-        - Some way to swap back to other characters (probably just click their portrait)
-        - When removing test char, put the original selected char in place of test char.
-        - Could worry about deleting test char canvases to avoid memory leak, but not important. We do need to do this for Person enemies since they will get created/destroyed in the game.
     [H] Add additional assets (decorations+objects) like rocks, bushes
     [H] Add NPC placement (to be used with tracker in mission 2)
     [H] Add Ally placement (to be used with villagers in mission 3)
@@ -25,6 +21,7 @@ Editor Improvements:
         - number input for monster level, area width, x, y, z
         - toggle for flipped
     [M] Set parent key + alignment on objects/monsters
+    [L] Export test character jewel board as just abilities+bonusSource and disable jewelboard for them?
     [L] Add library of object groups (like niche+candle+flame)
 
 Missions:
@@ -33,11 +30,17 @@ Missions:
     5+ assist other villages/cities/the king
 
 Cutscenes:
-    [M] Return to guild after mission 2, Ruthven explains Quest Board and departs to assist movement of the refugees.
-    [M] Guild Spirit explains higher level gear is available after mission 2 but you need to be more powerful to equip so you should do Shrine Quests.
-    [M] Guild Spirit suggests clearing  Guild Hall at level 2.
-    [L] Guild Spirit moves to Guild Hall and explains the Shrine of Creation.
+    [H] Guild Spirit explains Shrine Quests so you can get strong enough to clear out the guild hall.
+        Dialogue: (before level 2) + Guild spirit reminds you to be careful when choosing which shrine to activate.
+        Dialogue: (after level 2) + Guild spirit suggests crafting new armor before clearing the hall.
+    [M] Guild Spirit moves to Guild Hall and explains the Shrine of Creation.
+        Dialogue: GS: You can obtain additional jewels and divinity for each guild member that completes a new Shrine Quest, even if they don't request a blessing from the Pantheon.
+    [M] Sprite tells you she has applications from Ruthven, and places them on the board
+        - This occurs only after mission 2 outro is completed, character is level 2.
+        - She will remind you that you cannot hire any new members until the guest room is unlocked.
+        - Disable the first shrine quests until Guild Spirit explains Shrine Quests.
     [L] Guild Spirit explains enchanting gear after mission 4.
+    [L] Automatically make cutscene characters face whoever is speaking. Add some override to prevent this when desired.
 
 
 
@@ -70,7 +73,6 @@ Cutscenes:
         ********************************
                     New Features
         ********************************
--Add NPCs + dialogue
 -Jewel Crafting Leveling
 
 
@@ -96,7 +98,6 @@ Cutscenes:
         ********************************
                     Testing
         ********************************
--Make sure skills work in 2d
 
 
 
