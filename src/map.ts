@@ -34,6 +34,7 @@ import { getMousePosition, isMouseDown } from 'app/utils/mouse';
 import SphereVector from 'app/utils/SphereVector';
 import Vector from 'app/utils/Vector';
 import { worldCamera } from 'app/WorldCamera';
+import { getUnlockedShrineQuests } from 'app/worldState';
 
 import { LevelData, MapTarget, ShortRectangle, Shrine } from 'app/types';
 
@@ -282,17 +283,14 @@ document.addEventListener('mousemove', function (event) {
         mapState.mapDragY = y;
     }
 });
-export function unlockMapLevel(levelKey: string) {
-    getState().visibleLevels[levelKey] = true;
-}
 
-export function unlockInitialLevels() {
+export function setVisibleMapLevels() {
     const state = getState();
-    if (state.guildStats.hasMap) {
-        // console.log(state.selectedCharacter.context);
-        // Unlock the first areas on the map if they aren't unlocked yet.
-        for (const levelKey of map.guild.unlocks) {
-            state.visibleLevels[levelKey] = true;
+    state.visibleLevels = {};
+    state.visibleLevels.guild = true
+    for (const key of [...getUnlockedShrineQuests()]) {
+        if (map[key].level <= state.selectedCharacter.hero.level) {
+            state.visibleLevels[key] = true;
         }
     }
 }

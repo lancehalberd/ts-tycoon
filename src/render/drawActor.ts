@@ -159,30 +159,32 @@ export function drawActorEffects(context: CanvasRenderingContext2D, actor: Actor
     } */
     let actorTop = Math.round(GROUND_Y - actor.y - actor.z / 2 - actor.h);
     let y = actorTop - 10;
-    if (!isCutscene && actor.health > 0 && actor.health < actor.stats.maxHealth) {
-        drawBar(context, x, y, barWidth, 3, 'white', (actor.stats.lifeBarColor || 'red'), actor.health / actor.stats.maxHealth);
-        if (actor.stats.bonusMaxHealth >= 1 && actor.health >= actor.stats.maxHealth - actor.stats.bonusMaxHealth) {
-            // This logic is kind of a mess but it is to make sure the % of the bar that is due to bonusMaxHealth
-            // is drawn as orange instead of red.
-            const totalWidth = (barWidth - 2) * actor.health / actor.stats.maxHealth;
-            const normalWidth = Math.floor((barWidth - 2) * (actor.stats.maxHealth - actor.stats.bonusMaxHealth) / actor.stats.maxHealth);
-            const bonusWidth = Math.min(
-                totalWidth - normalWidth,
-                Math.ceil(
-                    (totalWidth - normalWidth)
-                    * (actor.stats.bonusMaxHealth - (actor.health - actor.stats.maxHealth))
-                    / actor.stats.bonusMaxHealth
-                )
-            );
-            context.fillStyle = 'orange';
-            context.fillRect(x + 1 + normalWidth, y + 1, bonusWidth, 1);
+    if (!isCutscene) {
+        if (actor.health > 0 && actor.health < actor.stats.maxHealth) {
+            drawBar(context, x, y, barWidth, 3, 'white', (actor.stats.lifeBarColor || 'red'), actor.health / actor.stats.maxHealth);
+            if (actor.stats.bonusMaxHealth >= 1 && actor.health >= actor.stats.maxHealth - actor.stats.bonusMaxHealth) {
+                // This logic is kind of a mess but it is to make sure the % of the bar that is due to bonusMaxHealth
+                // is drawn as orange instead of red.
+                const totalWidth = (barWidth - 2) * actor.health / actor.stats.maxHealth;
+                const normalWidth = Math.floor((barWidth - 2) * (actor.stats.maxHealth - actor.stats.bonusMaxHealth) / actor.stats.maxHealth);
+                const bonusWidth = Math.min(
+                    totalWidth - normalWidth,
+                    Math.ceil(
+                        (totalWidth - normalWidth)
+                        * (actor.stats.bonusMaxHealth - (actor.health - actor.stats.maxHealth))
+                        / actor.stats.bonusMaxHealth
+                    )
+                );
+                context.fillStyle = 'orange';
+                context.fillRect(x + 1 + normalWidth, y + 1, bonusWidth, 1);
+            }
+            context.save();
+            context.fillStyle = 'white';
+            context.globalAlpha = .7;
+            const targetSize = Math.floor((barWidth - 2) * Math.max(0, actor.targetHealth) / actor.stats.maxHealth);
+            context.fillRect(x + 1 + targetSize, y + 1, (barWidth - 2) - targetSize, 1);
+            context.restore();
         }
-        context.save();
-        context.fillStyle = 'white';
-        context.globalAlpha = .7;
-        const targetSize = Math.floor((barWidth - 2) * Math.max(0, actor.targetHealth) / actor.stats.maxHealth);
-        context.fillRect(x + 1 + targetSize, y + 1, (barWidth - 2) - targetSize, 1);
-        context.restore();
         if (actor.reflectBarrier > 0) {
             y -= 2;
             const width = Math.ceil(Math.min(1, actor.maxReflectBarrier / actor.stats.maxHealth) * barWidth);

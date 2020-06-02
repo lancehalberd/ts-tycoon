@@ -45,7 +45,7 @@ export function showAreaMenu() {
             }
             medal.style.display = '';
         }
-        hardDifficulty.style.display  = state.savedState.completedLevels[selectedLevel.levelKey] ? '' : 'none';
+        hardDifficulty.style.display = '';
 
         if (times['hard']) {
             endlessDifficulty.innerText
@@ -70,8 +70,10 @@ function selectDifficulty(difficulty: LevelDifficulty) {
     hideAreaMenu();
     const state = getState();
     state.selectedCharacter.levelDifficulty = difficulty;
-    setContext('field');
+    // Set the level before setting context to field, as area is expected to be set before
+    // displaying the field context.
     startLevel(state.selectedCharacter, state.selectedCharacter.selectedLevelKey);
+    setContext('field');
 }
 
 export function getEndlessLevel(character: Character, level: LevelData): number {

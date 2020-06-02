@@ -138,7 +138,7 @@ function getMissionMenu(): MenuOption[] {
             return 'Mission...';
         },
         getChildren() {
-            return Object.keys(missions).map(missionKey => {
+            const options = Object.keys(missions).map(missionKey => {
                 const mission = missions[missionKey];
                 return {
                     label: `Start ${missionKey}: ${mission.name}`,
@@ -151,6 +151,15 @@ function getMissionMenu(): MenuOption[] {
                     }
                 }
             });
+            if (character.mission && !character.mission.completed) {
+                options.unshift({
+                    label: 'Complete Mission',
+                    onSelect() {
+                        character.mission.completed = true;
+                    }
+                })
+            }
+            return options;
         }
     }];
 }

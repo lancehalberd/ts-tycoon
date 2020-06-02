@@ -952,6 +952,7 @@ export const map = {
     },
     'guild': {
         'name': "Guild Hall",
+        'level': 0,
         'coords': [47,113,-587],
         'unlocks': ["meadow","grove","cave"],
     },
@@ -1090,7 +1091,7 @@ export const map = {
             ["vampireBat","gnomeCleric"]
         ]
     },
-    'master1': {
+    /*'master1': {
         'name': "master1",
         'description': "",
         'level': 1,
@@ -1101,7 +1102,7 @@ export const map = {
         'enemySkills': [],
         'monsters': [],
         'events': []
-    },
+    },*/
     'master2': {
         'name': "master2",
         'description': "",

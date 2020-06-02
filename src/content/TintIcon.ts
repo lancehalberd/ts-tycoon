@@ -10,13 +10,12 @@ const tintCompositeContext = tintCompositeCanvas.getContext('2d');
 // document.body.appendChild(tintCompositeCanvas);
 // This class only works for 32x32 icon images currently. To expand this we would need
 // to increase the size of the composite canvas and then add options to configure the size.
-export default class TintIcon extends Renderable {
+export default class TintIcon implements Renderable {
     type: string = 'tintIcon';
     frame: Frame;
     color: string;
 
     constructor(imageFile, color) {
-        super();
         this.frame = {
             image: requireImage(imageFile),
             x: 0, y: 0, w: 32, h: 32,

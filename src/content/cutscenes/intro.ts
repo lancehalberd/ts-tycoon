@@ -4,7 +4,7 @@ import { createVariableObject } from 'app/bonuses';
 import { abilities } from 'app/content/abilities';
 import { getAshleyRuthven, getGuildSpirit, getSprite } from 'app/content/actors';
 import { cutscenes } from 'app/content/cutscenes';
-import { Cutscene } from 'app/content/cutscenes/Cutscene';
+import Cutscene from 'app/content/cutscenes/Cutscene';
 import { setGuildGateMission } from 'app/content/missions';
 import { makeMonster, monsters } from 'app/content/monsters';
 import { setContext } from 'app/context';
@@ -15,7 +15,7 @@ import { actionDefinitions } from 'app/useSkill';
 
 import { Action, ActionStats, Actor, Area, GameContext, Hero } from 'app/types';
 
-export class IntroScene extends Cutscene {
+export default class IntroScene extends Cutscene {
     guildSpirit: Actor;
     ruthven: Actor;
     sprite: Actor;
@@ -144,7 +144,6 @@ export class IntroScene extends Cutscene {
     }
 
     async runEndScript() {
-        const hero = getState().selectedCharacter.hero;
         await this.fadeOut();
         // Make sure the guild gate ends up set to mission 1 even if the intro is skipped.
         setGuildGateMission('mission1');

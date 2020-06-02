@@ -6,6 +6,7 @@ import { bonusSourceHelpText } from 'app/helpText';
 import { drawWhiteOutlinedFrame, drawSolidTintedFrame, drawCompositeTintedFrame } from 'app/images';
 import { getCanvasCoords } from 'app/main';
 import { getState } from 'app/state';
+import { createAnimation, drawFrame } from 'app/utils/animations';
 
 import { Bonuses, Color, Frame, JobKey, ShortRectangle } from 'app/types';
 
@@ -13,6 +14,14 @@ interface AchievementBonus {
     target: number,
     bonuses: Bonuses,
 }
+
+
+const iconTrophyFrames = createAnimation('gfx2/objects/classtrophiessheet.png', {w: 24, h: 24}, {cols: 18}).frames;
+const achievementFrames: {[key in JobKey]?: Frame[]} = {
+    juggler: iconTrophyFrames.slice(1, 6),
+    priest: iconTrophyFrames.slice(7, 12),
+    blackbelt: iconTrophyFrames.slice(13, 18),
+};
 
 export default class JobAchievement {
     jobKey: JobKey;
@@ -32,12 +41,15 @@ export default class JobAchievement {
         this.title = job.name + ' Trophy';
         this.level = 0;
         this.value = 0;
-        const image = characterClasses[this.jobKey].achievementImage;
-        this.frame = {
-            image, x: 41, y: 0, w: 40, h: 40,
-        };
-        this.tintFrame = {
-            image, x: 0, y: 0, w: 40, h: 40,
+        // If we have newer achievement frames for this achievement, we don't need this code.
+        if (!achievementFrames[this.jobKey]) {
+            const image = characterClasses[this.jobKey].achievementImage;
+            this.frame = {
+                image, x: 41, y: 0, w: 40, h: 40,
+            };
+            this.tintFrame = {
+                image, x: 0, y: 0, w: 40, h: 40,
+            }
         }
         this.bonusesArray = [
             {target: 2, bonuses: bonuses[0]},
@@ -47,12 +59,21 @@ export default class JobAchievement {
         ];
     }
     render(context: CanvasRenderingContext2D, target: ShortRectangle) {
+        const frames = achievementFrames[this.jobKey];
+        if (frames) {
+            if (this.level === 0 ) {
+                drawSolidTintedFrame(context, {...frames[0], color: '#666'}, target);
+                return;
+            }
+            drawFrame(context, frames[this.level - 1], target);
+            if (this.level >= 4) {
+                // TODO: draw animated sparkles on the trophy.
+            }
+            return;
+        }
         const jobTrophyImage = characterClasses[this.jobKey].achievementImage;
         if (this.level === 0 ) {
             drawSolidTintedFrame(context, {...this.tintFrame, color: '#666'}, target);
-            //context.save();
-            //drawSolidTintedImage(context, jobTrophyImage, , {'left': 0, 'top': 0, 'width': 40, 'height': 40}, target);
-            //context.restore();
             return;
         }
         let color: Color;

@@ -7,7 +7,7 @@ import { getState } from 'app/state';
 
 import { Actor, Hero } from 'app/types';
 
-export default class UnlockedFoyer extends Cutscene {
+export default class ShrineQuestTutorial extends Cutscene {
     guildSpirit: Actor;
     sprite: Actor;
     hero: Hero;

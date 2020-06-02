@@ -546,7 +546,7 @@ export function gainLevel(hero: Hero) {
     // One way to avoid this in the future would be to store this as a single bonus
     // that uses the character level as input. Then if we called setStat(hero, 'level', hero.level + 1);
     // All the other stats would be updated as a result. A similar approach could be used to set the base monster bonuses.
-    // The formulate for monster health is too complicated for the bonus system to support at the moment though.
+    // The formula for monster health is too complicated for the bonus system to support at the moment though.
     updateHero(hero);
     refreshStatsPanel();
     updateEquipableItems();
@@ -610,13 +610,13 @@ export function setSelectedCharacter(character: Character) {
     // character.boardCanvas = jewelsCanvas;
     const jewelBonusContainer = query('.js-jewelBonuses .js-content');
     jewelBonusContainer.innerHTML = bonusSourceHelpText(character.jewelBonuses, character.hero);
-    centerMapOnLevel(map[character.currentLevelKey] || map.guild);
     updateAdventureButtons();
     updateSkillConfirmationButtons();
     updateEquipableItems();
     //character.$characterCanvas.after($('.js-divinityPoints'));
     //query('.js-charactersBox .js-divinityPoints').after(character.characterCanvas)
     //query('.js-charactersBox').appendChild();
+    centerMapOnLevel(map[character.currentLevelKey] || map.guild);
     showContext(character.context);
     // Immediately show the desired camera position so the camera doesn't have to
     // catch up on showing the area (the camera isn't updated when the character isn't selected).

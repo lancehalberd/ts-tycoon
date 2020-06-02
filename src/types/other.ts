@@ -7,11 +7,8 @@ export type Range = [number, number];
 
 export type Tags = {[key: string]: true};
 
-export class Renderable {
-    render(context: CanvasRenderingContext2D, target: ShortRectangle) {
-        debugger;
-        throw new Error('render not implemented');
-    }
+export interface Renderable {
+    render(context: CanvasRenderingContext2D, target: ShortRectangle): void
 }
 
 export type GameContext = 'cutscene' | 'field' | 'item' | 'jewel' | 'map';

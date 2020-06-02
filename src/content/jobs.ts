@@ -2,15 +2,15 @@ import { classBoards, squareBoard } from 'app/content/boards';
 import { itemsByKey } from 'app/content/equipment/index';
 import { drawImage, requireImage } from 'app/images';
 import { smallJewelLoot, jewelLoot } from 'app/loot';
-import { drawFrame } from 'app/utils/animations';
+import { createAnimation, drawFrame } from 'app/utils/animations';
 
-import { Job, JobKey, Renderable, ShortRectangle } from 'app/types';
+import { Frame, Job, JobKey, Renderable, ShortRectangle } from 'app/types';
 
 export const characterClasses:Partial<{[key in JobKey]: Job}> = {};
 window['characterClasses'] = characterClasses;
 
 const jobIconImage = requireImage('gfx/jobIcons.png');
-export class JobIcon extends Renderable {
+export class JobIcon implements Renderable {
     image: HTMLImageElement = jobIconImage;
     x: number;
     y: number;
@@ -18,7 +18,6 @@ export class JobIcon extends Renderable {
     h: number;
 
     constructor(column: number, row: number) {
-        super();
         this.x = column * 41;
         this.y = row * 41;
         this.w = 40;
@@ -30,19 +29,33 @@ export class JobIcon extends Renderable {
     }
 }
 
-export const jobIcons: {[key in JobKey]: JobIcon} = {
+class RenderableFrame implements Renderable {
+    frame: Frame;
+
+    constructor(frame: Frame) {
+        this.frame = frame;
+    }
+
+    render(context: CanvasRenderingContext2D, target: ShortRectangle) {
+        drawFrame(context, this.frame, target);
+    }
+}
+
+const iconTrophyFrames = createAnimation('gfx2/objects/classtrophiessheet.png', {w: 24, h: 24}, {cols: 18}).frames;
+
+export const jobIcons: {[key in JobKey]: Renderable} = {
     // None
     fool: new JobIcon(0, 2),
     // Strength
-    blackbelt: new JobIcon(0, 1),
+    blackbelt: new RenderableFrame(iconTrophyFrames[12]),
     warrior: new JobIcon(1, 1),
     samurai: new JobIcon(2, 1),
     // Dexterity
-    juggler: new JobIcon(4, 0),
+    juggler: new RenderableFrame(iconTrophyFrames[0]),
     ranger: new JobIcon(4, 2),
     sniper: new JobIcon(0, 0),
     // Intelligence
-    priest: new JobIcon(0, 3),
+    priest: new RenderableFrame(iconTrophyFrames[6]),
     wizard: new JobIcon(4, 3),
     sorcerer: new JobIcon(1, 3),
     // Strength+Dexterity

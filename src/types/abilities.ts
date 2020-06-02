@@ -3,7 +3,7 @@ import { Bonuses } from 'app/types/bonuses';
 import {
     ActionStats, Actor, FrameAnimation, AreaEntity, ArrayFrame, Area, BonusSource,
     Character, Color, EffectVariableObject,
-    Frame, Rectangle, ShortRectangle, Target, TintIcon,
+    Frame, Rectangle, Renderable, ShortRectangle, Target, TintIcon,
     VariableObject, VariableObjectBase,
 } from 'app/types';
 
@@ -26,7 +26,7 @@ export interface ActionData {
     bonuses: Bonuses,
     hasImplicitBonuses: true,
     helpText: string,
-    icon: string | Frame,
+    icon: string | Frame | Renderable,
     tags: string[],
     // This will render the skill name as it is used.
     showName?: boolean,
@@ -124,7 +124,7 @@ export interface Ability {
     onMissEffect?: TriggerEffect,
     bonuses?: Bonuses,
     minionBonuses?: Bonuses,
-    icon?: JobIcon | Frame | TintIcon | string,
+    icon?: Frame | Renderable | string,
     helpText?: string,
 }
 

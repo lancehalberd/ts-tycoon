@@ -5,7 +5,6 @@ import {
 import { map } from 'app/content/mapData';
 import { setContext } from 'app/context';
 import { requireImage } from 'app/images';
-import { unlockInitialLevels } from 'app/map';
 import { getState } from 'app/state';
 
 import {
@@ -16,12 +15,11 @@ const guildImage = requireImage('gfx/guildhall.png');
 const mapTableFrame:Frame = {image: guildImage, x: 360, y: 150, w: 60, h: 30, content: {x: 0, y: 0, w: 60, h: 27, d: 30}};
 
 export function openWorldMap() {
-    unlockInitialLevels();
     setContext('map');
 }
 
 export class MapTable extends EditableAreaObject {
-    name = 'World Map';
+    name = 'Shrine Map';
     bonusSource = {'bonuses': {'$hasMap': true}};
     getFrame(): Frame {
         return mapTableFrame;

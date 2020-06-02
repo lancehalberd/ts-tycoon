@@ -24,7 +24,6 @@ import { ADVENTURE_WIDTH, FRAME_LENGTH, MIN_SLOW, MIN_Z, MAX_Z, RANGE_UNIT } fro
 import { increaseAgeOfApplications } from 'app/heroApplication';
 import { animaLootDrop, coinsLootDrop } from 'app/loot';
 import { setActorInteractionTarget } from 'app/main';
-import { unlockMapLevel } from 'app/map';
 import { moveActor } from 'app/moveActor';
 import { updateActorHelpText } from 'app/popup';
 import { updateActorAnimationFrame } from 'app/render/drawActor';
@@ -807,12 +806,6 @@ export function completeLevel(hero: Hero, completionTime = 0) {
     if (oldDivinityScore === 0) {
         character.fame += level.level;
         gain('fame', level.level);
-        // Unlock the next areas.
-        const levelData = map[character.currentLevelKey];
-        state.savedState.completedLevels[character.currentLevelKey] = true;
-        levelData.unlocks.forEach(function (levelKey) {
-            unlockMapLevel(levelKey);
-        });
     }
     let newDivinityScore;
     const currentEndlessLevel = getEndlessLevel(character, level);
@@ -834,6 +827,10 @@ export function completeLevel(hero: Hero, completionTime = 0) {
             'vx': 0, 'vy': 1, 'gravity': .1
         };
         appendTextPopup(hero.area, textPopup, true);
+        // Update the divinity display if this is the selected character.
+        if (hero === getState().selectedCharacter.hero) {
+            refreshStatsPanel();
+        }
     }
     character.divinityScores[character.currentLevelKey] = Math.max(oldDivinityScore, newDivinityScore);
     // Initialize level times for this level if not yet set.

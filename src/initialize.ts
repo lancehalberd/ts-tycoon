@@ -20,7 +20,7 @@ import { createNewHeroApplicant, hireCharacter, jobRanks } from 'app/heroApplica
 import { makeJewel } from 'app/jewels'
 import { addKeyCommands } from 'app/keyCommands';
 import { gainJewel } from 'app/loot';
-import { centerMapOnLevel, unlockInitialLevels } from 'app/map';
+import { centerMapOnLevel } from 'app/map';
 import { gain } from 'app/points';
 import { eraseSave, loadSavedData } from 'app/saveGame';
 import {
@@ -82,7 +82,6 @@ export function initializeGame() {
         gain('anima', 0);
         const jobKey = Random.element(jobRanks[0]);
         //const jobKey = 'blackbelt';
-        // jobKey = testJob || jobKey;
         const startingCharacter = newCharacter(characterClasses[jobKey]);
         updateHero(startingCharacter.hero);
         hireCharacter(startingCharacter as Applicant);
@@ -94,13 +93,11 @@ export function initializeGame() {
         enterArea(state.selectedCharacter.hero, guildYardEntrance);
     }
     state.gameHasBeenInitialized = true;
-    state.visibleLevels['guild'] = true;
     if (state.savedState.skipShrinesEnabled) {
         query('.js-shrineButton').style.display = '';
     }
     updateItemsThatWillBeCrafted();
     updateEnchantmentOptions();
-    unlockInitialLevels();
     centerMapOnLevel(map[state.selectedCharacter.currentLevelKey] || map.guild, true);
     drawMap();
     // The main loop will throw errors constantly if an error prevented selectedCharacter

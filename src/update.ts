@@ -173,6 +173,15 @@ export function update() {
         && state.selectedCharacter.hero.x <= 250
     ) {
         cutscenes.unlockedFoyer.run();
+    } else if (state.selectedCharacter.context === 'field'
+        && !state.savedState.completedCutscenes.shrineQuestTutorial
+        && state.savedState.unlockedGuildAreas.guildFoyer
+        && state.savedState.completedMissions.mission2
+        && state.savedState.completedCutscenes.unlockedFoyer
+        && state.selectedCharacter.hero.area?.key === 'guildFoyer'
+        && state.selectedCharacter.hero.x <= 200
+    ) {
+        cutscenes.shrineQuestTutorial.run();
     }
     // context might have changed if a cutscene started.
     const context = state.selectedCharacter.context;

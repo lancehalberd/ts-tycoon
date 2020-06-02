@@ -20,7 +20,7 @@ import {
 } from 'app/saveGame';
 import { Polygon } from 'app/utils/polygon';
 
-import { Cutscene } from 'app/content/cutscenes/Cutscene';
+import Cutscene from 'app/content/cutscenes/Cutscene';
 
 import {
     Applicant, Area, BonusSource, Character, Exit,
@@ -320,15 +320,6 @@ export function importState(savedState: SavedState) {
         } else enterArea(character.hero, guildYardEntrance);
         query('.js-charactersBox').appendChild(character.characterCanvas);
     });
-    for (let completedLevelKey in state.savedState.completedLevels) {
-        const level = map[completedLevelKey];
-        if (!level) {
-            delete state.savedState.completedLevels[completedLevelKey];
-            continue;
-        }
-        state.visibleLevels[completedLevelKey] = true;
-        for (var nextLevelKey of level.unlocks) state.visibleLevels[nextLevelKey] = true;
-    }
     const craftingItems = [...savedState.craftingItems];
     if (craftingItems.length) {
         for (const itemSlot of queryAll('.js-craftingSelectOptions .js-itemSlot')) {

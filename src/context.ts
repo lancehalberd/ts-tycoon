@@ -7,6 +7,7 @@ import { autoplayControls, jewelsCanvas, query, queryAll, toggleElement, toggleE
 import { drawBoardJewels } from 'app/drawBoard';
 import { stopDrag } from 'app/inventory';
 import { jewelInventoryState, stopJewelDrag } from 'app/jewelInventory';
+import { setVisibleMapLevels } from 'app/map';
 import { hidePointsPreview } from 'app/points';
 import { removePopup, setCanvasPopupTarget } from 'app/popup';
 import { getState, guildYardEntrance } from 'app/state';
@@ -59,6 +60,9 @@ export function showContext(context: GameContext): void {
     overlay.style.opacity = (context === 'cutscene' ? '1' : '0');
     toggleElements(queryAll('.js-adventureContext, .js-jewelContext, .js-itemContext, .js-guildContext, .js-mapContext, .js-cutsceneContext'), false);
     toggleElements(queryAll(`.js-${context}Context`), true);
+    if (context === 'map') {
+        setVisibleMapLevels();
+    }
     if (context === 'field' && state.selectedCharacter.activeShrine) {
         showChooseBlessing();
     } else {

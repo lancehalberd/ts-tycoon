@@ -8,7 +8,6 @@ import { drawBoardBackground, drawBoardJewels } from 'app/drawBoard';
 import { jewelInventoryState, updateJewelUnderMouse } from 'app/jewelInventory';
 import { drawImage } from 'app/images';
 import { inventoryState } from 'app/inventory';
-import { unlockMapLevel } from 'app/map';
 import { updateRetireButtons } from 'app/main';
 import { gain, hidePointsPreview, previewPointsChange, points, spend } from 'app/points';
 import { saveGame } from 'app/saveGame';
@@ -151,7 +150,6 @@ export function hireCharacter(applicant: Applicant) {
     if (state.characters.length > 0 && state.characters.length >= state.guildStats.maxHeroes) {
         return;
     }
-    unlockMapLevel(applicant.currentLevelKey);
     gain('fame', applicant.fame);
     state.characters.push(applicant);
     // Update the adventurer because it may not have guild bonuses applied to it yet.

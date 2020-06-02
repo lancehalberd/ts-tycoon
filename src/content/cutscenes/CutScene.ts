@@ -29,7 +29,7 @@ interface Operation {
     done: boolean,
 }
 
-export class Cutscene {
+export default class Cutscene {
     area: Area;
     actors: Actor[] = [];
     activeOperations: Operation[] = [];
@@ -64,6 +64,7 @@ export class Cutscene {
             this.stashedAllies = null;
             this.stashedEnemies = null;
         }
+        updateNPCs();
     }
 
     setActors(actors: Actor[]): void {
@@ -104,16 +105,16 @@ export class Cutscene {
     async endScene(): Promise<void> {
         try {
             this.finished = true;
-            await this.runEndScript();
-            getState().cutscene = null;
-            await this.setupNextScene();
-            const cutsceneKey = _.findKey(cutscenes, this);
+            const cutsceneKey = _.findKey(cutscenes, scene => scene === this);
             if (cutsceneKey && this.shouldSaveSceneCompleted()) {
                 getState().savedState.completedCutscenes[cutsceneKey] = true;
                 saveGame();
             } else if (!cutsceneKey) {
                 console.error('Could not find key for cutscene');
             }
+            await this.runEndScript();
+            getState().cutscene = null;
+            await this.setupNextScene();
             updateNPCs();
         } catch (e) {
             if (e && e.message) {

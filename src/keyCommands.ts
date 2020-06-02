@@ -16,7 +16,7 @@ import {
     areAnyCraftedItemsVisible, equipItem, getItemForElement, inventoryState, sellItem,
 } from 'app/inventory';
 import { jewelInventoryState, sellJewel } from 'app/jewelInventory';
-import { mapState, unlockInitialLevels } from 'app/map';
+import { mapState } from 'app/map';
 import { gain } from 'app/points';
 import { getPopup } from 'app/popup';
 import { getState, guildYardEntrance } from 'app/state';
@@ -123,7 +123,6 @@ document.addEventListener('keydown', function(event) {
         }
     }
     if (keyCode === KEY.M && state.guildStats.hasMap) {
-        unlockInitialLevels();
         if (state.selectedCharacter.context === 'map') {
             if (!state.selectedCharacter.hero.area) {
                 enterArea(state.selectedCharacter.hero, guildYardEntrance);
@@ -165,11 +164,6 @@ document.addEventListener('keydown', function(event) {
             }
         });
         unlockItemLevel(73);
-        state.characters.forEach(function (character) {
-            $.each(map, function (key) {
-                unlockMapLevel(key);
-            });
-        });
     }*/
     if (keyCode == KEY.E) {
         const popup = getPopup();

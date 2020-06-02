@@ -115,8 +115,10 @@ export function redrawInventoryJewels() {
 jewelInventoryContainer.onscroll = redrawInventoryJewels;
 
 export function sellJewel(jewel: Jewel) {
-    if (jewel.fixed) return;
-    if (jewel.character && getState().characters.indexOf(jewel.character) < 0) {
+    if (jewel.fixed) {
+        return;
+    }
+    if (jewel.character !== getState().selectedCharacter) {
         return;
     }
     if (inventoryState.dragHelper && jewel !== jewelInventoryState.draggedJewel) {
@@ -134,12 +136,18 @@ export function sellJewel(jewel: Jewel) {
 document.body.ondblclick = function (event) {
     const state = getState();
     const { overJewel } = jewelInventoryState;
-    if (!overJewel || !overJewel.fixed || !overJewel.confirmed) return; // dblclick action only applies to fixed jewels
-    // Cannot interact with jewel boards of characters that are not in your guild yet.
-    if (overJewel.character && state.characters.indexOf(overJewel.character) < 0) return;
+    if (!overJewel || !overJewel.fixed || !overJewel.confirmed) {
+        return; // dblclick action only applies to fixed jewels
+    }
+    // This is primarily meant to prevent editing jewel boards displayed in applications.
+    if (overJewel.character !== state.selectedCharacter) {
+        return;
+    }
     overJewel.disabled = !overJewel.disabled;
     const ability = overJewel.ability;
-    if (!ability) return;
+    if (!ability) {
+        return;
+    }
     const hero = state.selectedCharacter.hero;
     if (overJewel.disabled) {
         const abilityIndex = hero.abilities.indexOf(ability);
@@ -168,8 +176,8 @@ document.body.onmousedown = function (event) {
     if (!jewelInventoryState.overJewel) {
         return;
     }
-    // Cannot interact with jewel boards of characters that are not in your guild yet.
-    if (jewelInventoryState.overJewel.character && getState().characters.indexOf(jewelInventoryState.overJewel.character) < 0) {
+    // This is primarily meant to prevent editing jewel boards displayed in applications.
+    if (jewelInventoryState.overJewel.character !== getState().selectedCharacter) {
         return;
     }
     if (jewelInventoryState.overJewel.fixed) {

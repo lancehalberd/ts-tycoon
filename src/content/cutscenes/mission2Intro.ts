@@ -2,7 +2,7 @@ import { getArea } from 'app/adventure';
 import { createVariableObject } from 'app/bonuses';
 import { abilities } from 'app/content/abilities';
 import { getSprite } from 'app/content/actors';
-import { Cutscene } from 'app/content/cutscenes/Cutscene';
+import Cutscene from 'app/content/cutscenes/Cutscene';
 import { setupMission } from 'app/content/missions';
 import { makeMonster, monsters } from 'app/content/monsters';
 import { setContext } from 'app/context';
@@ -13,7 +13,7 @@ import { actionDefinitions } from 'app/useSkill';
 
 import { Action, ActionStats, Actor, Area, GameContext, Hero } from 'app/types';
 
-export class Mission2Intro extends Cutscene {
+export default class Mission2Intro extends Cutscene {
     sprite: Actor;
     hero: Hero;
 

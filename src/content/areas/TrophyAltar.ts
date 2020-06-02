@@ -21,6 +21,7 @@ const altarGeometry: FrameDimensions = {w: 24, h: 31, d: 24, content: {x: 2, y: 
 const altar: FrameAnimation = createAnimation('gfx2/objects/trophyaltar.png', altarGeometry, {x: 6});
 const altarHover: FrameAnimation = createAnimation('gfx2/objects/trophyaltar.png', altarGeometry, {cols: 2});
 const altarGlow: FrameAnimation = createAnimation('gfx2/objects/trophyaltar.png', altarGeometry, {cols: 4, x: 2});
+const altarGlowFront: FrameAnimation = createAnimation('gfx2/objects/trophyalterfront.png', altarGeometry, {cols: 4, x: 2})
 
 function drawFlashing(context: CanvasRenderingContext2D, frame: Frame, target: ShortRectangle): void {
     drawTintedFrame(context, {...frame, color: 'white', amount: 0.5 + .2 * Math.sin(Date.now() / 150)}, target);
@@ -44,7 +45,7 @@ export class TrophyAltar extends EditableAreaObject {
         const rectangle = areaTargetToScreenTarget(target);
         return {
             x: rectangle.x + rectangle.w / 2 - TROPHY_SIZE / 2,
-            y: rectangle.y - TROPHY_SIZE + 1 + 3 * Math.sin(this.area.time * 2),
+            y: rectangle.y - TROPHY_SIZE + 4 + 3 * Math.sin(this.area.time * 2),
             w: TROPHY_SIZE,
             h: TROPHY_SIZE,
         };
@@ -65,10 +66,12 @@ export class TrophyAltar extends EditableAreaObject {
         // Draw with white outlines when this is the canvas target.
         const altarFrame = this.getFrame();
         let glowFrame = null;
+        let glowFrontFrame = null;
         if (getCanvasPopupTarget() === this) {
             glowFrame = getFrame(altarHover, this.area.time * 1000);
         } else if (this.trophy || getIsAltarTrophyAvailable()) {
             glowFrame = getFrame(altarGlow, this.area.time * 1000);
+            glowFrontFrame = getFrame(altarGlowFront, this.area.time * 1000);
         }
         const isEditing = editingAreaState.selectedObject === this;
         drawFrameToAreaTarget(context, this.getAreaTarget(), {...altarFrame, flipped: this.definition.flipped}, drawFrame, isEditing);
@@ -78,6 +81,9 @@ export class TrophyAltar extends EditableAreaObject {
         if (this.trophy) {
             // Note: this uses a composite drawing method, so regular draw effects may not work.
             this.trophy.render(context, this.getTrophyRectangle());
+        }
+        if (glowFrontFrame) {
+            drawFrameToAreaTarget(context, this.getAreaTarget(), {...glowFrontFrame, flipped: this.definition.flipped}, drawFrame, isEditing);
         }
     }
 }

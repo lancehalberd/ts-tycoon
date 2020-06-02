@@ -25,8 +25,8 @@ Editor Improvements:
     [L] Add library of object groups (like niche+candle+flame)
 
 Missions:
-    3: Defeat beasts attacking village
-    4: Find the beast den and clear out the matriarch/leader
+    3: Defeat bandits attacking village
+    4: Find the bandits hideout and defeat the leader
     5+ assist other villages/cities/the king
 
 Cutscenes:

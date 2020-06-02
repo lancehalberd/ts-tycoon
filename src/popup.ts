@@ -2,7 +2,7 @@ import { abilities } from 'app/content/abilities';
 import { getChoosingTrophyAltar, getTrophyPopupTarget } from 'app/content/achievements';
 import { getUpgradingObject, upgradeButton } from 'app/content/upgradeButton';
 import {
-    jewelInventoryContainer, mainCanvas, mouseContainer, tagElement,
+    getElementIndex, jewelInventoryContainer, mainCanvas, mouseContainer, tagElement,
     bodyDiv, query, queryAll, tag, titleDiv,
 } from 'app/dom';
 import { getGlobalHud } from 'app/drawArea';
@@ -313,11 +313,9 @@ function getHelpText(popupTarget: HTMLElement) {
         return getItemHelpText(getItemForElement(popupTarget));
     }
     if (helpText === '$character$') {
-        const hero = getState().selectedCharacter.hero;
-        if (hero.helpMethod) {
-            return hero.helpMethod();
-        }
-        return null;
+        const index = getElementIndex(popupTarget) - 1;
+        const hero = getState().characters[index]?.hero;
+        return hero?.helpMethod?.();
     }
     if (helpText === '$coins$') {
         return titleDiv(abbreviate(state.savedState.coins) + ' / ' + abbreviate(state.guildStats.maxCoins) + ' coins')
