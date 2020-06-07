@@ -182,19 +182,24 @@ export function enterArea(actor: Actor, {x, z, areaKey, objectKey, zoneKey}: Exi
         } else {
             const target = object.getAreaTarget();
             z = target.z;
-            if (target.x < 100) {
+            if (target.x < 25) {
                 x = target.x + 32;
-            } else if (target.x > area.width - 100) {
+            } else if (target.x > area.width - 25) {
                 x = target.x - 32;
-            } else {
+            } else if (target.z > 0) {
                 x = target.x;
                 z = target.z - 32;
+            } else {
+                x = target.x;
+                z = target.z + 32;
             }
         }
     }
     actor.x = x;
     actor.y = 0;
     actor.z = z;
+    // Just in case, make sure the character doesn't get set out of bounds.
+    actor.z = limitZ(actor.z, actor.d / 2);
     // state.selectedCharacter is not set when initializing or loading a save file.
     if (state.selectedCharacter && actor === state.selectedCharacter.hero) {
         area.cameraX = Math.round(Math.max(0, Math.min(area.width - ADVENTURE_WIDTH, actor.x - ADVENTURE_WIDTH / 2)));
@@ -205,7 +210,7 @@ export function enterArea(actor: Actor, {x, z, areaKey, objectKey, zoneKey}: Exi
     }
     editingAreaState.cameraX = area.cameraX;
     editingAreaState.selectedObject = null;
-    editingAreaState.selectedMonsterIndex = null;
+    editingAreaState.selectedMonsterIndex = -1;
     if (isNaN(actor.x) || isNaN(actor.z)) {
         debugger;
     }

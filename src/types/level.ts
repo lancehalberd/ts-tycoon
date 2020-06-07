@@ -26,6 +26,7 @@ export interface AreaType {
     }) => void,
     drawFloor: (context: CanvasRenderingContext2D, area: Area) => void,
     drawBackground: (context: CanvasRenderingContext2D, area: Area) => void,
+    drawForeground?: (context: CanvasRenderingContext2D, area: Area) => void,
 }
 
 export type Target = LocationTarget | Actor;

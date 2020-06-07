@@ -60,6 +60,7 @@ export interface Area {
     width: number,
     rightWall?: FrameAnimation,
     leftWall?: FrameAnimation,
+    southWall?: FrameAnimation,
     cameraX: number,
     time: number,
     // Used for randomly generating area.

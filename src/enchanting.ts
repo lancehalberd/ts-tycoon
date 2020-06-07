@@ -177,7 +177,7 @@ function resetItem() {
     }
     item.prefixes = [];
     item.suffixes = [];
-    delete item.displayName;
+    item.displayName = null;
     item.unique = false;
     updateItem(item);
     updateEnchantmentOptions();

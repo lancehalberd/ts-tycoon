@@ -7,6 +7,7 @@ export * from 'app/content/zones/zoneHash';
 export * from 'app/content/zones/guild';
 export * from 'app/content/zones/mission1';
 export * from 'app/content/zones/mission2';
+export * from 'app/content/zones/shrineHeal';
 
 // Set zoneKey in each areaDefinition.
 for (let zoneKey in zones) {

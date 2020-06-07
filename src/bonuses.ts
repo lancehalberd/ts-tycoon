@@ -389,7 +389,7 @@ export function recomputeStat(object: VariableObject, statKey: string) {
 }
 export function setStat(object: VariableObject, statKey: string, newValue: any) {
     //console.log('setting stat', statKey, newValue);
-    delete object.dirtyStats[statKey];
+    object.dirtyStats[statKey] = null;
     // Set a hard cap of 1e12 for all computed values.
     if (typeof newValue === 'number' && newValue > 1e12) {
         newValue = 1e12;
@@ -522,45 +522,11 @@ function recomputeChildTags(parentObject: VariableObject, child: VariableObject)
         tags[parentTag] = true;
     }
     // Each object exclusively uses its variableObjectType as a tag. Unset all other possible values and then set its tag.
-    delete tags['actor'];
-    delete tags['action'];
-    delete tags['effect'];
-    delete tags['guild'];
-    delete tags['trigger'];
+    tags['actor'] = null;
+    tags['action'] = null;
+    tags['effect'] = null;
+    tags['guild'] = null;
+    tags['trigger'] = null;
     tags[child.base.variableObjectType] = true;
     return tags;
 }
-
-/*
-These methods were designed with an old version of updateTags and don't work with
-the new version. Probably we don't need them, but I'm keeping them around for a bit
-just in case I want to ressurect them.
-function addTagToObject(object, tag, triggerComputation) {
-    if (object.tags[tag]) return;
-    var newTags = copy(object.tags);
-    newTags[tag] = true;
-    if (tag === 'melee') delete newTags['ranged'];
-    if (tag === 'ranged') delete newTags['melee'];
-    updateTags(object, newTags, false);
-    for (var variableChild of object.variableChildren) {
-        addTagToObject(variableChild, tag, false);
-    }
-    if (triggerComputation) {
-        recomputeDirtyStats(object);
-    }
-}
-
-function removeTagFromObject(object, tag, triggerComputation) {
-    if (!object.tags[tag]) return;
-    var newTags = copy(object.tags);
-    delete newTags[tag];
-    // Everything is either melee or ranged. If neither is set, default to melee.
-    if (!newTags.melee && !newTags.ranged) newTags.melee = true;
-    updateTags(object, newTags, false);
-    for (var variableChild of object.variableChildren) {
-        removeTagFromObject(variableChild, tag, false);
-    }
-    if (triggerComputation) {
-        recomputeDirtyStats(object);
-    }
-}*/

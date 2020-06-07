@@ -62,12 +62,21 @@ export function isKeyDown(keyCode: number, releaseThreshold: boolean = false): b
 export function addKeyCommands() {
 document.addEventListener('keyup', function(event) {
     const keyCode: number = event.which;
-    delete keysDown[keyCode];
+    keysDown[keyCode] = null;
 });
-document.addEventListener('keydown', function(event) {
-    const state = getState();
+document.addEventListener('keydown', function(event: KeyboardEvent) {
+    // Don't process keys if an input is targeted, otherwise we prevent typing in
+    // the input.
+    if ((event.target as HTMLElement).closest('input')) {
+        return;
+    }
     const keyCode: number = event.which;
+    // Don't override the refresh page command.
+    if (keyCode === KEY.R && (keysDown[KEY.CONTROL] || keysDown[KEY.COMMAND])) {
+        return;
+    }
     keysDown[keyCode] = true;
+    const state = getState();
     //console.log(keyCode);
     if (state.selectedCharacter.context === 'cutscene') {
         return;

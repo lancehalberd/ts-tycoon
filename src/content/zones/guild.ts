@@ -33,8 +33,8 @@ export const guildYard: AreaDefinition = {
 export const guildFoyer: AreaDefinition = {
     type: 'oldGuild',
     width: 500,
-    leftWallType: 'guildWall',
-    rightWallType: 'guildWall',
+    leftWallType: 'straightGuildWall',
+    rightWallType: 'straightGuildWall',
     seed: 2,
     objects: {
         mapTable: {
@@ -151,20 +151,20 @@ export const guildFoyer: AreaDefinition = {
         },
         frontDoor: {
             type: 'door',
-            x: 8, z: -7, flipped: true,
+            x: 1, z: 20, flipped: true,
             exitKey: "guildYard:frontDoor",
-            animation: "closedDoor",
+            animation: "sideDoorClosed",
         },
         hallDoor: {
             type: 'door',
-            xAlign: 'right', x: -8, z: -7,
+            xAlign: 'right', x: -1,
             exitKey: "guildFrontHall:foyerDoor",
-            animation: "openDoor",
+            animation: "sideDoorClosed",
         },
     },
     monsters: [
-        {key: 'gremlin', level: 1, location: {x: 211, z: -8}},
-        {key: 'skeleton', level: 1, location: {x: 381, z: -8}},
+        {key: 'gremlin', level: 1, location: {x: 211, z: -8}, },
+        {key: 'skeleton', level: 1, location: {x: 381, z: -8}, },
     ],
 };
 
@@ -218,8 +218,8 @@ export const guildFrontHall: AreaDefinition = {
         },
     },
     monsters: [
-        {key: 'spider', level: 3, location: {x: 228, z: -60}},
-        {key: 'gnome', level: 3, location: {x: 494, z: -56}},
+        {key: 'spider', level: 3, location: {x: 228, z: -60}, },
+        {key: 'gnome', level: 3, location: {x: 494, z: -56}, },
     ],
 };
 
@@ -315,9 +315,9 @@ export const guildBasement: AreaDefinition = {
         },
     },
     monsters: [
-        {key: 'vampireBat', level: 15, location: {xAlign: 'right', x: -218, zAlign: 'front', flipped: true}},
-        {key: 'vampireBat', level: 15, location: {x: 95, z: 60, flipped: true}},
-        {key: 'vampireBat', level: 15, location: {x: 77, z: -60, flipped: true}},
+        {key: 'vampireBat', level: 15, location: {xAlign: 'right', x: -218, zAlign: 'front', flipped: true}, },
+        {key: 'vampireBat', level: 15, location: {x: 95, z: 60, flipped: true}, },
+        {key: 'vampireBat', level: 15, location: {x: 77, z: -60, flipped: true}, },
     ],
 };
 

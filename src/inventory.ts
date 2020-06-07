@@ -279,7 +279,7 @@ function destroyItem(item: Item) {
     }
     item.domElement.remove();
     item.domElement = null;
-    delete itemMap[item.id];
+    itemMap[item.id] = null;
     updateEnchantmentOptions();
 }
 

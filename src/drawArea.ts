@@ -95,8 +95,8 @@ export function drawArea(context: CanvasRenderingContext2D, area: Area) {
     }
     drawActionTargetCircle(context);
     areaType.drawBackground(context, area);
-    if (area.leftWall) drawLeftWall(context, area);
-    if (area.rightWall) drawRightWall(context, area);
+    drawLeftWall(context, area);
+    drawRightWall(context, area);
     if (area.wallDecorations) {
         for (const object of area.wallDecorations) object.render(context);
     }
@@ -120,6 +120,9 @@ export function drawArea(context: CanvasRenderingContext2D, area: Area) {
         context.font = 'bold ' + Math.round(scale * (textPopup.fontSize || 20)) + "px 'Cormorant SC', Georgia, serif";
         context.textAlign = 'center'
         context.fillText(textPopup.value, textPopup.x - cameraX, GROUND_Y - textPopup.y - textPopup.z / 2);
+    }
+    if (areaType.drawForeground) {
+        areaType.drawForeground(context, area);
     }
 }
 function drawRune(context: CanvasRenderingContext2D, actor: Actor, animation: FrameAnimation, frameIndex: number) {
@@ -342,24 +345,32 @@ function drawActionTargetCircle(targetContext) {
     //drawImage(targetContext, bufferCanvas, rectangle(0, 300, bufferCanvas.width, 180), rectangle(0, 300, bufferCanvas.width, 180));
 }
 
-function drawRightWall(context: CanvasRenderingContext2D, guildArea: Area) {
-    const frame = getFrame(guildArea.rightWall, guildArea.time);
-    if (guildArea.cameraX + 320 < guildArea.width - frame.w) return;
-    if (!guildArea.rightWall) return;
+function drawRightWall(context: CanvasRenderingContext2D, area: Area) {
+    if (!area.rightWall) {
+        return;
+    }
+    const frame = getFrame(area.rightWall, area.time);
+    if (area.cameraX + 320 < area.width - frame.w) {
+        return;
+    }
     const target = {
         ...frame,
-        x: guildArea.width - guildArea.cameraX - frame.w,
+        x: area.width - area.cameraX - frame.w,
         y: 0,
     }
     drawFrame(context, frame, target);
 }
 
-function drawLeftWall(context, guildArea) {
-    const frame = getFrame(guildArea.leftWall, guildArea.time);
-    if (guildArea.cameraX > frame.w) return;
-    if (!guildArea.leftWall) return;
+function drawLeftWall(context: CanvasRenderingContext2D, area: Area) {
+    if (!area.leftWall) {
+        return;
+    }
+    const frame = getFrame(area.leftWall, area.time);
+    if (area.cameraX > frame.w) {
+        return;
+    }
     context.save();
-        context.translate(frame.w - guildArea.cameraX, 0);
+        context.translate(frame.w - area.cameraX, 0);
         context.scale(-1, 1);
         drawFrame(context, frame, {...frame, x: 0, y: 0});
     context.restore();

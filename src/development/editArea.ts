@@ -2,7 +2,7 @@ import _ from 'lodash';
 import { addMonstersFromAreaDefinition, enterArea, getArea } from 'app/adventure';
 import { addAreaFurnitureBonuses, removeAreaFurnitureBonuses } from 'app/content/furniture';
 import { missions, setupMission } from 'app/content/missions';
-import { getMonsterDefinitionAreaEntity, makeMonster, monsters } from 'app/content/monsters';
+import { getMonsterDefinitionAreaEntity, monsters } from 'app/content/monsters';
 import { serializeZone, zones } from 'app/content/zones';
 import {
     applyDefinitionToArea,
@@ -10,17 +10,21 @@ import {
     createAreaObjectFromDefinition, createAreaFromDefinition,
     getPositionFromLocationDefinition, isPointOverAreaTarget,
 } from 'app/content/areas';
+import {
+    MonsterDefinitionAreaObject,
+    getMonsterContextMenu,
+    getMonsterProperties,
+    getMonsterTypeMenuItems,
+    refreshEnemies,
+} from 'app/development/editMonsters';
 import { displayPropertyPanel, hidePropertyPanel } from 'app/development/propertyPanel';
 import { mainCanvas } from 'app/dom';
 import { ADVENTURE_WIDTH, ADVENTURE_SCALE, BACKGROUND_HEIGHT, GROUND_Y, MAX_Z, MIN_Z } from 'app/gameConstants';
 import { isKeyDown, KEY } from 'app/keyCommands';
-import { getBasicAttack } from 'app/performAttack';
 import { renderMonsterFromDefinition } from 'app/render/drawActor';
 import { getState } from 'app/state';
-import { abbreviate, fixedDigits, percent } from 'app/utils/formatters';
 import { readFromFile, saveToFile } from 'app/utils/index';
 import { getMousePosition } from 'app/utils/mouse';
-
 
 import {
     Actor, Area, AreaDefinition, AreaEntity, AreaObject, AreaObjectDefinition, AreaObjectTarget,
@@ -45,7 +49,7 @@ interface EditingAreaState {
 export const editingAreaState: EditingAreaState = {
     isEditing: false,
     selectedObject: null,
-    selectedMonsterIndex: null,
+    selectedMonsterIndex: -1,
     cameraX: null,
     contextCoords: null,
 }
@@ -59,24 +63,15 @@ function getAreaDefinition(): AreaDefinition {
     return zones[area.zoneKey][area.key];
 }
 
-class MonsterDefinitionAreaObject implements AreaObject {
-    area: Area;
-    index: number;
-    constructor(area: Area, index: number) {
-        this.area = area;
-        this.index = index;
-    }
-    getAreaTarget(): AreaObjectTarget {
-        const areaDefinition = zones[this.area.zoneKey][this.area.key];
-        const monsterDefinition: MonsterDefinition = areaDefinition.monsters[this.index];
-        return {
-            targetType: 'object',
-            object: this,
-            ...getMonsterDefinitionAreaEntity(this.area, monsterDefinition),
-        };
-    }
-    isPointOver(x: number, y: number): boolean {
-        return isPointOverAreaTarget(this.getAreaTarget(), x, y);
+export function deleteSelectedObject(): void {
+    const { selectedObject, selectedMonsterIndex} = editingAreaState;
+    if (selectedObject) {
+        deleteObject(selectedObject);
+        editingAreaState.selectedObject = null;
+    } else if (selectedMonsterIndex >= 0) {
+        getAreaDefinition().monsters.splice(selectedMonsterIndex, 1);
+        editingAreaState.selectedMonsterIndex = -1;
+        refreshEnemies();
     }
 }
 
@@ -86,10 +81,10 @@ export function handleEditAreaClick(x: number, y: number): void {
     const hero = getState().selectedCharacter.hero;
     const area = hero.area;
     const areaDefinition = getAreaDefinition();
-    editingAreaState.selectedMonsterIndex = null;
+    editingAreaState.selectedMonsterIndex = -1;
     editingAreaState.selectedObject = null;
     editingAreaState.initialObjectPosition = null;
-    hidePropertyPanel();
+    refreshPropertyPanel();
     const monsterObjects: MonsterDefinitionAreaObject[] = (areaDefinition.monsters || []).map((definition, index) => {
         return new MonsterDefinitionAreaObject(area, index);
     });
@@ -103,7 +98,7 @@ export function handleEditAreaClick(x: number, y: number): void {
         if (object.isPointOver(x, y)) {
             if (object instanceof MonsterDefinitionAreaObject) {
                 editingAreaState.selectedMonsterIndex = object.index;
-                displayPropertyPanel(getSelectedMonsterProperties());
+                refreshPropertyPanel();
                 return;
             } else {
                 if (isKeyDown(KEY.SHIFT) && object.onInteract) {
@@ -111,6 +106,7 @@ export function handleEditAreaClick(x: number, y: number): void {
                     return;
                 }
                 editingAreaState.selectedObject = object;
+                refreshPropertyPanel();
                 return;
             }
         }
@@ -126,6 +122,7 @@ export function handleEditAreaClick(x: number, y: number): void {
                 return;
             }
             editingAreaState.selectedObject = object;
+            refreshPropertyPanel();
             return;
         }
     }
@@ -145,16 +142,17 @@ export function handleEditMouseDragged(x: number, y: number, sx: number, sy: num
         // Objects on the wall aren't bound by the z limits.
         if (!area.wallDecorations.includes(selectedObject)) {
             boundZPosition(selectedObject.definition, selectedObject.getAreaTarget().d);
-            selectedObject.definition.y = 0;
         }
         refreshDefinition(selectedObject);
     } else if (selectedMonsterIndex >= 0) {
         const monster = getAreaDefinition().monsters[selectedMonsterIndex];
         dragLocationDefinition(monster.location, dx, dy);
         boundZPosition(monster.location, getMonsterDefinitionAreaEntity(getCurrentArea(), monster).d);
-        monster.location.y = 0;
         refreshEnemies();
     }
+}
+export function handleEditMouseDragStopped(): void {
+    editingAreaState.initialObjectPosition = null;
 }
 
 function dragLocationDefinition(definition: LocationDefinition, dx: number, dy: number) {
@@ -184,7 +182,7 @@ function moveSelectedTarget(dx: number, dy: number): boolean {
         moveObject(selectedObject, dx, dy);
         return true;
     }
-    if (selectedMonsterIndex !== null) {
+    if (selectedMonsterIndex >= 0) {
         moveMonsterDefinition(getAreaDefinition().monsters[selectedMonsterIndex], dx, dy);
         return true;
     }
@@ -233,6 +231,7 @@ export function createObjectAtMouse(definition: AreaObjectDefinition, objectKey:
     applyDefinitionToArea(area, areaDefinition);
     // Select the most recently created object.
     editingAreaState.selectedObject = area.objectsByKey[objectKey];
+    refreshPropertyPanel();
     return area.objectsByKey[objectKey];
 }
 
@@ -260,10 +259,14 @@ function moveLocationDefinition(definition: LocationDefinition, dx: number, dy: 
 }
 
 function boundZPosition(definition: LocationDefinition, d: number): void {
+    if (definition.y > 0) {
+        definition.z += definition.y * 2;
+        definition.y = 0;
+    }
     if (definition.zAlign === 'back') {
         definition.z = Math.max(2 * MIN_Z + d, Math.min(0, definition.z));
     } else if (definition.zAlign === 'front') {
-        definition.z = Math.max(0, Math.min(2 * MAX_Z - d, definition.z));
+        definition.z = Math.max(0, Math.min(MAX_Z - MIN_Z - d, definition.z));
     } else {
         definition.z = Math.max(MIN_Z + d / 2, Math.min(MAX_Z - d / 2, definition.z));
     }
@@ -272,7 +275,6 @@ function boundZPosition(definition: LocationDefinition, d: number): void {
 function moveMonsterDefinition(definition: MonsterDefinition, dx: number, dy: number): void {
     moveLocationDefinition(definition.location, dx, 0, -2 * dy);
     boundZPosition(definition.location, getMonsterDefinitionAreaEntity(getCurrentArea(), definition).d);
-    definition.location.y = 0;
     refreshEnemies();
 }
 
@@ -283,7 +285,6 @@ function moveObject(object: AreaObject, dx: number, dy: number): void {
     } else {
         moveLocationDefinition(object.definition, dx, 0, -dy * 2);
         boundZPosition(object.definition, object.getAreaTarget().d);
-        object.definition.y = 0;
     }
     refreshDefinition(object);
 }
@@ -301,6 +302,7 @@ export function refreshDefinition(object: AreaObject) {
             refreshDefinition(otherObject);
         }
     }
+    refreshPropertyPanel();
 }
 
 function changeObjectOrder(object: AreaObject, dz: number ): void {
@@ -407,10 +409,10 @@ export function updateEditArea(): boolean {
     let [x, y] = getMousePosition(mainCanvas, ADVENTURE_SCALE);
     x = Math.round(x);
     y = Math.round(y);
-    if (x < 30) {
+    if (x >= 0 && x < 30) {
         adjustCamera(-5);
     }
-    if (x > ADVENTURE_WIDTH - 30) {
+    if (x <= ADVENTURE_WIDTH && x > ADVENTURE_WIDTH - 30) {
         adjustCamera(5);
     }
     return true;
@@ -431,7 +433,7 @@ export function renderEditAreaOverlay(context: CanvasRenderingContext2D): void {
         }
     context.restore();
     let parentKey = null;
-    if (selectedMonsterIndex !== null) {
+    if (selectedMonsterIndex >= 0) {
         const monsterDefinition = areaDefinition.monsters[selectedMonsterIndex];
         drawBox(context, 'white', areaTargetToScreenTarget(getMonsterDefinitionAreaEntity(area, monsterDefinition)));
         parentKey = monsterDefinition.location.parentKey;
@@ -479,6 +481,8 @@ function updateAreaDefinition(updatedProps: Partial<AreaDefinition>) {
         ...updatedProps,
     };
     applyDefinitionToArea(area, zones[area.zoneKey][area.key]);
+    editingAreaState.cameraX = Math.min(editingAreaState.cameraX, area.width - ADVENTURE_WIDTH);
+    refreshPropertyPanel();
 }
 
 export function getEditingContextMenu(): MenuOption[] {
@@ -542,7 +546,6 @@ export function getEditingContextMenu(): MenuOption[] {
                     });
                     // Select the newly created monster.
                     editingAreaState.selectedMonsterIndex = areaDefinition.monsters.length - 1;
-                    displayPropertyPanel(getSelectedMonsterProperties());
                     refreshEnemies();
                 });
             }
@@ -554,173 +557,27 @@ export function getEditingContextMenu(): MenuOption[] {
     ];
 }
 
+export function refreshPropertyPanel(): void {
+    if (editingAreaState.selectedMonsterIndex >= 0) {
+        displayPropertyPanel(getSelectedMonsterProperties());
+    } else if (editingAreaState.selectedObject) {
+
+    } else {
+        displayPropertyPanel(getAreaProperties());
+    }
+}
+
 function startEditing() {
     editingAreaState.isEditing = true;
     editingAreaState.cameraX = getState().selectedCharacter.hero.area.cameraX;
+    refreshPropertyPanel();
 }
 
 export function stopEditing() {
     editingAreaState.isEditing = false;
     editingAreaState.selectedObject = null;
-    editingAreaState.selectedMonsterIndex = null;
+    editingAreaState.selectedMonsterIndex = -1;
     hidePropertyPanel();
-}
-
-export function getSelectedMonsterContextMenu(): MenuOption[] {
-    const {contextCoords, selectedMonsterIndex} = editingAreaState;
-    const area = getCurrentArea();
-    const areaDefinition = getAreaDefinition();
-    const monsterDefinition: MonsterDefinition = (areaDefinition.monsters || [])[selectedMonsterIndex];
-    if (!monsterDefinition
-        || !new MonsterDefinitionAreaObject(area, selectedMonsterIndex).isPointOver(contextCoords[0], contextCoords[1])
-    ) {
-        return [];
-    }
-    const monsterData = monsters[monsterDefinition.key];
-    const name = monsterData.name || monsterDefinition.key;
-    return [
-        {
-            label: 'Change type...',
-            getChildren() {
-                return getMonsterTypeMenuItems(monsterKey => {
-                    monsterDefinition.key = monsterKey;
-                    refreshEnemies();
-                });
-            }
-        },
-        {
-            label: 'Set level...',
-            getChildren() {
-                return [
-                    ...[-10, -5, -3, -1, 1, 3, 5, 10].map(n => monsterDefinition.level + n).filter(n => n >= 1 && n <= 100).map(level => ({
-                        label: 'Level ' + level,
-                        onSelect() {
-                            monsterDefinition.level = level;
-                            refreshEnemies();
-                        }
-                    })),
-                    {
-                        label: 'Custom...',
-                        onSelect() {
-                            const level = parseInt(prompt('Enter level'));
-                            if (level >= 1 && level <= 100) {
-                                monsterDefinition.level = level;
-                                refreshEnemies();
-                            }
-                        }
-                    },
-               ];
-            }
-        },
-        {
-            label: monsterDefinition.isTarget ? 'Remove From Targets' : 'Add to Targets',
-            onSelect() {
-                monsterDefinition.isTarget = !monsterDefinition.isTarget;
-                refreshEnemies();
-            }
-        },
-        {
-            label: 'Flip ' + name,
-            onSelect() {
-                monsterDefinition.location.flipped = !monsterDefinition.location.flipped;
-                refreshEnemies();
-            }
-        },
-        {},
-        {
-            label: 'Delete ' + name,
-            onSelect() {
-                areaDefinition.monsters.splice(selectedMonsterIndex, 1);
-                editingAreaState.selectedMonsterIndex = null;
-                hidePropertyPanel();
-                refreshEnemies();
-            }
-        },
-    ]
-}
-
-function fix(number: number, digits: number = 1): string {
-    return abbreviate(fixedDigits(number, digits));
-}
-
-export function getSelectedMonsterProperties(this: void): (EditorProperty | PropertyRow | string)[] {
-    const { selectedMonsterIndex } = editingAreaState;
-    const monsterDefinition = getAreaDefinition().monsters[selectedMonsterIndex];
-    const monster: Monster =  makeMonster(getCurrentArea(), monsterDefinition.key, monsterDefinition.level, [], monsterDefinition.rarity);
-    let attack = getBasicAttack(monster);
-    const props: (EditorProperty | PropertyRow | string)[] = [];
-    props.push(`Lvl ${monster.stats.level} ${monster.name}`);
-    props.push([{
-        name: 'Max Health',
-        value: monster.stats.maxHealth,
-    },{
-        name: 'MPow',
-        value: fix(monster.stats.magicPower),
-    }]);
-    props.push([{
-        name: 'Phys',
-        value: fix(attack.stats.minPhysicalDamage) + '-' + fix(attack.stats.maxPhysicalDamage),
-    },{
-        name: 'Mag',
-        value: fix(attack.stats.minMagicDamage) + '-' + fix(attack.stats.maxMagicDamage),
-    }]);
-    props.push([{
-        name: 'AtkSpd',
-        value: fix(attack.stats.attackSpeed),
-    },{
-        name: 'Range',
-        value: fix(attack.stats.range),
-    },{
-        name: 'Speed',
-        value: fix(monster.stats.speed),
-    }]);
-    props.push([{
-        name: 'Crt%',
-        value: percent(attack.stats.critChance),
-    },{
-        name: 'Dam*',
-        value: fix(1 + attack.stats.critDamage),
-    },{
-        name: 'Acc*',
-        value: fix(1 + attack.stats.critAccuracy),
-    }]);
-    props.push([{
-        name: 'Armor',
-        value: fix(monster.stats.armor),
-    },{
-        name: 'MRes',
-        value: fix(monster.stats.magicResist),
-    }]);
-    props.push([{
-        name: 'PBlock',
-        value: fix(monster.stats.block),
-    },{
-        name: 'MBlock',
-        value: fix(monster.stats.magicBlock),
-    }]);
-    return props;
-}
-
-export function getMonsterTypeMenuItems(callback: (monsterKey: string) => void): MenuOption[] {
-    return Object.keys(monsters).map(monsterKey => ({
-        getLabel() {
-            return monsters[monsterKey].name || monsterKey;
-        },
-        onSelect() {
-            callback(monsterKey);
-        }
-    }));
-}
-
-function refreshEnemies() {
-    const area = getCurrentArea();
-    if (area.zoneKey !== 'guild' || !getState().savedState.unlockedGuildAreas[area.key]) {
-        addMonstersFromAreaDefinition(area);
-        // The above call replaces the enemies array, so we need to reassign it to the character.
-        getState().selectedCharacter.hero.enemies = area.enemies;
-    } else {
-        getState().selectedCharacter.hero.enemies = area.enemies = [];
-    }
 }
 
 export function getAreaContextMenuOption(): MenuOption {
@@ -746,7 +603,7 @@ export function getAreaContextMenuOption(): MenuOption {
                     onSelect() {
                         const unlockedGuildAreas = getState().savedState.unlockedGuildAreas;
                         if (unlockedGuildAreas[area.key]) {
-                            delete unlockedGuildAreas[area.key];
+                            unlockedGuildAreas[area.key] = null;
                             removeAreaFurnitureBonuses(area, true);
                         } else {
                             unlockedGuildAreas[area.key] = true;
@@ -755,88 +612,131 @@ export function getAreaContextMenuOption(): MenuOption {
                         refreshEnemies();
                     }
                 }] : []),
-                {
-                    getLabel() {
-                        return 'Goto...';
-                    },
-                    getChildren() {
-                        return Object.keys(zones[getCurrentArea().zoneKey]).map((areaKey: string): MenuOption => {
-                            return {
-                                getLabel: () => areaKey,
-                                onSelect() {
-                                    enterArea(getState().selectedCharacter.hero, {x: 60, z: 0, areaKey});
-                                }
-                            }
-                        });
-                    }
-                },
-                {
-                    getLabel() {
-                        return 'Type...';
-                    },
-                    getChildren() {
-                        return Object.keys(areaTypes).map(getSetAreaTypeMenuItem);
-                    }
-                },
-                {
-                    getLabel() {
-                        return 'Left wall...';
-                    },
-                    getChildren() {
-                        const callback = (wallType) => {
-                            updateAreaDefinition({leftWallType: wallType});
-                        }
-                        return [
-                            {
-                                getLabel: () => 'None',
-                                onSelect() {
-                                    updateAreaDefinition({leftWallType: null});
-                                }
-                            },
-                            ...Object.keys(areaWalls).map(wallType => getSetWallTypeMenuItem(wallType, callback))
-                        ];
-                    }
-                },
-                {
-                    getLabel() {
-                        return 'Right wall...';
-                    },
-                    getChildren() {
-                        const callback = (wallType) => {
-                            updateAreaDefinition({rightWallType: wallType});
-                        }
-                        return [
-                            {
-                                getLabel: () => 'None',
-                                onSelect() {
-                                    updateAreaDefinition({rightWallType: null});
-                                }
-                            },
-                            ...Object.keys(areaWalls).map(wallType => getSetWallTypeMenuItem(wallType, callback))
-                        ];
-                    }
-                },
-                {
-                    getLabel() {
-                        return 'Change size...';
-                    },
-                    getChildren() {
-                        return [
-                            ADVENTURE_WIDTH,
-                            ...[-200, -100, -50, -20, 20, 50, 100, 200].map(s => getCurrentArea().width + s)
-                        ].filter(size => size >= ADVENTURE_WIDTH).map(size => ({
-                            getLabel() {
-                                return `${size}`;
-                            },
-                            onSelect() {
-                                updateAreaDefinition({width: size});
-                            }
-                        }));
-                    }
-                },
             ];
         }
     };
+}
+function changeArea(zoneKey: ZoneType, areaKey: string) {
+    enterArea(getState().selectedCharacter.hero, {x: 60, z: 0, zoneKey, areaKey});
+    refreshPropertyPanel();
+}
+
+export function getAreaProperties(this: void): (EditorProperty<any> | PropertyRow | string)[] {
+    const area = getCurrentArea();
+    const areaDefinition = getAreaDefinition();
+    const props: (EditorProperty<any> | PropertyRow | string)[] = [];
+    const currentZone: EditorProperty<string> = {
+        name: 'Zone',
+        value: area.zoneKey,
+        values: Object.keys(zones),
+        onChange(zoneKey: ZoneType) {
+            const areaKey = Object.keys(zones[zoneKey])[0];
+            changeArea(zoneKey, areaKey);
+        },
+    };
+    const currentArea: EditorProperty<string> = {
+        name: 'Area',
+        value: area.key,
+        values: Object.keys(zones[area.zoneKey]),
+        onChange(areaKey: string) {
+            changeArea(area.zoneKey, areaKey);
+        },
+    };
+    props.push([currentZone, currentArea]);
+    props.push(['Export', {
+        name: 'Clipboard',
+        onClick() {
+            navigator.clipboard.writeText(serializeZone(area.zoneKey));
+        },
+    }, {
+        name: 'File',
+        onClick() {
+            saveToFile(serializeZone(area.zoneKey), `${area.zoneKey}.ts`, 'text/javascript');
+        },
+    }]);
+    props.push({
+        name: 'key',
+        value: area.key,
+        onChange(newValue: string) {
+            console.log(newValue);
+            if (!newValue.match(/^[a-zA-Z]\w*$/)) {
+                return area.key;
+            }
+        },
+    });
+    props.push({
+        name: 'type',
+        value: areaDefinition.type,
+        values: Object.keys(areaTypes),
+        onChange(type) {
+            updateAreaDefinition({type});
+        },
+    });
+    props.push([
+        'Walls',
+        {
+            name: 'left',
+            value: areaDefinition.leftWallType,
+            values: Object.keys(areaWalls),
+            onChange(leftWallType: string) {
+                updateAreaDefinition({leftWallType});
+            },
+        },
+        {
+            name: 'right',
+            value: areaDefinition.rightWallType,
+            values: Object.keys(areaWalls),
+            onChange(rightWallType: string) {
+                updateAreaDefinition({rightWallType});
+            },
+        },
+    ]);
+    props.push({
+        name: 'width',
+        value: area.width,
+        onChange: (width: number) => {
+            if (isNaN(width)) {
+                return area.width;
+            }
+            updateAreaDefinition({width});
+        },
+    });
+    props.push([{
+        name: 'seed',
+        value: area.seed || 0,
+        onChange(seed: number) {
+            if (isNaN(seed)) {
+                return area.seed;
+            }
+            updateAreaDefinition({seed});
+        },
+    }, {
+        name: 'Random',
+        onClick()  {
+            updateAreaDefinition({seed: Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)});
+        },
+    }]);
+
+    return props;
+}
+
+
+export function getSelectedMonsterContextMenu(): MenuOption[] {
+    const {contextCoords, selectedMonsterIndex} = editingAreaState;
+    const monsterDefinition: MonsterDefinition = (getAreaDefinition().monsters || [])[selectedMonsterIndex];
+    // Only add monster context options if the mouse is actually over the monster.
+    if (!monsterDefinition
+        || !new MonsterDefinitionAreaObject(getCurrentArea(), selectedMonsterIndex).isPointOver(contextCoords[0], contextCoords[1])
+    ) {
+        return [];
+    }
+    return getMonsterContextMenu(monsterDefinition);
+}
+
+export function getSelectedMonsterProperties(this: void): (EditorProperty<any> | PropertyRow | string)[] {
+    const { selectedMonsterIndex } = editingAreaState;
+    const monsterDefinition = getAreaDefinition().monsters[selectedMonsterIndex];
+    return getMonsterProperties(monsterDefinition, getCurrentArea());
 }
 
 function promptToCreateNewArea(zoneKey: ZoneType): void {
@@ -852,7 +752,7 @@ function promptToCreateNewArea(zoneKey: ZoneType): void {
         }
         zones[areaDefinition.zoneKey][areaKey] = areaDefinition;
     }
-    enterArea(getState().selectedCharacter.hero, {x: 60, z: 0, zoneKey, areaKey});
+    changeArea(zoneKey, areaKey);
 }
 
 export function getZoneContextMenuOption(): MenuOption {
@@ -890,63 +790,9 @@ export function getZoneContextMenuOption(): MenuOption {
                             // This makes a new instance of the current area, so move the hero to that new instance.
                             const hero = getState().selectedCharacter.hero;
                             enterArea(hero, {x: hero.x, z: hero.z, zoneKey: area.zoneKey, areaKey: area.key});
+                            refreshPropertyPanel();
                         }
                     }] : []),
-                {
-                    getLabel() {
-                        return 'Goto...';
-                    },
-                    getChildren() {
-                        return Object.keys(zones).map((zoneKey: ZoneType): MenuOption => {
-                            return {
-                                getLabel: () => zoneKey,
-                                getChildren() {
-                                    return Object.keys(zones[zoneKey]).map((areaKey: string): MenuOption => {
-                                        return {
-                                            getLabel: () => areaKey,
-                                            onSelect() {
-                                                enterArea(getState().selectedCharacter.hero, {x: 60, z: 0, zoneKey, areaKey});
-                                            }
-                                        }
-                                    });
-                                }
-                            }
-                        });
-                    }
-                },
-                {
-                    getLabel() {
-                        return 'Export to...';
-                    },
-                    getChildren() {
-                        return [
-                            {
-                                getLabel() {
-                                    return 'File';
-                                },
-                                onSelect() {
-                                    saveToFile(serializeZone(area.zoneKey), `${area.zoneKey}.ts`, 'text/javascript');
-                                }
-                            },
-                            {
-                                getLabel() {
-                                    return 'Clipboard';
-                                },
-                                onSelect() {
-                                    navigator.clipboard.writeText(serializeZone(area.zoneKey))
-                                }
-                            },
-                            {
-                                getLabel() {
-                                    return 'Console';
-                                },
-                                onSelect() {
-                                    console.log(serializeZone(area.zoneKey))
-                                }
-                            },
-                        ];
-                    }
-                },
                 {
                     getLabel() {
                         return 'Import from...';
@@ -995,7 +841,7 @@ function importZone(zoneFileContents: string) {
     }
     // Enter the first area found in the imported zone.
     for (let areaKey in zones[zoneKey]) {
-        enterArea(getState().selectedCharacter.hero, {x: 60, z: 0, zoneKey, areaKey});
+        changeArea(zoneKey, areaKey);
         break;
     }
 }
@@ -1029,8 +875,7 @@ export function getSelectedObjectContextMenu(): MenuOption[] {
                 return 'Delete ' + selectedObject.definition.type;
             },
             onSelect() {
-                deleteObject(selectedObject);
-                editingAreaState.selectedObject = null;
+                deleteSelectedObject();
             }
         },
     ]
@@ -1043,13 +888,13 @@ function deleteObject(object: AreaObject, updateArea: boolean = true) {
             console.log('Did not find object definition where expected during delete.');
             debugger;
         }
-        delete areaDefinition.objects[object.key];
+        areaDefinition.objects[object.key] = null;
     } else {
         if (areaDefinition.wallDecorations[object.key] !== object.definition) {
             console.log('Did not find object definition where expected during delete.');
             debugger;
         }
-        delete areaDefinition.wallDecorations[object.key];
+        areaDefinition.wallDecorations[object.key] = null;
     }
     // Recrusively delete child objects.
     for (const otherObject of object.area.objects) {
@@ -1078,17 +923,6 @@ export function getAddObjectMenuItem(type: string): MenuOption {
         },
         onSelect() {
             createObjectAtMouse({type});
-        }
-    }
-}
-
-export function getSetAreaTypeMenuItem(type: string): MenuOption {
-    return {
-        getLabel() {
-            return type;
-        },
-        onSelect() {
-            updateAreaDefinition({type});
         }
     }
 }

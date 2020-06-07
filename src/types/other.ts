@@ -99,9 +99,15 @@ export interface MenuOption {
     getChildren?: () => MenuOption[],
 }
 
-export interface EditorProperty {
+export interface EditorProperty<T> {
     name: string,
-    value: any,
-    editable?: boolean,
+    // A button property will have no value.
+    value?: T,
+    // If the property is an enum, you can set the list of all values.
+    values?: T[],
+    // If the property is editable, you can specify what happens when it is changed.
+    onChange?: (newValue: T) => (T | void),
+    // For buttons, use instead of onChange.
+    onClick?: () => void,
 }
-export type PropertyRow = (EditorProperty | string)[];
+export type PropertyRow = (EditorProperty<string | number> | string)[];

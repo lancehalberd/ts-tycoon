@@ -1,10 +1,23 @@
 Test at http://localhost:81/ttt/public/
 
+Bugs:
+    [M] Lag from Alpha wolf with bard song
+
 Features:
+    [H] Add flat walls, south walls, North and South Door graphics. Keep angled wall for guild exterior
+    [L] Add "Endless Discovery" section off of the guild exit to replace autofarming
+        - Randomly generated seed for each character
+        - Maps to the globe so areas get harder as you move north, and you can go in circles at latitude to fight monsters of similar difficulty but different composition.
+        - Rewards can be found periodically but can each be obtained only once. Can get jewels, equipment and even permanent buffs for character.
+        - *maybe* include entrances to quest shrines? Finding them would unlock them on the world map for that character.
+
     [L] Split core job abilities into multiple jewels with different values. Better hires can have more fixed jewels. Some abilities are shared between job pools like +1 str/level or 5% magic resist.
     [L] Help system where fairy floats on top of other UIs to give advice, during item/jewel crafting, world map, etc.
     [L] Add option for Pantheon dialogue at quest shrines.
     [L] Death recap for quests. Maybe not important with the more hands on gameplay.
+
+Graphics:
+    [L] Add sparkles to gold+platinum trophies.
 
 Abilities:
     [M] Try making ricochet bounce off walls if any are in the correct range.
@@ -25,6 +38,45 @@ Editor Improvements:
     [L] Add library of object groups (like niche+candle+flame)
 
 Missions:
+    Heal:
+        Healing totems that require dealing magic damage to interrupt channeled heal spell to defeat.
+            * Update heal to always be AoE but more effective on the main target.
+        Give player the heal spell during the quest and have them use it to complete the area
+            * Optional Area with powerful ally+enemies where you heal ally to win
+            * Optional Area with glass cannon ally that you tank for and heal yourself to win
+            * Boss that summons healing totems as seen in the entrance.
+            * Allies from previous area will attack the boss if they survived.
+
+                      tanky ally
+                          |
+            entrance -- shrine -- boss
+                          |
+                   glass cannon ally
+
+        Add overlay text with large font and transparent background, maybe dark blue,
+        reuse for mission Start/Complete text?
+        "Only the strong or the clever may attempt this trial."
+        "Prove you are worthy of this blessing."
+        Both allies survived: "A worthy challenger at last? We shall see..."
+        One ally survived: "My guardian will test you."
+        No allies: "You think you can defeat my guardian alone?"
+
+        "You are worthy. Return to my shrine if you would seek my blessing."
+
+    Sap (steals health + slows targets):
+        * Update slow to reduce block+evasion by the slow %.
+        Enemies have a telegraphed aoe root.
+        * Update root to reduce evasion by 50%
+        Enemies have ranged attack with the sap effect.
+
+        Boss uses a large version of the telegraphed root that hits 8-12 spots on the screen
+        Boss spawns relatively weak eggs that spawn enemies if not defeated quickly.
+
+    Vitality (gives STR based health regen over time):
+        Enemies have moderate block+mblock which favors monks high damage per hit.
+        Enemies have telegraphed ranged stun (1s) that favors naive melee behavior which will cause heroes to run past the initial stun.
+        At 75/50/25% health boss summons 1/2/3 enemies at 2s intervals to stagger their stun abilities.
+
     3: Defeat bandits attacking village
     4: Find the bandits hideout and defeat the leader
     5+ assist other villages/cities/the king

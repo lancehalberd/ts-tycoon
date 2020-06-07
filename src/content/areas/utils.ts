@@ -12,10 +12,12 @@ import { r } from 'app/utils/index';
 const river = createAnimation('gfx2/areas/meadowbridge.png', frame(0, 0, 39, 148, r(16, 92, 23, 35)));
 const caveWall = createAnimation('gfx2/areas/cavebridge2.png', frame(0, 0, 39, 148, r(16, 92, 23, 35)));
 const guildWall = createAnimation('gfx2/areas/guildbridge.png', frame(0, 0, 39, 148, r(11, 50, 20, 70)));
+const straightGuildWall = createAnimation('gfx2/areas/guildsidewall.png', {w: 40, h: 148});
 export const areaWalls: {[key in string]: FrameAnimation} = {
     caveWall,
     river,
     guildWall,
+    straightGuildWall
 };
 
 export function createAreaObjectFromDefinition(areaObjectDefinition: AreaObjectDefinition): AreaObject {

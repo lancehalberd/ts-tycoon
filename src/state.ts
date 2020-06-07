@@ -300,11 +300,11 @@ export function importState(savedState: SavedState) {
         for (var levelKey of Object.keys(character.divinityScores)) {
             var level = map[levelKey];
             if (!level) {
-                delete character.divinityScores[levelKey];
+                character.divinityScores[levelKey] = null;
                 continue;
             }
             if (isNaN(character.divinityScores[levelKey])) {
-                delete character.divinityScores[levelKey];
+                character.divinityScores[levelKey] = null;
             }
             state.savedState.completedLevels[levelKey] = true;
         }

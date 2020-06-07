@@ -35,7 +35,7 @@ const Random = {
             const keys = Object.keys(collection);
             const key = this.element(keys);
             const value = collection[key];
-            delete collection[key]
+            collection[key] = null;
             return value;
         }
         if (collection.constructor == Array) {

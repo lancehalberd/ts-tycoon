@@ -152,7 +152,7 @@ export function destroyJewel(jewel: Jewel) {
     removeFromBoard(jewel);
     jewel.canvas.remove();
     jewel.domElement.remove();
-    delete jewelMap[jewel.id];
+    jewelMap[jewel.id] = null;
 }
 export function clearAdjacentJewels(jewel: Jewel) {
     while (jewel.adjacentJewels.length) {

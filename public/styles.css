@@ -512,7 +512,8 @@ button {
 }
 
 select {
-    font-size: 20px;
+    font-size: 16px;
+    padding: 2px;
 }
 button {
     font-size: 12px;
@@ -1677,7 +1678,7 @@ p {
     position: absolute;
     right: 0px;
     top: 0;
-    width: 300px;
+    width: 400px;
     padding: 4px;
     background-color: #EEE;
     font-size: 16px;
@@ -1687,10 +1688,15 @@ p {
 .pp-row {
     display: flex;
     justify-content: space-around;
-    margin-bottom: 4px;
+    margin-bottom: 8px;
+    align-items: center;
 }
 
 .pp-property {
     display: inline-block;
     margin-right: 4px;
+}
+
+.pp-container select {
+    width: 120px;
 }

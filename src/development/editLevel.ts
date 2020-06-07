@@ -323,7 +323,7 @@ function updateMapKey(oldKey, newKey) {
     }
     const level = map[oldKey];
     level.levelKey = newKey;
-    delete map[oldKey];
+    map[oldKey] = null;
     map[newKey] = level;
 }
 function updateLevelKey(level) {
@@ -572,7 +572,7 @@ function deleteLevel(level) {
             otherLevel.unlocks.splice(index, 1);
         }
     }
-    delete map[level.levelKey];
+    map[level.levelKey] = null;
 }
 
 mainCanvas.addEventListener('dblclick', function (event) {

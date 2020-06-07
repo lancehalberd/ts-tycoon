@@ -11,6 +11,7 @@ import { bodyDiv, titleDiv } from 'app/dom';
 import {
     ADVENTURE_HEIGHT, ADVENTURE_WIDTH,
     BACKGROUND_HEIGHT, BOTTOM_HUD_RECT,
+    FIELD_HEIGHT,
     FRAME_LENGTH,
     GROUND_Y,
     MAX_Z, MIN_Z,
@@ -399,7 +400,7 @@ const CaveArea: AreaType = {
 
         // Draw a continuous stone wall, possibly with a gap in one section.
         {
-            const gap = random.range(0, 2);
+            const gap = random.range(-2, 2);
             let w = 128;
             let h = 86;
             let X = area.cameraX;
@@ -443,6 +444,8 @@ const guildBackFrontFrames = createAnimation('gfx2/areas/guildtiles.png',
     {w: 128, h: BG_TILE_HEIGHT}, {cols: 2}).frames;
 const [guildRightWall, guildRightDoorEmpty, guildRightDoor, guildRightBoardedDoor] = createAnimation('gfx2/areas/guildbridge.png',
     frame(0, 0, 39, 148, r(11, 50, 20, 70)), {cols: 4}).frames;
+const [guildBottomLeft, guildBottomRight, guildBottom] = createAnimation('gfx2/areas/guildnorthsouthdoorswalls.png',
+    {w: 32, h: 28}, {x: 6, cols: 3, top: 36}).frames;
 
 const GuildArea: AreaType = {
     addObjects(area, {monsters, exits, loot, ability}) {
@@ -465,7 +468,8 @@ const GuildArea: AreaType = {
             }
             x += w;
         }
-        fillRect(context, BOTTOM_HUD_RECT, '#433');
+        fillRect(context, BOTTOM_HUD_RECT, '#000');
+        //fillRect(context, BOTTOM_HUD_RECT, '#433');
     },
     drawBackground(context, area) {
         let w = 128;
@@ -476,6 +480,29 @@ const GuildArea: AreaType = {
             const frame = guildBackFrontFrames[1];//SRandom.seed(x).element(guildBackFrontFrames);
             drawFrame(context, frame, {x: x - area.cameraX, y: 0, w, h});
             x += w;
+        }
+    },
+    drawForeground(context, area) {
+        const w = guildBottom.w;
+        const h = guildBottom.h;
+        let x = Math.floor(area.cameraX / w) * w;
+        const y = BACKGROUND_HEIGHT + FIELD_HEIGHT;
+        while (x < area.cameraX + ADVENTURE_WIDTH && x < area.width - w) {
+            if (x <= 0) {
+                x += w;
+                continue;
+            }
+            // The other frame is a large window that I don't want to use just now.
+            const frame = guildBottom;
+            drawFrame(context, frame, {x: x - area.cameraX, y, w, h});
+            x += w;
+        }
+        // Draw the bottom left/right tiles if they are in frame.
+        if (area.cameraX < w) {
+            drawFrame(context, guildBottomLeft, {x: -area.cameraX, y, w, h});
+        }
+        if (area.cameraX + ADVENTURE_WIDTH > area.width - w) {
+            drawFrame(context, guildBottomRight, {x: area.width - w - area.cameraX, y, w, h});
         }
     }
 };
@@ -571,3 +598,4 @@ export const areaTypes = {
     beach: FieldArea,
     town: GuildArea,
 };
+window['areaTypes'] = areaTypes;

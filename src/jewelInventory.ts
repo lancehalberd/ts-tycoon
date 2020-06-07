@@ -177,7 +177,7 @@ document.body.onmousedown = function (event) {
         return;
     }
     // This is primarily meant to prevent editing jewel boards displayed in applications.
-    if (jewelInventoryState.overJewel.character !== getState().selectedCharacter) {
+    if (jewelInventoryState.overJewel.character && jewelInventoryState.overJewel.character !== getState().selectedCharacter) {
         return;
     }
     if (jewelInventoryState.overJewel.fixed) {

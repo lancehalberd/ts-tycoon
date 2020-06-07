@@ -14,6 +14,7 @@ import {
     editingAreaState,
     handleEditAreaClick,
     handleEditMouseDragged,
+    handleEditMouseDragStopped,
 } from 'app/development/editArea';
 import {
     getElementIndex, handleChildEvent, mainCanvas,
@@ -55,7 +56,10 @@ mainCanvas.addEventListener('mousemove', function () {
             }
             handleEditMouseDragged(x, y, dragStartCoords.x, dragStartCoords.y);
         } else {
-            dragStartCoords = null;
+            if(dragStartCoords) {
+                dragStartCoords = null;
+                handleEditMouseDragStopped();
+            }
         }
         return;
     }

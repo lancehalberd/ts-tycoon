@@ -485,16 +485,19 @@ export function recomputeActorTags(actor: Actor): Tags {
 
     if (actor.type === 'monster' && actor.base && actor.base.tags) {
         for (const tag of (actor.base.tags || [])) tags[tag] = true;
-        if (tags['ranged']) delete tags['melee'];
-        else tags['melee'] = true;
+        if (tags['ranged']) {
+            tags['melee'] = null;
+        } else {
+            tags['melee'] = true;
+        }
     }
     if (actor.stats.setRange) {
         if (actor.stats.setRange === 'ranged') {
             tags['ranged'] = true;
-            delete tags['melee'];
+            tags['melee'] = null;
         } else {
             tags['melee'] = true;
-            delete tags['ranged'];
+            tags['ranged'] = null;
         }
     }
     return tags as Tags;
@@ -573,12 +576,14 @@ export function totalCostForNextLevel(character: Character, level: {level: numbe
 // Clean up a character
 export function deleteCharacter(character: Character): void {
     leaveCurrentArea(character.hero);
-    delete character.hero.personCanvas;
-    delete character.boardCanvas;
+    // Delete all references to canvases in case that speeds up garbage collection.
+    character.hero.personCanvas = null;
+    character.boardCanvas = null;
     character.characterCanvas.remove();
-    delete character.characterCanvas;
-    delete character.hero.character;
-    delete character.hero;
+    character.characterCanvas = null;
+    // Delete references between character + hero.
+    character.hero.character = null;
+    character.hero = null;
 }
 export function setSelectedCharacter(character: Character) {
     const state = getState();

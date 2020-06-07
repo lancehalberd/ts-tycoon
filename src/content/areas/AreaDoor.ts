@@ -29,6 +29,8 @@ const backDoor = frameAnimation({image: guildImage, x: 240, y: 94, w: 30, h: 51}
 const upstairs = frameAnimation({image: guildImage, x: 270, y: 94, w: 30, h: 51});
 const downstairs = frameAnimation({image: guildImage, x: 300, y: 94, w: 30, h: 51});
 
+const [sideDoorClosed, sideDoorAjar, sideDoorOpen] = createAnimation('gfx2/areas/guilddoorsheet.png', { w: 38, h: 50}, {cols: 3}).frames;
+
 export class AreaDoor extends EditableAreaObject {
     static animations = {
         openDoor: frameAnimation(guildRightDoorEmpty),
@@ -40,6 +42,9 @@ export class AreaDoor extends EditableAreaObject {
         backDoor,
         upstairs,
         downstairs,
+        sideDoorClosed: frameAnimation(sideDoorClosed),
+        sideDoorAjar: frameAnimation(sideDoorAjar),
+        sideDoorOpen: frameAnimation(sideDoorOpen),
     };
 
     exit: Exit;
