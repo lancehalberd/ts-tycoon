@@ -61,6 +61,7 @@ export const shrine: AreaDefinition = {
 export const trialOfResolve: AreaDefinition = {
     type: 'cave',
     width: 500,
+    seed: 3167875903276947,
     objects: {
         door: {
             type: 'door',
