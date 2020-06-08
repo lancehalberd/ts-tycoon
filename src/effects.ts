@@ -36,6 +36,10 @@ export function songEffect(attackStats: AttackData): ActiveEffect {
     const notes = [];
     const thetaOffset = Math.PI * Math.random();
     const effectedTargets: Set<Actor> = new Set();
+    // Need to record the buff as it is created, since any changes to the actors
+    // stats could recompute the buff, turning it into a different object, which
+    // will preven it from being removed correctly.
+    const buff = attackStats.attack.stats.buff;
     return {
         // The song's position is based on followTarget
         x: 0, y: 0, z: 0,
@@ -47,7 +51,7 @@ export function songEffect(attackStats: AttackData): ActiveEffect {
             this.currentFrame++;
             if (notes.length < 6) {
                 const note = animationEffect(effectAnimations.song,
-                    {targetType: 'location', area: this.area, x: 0, y: 20, z: 0, w: 25, h: 50, d: 25},
+                    {targetType: 'location', area: this.area, x: 0, y: 10, z: 0, w: 12, h: 24, d: 12},
                     {loop: true, frameSpeed: .5, tintColor: color, tintValue: .5}
                 );
                 this.area.effects.push(note);
@@ -71,19 +75,19 @@ export function songEffect(attackStats: AttackData): ActiveEffect {
                 const zRadius = Math.min(currentRadius, 90);
                 note.target.x = currentLocation.x + Math.cos(i * 2 * Math.PI / 6 + timeTheta) * xRadius;
                 note.target.z = currentLocation.z + Math.sin(i * 2 * Math.PI / 6 + timeTheta) * zRadius;
-                note.target.y = 40 + 20 * Math.cos(i * Math.PI / 4 + 6 * timeTheta);
+                note.target.y = 10 + 5 * Math.cos(i * Math.PI / 4 + 6 * timeTheta);
             }
             const currentTargets: Set<Actor> = new Set();
             for (const target of this.attackStats.source.allies) {
                 if (getDistance(currentLocation, target) > currentRadius) {
                     if (effectedTargets.has(target)) {
-                        removeEffectFromActor(target, this.attackStats.attack.stats.buff, true);
+                        removeEffectFromActor(target, buff, true);
                         effectedTargets.delete(target);
                     }
                 } else {
                     currentTargets.add(target);
                     if (!effectedTargets.has(target)) {
-                        addEffectToActor(target, this.attackStats.attack.stats.buff, true);
+                        addEffectToActor(target, buff, true);
                         effectedTargets.add(target);
                     }
                 }
@@ -92,7 +96,7 @@ export function songEffect(attackStats: AttackData): ActiveEffect {
             // before the owner moved to another area.
             for (const target of effectedTargets) {
                 if (!currentTargets.has(target)) {
-                    removeEffectFromActor(target, this.attackStats.attack.stats.buff, true);
+                    removeEffectFromActor(target, buff, true);
                     effectedTargets.delete(target);
                 }
             }
@@ -100,7 +104,7 @@ export function songEffect(attackStats: AttackData): ActiveEffect {
         drawGround(context: CanvasRenderingContext2D) {
             drawOnGround(context, (groundContext: CanvasRenderingContext2D) => {
                 const currentRadius = Math.round(radius * Math.min(1, this.currentFrame / frames));
-                drawGroundCircle(context, this.area, followTarget.x, followTarget.z, currentRadius)
+                drawGroundCircle(groundContext, this.area, followTarget.x, followTarget.z, currentRadius)
                 groundContext.save();
                 groundContext.globalAlpha = alpha;
                 groundContext.fillStyle = '' + color;
@@ -113,7 +117,9 @@ export function songEffect(attackStats: AttackData): ActiveEffect {
             });
         },
         finish() {
-            effectedTargets.forEach(target => removeEffectFromActor(target, this.attackStats.attack.stats.buff, true));
+            effectedTargets.forEach(target => {
+                removeEffectFromActor(target, buff, true)
+            });
             effectedTargets.clear();
             this.done = true;
             while (notes.length) notes.pop().done = true;
@@ -147,17 +153,18 @@ export function animationEffect(
         render(context: CanvasRenderingContext2D) {
             if (this.done) return;
             context.save();
-            // context.globalAlpha = alpha;
-            context.translate((this.x - this.area.cameraX), GROUND_Y - this.y - this.z / 2 - target.h / 2);
-            // fillRect(context, r(-this.width / 2, -this.height / 2, this.width, this.height), 'red');
-            const frame = animation.frames[Math.floor(this.currentFrame) % animation.frames.length];
-            const targetRectangle = r(-this.w / 2, -this.h / 2, this.w, this.h);
-            if (tintColor) {
-                drawTintedImage(context, frame.image, tintColor, tintValue || .5,
-                    frame, targetRectangle);
-            } else {
-                drawFrame(context, frame, targetRectangle);
-            }
+                // context.globalAlpha = alpha;
+                context.translate((this.x - this.area.cameraX), GROUND_Y - this.y - this.z / 2 - target.h / 2);
+                // fillRect(context, r(-this.width / 2, -this.height / 2, this.width, this.height), 'red');
+                const frame = animation.frames[Math.floor(this.currentFrame) % animation.frames.length];
+                const targetRectangle = r(-this.w / 2, -this.h / 2, this.w, this.h);
+                // This tint is killing safari at the moment, so disable it.
+                if (false && tintColor) {
+                    drawTintedImage(context, frame.image, tintColor, tintValue || .5,
+                        frame, targetRectangle);
+                } else {
+                    drawFrame(context, frame, targetRectangle);
+                }
             context.restore();
         }
     };
@@ -709,7 +716,7 @@ function removeEffectFromActor(actor: Actor, effect: ActorEffect, triggerComputa
         // Returning to the world map removes all effects, but doesn't remove the actor from the list of effected
         // targets, then the song is removed and tries to remove the effect from the actor since it still has
         // them listed as effected.
-        //debugger;
+        // debugger;
     }
 }
 

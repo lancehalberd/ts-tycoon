@@ -294,9 +294,9 @@ export function drawBar(context, x, y, w, h, background, color, percent) {
     context.fillRect(x + 1, y + 1, Math.floor((w - 2) * percent), h - 2);
 }
 
-export function drawGroundCircle(context, area: Area, x, z, radius) {
-    var centerY = GROUND_Y - z / 2;
-    var centerX = x - area.cameraX;
+export function drawGroundCircle(context: CanvasRenderingContext2D, area: Area, x, z, radius) {
+    const centerY = GROUND_Y - z / 2;
+    const centerX = x - area.cameraX;
     context.save();
         context.translate(centerX, centerY);
         context.scale(1, .5);

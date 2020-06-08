@@ -585,9 +585,10 @@ export function initializeMonsters() {
     }, monsters.wolf);
     addMonster('packLeader', {
         'name': 'Pack Leader', 'source': wolfSource,
+        'implicitBonuses': {'*maxHealth': 2, '*scale': .8},
         'abilities': [abilities.majorDexterity, abilities.majorStrength, abilities.majorIntelligence,
                       abilities.howl, abilities.howl, abilities.attackSong, abilities.defenseSong, abilities.sicem, abilities.howlSingAttack]
-    }, monsters.alphaWolf);
+    }, monsters.wolf);
     // Should be tinted white.
     addMonster('snowWolf', {'name': 'Snow Wolf',
             abilities: [leapAndAct('freeze'), abilities.freeze, abilities.minorIntelligence, abilities.sage]}, monsters.wolf);
