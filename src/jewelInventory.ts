@@ -673,16 +673,24 @@ function getFusedShape(jewelA: Jewel, jewelB: Jewel): ShapeDefinition {
 jewelCraftingButton.onclick = function () {
     const jewelA = getElementJewel(craftingSlotA.querySelector('.js-jewel'));
     const jewelB = getElementJewel(craftingSlotB.querySelector('.js-jewel'));
-    if (!jewelA && !jewelB) return;
-    if (jewelA && jewelB) fuseJewels(jewelA, jewelB);
-    else splitJewel(jewelA || jewelB);
+    if (!jewelA && !jewelB) {
+        return;
+    }
+    if (jewelA && jewelB) {
+        fuseJewels(jewelA, jewelB);
+    } else {
+        splitJewel(jewelA || jewelB);
+    }
 };
 jewelDeformationButton.onclick = function () {
     const jewelA = getElementJewel(craftingSlotA.querySelector('.js-jewel'));
     const jewelB = getElementJewel(craftingSlotB.querySelector('.js-jewel'));
     const jewel = jewelA || jewelB;
-    if (jewel.shapeType === 'triangle' || jewel.shapeType === 'diamond') expandJewel(jewel);
-    else compressJewel(jewel);
+    if (jewel.shapeType === 'triangle' || jewel.shapeType === 'diamond') {
+        expandJewel(jewel);
+    } else {
+        compressJewel(jewel);
+    }
 };
 function fuseJewels(jewelA: Jewel, jewelB: Jewel) {
     const fusedShape = getFusedShape(jewelA, jewelB);
@@ -745,8 +753,8 @@ function splitJewel(jewel: Jewel) {
         qualityB = jewel.quality * .99 * (1.1 + Math.random() * .1);
         qualityA = (jewel.quality * .99 * jewel.area - qualityB * shapeDefinitionB.area ) / shapeDefinitionA.area;
     }
-    let componentsA: JewelComponents;
-    let componentsB: JewelComponents;
+    let componentsA: JewelComponents = [0, 0, 0];
+    let componentsB: JewelComponents = [0, 0, 0];
     for (let i = 0; i < 3; i++) {
         // A component cannot be higher than 1. ComponentA must also be high enough to insure compontentB is no greater than 1.
         componentsA[i] = Math.max(Math.min(1, jewel.components[i] * (.6 + Math.random() * .8)), jewel.components[i] * jewel.area - shapeDefinitionB.area);
