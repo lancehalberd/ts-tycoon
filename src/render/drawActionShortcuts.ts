@@ -58,7 +58,7 @@ const tinySize = 16;
 const frameSize = 4;
 const totalSize = interiorSize + frameSize;
 
-export function updateActionShortcuts(character: Character) {
+export function updateActionShortcuts(character: Character): void {
     character.actionShortcuts = [];
     const margin = 5;
     const padding = 8;
@@ -70,6 +70,7 @@ export function updateActionShortcuts(character: Character) {
         const actionKeyCode = keysLeft.length ? keysLeft.shift() : null;
         const actionShortcut: ActionShortcut = new ActionShortcut(action, actionKeyCode, left, top);
         left += totalSize + padding;
+        character.actionShortcuts.push(actionShortcut);
     }
 }
 export class ActionShortcut implements HUDElement {
@@ -275,15 +276,25 @@ export function handleSkillKeyInput(keyCode: number): boolean {
 }
 
 function activateAction(action: Action): void {
-    if (action.readyAt > action.actor.time) return;
+    // If this action is currently selected, unselect it.
+    if (selectedAction === action) {
+        selectedAction = null;
+        return;
+    }
+    if (action.readyAt > action.actor.time) {
+        return;
+    }
     // If a skill has no target, trigger it as soon as they click the skill button.
     if (action.base.target === 'none' || action.variableObject.tags.field) {
         if (canUseSkillOnTarget(action.actor, action, action.actor)) {
             prepareToUseSkillOnTarget(action.actor, action, action.actor);
         }
     } else {
-        if (selectedAction === action) selectedAction = null;
-        else selectedAction = action;
+        selectedAction = action;
     }
+}
+
+export function clearSelectedAction(): void {
+    selectedAction = null;
 }
 

@@ -37,6 +37,7 @@ import { smallJewelLoot } from 'app/loot';
 import { centerMapOnLevel } from 'app/map';
 import { findActionByTag, getBasicAttack, updateDamageInfo } from 'app/performAttack';
 import { gain } from 'app/points';
+import { clearSelectedAction, updateActionShortcuts } from 'app/render/drawActionShortcuts';
 import { drawActor } from 'app/render/drawActor';
 import { getState } from 'app/state';
 import { getTargetCameraX } from 'app/update';
@@ -450,6 +451,9 @@ export function updateHero(hero: Hero | Person) {
         addBonusSourceToObject(hero.variableObject, bonusSource);
     }
     recomputeDirtyStats(hero.variableObject);
+    if (hero.type === 'hero' && hero.character) {
+        updateActionShortcuts(hero.character);
+    }
     //console.log(hero);
 }
 
@@ -590,6 +594,9 @@ export function setSelectedCharacter(character: Character) {
     // Clean up test characters when they are no longer selected.
     if (state.selectedCharacter && !state.characters.includes(state.selectedCharacter)) {
         deleteCharacter(state.selectedCharacter);
+    }
+    if (state.selectedCharacter !== character) {
+        clearSelectedAction();
     }
     state.selectedCharacter = character;
     // For debug purposes, put selected hero on window.Hero.

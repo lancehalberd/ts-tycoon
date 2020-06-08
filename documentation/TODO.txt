@@ -1,8 +1,5 @@
 Test at http://localhost:81/ttt/public/
 
-Bugs:
-    [M] Lag from Alpha wolf with bard song
-
 Features:
     [H] Add flat walls, south walls, North and South Door graphics. Keep angled wall for guild exterior
     [L] Add "Endless Discovery" section off of the guild exit to replace autofarming
@@ -17,6 +14,7 @@ Features:
     [L] Death recap for quests. Maybe not important with the more hands on gameplay.
 
 Graphics:
+    [M] Arrange HUD so skill tooltips+mission quest don't overlap. Remove minimap.
     [L] Add sparkles to gold+platinum trophies.
 
 Abilities:
