@@ -36,6 +36,8 @@ Editor Improvements:
     [L] Add library of object groups (like niche+candle+flame)
 
 Missions:
+    Opening Sequence:
+        Start with an NPC that has several abilities in a simple dungeon with a few short cutscenes so that people can see game play straight away. Add context menu option to skip this (leave this in for inquisitive players).
     Heal:
         Healing totems that require dealing magic damage to interrupt channeled heal spell to defeat.
             * Update heal to always be AoE but more effective on the main target.

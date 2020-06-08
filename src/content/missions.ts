@@ -12,6 +12,7 @@ const allMissions: MissionParameters[] = [
         type: 'clearZone',
         introKey: 'mission1Intro',
         outroKey: 'mission1Outro',
+        //timeLimit: 1000000,
     },
     {
         key: 'mission2',

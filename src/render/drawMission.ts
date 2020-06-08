@@ -14,16 +14,16 @@ export function drawMissionHUD(context: CanvasRenderingContext2D, mission: Activ
     context.textBaseline = 'middle';
     const y = ADVENTURE_HEIGHT - BOTTOM_HUD_HEIGHT / 2;
     if (mission.parameters.type === 'clearZone') {
-        context.fillText(`Targets Defeated: ${mission.defeatedEnemies} / ${mission.totalEnemies}`, 10, y);
+        context.fillText(`Targets: ${mission.defeatedEnemies} / ${mission.totalEnemies}`, 150, y);
     } else if (mission.parameters.type === 'defeatTarget') {
-        context.fillText(`Targets Defeated: ${mission.defeatedTargets} / ${mission.totalTargets}`, 10, y);
+        context.fillText(`Targets: ${mission.defeatedTargets} / ${mission.totalTargets}`, 150, y);
     }
     if (mission.parameters.timeLimit > 0) {
         let secondsLeft = Math.max(0, Math.floor((mission.parameters.timeLimit - mission.time) / 1000));
         let minutesLeft = Math.floor(secondsLeft / 60);
         secondsLeft %= 60;
         const secondsString = secondsLeft < 10 ? `0${secondsLeft}` : `${secondsLeft}`;
-        context.fillText(`Time Remaining: ${minutesLeft}:${secondsString}`, ADVENTURE_WIDTH / 2, y);
+        context.fillText(`Time: ${minutesLeft}:${secondsString}`, 250, y);
     }
 
     context.font = "16px sans-serif";

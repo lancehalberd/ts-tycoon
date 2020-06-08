@@ -63,7 +63,7 @@ export function updateActionShortcuts(character: Character): void {
     const margin = 5;
     const padding = 8;
     const top = mainCanvas.height - margin - totalSize; // 30 is the height of the minimap.
-    let left = 30 + margin; // 60 pixels to make room for the return to map button.
+    let left = 10 + margin; // 60 pixels to make room for the return to map button.
     const keysLeft = actionKeyCodes.slice();
     for (const action of character.hero.actions) {
         if (action.variableObject.tags.basic) continue;
