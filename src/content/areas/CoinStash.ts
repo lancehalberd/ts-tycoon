@@ -6,7 +6,7 @@ import {
 } from 'app/content/areas';
 import { addFurnitureBonuses, removeFurnitureBonuses } from 'app/content/furniture';
 import { setUpgradingObject } from 'app/content/upgradeButton';
-import { editingAreaState, refreshDefinition } from 'app/development/editArea';
+import { editingAreaState } from 'app/development/editArea';
 import { titleDiv, bodyDiv } from 'app/dom';
 import { ADVENTURE_WIDTH, GROUND_Y } from 'app/gameConstants';
 import { bonusSourceHelpText } from 'app/helpText';

@@ -5,9 +5,13 @@ import {
 import { getMonsterDefinitionAreaEntity, makeMonster, monsters } from 'app/content/monsters';
 import { zones } from 'app/content/zones';
 import {
+    boundZPosition,
     deleteSelectedObject,
+    getCurrentArea,
+    moveLocationDefinition,
     refreshPropertyPanel,
 } from 'app/development/editArea';
+import { MAX_Z, MIN_Z } from 'app/gameConstants';
 import { getBasicAttack } from 'app/performAttack';
 import { getState } from 'app/state';
 import { abbreviate, fixedDigits, percent } from 'app/utils/formatters';
@@ -43,53 +47,6 @@ export function getMonsterContextMenu(definition: MonsterDefinition): MenuOption
     const monsterData = monsters[definition.key];
     const name = monsterData.name || definition.key;
     return [
-        {
-            label: 'Change type...',
-            getChildren() {
-                return getMonsterTypeMenuItems(monsterKey => {
-                    definition.key = monsterKey;
-                    refreshEnemies();
-                });
-            }
-        },
-        {
-            label: 'Set level...',
-            getChildren() {
-                return [
-                    ...[-10, -5, -3, -1, 1, 3, 5, 10].map(n => definition.level + n).filter(n => n >= 1 && n <= 100).map(level => ({
-                        label: 'Level ' + level,
-                        onSelect() {
-                            definition.level = level;
-                            refreshEnemies();
-                        }
-                    })),
-                    {
-                        label: 'Custom...',
-                        onSelect() {
-                            const level = parseInt(prompt('Enter level'));
-                            if (level >= 1 && level <= 100) {
-                                definition.level = level;
-                                refreshEnemies();
-                            }
-                        }
-                    },
-               ];
-            }
-        },
-        {
-            label: definition.isTarget ? 'Remove From Targets' : 'Add to Targets',
-            onSelect() {
-                definition.isTarget = !definition.isTarget;
-                refreshEnemies();
-            }
-        },
-        {
-            label: 'Flip ' + name,
-            onSelect() {
-                definition.location.flipped = !definition.location.flipped;
-                refreshEnemies();
-            }
-        },
         {},
         {
             label: 'Delete ' + name,
@@ -97,7 +54,7 @@ export function getMonsterContextMenu(definition: MonsterDefinition): MenuOption
                 deleteSelectedObject();
             }
         },
-    ]
+    ];
 }
 
 export function refreshEnemies() {
@@ -129,6 +86,61 @@ export function getMonsterProperties(definition: MonsterDefinition, area: Area):
     let attack = getBasicAttack(monster);
     const props: (EditorProperty<any> | PropertyRow | string)[] = [];
     props.push(`Lvl ${monster.stats.level} ${monster.name}`);
+    props.push([{
+        name: 'level',
+        value: monster.stats.level,
+        onChange: (level: number) => {
+            if (isNaN(level) || level < 1) {
+                return monster.stats.level;
+            }
+            definition.level = Math.round(level);
+            refreshEnemies();
+        },
+    }, {
+        name: 'type',
+        value: definition.key,
+        values: Object.keys(monsters),
+        onChange: (key: string) => {
+            definition.key = key;
+            refreshEnemies();
+        },
+    }]);
+    props.push([{
+        name: 'x',
+        value: definition.location.x,
+        onChange: (x: number) => {
+            if (isNaN(x) || x < 0 || x > getCurrentArea().width) {
+                return definition.location.x;
+            }
+            definition.location.x = Math.round(x);
+            refreshEnemies();
+        },
+    }, {
+        name: 'z',
+        value: definition.location.z,
+        onChange: (z: number) => {
+            if (isNaN(z) || z < MIN_Z || z > MAX_Z) {
+                return definition.location.z;
+            }
+            definition.location.z = Math.round(z);
+            refreshEnemies();
+        },
+    }]);
+    props.push([{
+        name: 'flipped',
+        value: definition.location.flipped || false,
+        onChange: (flipped: boolean) => {
+            definition.location.flipped = flipped;
+            refreshEnemies();
+        },
+    }, {
+        name: 'isTarget',
+        value: definition.isTarget || false,
+        onChange: (isTarget: boolean) => {
+            definition.isTarget = isTarget;
+            refreshEnemies();
+        },
+    }]);
     props.push([{
         name: 'Max Health',
         value: monster.stats.maxHealth,
@@ -182,5 +194,11 @@ export function getMonsterProperties(definition: MonsterDefinition, area: Area):
 
 function fix(number: number, digits: number = 1): string {
     return abbreviate(fixedDigits(number, digits));
+}
+
+export function moveMonsterDefinition(definition: MonsterDefinition, dx: number, dy: number): void {
+    moveLocationDefinition(definition.location, dx, 0, -2 * dy);
+    boundZPosition(definition.location, getMonsterDefinitionAreaEntity(getCurrentArea(), definition).d);
+    refreshEnemies();
 }
 

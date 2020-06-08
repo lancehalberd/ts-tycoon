@@ -7,7 +7,6 @@ import {
 import { cutscenes } from 'app/content/cutscenes';
 import { getMission, setupMission } from 'app/content/missions';
 import { zones } from 'app/content/zones';
-import { createObjectAtMouse, refreshDefinition, uniqueObjectId } from 'app/development/editArea';
 import { createCanvas } from 'app/dom';
 import { drawArea } from 'app/drawArea';
 import { BACKGROUND_HEIGHT } from 'app/gameConstants';

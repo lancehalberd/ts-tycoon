@@ -1700,3 +1700,7 @@ p {
 .pp-container select {
     width: 120px;
 }
+.pp-container input[type="checkbox"] {
+    margin: 0;
+    margin-left: 4px;
+}

@@ -110,4 +110,4 @@ export interface EditorProperty<T> {
     // For buttons, use instead of onChange.
     onClick?: () => void,
 }
-export type PropertyRow = (EditorProperty<string | number> | string)[];
+export type PropertyRow = (EditorProperty<any> | string)[];

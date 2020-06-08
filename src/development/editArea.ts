@@ -15,8 +15,19 @@ import {
     getMonsterContextMenu,
     getMonsterProperties,
     getMonsterTypeMenuItems,
+    moveMonsterDefinition,
     refreshEnemies,
 } from 'app/development/editMonsters';
+import {
+    changeObjectOrder,
+    createObjectAtScreenCoords,
+    deleteObject,
+    getAddObjectMenuItem,
+    getObjectContextMenu,
+    moveObject,
+    refreshObjectDefinition,
+    uniqueObjectId,
+} from 'app/development/editObjects';
 import { displayPropertyPanel, hidePropertyPanel } from 'app/development/propertyPanel';
 import { mainCanvas } from 'app/dom';
 import { ADVENTURE_WIDTH, ADVENTURE_SCALE, BACKGROUND_HEIGHT, GROUND_Y, MAX_Z, MIN_Z } from 'app/gameConstants';
@@ -55,12 +66,23 @@ export const editingAreaState: EditingAreaState = {
 }
 window['editingAreaState'] = editingAreaState;
 
-function getCurrentArea(): Area {
+export function getCurrentArea(): Area {
     return getState().selectedCharacter.hero.area;
 }
-function getAreaDefinition(): AreaDefinition {
+export function getAreaDefinition(): AreaDefinition {
     const area: Area = getCurrentArea();
     return zones[area.zoneKey][area.key];
+}
+
+export function refreshArea() {
+    const { selectedObject } = editingAreaState;
+    const area = getCurrentArea();
+    applyDefinitionToArea(area, getAreaDefinition());
+    // Select the most recently created object.
+    if (selectedObject) {
+        editingAreaState.selectedObject = area.objectsByKey[selectedObject.key];
+    }
+    refreshPropertyPanel();
 }
 
 export function deleteSelectedObject(): void {
@@ -143,7 +165,7 @@ export function handleEditMouseDragged(x: number, y: number, sx: number, sy: num
         if (!area.wallDecorations.includes(selectedObject)) {
             boundZPosition(selectedObject.definition, selectedObject.getAreaTarget().d);
         }
-        refreshDefinition(selectedObject);
+        refreshObjectDefinition(selectedObject);
     } else if (selectedMonsterIndex >= 0) {
         const monster = getAreaDefinition().monsters[selectedMonsterIndex];
         dragLocationDefinition(monster.location, dx, dy);
@@ -189,13 +211,6 @@ function moveSelectedTarget(dx: number, dy: number): boolean {
     return false;
 }
 
-export function uniqueObjectId(base: string, area: Area): string {
-    let i = 2, id = base;
-    while (area.objectsByKey[id]) {
-        id = base + (i++);
-    }
-    return id;
-}
 function uniqueAreaId(): string {
     let zoneKey = getCurrentArea().zoneKey;
     let i = 2, id: string = zoneKey;
@@ -205,37 +220,7 @@ function uniqueAreaId(): string {
     return id;
 }
 
-export function createObjectAtMouse(definition: AreaObjectDefinition, objectKey: string = null): AreaObject {
-    const area = getState().selectedCharacter.hero.area;
-    if (!objectKey) {
-        objectKey = uniqueObjectId(definition.type, area);
-    }
-    const [x, y] = editingAreaState.contextCoords;
-    const isWallDecoration = (y < BACKGROUND_HEIGHT);
-    if (isWallDecoration) {
-        definition.y = BACKGROUND_HEIGHT - y;
-        definition.zAlign = 'back';
-        definition.z = 0;
-    } else {
-        definition.y = 0;
-        // Recall GROUND_Y is y=0, z=0, and z is at 1/2 scale.
-        definition.z = (GROUND_Y - y) * 2;
-    }
-    definition.x = editingAreaState.cameraX + x;
-    const areaDefinition: AreaDefinition = zones[area.zoneKey][area.key];
-    if (isWallDecoration) {
-        areaDefinition.wallDecorations[objectKey] = definition;
-    } else {
-        areaDefinition.objects[objectKey] = definition;
-    }
-    applyDefinitionToArea(area, areaDefinition);
-    // Select the most recently created object.
-    editingAreaState.selectedObject = area.objectsByKey[objectKey];
-    refreshPropertyPanel();
-    return area.objectsByKey[objectKey];
-}
-
-function moveLocationDefinition(definition: LocationDefinition, dx: number, dy: number, dz: number): void {
+export function moveLocationDefinition(definition: LocationDefinition, dx: number, dy: number, dz: number): void {
     definition.x = (definition.x || 0 ) + dx;
     definition.y = (definition.y || 0 ) + dy;
     definition.z = (definition.z || 0 ) + dz;
@@ -258,7 +243,7 @@ function moveLocationDefinition(definition: LocationDefinition, dx: number, dy: 
     }
 }
 
-function boundZPosition(definition: LocationDefinition, d: number): void {
+export function boundZPosition(definition: LocationDefinition, d: number): void {
     if (definition.y > 0) {
         definition.z += definition.y * 2;
         definition.y = 0;
@@ -271,84 +256,6 @@ function boundZPosition(definition: LocationDefinition, d: number): void {
         definition.z = Math.max(MIN_Z + d / 2, Math.min(MAX_Z - d / 2, definition.z));
     }
 }
-
-function moveMonsterDefinition(definition: MonsterDefinition, dx: number, dy: number): void {
-    moveLocationDefinition(definition.location, dx, 0, -2 * dy);
-    boundZPosition(definition.location, getMonsterDefinitionAreaEntity(getCurrentArea(), definition).d);
-    refreshEnemies();
-}
-
-function moveObject(object: AreaObject, dx: number, dy: number): void {
-    const area = getState().selectedCharacter.hero.area;
-    if (area.wallDecorations.includes(object)) {
-        moveLocationDefinition(object.definition, dx, -dy, 0);
-    } else {
-        moveLocationDefinition(object.definition, dx, 0, -dy * 2);
-        boundZPosition(object.definition, object.getAreaTarget().d);
-    }
-    refreshDefinition(object);
-}
-
-// Reapply the definition for a given object and any objects that list it as an ancestor.
-export function refreshDefinition(object: AreaObject) {
-    object.applyDefinition(object.definition);
-    for (const otherObject of object.area.objects) {
-        if (otherObject.definition.parentKey === object.key) {
-            refreshDefinition(otherObject);
-        }
-    }
-    for (const otherObject of object.area.wallDecorations) {
-        if (otherObject.definition.parentKey === object.key) {
-            refreshDefinition(otherObject);
-        }
-    }
-    refreshPropertyPanel();
-}
-
-function changeObjectOrder(object: AreaObject, dz: number ): void {
-    if (!object) {
-        return;
-    }
-    const area = getCurrentArea();
-    const areaDefinition = getAreaDefinition();
-    const hewHash = {};
-    if (area.wallDecorations.indexOf(object) >= 0) {
-        areaDefinition.wallDecorations
-            = changeOrderInHash(object.definition, areaDefinition.wallDecorations, dz);
-    } else if (area.objects.indexOf(object) >= 0) {
-        areaDefinition.objects
-            = changeOrderInHash(object.definition, areaDefinition.objects, dz);
-    } else {
-        console.error('Object not found in area', object, area);
-    }
-    applyDefinitionToArea(area, areaDefinition);
-    // Update the selected object as it gets replaced when we refresh the area.
-    editingAreaState.selectedObject = area.objectsByKey[object.key];
-}
-
-function changeOrderInHash<T>(item: T, hash: {[key:string]: T}, dz: number): {[key:string]: T} {
-    const newHash: {[key:string]: T}  = {};
-    const keys = [];
-    let index = -1;
-    for (const key in hash) {
-        if (hash[key] === item) {
-            index = keys.length;
-        }
-        keys.push(key);
-    }
-    if (index < 0) {
-        console.error('Could not find item in hash', item, hash);
-        return hash;
-    }
-    const newIndex = Math.max(0, Math.min(keys.length - 1, index + dz));
-    const key = keys.splice(index, 1);
-    keys.splice(newIndex, 0, key);
-    for (const key of keys) {
-        newHash[key] = hash[key];
-    }
-    return newHash;
-}
-window['changeOrderInHash'] = changeOrderInHash;
 
 export function handleEditAreaKeyDown(keyCode: number): boolean {
     const { isEditing, selectedMonsterIndex, selectedObject } = editingAreaState;
@@ -481,7 +388,8 @@ function updateAreaDefinition(updatedProps: Partial<AreaDefinition>) {
         ...updatedProps,
     };
     applyDefinitionToArea(area, zones[area.zoneKey][area.key]);
-    editingAreaState.cameraX = Math.min(editingAreaState.cameraX, area.width - ADVENTURE_WIDTH);
+    // This will bound the camera to the edges of the zone, in case it changed size.
+    adjustCamera(0);
     refreshPropertyPanel();
 }
 
@@ -555,6 +463,14 @@ export function getEditingContextMenu(): MenuOption[] {
         ...getSelectedObjectContextMenu(),
         ...getSelectedMonsterContextMenu(),
     ];
+}
+
+export function createObjectAtContextCoords(definition: AreaObjectDefinition, objectKey: string = null): AreaObject {
+    const area = getState().selectedCharacter.hero.area;
+    if (!objectKey) {
+        objectKey = uniqueObjectId(definition.type, area);
+    }
+    return createObjectAtScreenCoords(definition, editingAreaState.contextCoords, objectKey);
 }
 
 export function refreshPropertyPanel(): void {
@@ -720,6 +636,16 @@ export function getAreaProperties(this: void): (EditorProperty<any> | PropertyRo
     return props;
 }
 
+export function getSelectedObjectContextMenu(): MenuOption[] {
+    const {contextCoords, selectedObject} = editingAreaState;
+    if (!selectedObject
+        || !selectedObject.isPointOver(contextCoords[0], contextCoords[1])
+        || !selectedObject.definition
+    ) {
+        return [];
+    }
+    return getObjectContextMenu(selectedObject);
+}
 
 export function getSelectedMonsterContextMenu(): MenuOption[] {
     const {contextCoords, selectedMonsterIndex} = editingAreaState;
@@ -843,87 +769,6 @@ function importZone(zoneFileContents: string) {
     for (let areaKey in zones[zoneKey]) {
         changeArea(zoneKey, areaKey);
         break;
-    }
-}
-
-export function getSelectedObjectContextMenu(): MenuOption[] {
-    const {contextCoords, selectedObject} = editingAreaState;
-    if (!selectedObject
-        || !selectedObject.isPointOver(contextCoords[0], contextCoords[1])
-        || !selectedObject.definition
-    ) {
-        return [];
-    }
-    const areaObjectFactory = areaObjectFactories[selectedObject.definition.type];
-    return [
-        ...(areaObjectFactory && areaObjectFactory.getEditMenu
-                ? areaObjectFactory.getEditMenu(selectedObject)
-                : []
-        ),
-        {
-            getLabel() {
-                return 'Flip ' + selectedObject.definition.type;
-            },
-            onSelect() {
-                selectedObject.definition.flipped = !selectedObject.definition.flipped;
-                refreshDefinition(selectedObject);
-            }
-        },
-        {},
-        {
-            getLabel() {
-                return 'Delete ' + selectedObject.definition.type;
-            },
-            onSelect() {
-                deleteSelectedObject();
-            }
-        },
-    ]
-}
-
-function deleteObject(object: AreaObject, updateArea: boolean = true) {
-    const areaDefinition: AreaDefinition = zones[object.area.zoneKey][object.area.key];
-    if (object.area.objects.indexOf(object) >= 0) {
-        if (areaDefinition.objects[object.key] !== object.definition) {
-            console.log('Did not find object definition where expected during delete.');
-            debugger;
-        }
-        areaDefinition.objects[object.key] = null;
-    } else {
-        if (areaDefinition.wallDecorations[object.key] !== object.definition) {
-            console.log('Did not find object definition where expected during delete.');
-            debugger;
-        }
-        areaDefinition.wallDecorations[object.key] = null;
-    }
-    // Recrusively delete child objects.
-    for (const otherObject of object.area.objects) {
-        if (otherObject.definition.parentKey === object.key) {
-            deleteObject(otherObject, false);
-        }
-    }
-    for (const otherObject of object.area.wallDecorations) {
-        if (otherObject.definition.parentKey === object.key) {
-            deleteObject(otherObject, false);
-        }
-    }
-    // For recursive calls, we only update area for the outer most call.
-    if (updateArea) {
-        applyDefinitionToArea(object.area, areaDefinition);
-    }
-}
-
-export function getAddObjectMenuItem(type: string): MenuOption {
-    if (areaObjectFactories[type].getCreateMenu) {
-        return areaObjectFactories[type].getCreateMenu();
-    }
-    return {
-        getLabel() {
-            return type;
-        },
-        onSelect() {
-            createObjectAtMouse({type});
-        }
     }
 }
 

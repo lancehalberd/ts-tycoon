@@ -41,6 +41,8 @@ export function displayPropertyPanel(properties: (EditorProperty<any> | Property
                 if (newValue) {
                     input.value = `${newValue}`;
                 }
+            } else if (isBooleanProperty(property) && property.onChange) {
+                property.onChange((input as HTMLInputElement).checked);
             }
         }
     });
@@ -70,6 +72,9 @@ function isStringProperty(property: EditorProperty<any>): property is EditorProp
 function isNumberProperty(property: EditorProperty<any>): property is EditorProperty<number> {
     return typeof(property.value) === 'number';
 }
+function isBooleanProperty(property: EditorProperty<any>): property is EditorProperty<boolean> {
+    return typeof(property.value) === 'boolean';
+}
 
 function renderProperty(property: EditorProperty<any> | string): string {
     if (typeof(property) === 'string') {
@@ -97,6 +102,11 @@ function renderProperty(property: EditorProperty<any> | string): string {
                     + '</select></span>';
             }
             return `<span class="pp-property">${property.name} <input type="number" value="${property.value}" name="${property.name}" /></span>`;
+        } else if (isBooleanProperty(property)) {
+            return `<span class="pp-property">
+                        ${property.name}
+                        <input type="checkbox" ${property.value ? 'checked' : ''} name="${property.name}" />
+                    </span>`;
         }
     } else if (property.onClick) {
         propertiesByName[property.name] = property;

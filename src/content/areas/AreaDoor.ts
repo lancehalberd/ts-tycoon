@@ -4,7 +4,8 @@ import {
     areaObjectFactories,
 } from 'app/content/areas';
 import { zones } from 'app/content/zones';
-import { createObjectAtMouse, refreshDefinition, uniqueObjectId } from 'app/development/editArea';
+import { createObjectAtContextCoords } from 'app/development/editArea';
+import { refreshObjectDefinition, uniqueObjectId } from 'app/development/editObjects';
 import { requireImage } from 'app/images';
 import { getState } from 'app/state';
 import { createAnimation, frame, getFrame, drawFrame, frameAnimation } from 'app/utils/animations';
@@ -98,7 +99,7 @@ export class AreaDoor extends EditableAreaObject {
                     const area: Area = getState().selectedCharacter.hero.area;
                     // Generate the objectKey now so we can use it for the initial target of this door.
                     const objectKey: string = uniqueObjectId('door', area);
-                    createObjectAtMouse({type: 'door', animation, exitKey: `${area.key}:${objectKey}`}, objectKey);
+                    createObjectAtContextCoords({type: 'door', animation, exitKey: `${area.key}:${objectKey}`}, objectKey);
                 });
             }
         }
@@ -110,7 +111,7 @@ export class AreaDoor extends EditableAreaObject {
             getChildren() {
                 return chooseAnimationMenu((animation: string) => {
                     object.definition.animation = animation;
-                    refreshDefinition(object)
+                    refreshObjectDefinition(object)
                 });
             }
         }, {
@@ -129,7 +130,7 @@ export class AreaDoor extends EditableAreaObject {
                                         getLabel: () => key,
                                         onSelect() {
                                             object.definition.exitKey = `${areaKey}:${key}`;
-                                            refreshDefinition(object)
+                                            refreshObjectDefinition(object)
                                         }
                                     }
                                 });

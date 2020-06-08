@@ -3,7 +3,8 @@ import {
     isPointOverAreaTarget,
     EditableAreaObject,
 } from 'app/content/areas';
-import { createObjectAtMouse, refreshDefinition } from 'app/development/editArea';
+import { createObjectAtContextCoords } from 'app/development/editArea';
+import { refreshObjectDefinition } from 'app/development/editObjects';
 import { createAnimation, frameAnimation, getFrame } from 'app/utils/animations';
 
 import {
@@ -55,7 +56,7 @@ export class AreaDecoration extends EditableAreaObject {
             getLabel: () => 'Decoration',
             getChildren() {
                 return chooseAnimationMenu(AreaDecoration.animations, (animationGroup: string, animationKey: string) => {
-                    createObjectAtMouse({type: 'decoration', animationGroup, animationKey});
+                    createObjectAtContextCoords({type: 'decoration', animationGroup, animationKey});
                 })
             }
         };
@@ -68,7 +69,7 @@ export class AreaDecoration extends EditableAreaObject {
                 return chooseAnimationMenu(AreaDecoration.animations, (animationGroup: string, animationKey: string) => {
                     object.definition.animationGroup = animationGroup;
                     object.definition.animationKey = animationKey;
-                    refreshDefinition(object)
+                    refreshObjectDefinition(object)
                 })
             }
         }];
@@ -125,7 +126,7 @@ export class AreaObstacle extends AreaDecoration {
             getLabel: () => 'Obstacle',
             getChildren() {
                 return chooseAnimationMenu(AreaObstacle.animations, (animationGroup: string, animationKey: string) => {
-                    createObjectAtMouse({type: 'obstacle', animationGroup, animationKey});
+                    createObjectAtContextCoords({type: 'obstacle', animationGroup, animationKey});
                 })
             }
         };
@@ -138,7 +139,7 @@ export class AreaObstacle extends AreaDecoration {
                 return chooseAnimationMenu(AreaObstacle.animations, (animationGroup: string, animationKey: string) => {
                     object.definition.animationGroup = animationGroup;
                     object.definition.animationKey = animationKey;
-                    refreshDefinition(object)
+                    refreshObjectDefinition(object)
                 })
             }
         }];
