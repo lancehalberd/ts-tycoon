@@ -323,6 +323,7 @@ function makeDistortionCurve(amount) {
 var distortionCurve = makeDistortionCurve(100);
 
 function playBeeps(frequencies, volume, duration, {smooth=false, swell=false, taper=false, distortion=false}) {
+    frequencies = Float32Array.from(frequencies);
     const oscillator = audioContext.createOscillator();
     oscillator.type = 'square';
     if (smooth) oscillator.frequency.setValueCurveAtTime(frequencies, audioContext.currentTime, duration);
