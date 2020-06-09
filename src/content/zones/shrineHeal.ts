@@ -2,7 +2,9 @@ import { zones } from 'app/content/zones';
 
 import { AreaDefinition } from 'app/types';
 
-export const entrance: AreaDefinition = {
+export const shrineHeal = 'shrineHeal';
+
+const entrance: AreaDefinition = {
     type: 'field',
     width: 500,
     rightWallType: 'caveWall',
@@ -18,7 +20,7 @@ export const entrance: AreaDefinition = {
     },
 };
 
-export const shrine: AreaDefinition = {
+const shrine: AreaDefinition = {
     type: 'cave',
     width: 320,
     leftWallType: 'caveWall',
@@ -58,7 +60,7 @@ export const shrine: AreaDefinition = {
     },
 };
 
-export const trialOfResolve: AreaDefinition = {
+const trialOfResolve: AreaDefinition = {
     type: 'cave',
     width: 500,
     seed: 3167875903276947,
@@ -74,7 +76,7 @@ export const trialOfResolve: AreaDefinition = {
     },
 };
 
-export const trialOfFaith: AreaDefinition = {
+const trialOfFaith: AreaDefinition = {
     type: 'cave',
     width: 500,
     leftWallType: 'caveWall',
@@ -92,7 +94,7 @@ export const trialOfFaith: AreaDefinition = {
     },
 };
 
-export const boss: AreaDefinition = {
+const boss: AreaDefinition = {
     type: 'cave',
     width: 500,
     leftWallType: 'caveWall',

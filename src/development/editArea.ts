@@ -592,17 +592,23 @@ export function getAreaProperties(this: void): (EditorProperty<any> | PropertyRo
         'Walls',
         {
             name: 'left',
-            value: areaDefinition.leftWallType,
-            values: Object.keys(areaWalls),
+            value: areaDefinition.leftWallType || 'none',
+            values: ['none', ...Object.keys(areaWalls)],
             onChange(leftWallType: string) {
+                if (leftWallType === 'none') {
+                    leftWallType = null;
+                }
                 updateAreaDefinition({leftWallType});
             },
         },
         {
             name: 'right',
-            value: areaDefinition.rightWallType,
-            values: Object.keys(areaWalls),
+            value: areaDefinition.rightWallType || 'none',
+            values: ['none', ...Object.keys(areaWalls)],
             onChange(rightWallType: string) {
+                if (rightWallType === 'none') {
+                    rightWallType = null;
+                }
                 updateAreaDefinition({rightWallType});
             },
         },

@@ -5,6 +5,7 @@ import { zones } from 'app/content/zones/zoneHash';
 export * from 'app/content/zones/zoneHash';
 // All zones need to be imported here as they are not otherwise referenced in the code directly.
 export * from 'app/content/zones/guild';
+export * from 'app/content/zones/prologue';
 export * from 'app/content/zones/mission1';
 export * from 'app/content/zones/mission2';
 export * from 'app/content/zones/shrineHeal';
@@ -37,7 +38,7 @@ export function serializeZone(zoneKey: ZoneType): string {
     ];
     for (let areaKey in zones[zoneKey]) {
         lines.push(
-            `export const ${areaKey}: AreaDefinition = `
+            `const ${areaKey}: AreaDefinition = `
             + serializeAreaDefinition(zones[zoneKey][areaKey])
             + ";"
         );

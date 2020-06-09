@@ -4,7 +4,7 @@ import {
     MonsterDefinition, MonsterSpawn,
 } from 'app/types';
 
-export type ZoneType = 'guild' | 'mission1' | 'mission2';
+export type ZoneType = 'prologue' | 'guild' | 'mission1' | 'mission2';
 
 export type Zones = {[key: string]: Zone};
 

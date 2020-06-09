@@ -2,7 +2,9 @@ import { zones } from 'app/content/zones';
 
 import { AreaDefinition } from 'app/types';
 
-export const forestClearing: AreaDefinition = {
+export const mission2 = 'mission2';
+
+const forestClearing: AreaDefinition = {
     type: 'field',
     width: 320,
     leftWallType: 'caveWall',
@@ -19,7 +21,7 @@ export const forestClearing: AreaDefinition = {
     },
 };
 
-export const westPath: AreaDefinition = {
+const westPath: AreaDefinition = {
     type: 'field',
     width: 600,
     objects: {
@@ -62,7 +64,7 @@ export const westPath: AreaDefinition = {
     ],
 };
 
-export const westForest: AreaDefinition = {
+const westForest: AreaDefinition = {
     type: 'field',
     width: 400,
     leftWallType: 'caveWall',
@@ -88,7 +90,7 @@ export const westForest: AreaDefinition = {
     ],
 };
 
-export const cave: AreaDefinition = {
+const cave: AreaDefinition = {
     type: 'cave',
     width: 320,
     leftWallType: 'caveWall',
@@ -115,7 +117,7 @@ export const cave: AreaDefinition = {
     ],
 };
 
-export const eastForest: AreaDefinition = {
+const eastForest: AreaDefinition = {
     type: 'field',
     width: 400,
     leftWallType: 'caveWall',
@@ -141,7 +143,7 @@ export const eastForest: AreaDefinition = {
     ],
 };
 
-export const eastPath: AreaDefinition = {
+const eastPath: AreaDefinition = {
     type: 'field',
     width: 400,
     objects: {
@@ -184,7 +186,7 @@ export const eastPath: AreaDefinition = {
     ],
 };
 
-export const southForest: AreaDefinition = {
+const southForest: AreaDefinition = {
     type: 'field',
     width: 700,
     leftWallType: 'river',

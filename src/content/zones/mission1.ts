@@ -2,7 +2,9 @@ import { zones } from 'app/content/zones';
 
 import { AreaDefinition } from 'app/types';
 
-export const villageWest: AreaDefinition = {
+export const mission1 = 'mission1';
+
+const villageWest: AreaDefinition = {
     type: 'cave',
     width: 450,
     leftWallType: 'caveWall',
@@ -29,7 +31,7 @@ export const villageWest: AreaDefinition = {
     ],
 };
 
-export const villageWestHouse: AreaDefinition = {
+const villageWestHouse: AreaDefinition = {
     type: 'oldGuild',
     width: 320,
     leftWallType: 'guildWall',
@@ -50,7 +52,7 @@ export const villageWestHouse: AreaDefinition = {
     ],
 };
 
-export const villageSquare: AreaDefinition = {
+const villageSquare: AreaDefinition = {
     type: 'town',
     width: 600,
     leftWallType: 'river',
@@ -96,7 +98,7 @@ export const villageSquare: AreaDefinition = {
     ],
 };
 
-export const VillageSquareSmallHouse: AreaDefinition = {
+const VillageSquareSmallHouse: AreaDefinition = {
     type: 'oldGuild',
     width: 320,
     leftWallType: 'guildWall',
@@ -117,7 +119,7 @@ export const VillageSquareSmallHouse: AreaDefinition = {
     ],
 };
 
-export const villageSquareLongHouse: AreaDefinition = {
+const villageSquareLongHouse: AreaDefinition = {
     type: 'oldGuild',
     width: 400,
     leftWallType: 'guildWall',
@@ -145,7 +147,7 @@ export const villageSquareLongHouse: AreaDefinition = {
     ],
 };
 
-export const villageEast: AreaDefinition = {
+const villageEast: AreaDefinition = {
     type: 'field',
     width: 600,
     leftWallType: 'river',

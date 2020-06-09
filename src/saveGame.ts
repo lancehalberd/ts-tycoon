@@ -57,6 +57,7 @@ export function exportCharacter(character: Character | Applicant): SavedCharacte
         replay: character.replay,
         gameSpeed: character.gameSpeed,
         loopSkip: character.loopSkip,
+        fixedAbilities: character.fixedAbilities,
     };
 }
 export function exportApplicant(applicant: Applicant): SavedApplicant {
@@ -99,12 +100,16 @@ export function importCharacter(characterData: SavedCharacter) {
         replay: characterData.replay,
         gameSpeed: characterData.gameSpeed,
         loopSkip: characterData.loopSkip,
+        fixedAbilities: characterData.fixedAbilities,
     };
     character.characterContext.imageSmoothingEnabled = false;
     if (isNaN(character.divinity) || typeof(character.divinity) !== "number") {
         character.divinity = 0;
     }
     hero.character = character;
+    for (const ability of (character.fixedAbilities || [])){
+        character.hero.abilities.push(ability);
+    }
     character.board = importJewelBoard(characterData.board, character);
     for (const jewel of [...character.board.jewels, ...character.board.fixed]) {
         jewel.character = character;

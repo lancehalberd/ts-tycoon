@@ -3,13 +3,15 @@ import { enterArea, leaveCurrentArea } from 'app/adventure';
 import { setSelectedCharacter } from 'app/character';
 import mission1 from 'app/development/testCharacters/mission1';
 import mission2 from 'app/development/testCharacters/mission2';
+import level10 from 'app/development/testCharacters/level10';
+import special from 'app/development/testCharacters/special';
 import { exportCharacter, importCharacter } from 'app/saveGame';
 import { getState } from 'app/state';
 
 import { MenuOption, SavedCharacter } from 'app/types';
 
 const allTestCharacters = {
-    mission1, mission2,
+    mission1, mission2, level10, special,
 };
 
 function pasteCharacterToClipBoard(character) {

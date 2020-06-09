@@ -1,5 +1,5 @@
 import {
-    Action, ActiveMission, Actor, Board, BonusSource, GameContext, FixedObject, Hero, HUDElement,
+    Ability, Action, ActiveMission, Actor, Board, BonusSource, GameContext, FixedObject, Hero, HUDElement,
     JobKey, LevelDifficulty, SavedActor, SavedBoard,
 } from 'app/types';
 import { JobIcon } from 'app/content/jobs';
@@ -45,6 +45,8 @@ export interface Character {
 
     // Current mission this character is on.
     mission?: ActiveMission,
+
+    fixedAbilities?: Ability[],
 }
 
 export interface Applicant extends Character {
@@ -74,6 +76,8 @@ export interface SavedCharacter {
 
     manualActions: {[key in string]: boolean},
     autoActions: {[key in string]: boolean},
+
+    fixedAbilities?: Ability[],
 }
 
 export interface SavedApplicant extends SavedCharacter {

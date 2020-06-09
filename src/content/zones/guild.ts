@@ -2,7 +2,9 @@ import { zones } from 'app/content/zones';
 
 import { AreaDefinition } from 'app/types';
 
-export const guildYard: AreaDefinition = {
+export const guild = 'guild';
+
+const guildYard: AreaDefinition = {
     type: 'forest',
     width: 420,
     leftWallType: 'river',
@@ -30,7 +32,7 @@ export const guildYard: AreaDefinition = {
     },
 };
 
-export const guildFoyer: AreaDefinition = {
+const guildFoyer: AreaDefinition = {
     type: 'oldGuild',
     width: 500,
     leftWallType: 'straightGuildWall',
@@ -168,7 +170,7 @@ export const guildFoyer: AreaDefinition = {
     ],
 };
 
-export const guildFrontHall: AreaDefinition = {
+const guildFrontHall: AreaDefinition = {
     type: 'oldGuild',
     width: 600,
     leftWallType: 'guildWall',
@@ -223,7 +225,7 @@ export const guildFrontHall: AreaDefinition = {
     ],
 };
 
-export const guildGuestRoom: AreaDefinition = {
+const guildGuestRoom: AreaDefinition = {
     type: 'oldGuild',
     width: 330,
     leftWallType: 'guildWall',
@@ -293,7 +295,7 @@ export const guildGuestRoom: AreaDefinition = {
     },
 };
 
-export const guildBasement: AreaDefinition = {
+const guildBasement: AreaDefinition = {
     type: 'cave',
     width: 640,
     leftWallType: 'caveWall',
@@ -321,7 +323,7 @@ export const guildBasement: AreaDefinition = {
     ],
 };
 
-export const guildVault: AreaDefinition = {
+const guildVault: AreaDefinition = {
     type: 'cave',
     width: 320,
     leftWallType: 'caveWall',

@@ -7,7 +7,7 @@ import { equipItemProper, makeItem } from 'app/inventory';
 import {
     Ability, Actor, ActorSource, ActorStats, Affix, AffixData,
     Area, AreaEntity, Bonuses, BonusSource, Equipment, EquipmentSlot,
-    Frame, FrameAnimation, FrameDimensions, FrameRectangle,
+    Frame, FrameAnimation, FrameDimensions, FrameRectangle, Hero,
     Monster, MonsterData, MonsterDefinition, Person
 } from 'app/types';
 

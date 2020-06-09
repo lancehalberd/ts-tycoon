@@ -359,6 +359,9 @@ export function performAttackProper(attackStats: AttackData, target: Target) {
             if (!targets.length) {
                 targets = Random.shuffle(attacker.enemies);
             }
+            if (!targets.length) {
+                targets = Random.shuffle(attacker.allies);
+            }
             const currentTarget = targets.pop();
             const x = attacker.x - 250 + Math.random() * 400 + 10 * i;
             const z = attacker.z - 90 + Math.random() * MAX_Z;
@@ -469,7 +472,9 @@ export function applyAttackToTarget(
             // Meteor calls applyAttackToTarget with a null target so it can explode
             // anywhere. If that has happened, just return once the explosion has
             // been created.
-            if (actorOrLocation.targetType === 'actor') explosion.hitTargets.push(actorOrLocation as Actor);
+            if (actorOrLocation && actorOrLocation.targetType === 'actor') {
+                explosion.hitTargets.push(actorOrLocation as Actor);
+            }
         }
     }
     // All the logic beyond this point does not apply to location targets.
