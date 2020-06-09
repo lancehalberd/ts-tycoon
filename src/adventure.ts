@@ -172,6 +172,7 @@ export function enterArea(actor: Actor, {x, z, areaKey, objectKey, zoneKey}: Exi
     (actor.minions || []).forEach(minion => enterArea(minion, {x:x + actor.heading[0] * 10, z: z - 90, areaKey}));
     // Any effects bound to the hero should be added to the area they have entered.
     (actor.boundEffects || []).forEach(effect => {
+        effect.area = area;
         area.effects.push(effect);
     });
     actor.area = area;
@@ -320,19 +321,28 @@ function capHealth(actor: Actor) {
     actor.percentTargetHealth = actor.targetHealth / actor.stats.maxHealth;
 }
 // Remove bound effects from an area. Called when the actor dies or leaves the area.
-export function removeBoundEffects(actor: Actor, area: Area, finishEffect = false) {
+function removeBoundEffects(actor: Actor, area: Area, finishEffect = false) {
     (actor.boundEffects || []).forEach(effect => {
         const index = area.effects.indexOf(effect);
-        if (index >= 0) area.effects.splice(index, 1);
-        if (finishEffect && effect.finish) effect.finish();
+        if (index >= 0) {
+            area.effects.splice(index, 1);
+        }
+        if (finishEffect && effect.finish) {
+            effect.finish();
+        }
     });
+    if (finishEffect) {
+        actor.boundEffects = [];
+    }
 }
 export function removeActor(actor: Actor) {
     if (actor.owner) {
         const minionIndex = actor.owner.minions.indexOf(actor);
         if (minionIndex >= 0) actor.owner.minions.splice(minionIndex, 1);
     }
-    if (actor.area) removeBoundEffects(actor, actor.area, true);
+    if (actor.area) {
+        removeBoundEffects(actor, actor.area, true);
+    }
     const index = actor.allies.indexOf(actor);
     // When a character with minions exits to the world map, this method is called on minions
     // after they are already removed from the area, so they won't be in the list of allies already.
@@ -588,6 +598,7 @@ function runActorLoop(actor: Actor) {
     if (actor.dialogueBox) {
         actor.dialogueBox.update();
     }
+    actor.boundEffects = actor.boundEffects.filter(effect => !effect.done);
     if (actor.isDead || actor.stunned || actor.pull || actor.chargeEffect) {
         actor.skillInUse = null;
         return;
