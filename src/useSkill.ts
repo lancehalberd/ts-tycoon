@@ -66,17 +66,13 @@ export function canUseSkillOnTarget(actor: Actor, skill: Action, target: Target)
 }
 
 /**
- * Checks whether an actor may use a reaction in response to a given attack targeting them.
- *
- * @param object actor       The actor performing the skill.
- * @param object skill       The skill being performed.
- * @param object target      The target to attack for active abilities.
+ * Checks whether an actor may use a reaction in response to a given attack.
+ * on death reactions won't pass attack data back.
  */
-export function canUseReaction(actor: Actor, reaction: Action, attackStats: AttackData): boolean {
+export function canUseReaction(actor: Actor, reaction: Action, attackStats: AttackData = null): boolean {
     //console.log('Can use reaction', actor, reaction, attackStats);
     if (!actor) throw new Error('No actor was passed to canUseReaction');
     if (!reaction) throw new Error('No reaction was passed to canUseReaction');
-    if (!attackStats) throw new Error('No attackStats was passed to canUseReaction');
     if (reaction.readyAt > actor.time) return false;
     const reactionDefinition = reactionDefinitions[reaction.base.type];
     if (!reactionDefinition) return false;
@@ -486,13 +482,10 @@ reactionDefinitions.revive = {
 // Note that attackStats won't actually be passed in for this skill.
 reactionDefinitions.stop = {
     isValid: function (actor, stopSkill, attackStats) {
-        return (actor.health / actor.stats.maxHealth < .1) && (actor.temporalShield > 0);
+        return actor.targetHealth <= 0 && actor.temporalShield > 0;
     },
     use: function (actor, stopSkill, attackStats) {
         actor.area.timeStopEffect = {actor};
-        if (actor.health <= 0) actor.health = 1;
-        if (actor.targetHealth <= 0) actor.targetHealth = 1;
-        actor.slow = 0;
     }
 };
 

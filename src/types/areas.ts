@@ -65,7 +65,7 @@ export interface Area {
     time: number,
     // Used for randomly generating area.
     seed: number,
-    timeStopEffect?: any,
+    timeStopEffect?: {actor: Actor},
     // Optional array of bonuses that apply to all enemies in this area.
     enemyBonuses?: BonusSource[],
     isShrineArea?: boolean,

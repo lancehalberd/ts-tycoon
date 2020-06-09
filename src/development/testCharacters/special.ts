@@ -24,6 +24,9 @@ export function getMysteriousSage(): Character {
         skinColor: '#FFCC99',
         hairColor: 'black',
     };
+    // Remove default gear.
+    hero.equipment.weapon = null;
+    hero.equipment.body = null;
     equipItemProper(hero, makeItem(itemsByKey.oakquarterstaff, 30), false);
     equipItemProper(hero, makeItem(itemsByKey.cashmererobe, 30), false);
     equipItemProper(hero, makeItem(itemsByKey.silkslippers, 30), false);
@@ -31,7 +34,6 @@ export function getMysteriousSage(): Character {
     equipItemProper(hero, makeItem(itemsByKey.silkhood, 30), false);
     equipItemProper(hero, makeItem(itemsByKey.silktights, 30), false);
     equipItemProper(hero, makeItem(itemsByKey.heavyamulet, 30), false);
-    equipItemProper(hero, makeItem(itemsByKey.meteoricband, 30), false);
     equipItemProper(hero, makeItem(itemsByKey.orichalcumband, 30), false);
     sage.fixedAbilities = [
         abilities.heal, abilities.defenseSong,

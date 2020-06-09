@@ -249,13 +249,17 @@ export function addMonstersToArea(
 function checkIfActorDied(actor: Actor) {
     const area = actor.area;
     // The actor who has stopped time cannot die while the effect is in place.
-    if (area.timeStopEffect && area.timeStopEffect.actor === actor) return;
-    // Actor has not died if they are already dead, have postiive health, cannot die or are currently being pulled.
-    if (actor.isDead || actor.health > 0 || actor.pull) return;
+    if (area.timeStopEffect && area.timeStopEffect.actor === actor) {
+        return;
+    }
     // If the actor is about to die, check to activate their temporal shield if they have one.
     const stopTimeAction = findActionByTag(actor.reactions, 'stopTime');
-    if (stopTimeAction && canUseReaction(actor, stopTimeAction, null)) {
+    if (actor.targetHealth <= 0 && stopTimeAction && canUseReaction(actor, stopTimeAction, null)) {
         useReaction(actor, stopTimeAction, null);
+        return;
+    }
+    // Actor has not died if they are already dead, have postiive health, cannot die or are currently being pulled.
+    if (actor.isDead || actor.health > 0 || actor.pull) {
         return;
     }
     // The actor has actually died, mark them as such and begin their death FrameAnimation and drop spoils.
@@ -270,20 +274,21 @@ function checkIfActorDied(actor: Actor) {
 }
 
 function timeStopLoop(area: Area) {
-    if (!area.timeStopEffect) return false;
-    var actor = area.timeStopEffect.actor;
-    var delta = FRAME_LENGTH / 1000;
+    if (!area.timeStopEffect) {
+        return false;
+    }
+    const actor = area.timeStopEffect.actor;
+    const delta = FRAME_LENGTH / 1000;
     actor.time += delta;
     actor.temporalShield -= delta;
-    if (actor.temporalShield <= 0 || actor.health / actor.maxHealth > .5) {
+    if (actor.temporalShield <= 0 || actor.targetHealth > 0) {
         area.timeStopEffect = null;
         return false;
     }
     processStatusEffects(actor);
     // The enemies of the time stopper can still die. This wil stop their life
     // bars from going negative.
-    for (var i = 0; i < actor.enemies.length; i++) {
-        var enemy = actor.enemies[i];
+    for (const enemy of actor.enemies) {
         checkIfActorDied(enemy);
     }
     expireTimedEffects(actor);

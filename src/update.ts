@@ -252,7 +252,7 @@ export function getTargetCameraX(hero: Hero) {
     // If a timestop is in effect, the caster must be in the frame.
     if (area.timeStopEffect) {
         const focusTarget = area.timeStopEffect.actor;
-        target = Math.max(focusTarget.x + focusTarget.width + 20 - ADVENTURE_WIDTH, target);
+        target = Math.max(focusTarget.x + focusTarget.w + 20 - ADVENTURE_WIDTH, target);
         target = Math.min(focusTarget.x - 20, target);
     }
     return Math.round(target);

@@ -528,7 +528,7 @@ function addExits(area: Area, exits: Exit[], animation: FrameAnimation = AreaDoo
             "z": -7,
             "flipped": true,
         };
-        area.objects.push(door);
+        area.wallDecorations.push(door);
     }
     if (exits[1]) {
         const door: AreaDoor = new AreaDoor();
@@ -545,7 +545,7 @@ function addExits(area: Area, exits: Exit[], animation: FrameAnimation = AreaDoo
             "y": 0,
             "z": -7,
         };
-        area.objects.push(door);
+        area.wallDecorations.push(door);
     }
 }
 
