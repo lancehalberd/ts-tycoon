@@ -78,11 +78,11 @@ export function deleteObject(object: AreaObject, updateArea: boolean = true) {
         }
         delete areaDefinition.objects[object.key];
     } else {
-        if (areaDefinition.wallDecorations[object.key] !== object.definition) {
+        if (areaDefinition.backgroundObjects[object.key] !== object.definition) {
             console.log('Did not find object definition where expected during delete.');
             debugger;
         }
-        delete areaDefinition.wallDecorations[object.key];
+        delete areaDefinition.backgroundObjects[object.key];
     }
     // Recrusively delete child objects.
     for (const otherObject of object.area.objects) {
@@ -90,7 +90,7 @@ export function deleteObject(object: AreaObject, updateArea: boolean = true) {
             deleteObject(otherObject, false);
         }
     }
-    for (const otherObject of object.area.wallDecorations) {
+    for (const otherObject of object.area.backgroundObjects) {
         if (otherObject.definition.parentKey === object.key) {
             deleteObject(otherObject, false);
         }
@@ -108,9 +108,9 @@ export function changeObjectOrder(object: AreaObject, dz: number ): void {
     const area = getCurrentArea();
     const areaDefinition = getAreaDefinition();
     const hewHash = {};
-    if (area.wallDecorations.indexOf(object) >= 0) {
-        areaDefinition.wallDecorations
-            = changeOrderInHash(object.definition, areaDefinition.wallDecorations, dz);
+    if (area.backgroundObjects.indexOf(object) >= 0) {
+        areaDefinition.backgroundObjects
+            = changeOrderInHash(object.definition, areaDefinition.backgroundObjects, dz);
     } else if (area.objects.indexOf(object) >= 0) {
         areaDefinition.objects
             = changeOrderInHash(object.definition, areaDefinition.objects, dz);
@@ -147,7 +147,7 @@ window['changeOrderInHash'] = changeOrderInHash;
 
 export function moveObject(object: AreaObject, dx: number, dy: number): void {
     const area = getState().selectedCharacter.hero.area;
-    if (area.wallDecorations.includes(object)) {
+    if (area.backgroundObjects.includes(object)) {
         moveLocationDefinition(object.definition, dx, -dy, 0);
     } else {
         moveLocationDefinition(object.definition, dx, 0, -dy * 2);
@@ -163,7 +163,7 @@ export function refreshObjectDefinition(object: AreaObject) {
             refreshObjectDefinition(otherObject);
         }
     }
-    for (const otherObject of object.area.wallDecorations) {
+    for (const otherObject of object.area.backgroundObjects) {
         if (otherObject.definition.parentKey === object.key) {
             refreshObjectDefinition(otherObject);
         }
@@ -194,7 +194,7 @@ export function createObjectAtScreenCoords(definition: AreaObjectDefinition, coo
     definition.x = area.cameraX + x;
     const areaDefinition: AreaDefinition = zones[area.zoneKey][area.key];
     if (isWallDecoration) {
-        areaDefinition.wallDecorations[objectKey] = definition;
+        areaDefinition.backgroundObjects[objectKey] = definition;
     } else {
         areaDefinition.objects[objectKey] = definition;
     }

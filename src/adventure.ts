@@ -669,11 +669,11 @@ function runActorLoop(actor: Actor) {
         const character = actor.character;
         // Code for intracting with chest/shrine at the end of level and leaving the area.
         // Might want to sort these by X coord at some point.
-        /*const sortedObjects = [...area.objects, ...area.wallDecorations];
+        /*const sortedObjects = [...area.objects, ...area.backgroundObjects];
         sortedObjects.sort((A, B) => {
             return B.getAreaTarget().x - A.getAreaTarget().x;
         })*/
-        for (const object of [...area.objects, ...area.wallDecorations]) {
+        for (const object of [...area.objects, ...area.backgroundObjects]) {
             if (!object.getAreaTarget || !object.shouldInteract || !object.shouldInteract(actor)) {
                 continue;
             }

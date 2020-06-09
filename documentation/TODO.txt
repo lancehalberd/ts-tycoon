@@ -1,5 +1,7 @@
 Test at http://localhost:81/ttt/public/
 
+    [M] Fix flat walls need different bounding rules than angled walls.
+
 Features:
     [H] Add flat walls, south walls, North and South Door graphics. Keep angled wall for guild exterior
     [L] Add "Endless Discovery" section off of the guild exit to replace autofarming
@@ -22,6 +24,12 @@ Abilities:
 
 Editor Improvements:
     [H] Add additional assets (decorations+objects) like rocks, bushes
+    [H] Add properties panel for selected objects:
+        location/alignment (add alignment to monsters)
+        parentKey (add to monsters)
+        flipped
+        object specific properties, similar to object specific context menu
+        key - update parentKey, door exit object keys (make sure changing area key has this applied as well)
     [H] Add NPC placement (to be used with tracker in mission 2)
     [H] Add Ally placement (to be used with villagers in mission 3)
     [M] Add PositionQueue objects to editor that can be used for controlling where NPCs are positioned and where actors appear/move to in cutscenes.

@@ -199,7 +199,7 @@ function getMainCanvasMouseTarget(x, y): CanvasPopupTarget {
         const B = spriteB.getAreaTarget ? spriteB.getAreaTarget().z : -10000;
         return A - B;
     });
-    for (const object of [...sortedObjects, ...(area.wallDecorations || [])]) {
+    for (const object of [...sortedObjects, ...(area.backgroundObjects || [])]) {
         if (!object.onInteract || (object.isEnabled && !object.isEnabled())) {
             continue;
         }

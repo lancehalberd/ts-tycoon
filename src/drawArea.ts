@@ -97,8 +97,8 @@ export function drawArea(context: CanvasRenderingContext2D, area: Area) {
     areaType.drawBackground(context, area);
     drawLeftWall(context, area);
     drawRightWall(context, area);
-    if (area.wallDecorations) {
-        for (const object of area.wallDecorations) object.render(context);
+    if (area.backgroundObjects) {
+        for (const object of area.backgroundObjects) object.render(context);
     }
     const sortedSprites = allSprites.slice().sort(function (spriteA, spriteB) {
         const A = spriteA.getAreaTarget ? spriteA.getAreaTarget().z : (spriteA.z || 0);

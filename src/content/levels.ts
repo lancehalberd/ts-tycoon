@@ -123,7 +123,7 @@ export function instantiateLevel(
             enemyBonuses: levelBonuses,
             treasurePopups: [],
             textPopups: [],
-            wallDecorations: [],
+            backgroundObjects: [],
             seed: areas.size + levelData.coords[0] + levelData.coords[1],
         };
         const isFirstArea = !lastArea;

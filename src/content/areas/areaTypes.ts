@@ -509,7 +509,7 @@ const GuildArea: AreaType = {
 
 function finalizeArea(area: Area) {
     for (const object of area.objects) object.area = area;
-    for (const object of area.wallDecorations) object.area = area;
+    for (const object of area.backgroundObjects) object.area = area;
 }
 
 function addExits(area: Area, exits: Exit[], animation: FrameAnimation = AreaDoor.animations.openDoor) {
@@ -528,7 +528,7 @@ function addExits(area: Area, exits: Exit[], animation: FrameAnimation = AreaDoo
             "z": -7,
             "flipped": true,
         };
-        area.wallDecorations.push(door);
+        area.backgroundObjects.push(door);
     }
     if (exits[1]) {
         const door: AreaDoor = new AreaDoor();
@@ -545,7 +545,7 @@ function addExits(area: Area, exits: Exit[], animation: FrameAnimation = AreaDoo
             "y": 0,
             "z": -7,
         };
-        area.wallDecorations.push(door);
+        area.backgroundObjects.push(door);
     }
 }
 

@@ -35,7 +35,7 @@ export function createNewArea(areaKey: string): Area {
         key: areaKey,
         width: 600,
         objects: [],
-        wallDecorations: [],
+        backgroundObjects: [],
         allies: [],
         enemies: [],
         cameraX: 0,
@@ -86,13 +86,13 @@ export function applyDefinitionToArea(area: Area, areaDefinition: AreaDefinition
         area.objectsByKey[objectKey] = object;
         area.objects.push(object);
     }
-    area.wallDecorations = [];
-    for (const objectKey in areaDefinition.wallDecorations) {
-        const object: AreaObject = createAreaObjectFromDefinition(areaDefinition.wallDecorations[objectKey]);
+    area.backgroundObjects = [];
+    for (const objectKey in areaDefinition.backgroundObjects) {
+        const object: AreaObject = createAreaObjectFromDefinition(areaDefinition.backgroundObjects[objectKey]);
         object.area = area;
         object.key = objectKey;
         area.objectsByKey[objectKey] = object;
-        area.wallDecorations.push(object);
+        area.backgroundObjects.push(object);
     }
     if (updatedBonuses) {
         addAreaFurnitureBonuses(area, true);

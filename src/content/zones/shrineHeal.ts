@@ -10,7 +10,7 @@ const entrance: AreaDefinition = {
     rightWallType: 'caveWall',
     objects: {
     },
-    wallDecorations: {
+    backgroundObjects: {
         door: {
             type: 'door',
             x: 477, zAlign: 'back', z: -54,
@@ -38,7 +38,7 @@ const shrine: AreaDefinition = {
             exitKey: "trialOfFaith:door",
         },
     },
-    wallDecorations: {
+    backgroundObjects: {
         door: {
             type: 'door',
             zAlign: 'back', z: -55, flipped: true,
@@ -72,7 +72,7 @@ const trialOfResolve: AreaDefinition = {
             exitKey: "shrine:door2",
         },
     },
-    wallDecorations: {
+    backgroundObjects: {
     },
 };
 
@@ -84,7 +84,7 @@ const trialOfFaith: AreaDefinition = {
     seed: 7389566328205333,
     objects: {
     },
-    wallDecorations: {
+    backgroundObjects: {
         door: {
             type: 'door',
             x: 53, zAlign: 'back', z: 30,
@@ -101,7 +101,7 @@ const boss: AreaDefinition = {
     rightWallType: 'caveWall',
     objects: {
     },
-    wallDecorations: {
+    backgroundObjects: {
         door: {
             type: 'door',
             zAlign: 'back', z: -54, flipped: true,

@@ -133,8 +133,8 @@ export function handleEditAreaClick(x: number, y: number): void {
             }
         }
     }
-    for (let i: number = area.wallDecorations.length - 1; i >= 0 ; i--) {
-        const object: AreaObject = area.wallDecorations[i];
+    for (let i: number = area.backgroundObjects.length - 1; i >= 0 ; i--) {
+        const object: AreaObject = area.backgroundObjects[i];
         if (!object.definition) {
             continue;
         }
@@ -162,7 +162,7 @@ export function handleEditMouseDragged(x: number, y: number, sx: number, sy: num
         const area = getCurrentArea();
         dragLocationDefinition(selectedObject.definition, dx, dy);
         // Objects on the wall aren't bound by the z limits.
-        if (!area.wallDecorations.includes(selectedObject)) {
+        if (!area.backgroundObjects.includes(selectedObject)) {
             boundZPosition(selectedObject.definition, selectedObject.getAreaTarget().d);
         }
         refreshObjectDefinition(selectedObject);
@@ -679,7 +679,7 @@ function promptToCreateNewArea(zoneKey: ZoneType): void {
             type: 'oldGuild',
             width: 600,
             objects: {},
-            wallDecorations: {},
+            backgroundObjects: {},
             zoneKey,
         }
         zones[areaDefinition.zoneKey][areaKey] = areaDefinition;

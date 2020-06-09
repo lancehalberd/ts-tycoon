@@ -84,7 +84,7 @@ function serializeAreaDefinition(areaDefinition: AreaDefinition): string {
     addProperty(lines, areaDefinition, 'rightWallType');
     addProperty(lines, areaDefinition, 'seed');
     addProperty(lines, areaDefinition, 'objects');
-    addProperty(lines, areaDefinition, 'wallDecorations');
+    addProperty(lines, areaDefinition, 'backgroundObjects');
     if (areaDefinition.monsters && areaDefinition.monsters.length) {
         lines.push('    monsters: [');
         for (const monster of areaDefinition.monsters) {

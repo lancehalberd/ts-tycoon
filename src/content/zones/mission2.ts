@@ -11,7 +11,7 @@ const forestClearing: AreaDefinition = {
     rightWallType: 'river',
     objects: {
     },
-    wallDecorations: {
+    backgroundObjects: {
         door: {
             type: 'door',
             x: 48, y: 13.333333333333336, zAlign: 'back',
@@ -38,7 +38,7 @@ const westPath: AreaDefinition = {
             exitKey: "eastPath:door",
         },
     },
-    wallDecorations: {
+    backgroundObjects: {
         door2: {
             type: 'door',
             x: 416.6666666666667, y: 13.333333333333329, zAlign: 'back',
@@ -83,7 +83,7 @@ const westForest: AreaDefinition = {
             exitKey: "cave:door",
         },
     },
-    wallDecorations: {
+    backgroundObjects: {
     },
     monsters: [
         {key: 'bullGremlin', level: 2, isTarget: true, location: {x: 38.66666666666666, z: 0.6666666666666856, flipped: true}, },
@@ -109,7 +109,7 @@ const cave: AreaDefinition = {
             exitKey: "eastForest:door",
         },
     },
-    wallDecorations: {
+    backgroundObjects: {
     },
     monsters: [
         {key: 'bat', level: 2, location: {x: 153, z: 60}, },
@@ -136,7 +136,7 @@ const eastForest: AreaDefinition = {
             exitKey: "eastPath:door2",
         },
     },
-    wallDecorations: {
+    backgroundObjects: {
     },
     monsters: [
         {key: 'bullGremlin', level: 2, isTarget: true, location: {x: 340, z: 19.333333333333343}, },
@@ -160,7 +160,7 @@ const eastPath: AreaDefinition = {
             exitKey: "southForest:door",
         },
     },
-    wallDecorations: {
+    backgroundObjects: {
         door2: {
             type: 'door',
             x: 141.66666666666663, y: 12, zAlign: 'back',
@@ -193,7 +193,7 @@ const southForest: AreaDefinition = {
     rightWallType: 'river',
     objects: {
     },
-    wallDecorations: {
+    backgroundObjects: {
         door: {
             type: 'door',
             x: 629.6666666666667, y: 13.000000000000007, zAlign: 'back',

@@ -45,7 +45,7 @@ export interface AreaDefinition {
     leftWallType?: string,
     rightWallType?: string,
     objects: {[key in string]: AreaObjectDefinition},
-    wallDecorations: {[key in string]: AreaObjectDefinition},
+    backgroundObjects: {[key in string]: AreaObjectDefinition},
     seed?: number,
     monsters?: MonsterDefinition[],
 }
@@ -77,7 +77,7 @@ export interface Area {
     textPopups: any[],
     treasurePopups: any[],
     objects: AreaObject[],
-    wallDecorations: AreaObject[],
+    backgroundObjects: AreaObject[],
     objectsByKey?: {[key in string]: AreaObject},
 
     // Used to show the chest open icon for the minimap.

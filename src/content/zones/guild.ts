@@ -22,7 +22,7 @@ const guildYard: AreaDefinition = {
             x: 295.66666666666663, z: 58,
         },
     },
-    wallDecorations: {
+    backgroundObjects: {
         frontDoor: {
             type: 'door',
             xAlign: 'right', x: -8, z: -8,
@@ -70,7 +70,7 @@ const guildFoyer: AreaDefinition = {
             animationKey: "bookShelf",
         },
     },
-    wallDecorations: {
+    backgroundObjects: {
         decoration: {
             type: 'decoration',
             x: 102.66666666666666, y: 2.000000000000007, zAlign: 'back',
@@ -199,7 +199,7 @@ const guildFrontHall: AreaDefinition = {
             xAlign: 'right', x: -180,
         },
     },
-    wallDecorations: {
+    backgroundObjects: {
         guestRoomDoor: {
             type: 'door',
             x: 94, y: 13, zAlign: 'back',
@@ -249,7 +249,7 @@ const guildGuestRoom: AreaDefinition = {
             x: 35, z: 54,
         },
     },
-    wallDecorations: {
+    backgroundObjects: {
         door: {
             type: 'door',
             x: 140, y: 15, zAlign: 'back',
@@ -302,7 +302,7 @@ const guildBasement: AreaDefinition = {
     rightWallType: 'caveWall',
     objects: {
     },
-    wallDecorations: {
+    backgroundObjects: {
         stairs: {
             type: 'door',
             x: 528, y: 10, zAlign: 'back',
@@ -374,7 +374,7 @@ const guildVault: AreaDefinition = {
             x: 144, z: 5,
         },
     },
-    wallDecorations: {
+    backgroundObjects: {
         door: {
             type: 'door',
             x: 296, z: -10,

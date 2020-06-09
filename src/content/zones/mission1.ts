@@ -17,7 +17,7 @@ const villageWest: AreaDefinition = {
             exitKey: "villageSquare:door",
         },
     },
-    wallDecorations: {
+    backgroundObjects: {
         door: {
             type: 'door',
             x: 206.66666666666666, y: 13.333333333333329, zAlign: 'back',
@@ -38,7 +38,7 @@ const villageWestHouse: AreaDefinition = {
     rightWallType: 'guildWall',
     objects: {
     },
-    wallDecorations: {
+    backgroundObjects: {
         door: {
             type: 'door',
             x: 44.66666666666667, y: 14.333333333333336, zAlign: 'back',
@@ -71,7 +71,7 @@ const villageSquare: AreaDefinition = {
             exitKey: "villageEast:door",
         },
     },
-    wallDecorations: {
+    backgroundObjects: {
         door2: {
             type: 'door',
             x: 103.33333333333334, y: 13, zAlign: 'back',
@@ -105,7 +105,7 @@ const VillageSquareSmallHouse: AreaDefinition = {
     rightWallType: 'guildWall',
     objects: {
     },
-    wallDecorations: {
+    backgroundObjects: {
         door: {
             type: 'door',
             x: 245.00000000000003, y: 14.333333333333336, zAlign: 'back',
@@ -126,7 +126,7 @@ const villageSquareLongHouse: AreaDefinition = {
     rightWallType: 'guildWall',
     objects: {
     },
-    wallDecorations: {
+    backgroundObjects: {
         door: {
             type: 'door',
             x: 78.66666666666669, y: 14.999999999999993, zAlign: 'back',
@@ -160,7 +160,7 @@ const villageEast: AreaDefinition = {
             exitKey: "villageSquare:door5",
         },
     },
-    wallDecorations: {
+    backgroundObjects: {
     },
     monsters: [
         {key: 'gremlin', level: 1, location: {x: 438.66666666666674, z: 38.66666666666666}},

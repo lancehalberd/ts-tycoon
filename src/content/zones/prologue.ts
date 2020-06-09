@@ -9,7 +9,7 @@ const entrance: AreaDefinition = {
     width: 500,
     objects: {
     },
-    wallDecorations: {
+    backgroundObjects: {
     },
 };
 
