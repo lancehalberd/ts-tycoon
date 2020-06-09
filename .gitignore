@@ -64,6 +64,8 @@ etc/
 public/client.js
 # Don't include old graphics.
 public/gfx2/old
+# Don't include rsync command.
+rsync.txt
 
 # osx file
 .DS_Store
