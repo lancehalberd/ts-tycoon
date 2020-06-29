@@ -70,25 +70,24 @@ export function getAddObjectMenuItem(type: string): MenuOption {
     }
 }
 
-export function deleteObject(object: AreaObject, updateArea: boolean = true) {
-    const area: Area = object.area;
-    const areaDefinition: AreaDefinition = zones[area.zoneKey][area.key];
+export function deleteObject(objectKey: string, updateArea: boolean = true) {
+    const areaDefinition = getAreaDefinition();
     // Delete the object, and recursively delete any objects that include it as a parent.
-    for (const layer of area.layers) {
+    for (const layer of areaDefinition.layers) {
         for (let i = 0; i < layer.objects.length; i++) {
             const otherObject = layer.objects[i];
-            if (otherObject.key === object.key) {
+            if (otherObject.key === objectKey) {
                 layer.objects.splice(i--);
                 continue;
             }
-            if (otherObject.definition.parentKey === object.key) {
-                deleteObject(otherObject, false);
+            if (otherObject.parentKey === objectKey) {
+                deleteObject(otherObject.key, false);
             }
         }
     }
     // For recursive calls, we only update area for the outer most call.
     if (updateArea) {
-        applyDefinitionToArea(area, areaDefinition);
+        applyDefinitionToArea(getCurrentArea(), areaDefinition);
     }
 }
 

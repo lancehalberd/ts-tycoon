@@ -31,12 +31,12 @@ const woodBridge = createAnimation('gfx2/areas/meadowbridge.png',
 const northSouthGuildBase = {image: requireImage('gfx2/areas/northsouthguild2.png'), w: 32, h: 64};
 
 const guildImage = requireImage('gfx/guildhall.png');
-const northDoor = frameAnimation({...northSouthGuildBase, x: 0, y: 0, content: {x: 0, y: 0, w: 32, h: 42}});
-const northDoorHover = frameAnimation({...northSouthGuildBase, x: 8 * 32, y: 0, content: {x: 0, y: 0, w: 32, h: 42}});
-const southDoor = frameAnimation({...northSouthGuildBase, x: 3 * 32, y: 0, content: {x: 0, y: 40, w: 32, h: 24}});
-const southDoorHover = frameAnimation({...northSouthGuildBase, x: 4 * 32, y: 0, content: {x: 0, y: 40, w: 32, h: 24}});
-const upstairs = frameAnimation({image: guildImage, x: 270, y: 94, w: 30, h: 51});
-const downstairs = frameAnimation({image: guildImage, x: 300, y: 94, w: 30, h: 51});
+const northDoor = frameAnimation({...northSouthGuildBase, x: 0, y: 0, content: {x: 0, y: 0, w: 32, h: 42, d: 8}});
+const northDoorHover = frameAnimation({...northSouthGuildBase, x: 8 * 32, y: 0, content: {x: 0, y: 0, w: 32, h: 42, d: 8}});
+const southDoor = frameAnimation({...northSouthGuildBase, x: 3 * 32, y: 0, content: {x: 0, y: 40, w: 32, h: 24, d: 8}});
+const southDoorHover = frameAnimation({...northSouthGuildBase, x: 4 * 32, y: 0, content: {x: 0, y: 40, w: 32, h: 24, d: 8}});
+const upstairs = frameAnimation({image: guildImage, x: 270, y: 94, w: 30, h: 51, d: 8});
+const downstairs = frameAnimation({image: guildImage, x: 300, y: 94, w: 30, h: 51, d: 8});
 
 const [sideDoorClosed, sideDoorAjar, sideDoorOpen] = createAnimation('gfx2/areas/guilddoorsheet.png', { w: 38, h: 50}, {cols: 3}).frames;
 

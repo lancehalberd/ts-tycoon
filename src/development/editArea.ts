@@ -88,7 +88,7 @@ export function refreshArea() {
 export function deleteSelectedObject(): void {
     const { selectedObject, selectedMonsterIndex} = editingAreaState;
     if (selectedObject) {
-        deleteObject(selectedObject);
+        deleteObject(selectedObject.key);
         editingAreaState.selectedObject = null;
     } else if (selectedMonsterIndex >= 0) {
         getAreaDefinition().monsters.splice(selectedMonsterIndex, 1);

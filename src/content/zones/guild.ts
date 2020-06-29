@@ -41,14 +41,14 @@ const guildYard: AreaDefinition = {
             objects: [
                 {
                     type: 'door',
-                    x: -1, flipped: true,
+                    x: -1, z: 8, flipped: true,
                     key: "mapExit",
                     exitKey: "worldMap",
                     animation: "woodBridge",
                 },
                 {
                     type: 'guildGate',
-                    x: 297, z: 64,
+                    x: 295, z: 80,
                     key: "guildGate",
                 },
             ],
@@ -187,7 +187,7 @@ const guildFoyer: AreaDefinition = {
                 },
                 {
                     type: 'door',
-                    x: 1, z: 20, flipped: true,
+                    x: 1, z: 10, flipped: true,
                     key: "frontDoor",
                     exitKey: "guildYard:frontDoor",
                     animation: "sideDoorClosed",
@@ -210,7 +210,7 @@ const guildFoyer: AreaDefinition = {
             objects: [
                 {
                     type: 'mapTable',
-                    x: 80,
+                    x: 98, z: 6,
                     key: "mapTable",
                 },
                 {
@@ -230,12 +230,12 @@ const guildFoyer: AreaDefinition = {
                 },
                 {
                     type: 'trophyAltar',
-                    x: 289,
+                    x: 316, z: 2,
                     key: "trophyAltar",
                 },
                 {
                     type: 'bed',
-                    xAlign: 'right', x: -34, zAlign: 'front', flipped: true,
+                    xAlign: 'right', x: -16, zAlign: 'front', flipped: true,
                     key: "bed",
                 },
                 {
@@ -291,14 +291,14 @@ const guildFrontHall: AreaDefinition = {
             objects: [
                 {
                     type: 'door',
-                    x: 94, zAlign: 'back', z: 35,
+                    x: 93, zAlign: 'back', z: 2,
                     key: "guestRoomDoor",
                     animation: "backDoor",
                     exitKey: "guildGuestRoom:door",
                 },
                 {
                     type: 'door',
-                    x: 489, zAlign: 'back', z: 32,
+                    x: 491, zAlign: 'back', z: 4,
                     key: "basementStairs",
                     animation: "downstairs",
                     exitKey: "guildBasement:stairs",
@@ -321,28 +321,28 @@ const guildFrontHall: AreaDefinition = {
             objects: [
                 {
                     type: 'shrineOfCreation',
-                    xAlign: 'middle', x: 3, z: 6,
+                    xAlign: 'middle', x: 2, z: 16,
                     key: "shrineOfCreation",
                 },
                 {
                     type: 'coinStash',
-                    x: 176, zAlign: 'back',
+                    x: 22, zAlign: 'back',
                     key: "coinStashA",
                 },
                 {
                     type: 'coinStash',
-                    x: 201, zAlign: 'back',
+                    x: 46, zAlign: 'back',
                     key: "coinStashB",
                     level: 2,
                 },
                 {
                     type: 'trophyAltar',
-                    x: 181, z: -4,
+                    x: 162, z: 8,
                     key: "trophyAltarA",
                 },
                 {
                     type: 'trophyAltar',
-                    xAlign: 'right', x: -180,
+                    xAlign: 'right', x: -180, z: 10,
                     key: "trophyAltarB",
                 },
             ],
@@ -358,8 +358,8 @@ const guildFrontHall: AreaDefinition = {
         },
     ],
     monsters: [
-        {key: 'spider', level: 3, location: {x: 232, z: -58}, },
-        {key: 'gnome', level: 3, location: {x: 496, z: -52}, },
+        {key: 'spider', level: 3, location: {x: 225, z: -52}, },
+        {key: 'gnome', level: 3, location: {x: 496, z: -42}, },
     ],
 };
 
@@ -389,55 +389,6 @@ const guildGuestRoom: AreaDefinition = {
         {
             key: 'background', x: 0, y: 0,
             objects: [
-                {
-                    type: 'door',
-                    x: 140, zAlign: 'back', z: 35,
-                    key: "door",
-                    animation: "backDoor",
-                    exitKey: "guildFrontHall:guestRoomDoor",
-                },
-                {
-                    type: 'decoration',
-                    x: 78, y: 25, zAlign: 'back',
-                    key: "decoration",
-                    animationGroup: "guildWall",
-                    animationKey: "niche",
-                },
-                {
-                    type: 'decoration',
-                    x: 202, y: 23, zAlign: 'back',
-                    key: "decoration2",
-                    animationGroup: "guildWall",
-                    animationKey: "niche",
-                },
-                {
-                    type: 'decoration',
-                    x: 86, y: 30, zAlign: 'back',
-                    key: "decoration3",
-                    animationGroup: "guildWall",
-                    animationKey: "candle",
-                },
-                {
-                    type: 'decoration',
-                    x: 210, y: 27, zAlign: 'back',
-                    key: "decoration4",
-                    animationGroup: "guildWall",
-                    animationKey: "candle",
-                },
-                {
-                    type: 'decoration',
-                    x: 86, y: 30, zAlign: 'back',
-                    key: "decoration5",
-                    animationGroup: "guildWall",
-                    animationKey: "candleFlame",
-                },
-                {
-                    type: 'decoration',
-                    x: 210, y: 28, zAlign: 'back',
-                    key: "decoration6",
-                    animationGroup: "guildWall",
-                    animationKey: "candleFlame",
-                },
             ],
             grid: {
                 palette: 'guildForeground', w: 10, h: 2,
@@ -449,22 +400,22 @@ const guildGuestRoom: AreaDefinition = {
             objects: [
                 {
                     type: 'bed',
-                    x: 12, z: -52,
+                    x: 12, z: 68,
                     key: "bedA",
                 },
                 {
                     type: 'bed',
-                    x: 256, z: -52, flipped: true,
+                    x: 255, z: 68, flipped: true,
                     key: "bedB",
                 },
                 {
                     type: 'coinStash',
-                    x: 283, z: 56,
+                    x: 287, z: 30,
                     key: "coinStashA",
                 },
                 {
                     type: 'coinStash',
-                    x: 16, z: 54,
+                    x: 12, z: 34,
                     key: "coinStashB",
                 },
             ],
@@ -472,10 +423,17 @@ const guildGuestRoom: AreaDefinition = {
         {
             key: 'foreground', x: 0, y: 0,
             objects: [
+                {
+                    type: 'door',
+                    x: 128, z: -100,
+                    animation: "southDoor",
+                    exitKey: "guildFrontHall:guestRoomDoor",
+                    key: "door",
+                },
             ],
             grid: {
                 palette: 'guildForeground', w: 10, h: 3,
-                tiles: [[],[],[{x:0,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:1,y:1}]],
+                tiles: [[],[],[{x:0,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:4,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:1,y:1}]],
             },
         },
     ],
@@ -501,14 +459,14 @@ const guildBasement: AreaDefinition = {
             objects: [
                 {
                     type: 'door',
-                    x: 528, zAlign: 'back', z: 20,
+                    x: 528, zAlign: 'back', z: -8,
                     key: "stairs",
                     animation: "upstairs",
                     exitKey: "guildFrontHall:basementStairs",
                 },
                 {
                     type: 'door',
-                    x: 1, z: -2, flipped: true,
+                    x: 3, z: 14, flipped: true,
                     key: "vaultDoor",
                     animation: "caveDoorOpen",
                     exitKey: "guildVault:door",
@@ -535,7 +493,7 @@ const guildBasement: AreaDefinition = {
         },
     ],
     monsters: [
-        {key: 'vampireBat', level: 15, location: {xAlign: 'right', x: -209, zAlign: 'front', flipped: true}, },
+        {key: 'vampireBat', level: 15, location: {xAlign: 'right', x: -207, zAlign: 'front', z: 22, flipped: true}, },
         {key: 'vampireBat', level: 15, location: {x: 94, z: 68, flipped: true}, },
         {key: 'vampireBat', level: 15, location: {x: 79, z: -62, flipped: true}, },
     ],
@@ -561,7 +519,7 @@ const guildVault: AreaDefinition = {
             objects: [
                 {
                     type: 'door',
-                    x: 294, z: 2,
+                    x: 296, z: 10,
                     key: "door",
                     animation: "caveDoorOpen",
                     exitKey: "guildBasement:vaultDoor",
@@ -627,7 +585,7 @@ const guildVault: AreaDefinition = {
                 },
                 {
                     type: 'trophyAltar',
-                    x: 144,
+                    x: 141, z: 10,
                     key: "trophyAltar",
                 },
             ],

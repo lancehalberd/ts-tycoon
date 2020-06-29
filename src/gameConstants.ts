@@ -40,10 +40,10 @@ export const TOP_HUD_HEIGHT = 16;
 export const BACKGROUND_HEIGHT = 84;
 export const FIELD_HEIGHT = 64;
 export const BOTTOM_HUD_HEIGHT = 32;
-export const GROUND_Y = BACKGROUND_HEIGHT + (FIELD_HEIGHT + 16) / 2;
+export const GROUND_Y = BACKGROUND_HEIGHT + (FIELD_HEIGHT + 24) / 2;
 // The middle of the field is 0, so it should only go to half the field height, but
 // each z unit is only half a pixel so it cancels out.
-export const MAX_Z = FIELD_HEIGHT + 8;
+export const MAX_Z = FIELD_HEIGHT + 24;
 export const MIN_Z = -MAX_Z;
 
 export const BOTTOM_HUD_RECT = {x: 0, y: ADVENTURE_HEIGHT - BOTTOM_HUD_HEIGHT, w: ADVENTURE_WIDTH, h: BOTTOM_HUD_HEIGHT};

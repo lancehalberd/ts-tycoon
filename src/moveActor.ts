@@ -34,7 +34,7 @@ export function moveActor(actor: Actor, ignoreCollisions: boolean = false) {
         const activity = actor.activity;
         switch (activity.type) {
             case 'move':
-                if (getPlanarDistanceSquared(actor, activity) < 10
+                if (getPlanarDistanceSquared(actor, activity) < 25
                     || (actor.type === 'hero' && actor.character.paused && !isMouseDown())
                 ) {
                     actor.activity = {type: 'none'};
