@@ -70,14 +70,28 @@ export function getAddObjectMenuItem(type: string): MenuOption {
     }
 }
 
-export function deleteObject(objectKey: string, updateArea: boolean = true) {
+export function findAndDeleteObject(objectKey: string): void {
+    const areaDefinition = getAreaDefinition();
+    for (const layer of areaDefinition.layers) {
+        for (let i = 0; i < layer.objects.length; i++) {
+            const otherObject = layer.objects[i];
+            if (otherObject.key === objectKey) {
+                layer.objects.splice(i--, 1);
+                return;
+            }
+        }
+    }
+}
+
+export function deleteObject(objectKey: string, updateArea: boolean = true): void {
+    findAndDeleteObject(objectKey);
     const areaDefinition = getAreaDefinition();
     // Delete the object, and recursively delete any objects that include it as a parent.
     for (const layer of areaDefinition.layers) {
         for (let i = 0; i < layer.objects.length; i++) {
             const otherObject = layer.objects[i];
             if (otherObject.key === objectKey) {
-                layer.objects.splice(i--);
+                layer.objects.splice(i--, 1);
                 continue;
             }
             if (otherObject.parentKey === objectKey) {

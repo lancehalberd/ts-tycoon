@@ -24,7 +24,7 @@ const villageWest: AreaDefinition = {
             objects: [
                 {
                     type: 'door',
-                    x: 207, zAlign: 'back', z: 22,
+                    x: 205, zAlign: 'back', z: -10,
                     key: "door",
                     animation: "backDoor",
                     exitKey: "villageWestHouse:door",
@@ -153,21 +153,21 @@ const villageSquare: AreaDefinition = {
             objects: [
                 {
                     type: 'door',
-                    x: 102, zAlign: 'back', z: 34,
+                    x: 99, zAlign: 'back', z: 2,
                     key: "door2",
                     animation: "backDoor",
                     exitKey: "VillageSquareSmallHouse:door",
                 },
                 {
                     type: 'door',
-                    x: 299, zAlign: 'back', z: 35,
+                    x: 304, zAlign: 'back', z: 4,
                     key: "door3",
                     animation: "backDoor",
                     exitKey: "villageSquareLongHouse:door",
                 },
                 {
                     type: 'door',
-                    x: 473, zAlign: 'back', z: 35,
+                    x: 497, zAlign: 'back', z: 2,
                     key: "door4",
                     animation: "backDoor",
                     exitKey: "villageSquareLongHouse:door2",
@@ -183,14 +183,14 @@ const villageSquare: AreaDefinition = {
             objects: [
                 {
                     type: 'door',
-                    x: 0, z: -13, flipped: true,
+                    z: 8, flipped: true,
                     key: "door",
                     animation: "woodBridge",
                     exitKey: "villageWest:door2",
                 },
                 {
                     type: 'door',
-                    x: 577, z: -9,
+                    x: 577, z: 6,
                     key: "door5",
                     animation: "woodBridge",
                     exitKey: "villageEast:door",
@@ -217,8 +217,6 @@ const villageSquare: AreaDefinition = {
 const VillageSquareSmallHouse: AreaDefinition = {
     type: 'oldGuild',
     width: 320,
-    leftWallType: 'guildWall',
-    rightWallType: 'guildWall',
     layers: [
         {
             key: 'floor', x: 0, y: 84,
@@ -241,13 +239,6 @@ const VillageSquareSmallHouse: AreaDefinition = {
         {
             key: 'background', x: 0, y: 0,
             objects: [
-                {
-                    type: 'door',
-                    x: 245, zAlign: 'back', z: 34,
-                    key: "door",
-                    animation: "backDoor",
-                    exitKey: "villageSquare:door2",
-                },
             ],
             grid: {
                 palette: 'guildForeground', w: 10, h: 2,
@@ -262,24 +253,29 @@ const VillageSquareSmallHouse: AreaDefinition = {
         {
             key: 'foreground', x: 0, y: 0,
             objects: [
+                {
+                    type: 'door',
+                    x: 256, z: -100,
+                    animation: "southDoor",
+                    exitKey: "villageSquare:door2",
+                    key: "door",
+                },
             ],
             grid: {
                 palette: 'guildForeground', w: 10, h: 3,
-                tiles: [[],[],[{x:0,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:1,y:1}]],
+                tiles: [[],[],[{x:0,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:3,y:1},{x:1,y:1}],null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,[]],
             },
         },
     ],
     monsters: [
-        {key: 'skeleton', level: 1, location: {x: 53, z: 46}, },
-        {key: 'skeleton', level: 1, location: {x: 40, z: 4}, },
+        {key: 'skeleton', level: 1, location: {x: 59, z: 60}, },
+        {key: 'skeleton', level: 1, location: {x: 36}, },
     ],
 };
 
 const villageSquareLongHouse: AreaDefinition = {
     type: 'oldGuild',
-    width: 400,
-    leftWallType: 'guildWall',
-    rightWallType: 'guildWall',
+    width: 412,
     layers: [
         {
             key: 'floor', x: 0, y: 84,
@@ -302,20 +298,6 @@ const villageSquareLongHouse: AreaDefinition = {
         {
             key: 'background', x: 0, y: 0,
             objects: [
-                {
-                    type: 'door',
-                    x: 80, zAlign: 'back', z: 35,
-                    key: "door",
-                    animation: "backDoor",
-                    exitKey: "villageSquare:door3",
-                },
-                {
-                    type: 'door',
-                    x: 288, zAlign: 'back', z: 35,
-                    key: "door2",
-                    animation: "backDoor",
-                    exitKey: "villageSquare:door4",
-                },
             ],
             grid: {
                 palette: 'guildForeground', w: 13, h: 2,
@@ -330,17 +312,31 @@ const villageSquareLongHouse: AreaDefinition = {
         {
             key: 'foreground', x: 0, y: 0,
             objects: [
+                {
+                    type: 'door',
+                    x: 64, z: -100,
+                    animation: "southDoor",
+                    exitKey: "villageSquare:door3",
+                    key: "door",
+                },
+                {
+                    type: 'door',
+                    x: 320, z: -100,
+                    animation: "southDoor",
+                    exitKey: "villageSquare:door4",
+                    key: "door2",
+                },
             ],
             grid: {
                 palette: 'guildForeground', w: 13, h: 3,
-                tiles: [[],[],[{x:0,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:1,y:1}]],
+                tiles: [[null,null,null,null,null,null,{x:1,y:0},{x:2,y:0}],[null,null,null,null,null,null,{x:3,y:0},{x:4,y:0}],[{x:0,y:1},{x:2,y:1},{x:3,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:1,y:1},{x:0,y:1},{x:2,y:1},{x:2,y:1},{x:3,y:1},{x:2,y:1},{x:1,y:1}],null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,[],null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,[],[],null,[],null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,[],null,null,null,[]],
             },
         },
     ],
     monsters: [
-        {key: 'skeleton', level: 1, location: {x: 52, z: 12}, },
-        {key: 'skeleton', level: 1, location: {x: 194, z: -42}, },
-        {key: 'skeleton', level: 1, location: {x: 341, z: 18}, },
+        {key: 'skeleton', level: 1, location: {x: 41, z: 64}, },
+        {key: 'skeleton', level: 1, location: {x: 205, z: -42}, },
+        {key: 'skeleton', level: 1, location: {x: 382, z: 66}, },
     ],
 };
 
@@ -373,7 +369,7 @@ const villageEast: AreaDefinition = {
             objects: [
                 {
                     type: 'door',
-                    z: -8, flipped: true,
+                    z: 10, flipped: true,
                     key: "door",
                     animation: "woodBridge",
                     exitKey: "villageSquare:door5",

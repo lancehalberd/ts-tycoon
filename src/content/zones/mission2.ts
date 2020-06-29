@@ -24,7 +24,7 @@ const forestClearing: AreaDefinition = {
             objects: [
                 {
                     type: 'door',
-                    x: 48, zAlign: 'back', z: 34,
+                    x: 49, zAlign: 'back', z: 2,
                     key: "door",
                     animation: "upstairs",
                     exitKey: "westPath:door",
@@ -32,7 +32,7 @@ const forestClearing: AreaDefinition = {
             ],
             grid: {
                 palette: 'meadowBackground', w: 2, h: 1,
-                tiles: [[{x:1,y:0},{x:0,y:0}]],
+                tiles: [[{x:1,y:0},{x:1,y:0}]],
             },
         },
         {
@@ -70,7 +70,7 @@ const westPath: AreaDefinition = {
             objects: [
                 {
                     type: 'door',
-                    x: 416, zAlign: 'back', z: 32,
+                    x: 415, zAlign: 'back', z: 4,
                     key: "door2",
                     animation: "upstairs",
                     exitKey: "westForest:door",
@@ -92,7 +92,7 @@ const westPath: AreaDefinition = {
             ],
             grid: {
                 palette: 'meadowBackground', w: 3, h: 1,
-                tiles: [[{x:1,y:0},{x:0,y:0},{x:0,y:0}]],
+                tiles: [[{x:1,y:0},{x:1,y:0},{x:1,y:0}],null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,[],null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,[]],
             },
         },
         {
@@ -100,14 +100,14 @@ const westPath: AreaDefinition = {
             objects: [
                 {
                     type: 'door',
-                    x: 1, z: -48,
+                    x: 1, z: -54,
                     key: "door",
                     animation: "downstairs",
                     exitKey: "forestClearing:door",
                 },
                 {
                     type: 'door',
-                    x: 577, z: -10,
+                    x: 577, z: 2,
                     key: "door3",
                     animation: "woodBridge",
                     exitKey: "eastPath:door",
@@ -151,7 +151,7 @@ const westForest: AreaDefinition = {
             ],
             grid: {
                 palette: 'meadowBackground', w: 2, h: 1,
-                tiles: [[{x:1,y:0},{x:0,y:0}]],
+                tiles: [[{x:1,y:0},{x:1,y:0}]],
             },
         },
         {
@@ -166,7 +166,7 @@ const westForest: AreaDefinition = {
                 },
                 {
                     type: 'door',
-                    x: 376,
+                    x: 375, z: 22,
                     key: "door2",
                     animation: "caveDoorOpen",
                     exitKey: "cave:door",
@@ -209,7 +209,7 @@ const cave: AreaDefinition = {
             ],
             grid: {
                 palette: 'caveBackground', w: 3, h: 1,
-                tiles: [[{x:1,y:0},{x:0,y:0},{x:0,y:0}]],
+                tiles: [[{x:1,y:0},{x:1,y:0},{x:0,y:0}],null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,[]],
             },
         },
         {
@@ -217,14 +217,14 @@ const cave: AreaDefinition = {
             objects: [
                 {
                     type: 'door',
-                    flipped: true,
+                    x: 4, z: 14, flipped: true,
                     key: "door",
                     animation: "caveDoorOpen",
                     exitKey: "westForest:door2",
                 },
                 {
                     type: 'door',
-                    x: 296, z: -2,
+                    x: 295, z: 10,
                     key: "door2",
                     animation: "caveDoorOpen",
                     exitKey: "eastForest:door",
@@ -268,7 +268,7 @@ const eastForest: AreaDefinition = {
             ],
             grid: {
                 palette: 'meadowBackground', w: 2, h: 1,
-                tiles: [[{x:1,y:0},{x:0,y:0}]],
+                tiles: [[{x:1,y:0},{x:1,y:0}]],
             },
         },
         {
@@ -276,7 +276,7 @@ const eastForest: AreaDefinition = {
             objects: [
                 {
                     type: 'door',
-                    x: 1, z: 4, flipped: true,
+                    x: 2, z: 20, flipped: true,
                     key: "door",
                     animation: "caveDoorOpen",
                     exitKey: "cave:door2",
@@ -323,7 +323,7 @@ const eastPath: AreaDefinition = {
             objects: [
                 {
                     type: 'door',
-                    x: 142, zAlign: 'back', z: 34,
+                    x: 141, zAlign: 'back', z: 4,
                     key: "door2",
                     animation: "upstairs",
                     exitKey: "eastForest:door2",
@@ -345,7 +345,7 @@ const eastPath: AreaDefinition = {
             ],
             grid: {
                 palette: 'meadowBackground', w: 2, h: 1,
-                tiles: [[{x:1,y:0},{x:0,y:0}]],
+                tiles: [[{x:1,y:0},{x:1,y:0}]],
             },
         },
         {
@@ -353,7 +353,7 @@ const eastPath: AreaDefinition = {
             objects: [
                 {
                     type: 'door',
-                    x: -8.881784197001252e-16, z: -10.666666666666686, flipped: true,
+                    flipped: true,
                     key: "door",
                     animation: "woodBridge",
                     exitKey: "westPath:door3",
@@ -403,7 +403,7 @@ const southForest: AreaDefinition = {
             objects: [
                 {
                     type: 'door',
-                    x: 630, zAlign: 'back', z: 34,
+                    x: 630, zAlign: 'back', z: 2,
                     key: "door",
                     animation: "upstairs",
                     exitKey: "eastPath:door3",
@@ -411,7 +411,7 @@ const southForest: AreaDefinition = {
             ],
             grid: {
                 palette: 'meadowBackground', w: 3, h: 1,
-                tiles: [[{x:1,y:0},{x:0,y:0},{x:0,y:0}]],
+                tiles: [[{x:1,y:0},{x:1,y:0},{x:1,y:0}]],
             },
         },
         {

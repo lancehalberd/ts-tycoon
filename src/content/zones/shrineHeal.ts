@@ -23,7 +23,7 @@ const entrance: AreaDefinition = {
             objects: [
                 {
                     type: 'door',
-                    x: 476, zAlign: 'back', z: -48,
+                    x: 476, zAlign: 'back', z: -54,
                     key: "door",
                     animation: "caveDoorOpen",
                     exitKey: "shrine:door",
@@ -31,7 +31,7 @@ const entrance: AreaDefinition = {
             ],
             grid: {
                 palette: 'meadowBackground', w: 2, h: 1,
-                tiles: [[{x:1,y:0},{x:0,y:0}]],
+                tiles: [[{x:0,y:0},{x:1,y:0}]],
             },
         },
         {
@@ -72,14 +72,14 @@ const shrine: AreaDefinition = {
             objects: [
                 {
                     type: 'door',
-                    zAlign: 'back', z: -55, flipped: true,
+                    x: 1, zAlign: 'back', z: -64, flipped: true,
                     key: "door",
                     animation: "caveDoorOpen",
                     exitKey: "entrance:door",
                 },
                 {
                     type: 'door',
-                    x: 219, zAlign: 'back', z: 28,
+                    x: 219, zAlign: 'back', z: -10,
                     key: "door2",
                     animation: "backDoor",
                     exitKey: "trialOfResolve:door",
@@ -107,7 +107,7 @@ const shrine: AreaDefinition = {
                 },
                 {
                     type: 'door',
-                    x: 182, z: -57,
+                    x: 180, z: -68,
                     key: "door3",
                     animation: "downstairs",
                     exitKey: "trialOfFaith:door",
@@ -194,7 +194,7 @@ const trialOfFaith: AreaDefinition = {
             objects: [
                 {
                     type: 'door',
-                    x: 53, zAlign: 'back', z: 24,
+                    x: 53, zAlign: 'back', z: -8,
                     key: "door",
                     animation: "upstairs",
                     exitKey: "shrine:door3",
@@ -242,7 +242,7 @@ const boss: AreaDefinition = {
             objects: [
                 {
                     type: 'door',
-                    x: 2, zAlign: 'back', z: -54, flipped: true,
+                    x: 3, zAlign: 'back', z: -60, flipped: true,
                     key: "door",
                     animation: "caveDoorOpen",
                     exitKey: "shrine:door4",
