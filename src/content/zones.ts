@@ -1,5 +1,11 @@
-import { AreaDefinition, AreaObjectDefinition, LocationDefinition, Zone, Zones, ZoneType } from 'app/types';
+import _ from 'lodash';
 
+import {
+    AreaDefinition, AreaLayerDefinition, AreaObjectDefinition,
+    LocationDefinition, Zone, Zones, ZoneType
+} from 'app/types';
+
+import { palettes } from 'app/content/areas';
 import { zones } from 'app/content/zones/zoneHash';
 
 export * from 'app/content/zones/zoneHash';
@@ -34,6 +40,10 @@ export function serializeZone(zoneKey: ZoneType): string {
         "import { zones } from 'app/content/zones';",
         "",
         "import { AreaDefinition } from 'app/types';",
+        "",
+        // We need to export at least one thing from this file otherwise
+        // webpack ignores the file altogether.
+        `export const ${zoneKey} = '${zoneKey}';`,
         "",
     ];
     for (let areaKey in zones[zoneKey]) {
@@ -83,8 +93,12 @@ function serializeAreaDefinition(areaDefinition: AreaDefinition): string {
     addProperty(lines, areaDefinition, 'leftWallType');
     addProperty(lines, areaDefinition, 'rightWallType');
     addProperty(lines, areaDefinition, 'seed');
-    addProperty(lines, areaDefinition, 'objects');
-    addProperty(lines, areaDefinition, 'backgroundObjects');
+
+    lines.push('    layers: [');
+    for (const layer of areaDefinition.layers) {
+        lines.push(serializeLayerDefinition(layer) + ',');
+    }
+    lines.push('    ],')
     if (areaDefinition.monsters && areaDefinition.monsters.length) {
         lines.push('    monsters: [');
         for (const monster of areaDefinition.monsters) {
@@ -126,20 +140,41 @@ function serializeLocation(location: LocationDefinition) {
     return parts.join(', ');
 }
 
-function serializeObjectDefinition(definition: AreaObjectDefinition): string {
+function serializeLayerDefinition(layer: AreaLayerDefinition): string {
+    const lines = [];
+    lines.push('        {');
+    lines.push(`            key: '${layer.key}', x: ${layer.x || 0}, y: ${layer.y || 0},`);
+    lines.push(`            objects: [`);
+    for (const object of layer.objects) {
+        lines.push(`                ${serializeObjectDefinition(object, '                ')},`);
+    }
+    lines.push(`            ],`);
+    if (layer.grid) {
+        lines.push(`            grid: {`);
+        lines.push(`                palette: '${layer.grid.palette}', w: ${layer.grid.w}, h: ${layer.grid.h},`);
+        // Hack to serialize grid without quotes around every x/y key.
+        const tileString = JSON.stringify(layer.grid.tiles).replace(/\"/g, '');
+        lines.push(`                tiles: ${tileString},`);
+        lines.push(`            },`);
+    }
+    lines.push('        }');
+    return lines.join("\n");
+}
+
+function serializeObjectDefinition(definition: AreaObjectDefinition, padding: string = '            '): string {
     const lines = ['{'];
-    lines.push(`            type: '${definition.type}',`);
+    lines.push(`${padding}    type: '${definition.type}',`);
     const location = serializeLocation(definition);
     if (location) {
-        lines.push(`            ${location},`);
+        lines.push(`${padding}    ${location},`);
     }
     // All additional fields are included last.
     for (let key in definition) {
         if (['type', 'parentKey', 'x', 'y', 'z', 'xAlign', 'yAlign', 'zAlign', 'flipped'].includes(key)) {
             continue;
         }
-        lines.push(`            ${key}: ${JSON.stringify(definition[key])},`);
+        lines.push(`${padding}    ${key}: ${JSON.stringify(definition[key])},`);
     }
-    lines.push('        }');
+    lines.push(`${padding}}`);
     return lines.join("\n");
 }

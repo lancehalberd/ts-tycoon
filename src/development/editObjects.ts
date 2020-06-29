@@ -2,6 +2,7 @@ import { addMonstersFromAreaDefinition } from 'app/adventure';
 import {
     applyDefinitionToArea,
     areaObjectFactories,
+    getLayer, getLayerDefinition,
 } from 'app/content/areas';
 import { getMonsterDefinitionAreaEntity, makeMonster, monsters } from 'app/content/monsters';
 import { zones } from 'app/content/zones';
@@ -15,7 +16,7 @@ import {
     refreshArea,
     refreshPropertyPanel,
 } from 'app/development/editArea';
-import { BACKGROUND_HEIGHT, GROUND_Y } from 'app/gameConstants';
+import { ADVENTURE_HEIGHT, BACKGROUND_HEIGHT, GROUND_Y } from 'app/gameConstants';
 import { getBasicAttack } from 'app/performAttack';
 import { getState } from 'app/state';
 import { abbreviate, fixedDigits, percent } from 'app/utils/formatters';
@@ -70,34 +71,24 @@ export function getAddObjectMenuItem(type: string): MenuOption {
 }
 
 export function deleteObject(object: AreaObject, updateArea: boolean = true) {
-    const areaDefinition: AreaDefinition = zones[object.area.zoneKey][object.area.key];
-    if (object.area.objects.indexOf(object) >= 0) {
-        if (areaDefinition.objects[object.key] !== object.definition) {
-            console.log('Did not find object definition where expected during delete.');
-            debugger;
-        }
-        delete areaDefinition.objects[object.key];
-    } else {
-        if (areaDefinition.backgroundObjects[object.key] !== object.definition) {
-            console.log('Did not find object definition where expected during delete.');
-            debugger;
-        }
-        delete areaDefinition.backgroundObjects[object.key];
-    }
-    // Recrusively delete child objects.
-    for (const otherObject of object.area.objects) {
-        if (otherObject.definition.parentKey === object.key) {
-            deleteObject(otherObject, false);
-        }
-    }
-    for (const otherObject of object.area.backgroundObjects) {
-        if (otherObject.definition.parentKey === object.key) {
-            deleteObject(otherObject, false);
+    const area: Area = object.area;
+    const areaDefinition: AreaDefinition = zones[area.zoneKey][area.key];
+    // Delete the object, and recursively delete any objects that include it as a parent.
+    for (const layer of area.layers) {
+        for (let i = 0; i < layer.objects.length; i++) {
+            const otherObject = layer.objects[i];
+            if (otherObject.key === object.key) {
+                layer.objects.splice(i--);
+                continue;
+            }
+            if (otherObject.definition.parentKey === object.key) {
+                deleteObject(otherObject, false);
+            }
         }
     }
     // For recursive calls, we only update area for the outer most call.
     if (updateArea) {
-        applyDefinitionToArea(object.area, areaDefinition);
+        applyDefinitionToArea(area, areaDefinition);
     }
 }
 
@@ -105,67 +96,48 @@ export function changeObjectOrder(object: AreaObject, dz: number ): void {
     if (!object) {
         return;
     }
-    const area = getCurrentArea();
     const areaDefinition = getAreaDefinition();
-    const hewHash = {};
-    if (area.backgroundObjects.indexOf(object) >= 0) {
-        areaDefinition.backgroundObjects
-            = changeOrderInHash(object.definition, areaDefinition.backgroundObjects, dz);
-    } else if (area.objects.indexOf(object) >= 0) {
-        areaDefinition.objects
-            = changeOrderInHash(object.definition, areaDefinition.objects, dz);
-    } else {
-        console.error('Object not found in area', object, area);
-    }
+    const backgroundLayer = getLayerDefinition(areaDefinition, 'background');
+    const fieldLayer = getLayerDefinition(areaDefinition, 'field');
+    const foregroundLayer = getLayerDefinition(areaDefinition, 'foreground');
+    changeOrderInArray(object.definition, backgroundLayer.objects, dz);
+    changeOrderInArray(object.definition, fieldLayer.objects, dz);
+    changeOrderInArray(object.definition, foregroundLayer.objects, dz);
     refreshArea();
 }
 
-function changeOrderInHash<T>(item: T, hash: {[key:string]: T}, dz: number): {[key:string]: T} {
-    const newHash: {[key:string]: T}  = {};
-    const keys = [];
-    let index = -1;
-    for (const key in hash) {
-        if (hash[key] === item) {
-            index = keys.length;
-        }
-        keys.push(key);
-    }
+function changeOrderInArray<T>(item: T, array: T[], dz: number): void {
+    const index = array.indexOf(item);
+    // Do nothing if the item isn't in this array.
     if (index < 0) {
-        console.error('Could not find item in hash', item, hash);
-        return hash;
+        return;
     }
-    const newIndex = Math.max(0, Math.min(keys.length - 1, index + dz));
-    const key = keys.splice(index, 1);
-    keys.splice(newIndex, 0, key);
-    for (const key of keys) {
-        newHash[key] = hash[key];
-    }
-    return newHash;
+    const newIndex = Math.max(0, Math.min(array.length - 1, index + dz));
+    array.splice(index, 1);
+    array.splice(newIndex, 0, item);
 }
-window['changeOrderInHash'] = changeOrderInHash;
+window['changeOrderInArray'] = changeOrderInArray;
 
 
 export function moveObject(object: AreaObject, dx: number, dy: number): void {
     const area = getState().selectedCharacter.hero.area;
-    if (area.backgroundObjects.includes(object)) {
-        moveLocationDefinition(object.definition, dx, -dy, 0);
-    } else {
+    if (getLayer(area, 'field').objects.includes(object)) {
         moveLocationDefinition(object.definition, dx, 0, -dy * 2);
         boundZPosition(object.definition, object.getAreaTarget().d);
+    } else {
+        moveLocationDefinition(object.definition, dx, -dy, 0);
     }
     refreshObjectDefinition(object);
 }
 // Reapply the definition for a given object and any objects that list it as an ancestor.
 export function refreshObjectDefinition(object: AreaObject) {
     object.applyDefinition(object.definition);
-    for (const otherObject of object.area.objects) {
-        if (otherObject.definition.parentKey === object.key) {
-            refreshObjectDefinition(otherObject);
-        }
-    }
-    for (const otherObject of object.area.backgroundObjects) {
-        if (otherObject.definition.parentKey === object.key) {
-            refreshObjectDefinition(otherObject);
+    const area = object.area;
+    for (const layer of area.layers) {
+        for (const otherObject of layer.objects) {
+            if (otherObject.definition.parentKey === object.key) {
+                refreshObjectDefinition(otherObject);
+            }
         }
     }
     refreshPropertyPanel();
@@ -178,11 +150,12 @@ export function uniqueObjectId(base: string, area: Area): string {
     }
     return id;
 }
-export function createObjectAtScreenCoords(definition: AreaObjectDefinition, coords: number[], objectKey: string): AreaObject {
+export function createObjectAtScreenCoords(definition: AreaObjectDefinition, coords: number[]): AreaObject {
     const area = getState().selectedCharacter.hero.area;
     const [x, y] = coords;
-    const isWallDecoration = (y < BACKGROUND_HEIGHT);
-    if (isWallDecoration) {
+    const isBackgroundObject = (y < BACKGROUND_HEIGHT);
+    const isForegroundObject = (y > ADVENTURE_HEIGHT - 32);
+    if (isBackgroundObject) {
         definition.y = BACKGROUND_HEIGHT - y;
         definition.zAlign = 'back';
         definition.z = 0;
@@ -193,11 +166,13 @@ export function createObjectAtScreenCoords(definition: AreaObjectDefinition, coo
     }
     definition.x = area.cameraX + x;
     const areaDefinition: AreaDefinition = zones[area.zoneKey][area.key];
-    if (isWallDecoration) {
-        areaDefinition.backgroundObjects[objectKey] = definition;
+    if (isBackgroundObject) {
+        getLayerDefinition(areaDefinition, 'background').objects.push(definition);
+    } else if (isForegroundObject) {
+        getLayerDefinition(areaDefinition, 'foreground').objects.push(definition);
     } else {
-        areaDefinition.objects[objectKey] = definition;
+        getLayerDefinition(areaDefinition, 'field').objects.push(definition);
     }
     refreshArea();
-    return area.objectsByKey[objectKey];
+    return area.objectsByKey[definition.key];
 }

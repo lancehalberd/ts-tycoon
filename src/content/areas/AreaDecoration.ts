@@ -22,6 +22,10 @@ type AnimationTree = {
     [key in string]: {[key in string]: FrameAnimation}
 }
 
+const [guildBottomLeft, guildBottomRight, guildBottom] = createAnimation('gfx2/areas/northsouthguild2.png',
+    {w: 32, h: 64, content: {x: 0, y: 36, w: 32, h: 28}}, {x: 5, cols: 3}).frames.map(frame => frameAnimation(frame));
+
+
 
 export class AreaDecoration extends EditableAreaObject {
     animation: FrameAnimation;
@@ -49,6 +53,12 @@ export class AreaDecoration extends EditableAreaObject {
             billBoard: createAnimation('gfx2/objects/billboard.png', {w: 66, h: 49, d: 0}),
             paper: createAnimation('gfx2/objects/billboardpaper.png', {w: 24, h: 32, d: 0}),
         },
+        guildForeground: {
+            guildBottom,
+            guildBottomLeft,
+            guildBottomRight,
+        },
+        guildFloor: {},
     };
 
     static getCreateMenu(): MenuOption {
@@ -76,6 +86,12 @@ export class AreaDecoration extends EditableAreaObject {
     }
 }
 areaObjectFactories.decoration = AreaDecoration;
+
+const guildFloorAnimations = createAnimation('gfx2/areas/Guild tiles2.png',
+    {w: 32, h: 32}, {rows: 3}).frames.map(frame => frameAnimation(frame));
+for (let i = 0; i < guildFloorAnimations.length; i++) {
+    AreaDecoration.animations.guildFloor['tile' + i] = guildFloorAnimations[i];
+}
 
 function chooseAnimationMenu(
     animations: AnimationTree,

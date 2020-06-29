@@ -54,11 +54,12 @@ export function update() {
         }
         return;
     }
+    const state = getState();
+    state.time += FRAME_LENGTH;
     if (updateEditArea()) {
         return;
     }
     try {
-    const state = getState();
     //var characters = testingLevel ? [state.selectedCharacter] : state.characters;
     let characters = [...state.characters];
     // Add the test character to list of characters to process.

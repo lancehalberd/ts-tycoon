@@ -4,7 +4,7 @@ import {
     Frame, Hero, JobAchievement, MonsterSpawn, ZoneType,
 } from 'app/types';
 
-import { AreaDecorationDefinition, AreaDoorDefinition } from 'app/content/areas';
+import { AreaDecorationDefinition, AreaDoorDefinition, FlameThrowerDefinition } from 'app/content/areas';
 
 export interface LocationDefinition {
     // Default to 0, relative to the parent coordinates.
@@ -20,6 +20,7 @@ export interface LocationDefinition {
 
 export interface BaseAreaObjectDefinition extends LocationDefinition {
     type: string,
+    key?: string,
     shapeType?: 'oval' | 'rectangle',
     // Can be used to scale the entire size of the object.
     scale?: number,
@@ -37,6 +38,7 @@ export interface UpgradeableObjectDefinition extends BaseAreaObjectDefinition {
 export type AreaObjectDefinition = BaseAreaObjectDefinition
     | AreaDecorationDefinition
     | AreaDoorDefinition
+    | FlameThrowerDefinition
     | TreasureChestDefinition
     | UpgradeableObjectDefinition
     ;

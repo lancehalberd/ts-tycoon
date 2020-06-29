@@ -6,7 +6,7 @@ import { getState } from 'app/state';
 
 import { Area, AreaObject } from 'app/types';
 
-export function addFurnitureBonuses(furniture: AreaObject, recompute = false) {
+export function addFurnitureBonuses(this: void, furniture: AreaObject, recompute = false): void {
     if (!furniture.getActiveBonusSources) return;
     const state = getState();
     const bonusSources = furniture.getActiveBonusSources();
@@ -23,9 +23,11 @@ export function addFurnitureBonuses(furniture: AreaObject, recompute = false) {
             addBonusSourceToObject(character.hero.variableObject, bonusSource);
         }
     }
-    if (recompute) recomputeAllCharacterDirtyStats();
+    if (recompute) {
+        recomputeAllCharacterDirtyStats();
+    }
 }
-export function removeFurnitureBonuses(furniture: AreaObject, recompute = false) {
+export function removeFurnitureBonuses(this: void, furniture: AreaObject, recompute = false): void {
     if (!furniture.getActiveBonusSources) return;
     const state = getState();
     const bonusSources = furniture.getActiveBonusSources();
@@ -41,10 +43,12 @@ export function removeFurnitureBonuses(furniture: AreaObject, recompute = false)
             removeBonusSourceFromObject(character.hero.variableObject, bonusSource);
         }
     }
-    if (recompute) recomputeAllCharacterDirtyStats();
+    if (recompute) {
+        recomputeAllCharacterDirtyStats();
+    }
 }
 
-export function addAllUnlockedFurnitureBonuses() {
+export function addAllUnlockedFurnitureBonuses(this: void): void {
     for (let areaKey in zones.guild) {
         if (!getState().savedState.unlockedGuildAreas[areaKey]) {
             continue;
@@ -54,12 +58,24 @@ export function addAllUnlockedFurnitureBonuses() {
     recomputeAllCharacterDirtyStats();
 }
 
-export function addAreaFurnitureBonuses(guildArea: Area, recompute = false) {
-    for (const object of guildArea.objects) addFurnitureBonuses(object, false);
-    if (recompute) recomputeAllCharacterDirtyStats();
+export function addAreaFurnitureBonuses(this: void, guildArea: Area, recompute = false): void {
+    for (const layer of guildArea.layers) {
+        for (const object of layer.objects) {
+            addFurnitureBonuses(object, false);
+        }
+    }
+    if (recompute) {
+        recomputeAllCharacterDirtyStats();
+    }
 }
 
-export function removeAreaFurnitureBonuses(guildArea: Area, recompute = false) {
-    for (const object of guildArea.objects) removeFurnitureBonuses(object, false);
-    if (recompute) recomputeAllCharacterDirtyStats();
+export function removeAreaFurnitureBonuses(this: void, guildArea: Area, recompute = false): void {
+    for (const layer of guildArea.layers) {
+        for (const object of layer.objects) {
+            removeFurnitureBonuses(object, false);
+        }
+    }
+    if (recompute) {
+        recomputeAllCharacterDirtyStats();
+    }
 }

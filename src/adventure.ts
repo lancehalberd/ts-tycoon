@@ -7,7 +7,7 @@ import {
 } from 'app/bonuses';
 import { baseDivinity, refreshStatsPanel} from 'app/character';
 import { getSprite } from 'app/content/actors';
-import { createAreaFromDefinition, getPositionFromLocationDefinition } from 'app/content/areas';
+import { createAreaFromDefinition, getLayer, getPositionFromLocationDefinition } from 'app/content/areas';
 import { addAreaFurnitureBonuses } from 'app/content/furniture';
 import { instantiateLevel } from 'app/content/levels';
 import { map } from 'app/content/mapData';
@@ -15,7 +15,7 @@ import { getMonsterDefinitionAreaEntity, makeMonster } from 'app/content/monster
 import { getZone } from 'app/content/zones';
 import { setContext, showContext } from 'app/context';
 import { editingMapState, stopTestingLevel } from 'app/development/editLevel';
-import { editingAreaState } from 'app/development/editArea';
+import { editingAreaState, refreshPropertyPanel } from 'app/development/editArea';
 import { query } from 'app/dom';
 import { drawBoardBackground } from 'app/drawBoard';
 import { expireTimedEffects } from 'app/effects';
@@ -208,6 +208,10 @@ export function enterArea(actor: Actor, {x, z, areaKey, objectKey, zoneKey}: Exi
         // Have the sprite immediately follow the actor to new areas so that she appears
         // at the start of missions.
         updateSprite(area, actor, 0);
+        // Update editing property panel when area changes so it doesn't become stale.
+        if (editingAreaState.isEditing) {
+            refreshPropertyPanel();
+        }
     }
     editingAreaState.cameraX = area.cameraX;
     editingAreaState.selectedObject = null;
@@ -457,9 +461,11 @@ export function updateArea(area: Area) {
         checkIfActorDied(ally);
         expireTimedEffects(ally);
     }
-    for (const object of area.objects) {
-        if (object.update) {
-            object.update();
+    for (const layer of area.layers) {
+        for (const object of layer.objects) {
+            if (object.update) {
+                object.update();
+            }
         }
     }
     area.allies.forEach(runActorLoop);
@@ -569,7 +575,7 @@ function processStatusEffects(target: Actor) {
             target.pull = null;
         }
         // End the pull if the target hits something.
-        for (const object of target.area.objects) {
+        for (const object of getLayer(target.area, 'field').objects) {
             if (object.isSolid === false || !object.getAreaTarget) continue;
             const distance = getDistanceOverlap(target, object.getAreaTarget());
             if (distance <= -8) {
@@ -669,25 +675,23 @@ function runActorLoop(actor: Actor) {
         const character = actor.character;
         // Code for intracting with chest/shrine at the end of level and leaving the area.
         // Might want to sort these by X coord at some point.
-        /*const sortedObjects = [...area.objects, ...area.backgroundObjects];
-        sortedObjects.sort((A, B) => {
-            return B.getAreaTarget().x - A.getAreaTarget().x;
-        })*/
-        for (const object of [...area.objects, ...area.backgroundObjects]) {
-            if (!object.getAreaTarget || !object.shouldInteract || !object.shouldInteract(actor)) {
-                continue;
+        for (const layer of area.layers){
+            for (const object of layer.objects) {
+                if (!object.getAreaTarget || !object.shouldInteract || !object.shouldInteract(actor)) {
+                    continue;
+                }
+                const objectTarget = object.getAreaTarget();
+                if (objectTarget.x < actor.x + 100
+                    || actor.consideredObjects.has(object)
+                    || (object.isEnabled && !object.isEnabled())
+                ) {
+                    continue;
+                }
+                // The AI only considers each object once.
+                actor.consideredObjects.add(object);
+                setActorInteractionTarget(actor, objectTarget);
+                break;
             }
-            const objectTarget = object.getAreaTarget();
-            if (objectTarget.x < actor.x + 100
-                || actor.consideredObjects.has(object)
-                || (object.isEnabled && !object.isEnabled())
-            ) {
-                continue;
-            }
-            // The AI only considers each object once.
-            actor.consideredObjects.add(object);
-            setActorInteractionTarget(actor, objectTarget);
-            break;
         }
     }
     // Manual control doesn't use the auto targeting logic.

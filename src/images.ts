@@ -21,26 +21,28 @@ function loadImage(source, callback) {
     return images[source];
 }
 
-var numberOfImagesLeftToLoad = 0;
+let startedLoading = false;
+let numberOfImagesLeftToLoad = 0;
 export function requireImage(imageFile) {
     if (images[imageFile]) return images[imageFile];
+    startedLoading = true;
     numberOfImagesLeftToLoad++;
     return loadImage(imageFile, () => numberOfImagesLeftToLoad--);
 }
 
 export function areAllImagesLoaded() {
-    return numberOfImagesLeftToLoad <= 0;
+    return startedLoading && numberOfImagesLeftToLoad <= 0;
 }
-/*function imagePromise(imageFile) {
-    if (images[imageFile]) return Promise.resolve(images[imageFile]);
+export async function allImagesLoaded() {
     return new Promise(resolve => {
-        numberOfImagesLeftToLoad++;
-        loadImage(imageFile, () => {
-            numberOfImagesLeftToLoad--;
-            resolve(images[imageFile]);
-        });
-    };
-}*/
+        const intervalId = setInterval(() => {
+            if (areAllImagesLoaded()) {
+                clearInterval(intervalId);
+                resolve();
+            }
+        }, 50);
+    });
+}
 const initialImagesToLoad = [
     // Original images from project contributors:
     'gfx/personSprite.png', 'gfx/hair.png', 'gfx/equipment.png', 'gfx/weapons.png',

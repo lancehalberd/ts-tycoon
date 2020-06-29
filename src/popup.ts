@@ -194,17 +194,24 @@ function getMainCanvasMouseTarget(x, y): CanvasPopupTarget {
             return hudObject;
         }
     }
-    const sortedObjects = area.objects.slice().sort(function (spriteA, spriteB) {
-        const A = spriteA.getAreaTarget ? spriteA.getAreaTarget().z : -10000;
-        const B = spriteB.getAreaTarget ? spriteB.getAreaTarget().z : -10000;
-        return A - B;
-    });
-    for (const object of [...sortedObjects, ...(area.backgroundObjects || [])]) {
-        if (!object.onInteract || (object.isEnabled && !object.isEnabled())) {
-            continue;
+    // Traverse layers in reverse order to find the highest object under the mouse.
+    for (const layer of [...area.layers].reverse()) {
+        let objects = layer.objects;
+        // Field objects need to be z-sorted.
+        if (layer.key === 'field') {
+            objects = layer.objects.slice().sort(function (spriteA, spriteB) {
+                const A = spriteA.getAreaTarget ? spriteA.getAreaTarget().z : -10000;
+                const B = spriteB.getAreaTarget ? spriteB.getAreaTarget().z : -10000;
+                return A - B;
+            });
         }
-        if (object.isPointOver(x, y)) {
-            return object;
+        for (const object of objects) {
+            if (!object.onInteract || (object.isEnabled && !object.isEnabled())) {
+                continue;
+            }
+            if (object.isPointOver(x, y)) {
+                return object;
+            }
         }
     }
     return null;

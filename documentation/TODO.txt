@@ -1,5 +1,12 @@
 Test at http://localhost:81/ttt/public/
 
+    XXX [H] Update layers/tiles to defaults when switching area types.
+    [M] Add layer selection + palette for editing tiles
+        Select layer (select dropdown)
+        Select tile from side palette to change brush
+
+    [M] Add pillar decorations.
+    [M] Add hover state for bridge (3rd frame of meadowbridge.png, 2nd frame is normal state.)
     [M] Fix flat walls need different bounding rules than angled walls.
 
 Features:

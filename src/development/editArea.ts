@@ -8,7 +8,7 @@ import {
     applyDefinitionToArea,
     areaObjectFactories, areaTargetToScreenTarget, areaTypes, areaWalls,
     createAreaObjectFromDefinition, createAreaFromDefinition,
-    getPositionFromLocationDefinition, isPointOverAreaTarget,
+    getLayer, getPositionFromLocationDefinition, getStandardLayers, isPointOverAreaTarget,
 } from 'app/content/areas';
 import {
     MonsterDefinitionAreaObject,
@@ -30,11 +30,11 @@ import {
 } from 'app/development/editObjects';
 import { displayPropertyPanel, hidePropertyPanel } from 'app/development/propertyPanel';
 import { mainCanvas } from 'app/dom';
-import { ADVENTURE_WIDTH, ADVENTURE_SCALE, BACKGROUND_HEIGHT, GROUND_Y, MAX_Z, MIN_Z } from 'app/gameConstants';
+import { ADVENTURE_HEIGHT, ADVENTURE_WIDTH, ADVENTURE_SCALE, BACKGROUND_HEIGHT, GROUND_Y, MAX_Z, MIN_Z } from 'app/gameConstants';
 import { isKeyDown, KEY } from 'app/keyCommands';
 import { renderMonsterFromDefinition } from 'app/render/drawActor';
 import { getState } from 'app/state';
-import { readFromFile, saveToFile } from 'app/utils/index';
+import { isPointInShortRect, readFromFile, saveToFile } from 'app/utils/index';
 import { getMousePosition } from 'app/utils/mouse';
 
 import {
@@ -107,45 +107,39 @@ export function handleEditAreaClick(x: number, y: number): void {
     editingAreaState.selectedObject = null;
     editingAreaState.initialObjectPosition = null;
     refreshPropertyPanel();
-    const monsterObjects: MonsterDefinitionAreaObject[] = (areaDefinition.monsters || []).map((definition, index) => {
-        return new MonsterDefinitionAreaObject(area, index);
-    });
-    const sortedObjects = [...area.objects, ...monsterObjects];
-    // Consider objects closer to the screen first to make selection intuitive.
-    sortedObjects.sort((A, B) => A.getAreaTarget().z - B.getAreaTarget().z);
-    for (const object of sortedObjects) {
-        if (!(object instanceof MonsterDefinitionAreaObject) && !object.definition) {
-            continue;
+    // Check for highest event target by traversing layers in reverse order (from top to bottom).
+    for (const layer of [...area.layers].reverse()) {
+        let objects = layer.objects;
+        // The field layer should sort objects and consider monster objects as well.
+        if (layer.key === 'field') {
+            const monsterObjects: MonsterDefinitionAreaObject[] =
+                (areaDefinition.monsters || []).map((definition, index) => {
+                    return new MonsterDefinitionAreaObject(area, index);
+                });
+            objects = [...objects, ...monsterObjects];
+            objects.sort((A, B) => A.getAreaTarget().z - B.getAreaTarget().z);
+        } else {
+            objects = [...objects].reverse();
         }
-        if (object.isPointOver(x, y)) {
-            if (object instanceof MonsterDefinitionAreaObject) {
-                editingAreaState.selectedMonsterIndex = object.index;
-                refreshPropertyPanel();
-                return;
-            } else {
-                if (isKeyDown(KEY.SHIFT) && object.onInteract) {
-                    object.onInteract(hero);
+        for (const object of objects) {
+            if (!(object instanceof MonsterDefinitionAreaObject) && !object.definition) {
+                continue;
+            }
+            if (object.isPointOver(x, y)) {
+                if (object instanceof MonsterDefinitionAreaObject) {
+                    editingAreaState.selectedMonsterIndex = object.index;
+                    refreshPropertyPanel();
+                    return;
+                } else {
+                    if (isKeyDown(KEY.SHIFT) && object.onInteract) {
+                        object.onInteract(hero);
+                        return;
+                    }
+                    editingAreaState.selectedObject = object;
+                    refreshPropertyPanel();
                     return;
                 }
-                editingAreaState.selectedObject = object;
-                refreshPropertyPanel();
-                return;
             }
-        }
-    }
-    for (let i: number = area.backgroundObjects.length - 1; i >= 0 ; i--) {
-        const object: AreaObject = area.backgroundObjects[i];
-        if (!object.definition) {
-            continue;
-        }
-        if (object.isPointOver(x, y)) {
-            if (isKeyDown(KEY.SHIFT) && object.onInteract) {
-                object.onInteract(hero);
-                return;
-            }
-            editingAreaState.selectedObject = object;
-            refreshPropertyPanel();
-            return;
         }
     }
     if (isKeyDown(KEY.SHIFT) && y > BACKGROUND_HEIGHT) {
@@ -161,8 +155,8 @@ export function handleEditMouseDragged(x: number, y: number, sx: number, sy: num
     if (selectedObject) {
         const area = getCurrentArea();
         dragLocationDefinition(selectedObject.definition, dx, dy);
-        // Objects on the wall aren't bound by the z limits.
-        if (!area.backgroundObjects.includes(selectedObject)) {
+        // Objects on the field area bound by the z limits.
+        if (getLayer(area, 'field').objects.includes(selectedObject)) {
             boundZPosition(selectedObject.definition, selectedObject.getAreaTarget().d);
         }
         refreshObjectDefinition(selectedObject);
@@ -419,7 +413,8 @@ export function getEditingContextMenu(): MenuOption[] {
     editingAreaState.contextCoords = getMousePosition(mainCanvas, ADVENTURE_SCALE);
     editingAreaState.contextCoords[0] = Math.round(editingAreaState.contextCoords[0]);
     editingAreaState.contextCoords[1] = Math.round(editingAreaState.contextCoords[1]);
-    const isWallDecoration = (editingAreaState.contextCoords[1] < BACKGROUND_HEIGHT);
+    const isBackgroundDecoration = (editingAreaState.contextCoords[1] < BACKGROUND_HEIGHT);
+    const isForegroundDecoration = (editingAreaState.contextCoords[1] > ADVENTURE_HEIGHT - 32);
     return [
         {
             getLabel() {
@@ -431,14 +426,15 @@ export function getEditingContextMenu(): MenuOption[] {
         },
         {
             getLabel() {
-                return isWallDecoration ? 'Add to Wall...' : 'Add to Field...';
+                return isBackgroundDecoration ? 'Add to Background...' :
+                    (isForegroundDecoration ? 'Add to Foreground' : 'Add to Field...');
             },
             getChildren() {
                 // Filter out null values, which are used to disable some object types.
                 return Object.keys(areaObjectFactories).map(getAddObjectMenuItem).filter(o => o);
             }
         },
-        ...(!isWallDecoration ? [{
+        ...(!isBackgroundDecoration && !isForegroundDecoration ? [{
             getLabel() {
                 return 'Add monster...';
             },
@@ -465,15 +461,19 @@ export function getEditingContextMenu(): MenuOption[] {
     ];
 }
 
-export function createObjectAtContextCoords(definition: AreaObjectDefinition, objectKey: string = null): AreaObject {
+export function createObjectAtContextCoords(definition: AreaObjectDefinition): AreaObject {
     const area = getState().selectedCharacter.hero.area;
-    if (!objectKey) {
-        objectKey = uniqueObjectId(definition.type, area);
+    if (!definition.key || area.objectsByKey[definition.key]) {
+        definition.key = uniqueObjectId(definition.type, area);
     }
-    return createObjectAtScreenCoords(definition, editingAreaState.contextCoords, objectKey);
+    return createObjectAtScreenCoords(definition, editingAreaState.contextCoords);
 }
 
 export function refreshPropertyPanel(): void {
+    if (!editingAreaState.isEditing) {
+        hidePropertyPanel();
+        return;
+    }
     if (editingAreaState.selectedMonsterIndex >= 0) {
         displayPropertyPanel(getSelectedMonsterProperties());
     } else if (editingAreaState.selectedObject) {
@@ -678,9 +678,8 @@ function promptToCreateNewArea(zoneKey: ZoneType): void {
         const areaDefinition: AreaDefinition = {
             type: 'oldGuild',
             width: 600,
-            objects: {},
-            backgroundObjects: {},
             zoneKey,
+            layers: getStandardLayers(),
         }
         zones[areaDefinition.zoneKey][areaKey] = areaDefinition;
     }
@@ -788,4 +787,55 @@ export function getSetWallTypeMenuItem(wallType: string, callback: (string) => v
         }
     }
 }
+
+document.body.addEventListener('wheel', (event: WheelEvent) => {
+    if (!editingAreaState.isEditing) {
+        return;
+    }
+    const area = getCurrentArea();
+    const areaDefinition = getAreaDefinition();
+    const [x, y] = getMousePosition(mainCanvas, ADVENTURE_SCALE);
+    for (const layer of [...getCurrentArea().layers].reverse()) {
+        if (!layer.grid) {
+            continue;
+        }
+        const tx = Math.floor((x + area.cameraX - layer.x) / layer.grid.palette.w);
+        const ty = Math.floor((y - layer.y) / layer.grid.palette.h);
+        if (tx >= 0 && tx < layer.grid.w && ty >= 0 && ty < layer.grid.h) {
+            const layerDefinition = _.find(areaDefinition.layers, {key: layer.key});
+            layerDefinition.grid.tiles[y] = layerDefinition.grid.tiles[y] || [];
+            let tile = layerDefinition.grid.tiles[ty][tx];
+            const R = layer.grid.palette.source.w / layer.grid.palette.w;
+            const B = layer.grid.palette.source.h / layer.grid.palette.h;
+            if (!tile) {
+                if (event.deltaY > 0) {
+                    tile = {x: 0, y: 0};
+                } else {
+                    tile = {x: R - 1, y: B - 1};
+                }
+            } else if (event.deltaY > 0) {
+                tile.x++;
+                if (tile.x >= R) {
+                    tile.x = 0;
+                    tile.y++;
+                    if (tile.y >= B) {
+                        tile = null;
+                    }
+                }
+            } else if (event.deltaY < 0) {
+                tile.x--;
+                if (tile.x < 0) {
+                    tile.x = R - 1;
+                    tile.y--;
+                    if (tile.y < 0) {
+                        tile = null;
+                    }
+                }
+            }
+            layerDefinition.grid.tiles[ty][tx] = tile;
+            refreshArea();
+            break;
+        }
+    }
+});
 

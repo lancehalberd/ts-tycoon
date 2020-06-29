@@ -24,9 +24,11 @@ export interface AreaType {
         loot?: any[],
         ability?: Ability,
     }) => void,
+    addLayers: (area: Area) => void,
     drawFloor: (context: CanvasRenderingContext2D, area: Area) => void,
     drawBackground: (context: CanvasRenderingContext2D, area: Area) => void,
     drawForeground?: (context: CanvasRenderingContext2D, area: Area) => void,
+    populateGrids?: (area: Area) => void,
 }
 
 export type Target = LocationTarget | Actor;

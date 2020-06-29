@@ -1,9 +1,12 @@
+import _ from 'lodash';
 import { addMonstersToArea, enterArea } from 'app/adventure';
 import {
     initializeActorForAdventure,
 } from 'app/actor';
 import {
     areaWalls, AreaDecoration, AreaDoor, AreaObstacle,
+    finalizeArea, getLayer, palettes, populateLayerGrid,
+    setStandardLayersOnArea,
     SimpleMonsterSpawner, SkillShrine, TreasureChest,
 } from 'app/content/areas';
 import { makeMonster } from 'app/content/monsters';
@@ -24,171 +27,10 @@ import { r, fillRect, isPointInRect } from 'app/utils/index';
 import SRandom from 'app/utils/SRandom';
 
 import {
-    Ability, Actor, Area, AreaEntity, AreaObject, AreaObjectTarget,
-    AreaType, Exit, FixedObject, Frame, Hero, LootGenerator,
+    Ability, Actor, Area, AreaLayer, AreaEntity, AreaObject, AreaObjectTarget,
+    AreaType, Exit, FixedObject, Frame, FrameDimensions, Hero, LootGenerator,
     MonsterSpawn, MonsterSpawner, FrameAnimation,
 } from 'app/types';
-/*
-interface BackgroundSource {
-    image: HTMLCanvasElement | HTMLImageElement,
-    x: number,
-    y: number,
-    left: number,
-    top: number,
-    width: number,
-    height: number,
-}
-interface BackgroundSection {
-    source: BackgroundSource,
-    spacing?: number,
-    parallax?: number,
-    velocity?: number,
-    alpha?: number,
-}
-
-function backgroundSource(image, xFrame, y = 0, width = 60, height = 300): BackgroundSource {
-    return { image, x: xFrame * 60, left: xFrame * 60, y, top: y, width, height };
-}
-
-const forestImage = requireImage('gfx/forest.png');
-const fieldImage = requireImage('gfx/grass.png');
-const beachImage = requireImage('gfx/beach.png');
-const townImage = requireImage('gfx/town.png');
-const guildImage = requireImage('gfx/guildhall.png');
-const caveImage = requireImage('gfx/cave.png');
-const bgSources = {
-    forest: backgroundSource(forestImage, 0),
-    treeTops: backgroundSource(forestImage, 1, 0, 60, 150),
-    tallTrees: backgroundSource(forestImage, 2, 0, 60, 150),
-    shortTrees: backgroundSource(forestImage, 3, 0, 60, 150),
-    roses: backgroundSource(forestImage, 4, 0, 60, 150),
-    rootsA: backgroundSource(forestImage, 1, 240, 60, 60),
-    rootsB: backgroundSource(forestImage, 2, 240, 60, 60),
-    denseLeaves: backgroundSource(forestImage, 1, 150, 60, 90),
-    leavesAndStick: backgroundSource(forestImage, 2, 150, 60, 90),
-    stick: backgroundSource(forestImage, 3, 150, 60, 90),
-    leaf: backgroundSource(forestImage, 4, 150, 60, 90),
-    field: backgroundSource(fieldImage, 0),
-    skinnyCloud: backgroundSource(fieldImage, 1, 0, 60, 150),
-    tinyCloud: backgroundSource(fieldImage, 2, 0, 60, 150),
-    mediumCloud: backgroundSource(fieldImage, 3, 0, 60, 150),
-    grassEdge: backgroundSource(fieldImage, 1, 150, 60, 90),
-    grassA: backgroundSource(fieldImage, 2, 150, 60, 90),
-    grassB: backgroundSource(fieldImage, 3, 150, 60, 90),
-    grassC: backgroundSource(fieldImage, 4, 150, 60, 90),
-    dirtCracksA: backgroundSource(fieldImage, 1, 240, 60, 60),
-    dirtCracksB: backgroundSource(fieldImage, 2, 240, 60, 60),
-    cave: backgroundSource(caveImage, 0),
-    rocks: backgroundSource(caveImage, 1, 240, 60, 60),
-    spikesA: backgroundSource(caveImage, 1, 0, 60, 60),
-    spikesB: backgroundSource(caveImage, 2, 0, 60, 60),
-    spikesC: backgroundSource(caveImage, 3, 0, 60, 60),
-    tombstone: backgroundSource(caveImage, 1, 60, 60, 150),
-// underground: y240, floor: y150, sky: y0, floor: height=90
-    beach: backgroundSource(beachImage, 0),
-    water1: backgroundSource(beachImage, 1, 150, 60, 60),
-    water2: backgroundSource(beachImage, 2, 150, 60, 60),
-    shells1: backgroundSource(beachImage, 3, 240, 60, 60),
-    shells2: backgroundSource(beachImage, 4, 240, 60, 60),
-// underground: y240, floor: y150, sky: y0, floor: height=90, sky: height=150
-    town: backgroundSource(townImage, 0),
-    cobblestone: backgroundSource(townImage, 1, 150, 60, 90),
-    houseCurtains: backgroundSource(townImage, 2, 0, 60, 150),
-    houseTiles: backgroundSource(townImage, 3, 0, 60, 150),
-    fountain: backgroundSource(townImage, 4, 0, 60, 150),
-    ceilingAndTrim: backgroundSource(guildImage, 1, 0, 60, 24),
-    crackedWall: backgroundSource(guildImage, 1, 0, 60, 150),
-    oldFloorBoards: backgroundSource(guildImage, 1, 150, 60, 90),
-    woodFloorEdge: backgroundSource(guildImage, 0, 240, 60, 60),
-};
-
-export const backgrounds = {
-    oldGuild: [
-        {'source': bgSources.crackedWall},
-        {'source': bgSources.oldFloorBoards},
-        {'source': bgSources.woodFloorEdge}
-    ],
-    guildBasement: [
-        {'source': bgSources.cave},
-        {'source': bgSources.ceilingAndTrim},
-        {'source': bgSources.rocks},
-        {'source': bgSources.rootsA, 'spacing': 4},
-        {'source': bgSources.rootsB, 'spacing': 3}
-    ],
-    forest: [
-        {'source': bgSources.forest},
-        {'source': bgSources.treeTops, 'parallax': .2},
-        {'source': bgSources.shortTrees, 'parallax': .3, 'spacing': 2},
-        {'source': bgSources.tallTrees, 'parallax': .5, 'spacing': 3},
-        {'source': bgSources.roses, 'parallax': .65, 'spacing': 4},
-        {'source': bgSources.leavesAndStick, 'spacing': 2},
-        {'source': bgSources.denseLeaves, 'spacing': 3},
-        {'source': bgSources.stick, 'spacing': 5},
-        {'source': bgSources.rootsA, 'spacing': 4},
-        {'source': bgSources.rootsB, 'spacing': 3}
-    ],
-    garden: [
-        {'source': bgSources.field},
-        {'source': bgSources.roses, 'parallax': .4, 'spacing': 3.5},
-        {'source': bgSources.roses, 'parallax': .65, 'spacing': 2},
-        {'source': bgSources.denseLeaves, 'spacing': 3},
-        {'source': bgSources.stick, 'spacing': 5},
-        {'source': bgSources.rootsA, 'spacing': 4},
-        {'source': bgSources.rootsB, 'spacing': 3}
-    ],
-    orchard: [
-        {'source': bgSources.forest},
-        {'source': bgSources.treeTops, 'parallax': .2},
-        {'source': bgSources.shortTrees, 'parallax': .3, 'spacing': 1},
-        {'source': bgSources.tallTrees, 'parallax': .5, 'spacing': 1.5},
-        {'source': bgSources.leavesAndStick, 'spacing': 2},
-        {'source': bgSources.denseLeaves, 'spacing': 1},
-        {'source': bgSources.rootsA, 'spacing': 4},
-        {'source': bgSources.rootsB, 'spacing': 3}
-    ],
-    field: [
-        {'source': bgSources.field},
-        {'source': bgSources.skinnyCloud, 'parallax': .2, 'spacing': 3, 'velocity': -50, 'alpha': .4},
-        {'source': bgSources.tinyCloud, 'parallax': .3, 'spacing': 2, 'velocity': -50, 'alpha': .4},
-        {'source': bgSources.mediumCloud, 'parallax': .5, 'spacing': 3, 'velocity': -50, 'alpha': .4},
-        {'source': bgSources.dirtCracksA},
-        {'source': bgSources.dirtCracksB},
-        {'source': bgSources.grassEdge},
-        {'source': bgSources.grassA},
-        {'source': bgSources.grassB, 'spacing': 4},
-        {'source': bgSources.grassC, 'spacing': 3}
-    ],
-    cemetery: [
-        {'source': bgSources.cave},
-        {'source': bgSources.shortTrees, 'parallax': .3, 'spacing': 2.5},
-        {'source': bgSources.tallTrees, 'parallax': .5, 'spacing': 3},
-        {'source': bgSources.tombstone, 'spacing': 5},
-        {'source': bgSources.stick, 'spacing': 4},
-        {'source': bgSources.rootsA, 'spacing': 4},
-        {'source': bgSources.rootsB, 'spacing': 3}
-    ],
-    cave: [
-        {'source': bgSources.cave},
-        {'source': bgSources.spikesA, 'parallax': .2, 'spacing': 1.5},
-        {'source': bgSources.spikesC, 'parallax': .3, 'spacing': 2},
-        {'source': bgSources.spikesB, 'parallax': .5, 'spacing': 3},
-        {'source': bgSources.rocks}
-    ],
-    beach: [
-        {'source': bgSources.beach},
-        {'source': bgSources.water1},
-        {'source': bgSources.water2, 'spacing': 3},
-        {'source': bgSources.shells1, 'spacing': 3},
-        {'source': bgSources.shells2, 'spacing': 2}
-    ],
-    town: [
-        {'source': bgSources.town},
-        {'source': bgSources.cobblestone},
-        {'source': bgSources.fountain, 'spacing': 5},
-        {'source': bgSources.houseCurtains, 'spacing': 3},
-        {'source': bgSources.houseTiles, 'spacing': 2},
-    ],
-};*/
 
 const FLOOR_TILE_SIZE = 32;
 const BG_TILE_WIDTH = 256;
@@ -202,6 +44,7 @@ const meadowBackMidFrames = createAnimation('gfx2/areas/meadowBackMid.png',
 const meadowThingFrames = createAnimation('gfx2/areas/meadowThings.png',
     {w: 32, h: 32}, {cols: 6}).frames;
 
+
 const [meadowRiver, meadowBridge] = createAnimation('gfx2/areas/meadowbridge.png',
     frame(0, 0, 39, 148, r(16, 92, 23, 35)), {cols: 2}).frames;
 const meadowClouds = createAnimation('gfx2/areas/meadowClouds.png',
@@ -210,6 +53,12 @@ const meadowClouds = createAnimation('gfx2/areas/meadowClouds.png',
 const bushAnimation = createAnimation('gfx2/areas/meadowBush.png', {w: 32, h: 32}, {cols: 4});
 
 const FieldArea: AreaType = {
+    addLayers(area) {
+        setStandardLayersOnArea(area);
+        getLayer(area, 'background').grid = {w: 1, h: 1, palette: palettes.meadowBackground, tiles: []};
+        getLayer(area, 'floor').grid = {w: 1, h: 3, palette: palettes.meadowFloor, tiles: []};
+        getLayer(area, 'foreground').grid = {w: 1, h: 1, palette: palettes.meadowForeground, tiles: []};
+    },
     addObjects(area, {monsters = [], exits, loot, ability}) {
         const random = SRandom.addSeed(area.seed);
         if (monsters.length) {
@@ -221,7 +70,7 @@ const FieldArea: AreaType = {
                 spawner.x = spawnerMonster.location.x - RANGE_UNIT * 10;
                 spawner.y = 0;
                 spawner.z = spawnerMonster.location.z;
-                area.objects.push(spawner);
+                getLayer(area, 'field').objects.push(spawner);
             }
             addMonstersToArea(area, monsters, area.enemyBonuses);
         }
@@ -238,18 +87,7 @@ const FieldArea: AreaType = {
         finalizeArea(area);
     },
     drawFloor(context, area) {
-        const random = SRandom.addSeed(area.seed);
-        let w = FLOOR_TILE_SIZE;
-        let h = FLOOR_TILE_SIZE;
-        let x = Math.floor(area.cameraX / w) * w;
-        while (x < area.cameraX + ADVENTURE_WIDTH) {
-            for (let row = 0; row < 2; row++) {
-                const frame = random.addSeed(x + row).element(meadowFrames);
-                drawFrame(context, frame, {x: x - area.cameraX, y: BACKGROUND_HEIGHT + h * row, w, h});
-            }
-            x += w;
-        }
-        fillRect(context, BOTTOM_HUD_RECT, '#883');
+
     },
     drawBackground(context, area) {
         drawFrame(context, meadowSky, {...meadowSky, x: 0, y: 0});
@@ -322,23 +160,15 @@ const FieldArea: AreaType = {
             drawFrame(context, frame, {x: x - X, y: 0, w, h});
             x += w;
         }
-
-        // Treese/grass in the background
-        w = BG_TILE_WIDTH;
-        h = 86;
-        x = Math.floor(area.cameraX / w) * w;
-        while (x < area.cameraX + ADVENTURE_WIDTH) {
-            const frame = random.addSeed(x).element(meadowBackFrontFrames);
-            drawFrame(context, frame, {x: x - area.cameraX, y: 0, w, h});
-            x += w;
-        }
+    },
+    drawForeground(context, area) {
+        const foreground = getLayer(area, 'foreground');
+        const y = foreground.y + foreground.grid.h * foreground.grid.palette.h;
+        context.fillStyle = '#000';
+        context.fillRect(0, y, ADVENTURE_WIDTH, ADVENTURE_HEIGHT - y);
     }
 };
 
-
-const caveFrames = createAnimation('gfx2/areas/cavetiles.png', {w: 32, h: 32}, {cols: 6}).frames;
-const caveBackFrontFrames = createAnimation('gfx2/areas/caveforeground.png',
-    {w: 128, h: 86}, {cols: 2}).frames;
 const [stoneWallMid, stoneWallLeft, stoneWallRight, ...caveBackFrames] = createAnimation('gfx2/areas/cavebackground.png',
     {w: 128, h: 86}, {cols: 6}).frames;
 const caveThingFrames = createAnimation('gfx2/areas/cavethings.png',
@@ -348,6 +178,14 @@ const [caveWall, caveDoorOpen, caveDoorClosed] = createAnimation('gfx2/areas/cav
     frame(0, 0, 39, 148, r(16, 92, 23, 35)), {cols: 3}).frames;
 
 const CaveArea: AreaType = {
+    addLayers(area) {
+        setStandardLayersOnArea(area);
+        const background = getLayer(area, 'background');
+        background.y = 8;
+        background.grid = {w: 1, h: 1, palette: palettes.caveBackground, tiles: []};
+        getLayer(area, 'floor').grid = {w: 1, h: 3, palette: palettes.caveFloor, tiles: []};
+        getLayer(area, 'foreground').grid = {w: 1, h: 1, palette: palettes.caveForeground, tiles: []};
+    },
     addObjects(area, {monsters = [], exits, loot, ability}) {
         const random = SRandom.addSeed(area.seed);
         addMonstersToArea(area, monsters, area.enemyBonuses);
@@ -364,23 +202,9 @@ const CaveArea: AreaType = {
         finalizeArea(area);
     },
     drawFloor(context, area) {
-        const random = SRandom.addSeed(area.seed);
-
         // Draw a black background behind everything. This is for pits and when the background is empty.
         context.fillStyle = '#121115';
         context.fillRect(0, 0, ADVENTURE_WIDTH, ADVENTURE_HEIGHT);
-
-        let w = FLOOR_TILE_SIZE;
-        let h = FLOOR_TILE_SIZE;
-        let x = Math.floor(area.cameraX / w) * w;
-        while (x < area.cameraX + ADVENTURE_WIDTH) {
-            for (let row = 0; row < 2; row++) {
-                const frame = random.addSeed(x + row).element(caveFrames);
-                drawFrame(context, frame, {x: x - area.cameraX, y: BACKGROUND_HEIGHT + h * row, w, h});
-            }
-            x += w;
-        }
-        fillRect(context, BOTTOM_HUD_RECT, '#883');
     },
     drawBackground(context, area) {
         const random = SRandom.addSeed(area.seed);
@@ -423,31 +247,43 @@ const CaveArea: AreaType = {
                 x += w;
             }
         }
-
-        // row of rocks in front of the background.
-        {
-            let w = 128;
-            let h = 86;
-            let x = Math.floor(area.cameraX / w) * w;
-            while (x < area.cameraX + ADVENTURE_WIDTH) {
-                const frame = random.addSeed(x).element(caveBackFrontFrames);
-                // Currently this needs to be down several pixels to line up correctly.
-                drawFrame(context, frame, {x: x - area.cameraX, y: 5, w, h});
-                x += w;
-            }
-        }
+    },
+    drawForeground(context, area) {
+        const foreground = getLayer(area, 'foreground');
+        const y = foreground.y + foreground.grid.h * foreground.grid.palette.h;
+        context.fillStyle = '#000';
+        context.fillRect(0, y, ADVENTURE_WIDTH, ADVENTURE_HEIGHT - y);
     }
 };
-
-const guildFrames = createAnimation('gfx2/areas/Guild tiles2.png', {w: FLOOR_TILE_SIZE, h: FLOOR_TILE_SIZE}, {rows: 3}).frames;
-const guildBackFrontFrames = createAnimation('gfx2/areas/guildtiles.png',
-    {w: 128, h: BG_TILE_HEIGHT}, {cols: 2}).frames;
-const [guildRightWall, guildRightDoorEmpty, guildRightDoor, guildRightBoardedDoor] = createAnimation('gfx2/areas/guildbridge.png',
-    frame(0, 0, 39, 148, r(11, 50, 20, 70)), {cols: 4}).frames;
 const [guildBottomLeft, guildBottomRight, guildBottom] = createAnimation('gfx2/areas/guildnorthsouthdoorswalls.png',
     {w: 32, h: 28}, {x: 6, cols: 3, top: 36}).frames;
 
 const GuildArea: AreaType = {
+    addLayers(area) {
+        area.layers = [
+            // Additional background layers with parallax <= 1 can be added here.
+            // Holds the floor tiles, won't usually have objects on it, as they would be behind the background.
+            {key: 'floor', x: 0, y: BACKGROUND_HEIGHT, objects: [],
+                grid: {w: 1, h: 3, palette: palettes.guildFloor, tiles: []},
+            },
+            // Holds the back wall tiles
+            {key: 'backgroundWalls', x: 0, y: 0, objects: [],
+                grid: {w: 1, h: 1, palette: palettes.guildBackground, tiles: []},
+            },
+            // Holds the back+side wall caps and background objects.
+            {key: 'background', x: 0, y: 0, objects: [],
+                grid: {w: 1, h: 2, palette: palettes.guildForeground, tiles: []},
+            },
+            // Holds all the objects that are z-sorted in the field as well as players/effects
+            // Does not have a defined grid currently.
+            {key: 'field', x: 0, y: BACKGROUND_HEIGHT, grid: null, objects: []},
+            // Holds a grid and objects that are always in front of the field.
+            {key: 'foreground', x: 0, y: 0, objects: [],
+                grid: {w: 1, h: 3, palette: palettes.guildForeground, tiles: []}
+            },
+            // Additional foreground layers with parallax >= 1 can be added here.
+        ];
+    },
     addObjects(area, {monsters, exits, loot, ability}) {
         addMonstersToArea(area, monsters, area.enemyBonuses);
         addChest(area, loot);
@@ -457,33 +293,47 @@ const GuildArea: AreaType = {
         finalizeArea(area);
     },
     drawFloor(context, area) {
-        const random = SRandom.addSeed(area.seed);
-        let w = FLOOR_TILE_SIZE;
-        let h = FLOOR_TILE_SIZE;
-        let x = Math.floor(area.cameraX / w) * w;
-        while (x < area.cameraX + ADVENTURE_WIDTH) {
-            for (let row = 0; row < 2; row++) {
-                const frame = random.addSeed(x + row).element(guildFrames);
-                drawFrame(context, frame, {x: x - area.cameraX, y: BACKGROUND_HEIGHT + h * row, w, h});
-            }
-            x += w;
-        }
-        fillRect(context, BOTTOM_HUD_RECT, '#000');
-        //fillRect(context, BOTTOM_HUD_RECT, '#433');
     },
     drawBackground(context, area) {
-        let w = 128;
-        let h = BG_TILE_HEIGHT;
-        let x = Math.floor(area.cameraX / w) * w;
-        while (x < area.cameraX + ADVENTURE_WIDTH) {
-            // The other frame is a large window that I don't want to use just now.
-            const frame = guildBackFrontFrames[1];//SRandom.seed(x).element(guildBackFrontFrames);
-            drawFrame(context, frame, {x: x - area.cameraX, y: 0, w, h});
-            x += w;
-        }
     },
     drawForeground(context, area) {
-        const w = guildBottom.w;
+        const foreground = getLayer(area, 'foreground');
+        const y = foreground.y + foreground.grid.h * foreground.grid.palette.h;
+        context.fillStyle = '#000';
+        context.fillRect(0, y, ADVENTURE_WIDTH, ADVENTURE_HEIGHT - y);
+    },
+    populateGrids(area) {
+        const random = SRandom.addSeed(area.seed);
+        for (const layer of area.layers) {
+            if (layer.key === 'background') {
+                layer.grid.w = Math.ceil(area.width / layer.grid.palette.w);
+                layer.grid.tiles = [[], [], []];
+                for (let x = 0; x < layer.grid.w; x++) {
+                    layer.grid.tiles[0][x] = {
+                        x: (x === 0 ? 2 : (x === layer.grid.w - 1 ? 1 : 0)),
+                        y: 0,
+                    };
+                }
+                layer.grid.tiles[1][0] = {x: 4, y: 0};
+                layer.grid.tiles[1][layer.grid.w - 1] = {x: 3, y: 0};
+            } else if (layer.key === 'foreground') {
+                layer.grid.w = Math.ceil(area.width / layer.grid.palette.w);
+                layer.grid.tiles = [[], [], []];
+                for (let x = 0; x < layer.grid.w; x++) {
+                    layer.grid.tiles[2][x] = {
+                        x: (x === 0 ? 0 : (x === layer.grid.w - 1 ? 1 : 2)),
+                        y: 1,
+                    };
+                }
+            } else {
+                populateLayerGrid(area, layer);
+            }
+        }
+    },
+    /*drawForeground(context, area) {
+        context.fillStyle = '#000';
+        context.fillRect(0, ADVENTURE_HEIGHT - 4, ADVENTURE_WIDTH, 4);
+        /*const w = guildBottom.w;
         const h = guildBottom.h;
         let x = Math.floor(area.cameraX / w) * w;
         const y = BACKGROUND_HEIGHT + FIELD_HEIGHT;
@@ -504,18 +354,15 @@ const GuildArea: AreaType = {
         if (area.cameraX + ADVENTURE_WIDTH > area.width - w) {
             drawFrame(context, guildBottomRight, {x: area.width - w - area.cameraX, y, w, h});
         }
-    }
+    }*/
 };
 
-function finalizeArea(area: Area) {
-    for (const object of area.objects) object.area = area;
-    for (const object of area.backgroundObjects) object.area = area;
-}
-
-function addExits(area: Area, exits: Exit[], animation: FrameAnimation = AreaDoor.animations.openDoor) {
+function addExits(area: Area, exits: Exit[], animations: {normal: FrameAnimation, hover: FrameAnimation} = AreaDoor.animations.openDoor) {
+    const background: AreaLayer = getLayer(area, 'background');
     if (exits[0]) {
         const door: AreaDoor = new AreaDoor();
-        door.animation = animation;
+        door.animation = animations.normal;
+        door.hoverAnimation = animations.hover;
         door.exit = exits[0];
         door.definition = {
             "type": "door",
@@ -528,11 +375,12 @@ function addExits(area: Area, exits: Exit[], animation: FrameAnimation = AreaDoo
             "z": -7,
             "flipped": true,
         };
-        area.backgroundObjects.push(door);
+        background.objects.push(door);
     }
     if (exits[1]) {
         const door: AreaDoor = new AreaDoor();
-        door.animation = animation;
+        door.animation = animations.normal;
+        door.hoverAnimation = animations.hover;
         door.exit = exits[1];
         door.definition = {
             "type": "door",
@@ -545,7 +393,7 @@ function addExits(area: Area, exits: Exit[], animation: FrameAnimation = AreaDoo
             "y": 0,
             "z": -7,
         };
-        area.backgroundObjects.push(door);
+        background.objects.push(door);
     }
 }
 
@@ -566,7 +414,7 @@ function addChest(area: Area, loot: LootGenerator[]) {
         y: 0,
         z: SRandom.addSeed(area.seed).range(MIN_Z + 16, MIN_Z + 32),
     };
-    area.objects.push(chest);
+    getLayer(area, 'field').objects.push(chest);
     area.width = chest.definition.x + RANGE_UNIT * 10;
 }
 
@@ -582,7 +430,7 @@ function addShrine(area: Area, ability: Ability) {
         y: 0,
         z: 10,
     };
-    area.objects.push(shrine);
+    getLayer(area, 'field').objects.push(shrine);
     area.width = shrine.definition.x + RANGE_UNIT * 20;
 }
 

@@ -36,7 +36,6 @@ export function render() {
     const state = getState();
     // Only render if the state has actually progressed since the last render.
     if (lastTimeRendered && lastTimeRendered >= state.time) {
-        console.log("skipping render " + lastTimeRendered);
         return;
     }
     if (!isPlayingTrack()) {

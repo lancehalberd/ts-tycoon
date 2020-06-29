@@ -23,7 +23,10 @@ import { canUseSkillOnTarget } from 'app/useSkill';
 import { drawFrame, getFrame } from 'app/utils/animations';
 import { arrMod, isPointInShortRect, rectangle, toR } from 'app/utils/index';
 
-import { ActionData, Actor, ActorEffect, FrameAnimation, Area, AreaObject, AreaType } from 'app/types';
+import {
+    ActionData, Actor, ActorEffect, FrameAnimation,
+    Area, AreaLayer, AreaObject, AreaType
+} from 'app/types';
 
 export const bufferCanvas: HTMLCanvasElement = createCanvas(ADVENTURE_WIDTH, ADVENTURE_HEIGHT);
 export const bufferContext = bufferCanvas.getContext('2d');
@@ -59,61 +62,12 @@ export function drawArea(context: CanvasRenderingContext2D, area: Area) {
     }
     const cameraX = area.cameraX;
     context.clearRect(0, 0, ADVENTURE_WIDTH, ADVENTURE_HEIGHT);
-    const areaTypeKey: string = area.areaType;
-    const areaType: AreaType = areaTypes[areaTypeKey] || areaTypes.field;
-    areaType.drawFloor(context, area);
-    const allSprites: {
-        z?: number,
-        drawGround?: Function,
-        getAreaTarget?: Function,
-        render?: Function,
-    }[] = [
-        ...area.allies,
-        ...area.enemies,
-        ...area.objects,
-        ...area.projectiles,
-        ...area.treasurePopups,
-        ...area.effects
-    ];
-    const allActors = area.allies.concat(area.enemies);
-    const fairy = getSprite();
-    // Usually fairy is not in the list of enemies/allies so she doesn't effect combat,
-    // but during cutscenes she will be in the list of allies.
-    if (fairy.area === area && allSprites.indexOf(fairy) < 0) {
-        allSprites.push(fairy);
-        allActors.push(fairy);
-    }
-    // Draw effects that appear underneath sprites. Do not sort these, rather, just draw them in
-    // the order they are present in the arrays.
-    for (const sprite of allSprites) {
-        sprite.drawGround?.(context);
+    for (const layer of area.layers) {
+        drawAreaLayer(context, area, layer);
     }
 
-    for (const actor of allActors) {
-        drawActorShadow(context, actor);
-        drawActorGroundEffects(context, actor);
-    }
-    drawActionTargetCircle(context);
-    areaType.drawBackground(context, area);
-    drawLeftWall(context, area);
-    drawRightWall(context, area);
-    if (area.backgroundObjects) {
-        for (const object of area.backgroundObjects) object.render(context);
-    }
-    const sortedSprites = allSprites.slice().sort(function (spriteA, spriteB) {
-        const A = spriteA.getAreaTarget ? spriteA.getAreaTarget().z : (spriteA.z || 0);
-        const B = spriteB.getAreaTarget ? spriteB.getAreaTarget().z : (spriteB.z || 0);
-        return B - A;
-    });
-    for (const sprite of sortedSprites) {
-        if (sprite.render) {
-            sprite.render(context);
-        }
-    }
-    //for (var effect of ifdefor(area.effects, [])) effect.render(context, effect);
-    // Draw actor lifebar/status effects on top of effects/projectiles
-    allActors.forEach(actor => drawActorEffects(context, actor));
     // Draw text popups such as damage dealt, item points gained, and so on.
+    // These appear in front of all layers currently.
     for (const textPopup of (area.textPopups || [])) {
         context.fillStyle = (textPopup.color|| "red");
         const scale = Math.max(0, Math.min(1.5, (textPopup.duration || 0) / 10));
@@ -121,7 +75,107 @@ export function drawArea(context: CanvasRenderingContext2D, area: Area) {
         context.textAlign = 'center'
         context.fillText(textPopup.value, textPopup.x - cameraX, GROUND_Y - textPopup.y - textPopup.z / 2);
     }
-    if (areaType.drawForeground) {
+}
+function drawAreaLayer(this: void, context: CanvasRenderingContext2D, area: Area, layer: AreaLayer): void {
+
+    const areaTypeKey: string = area.areaType;
+    const areaType: AreaType = areaTypes[areaTypeKey] || areaTypes.field;
+
+
+    if (layer.key === 'floor') {
+        areaType.drawFloor(context, area);
+    }
+    // Area type background is drawn below the background layer tiles.
+    // Eventually these will probably be moved to separate layers with paralax.
+    if (layer.key === 'background') {
+        areaType.drawBackground(context, area);
+    }
+
+    //for (var effect of ifdefor(area.effects, [])) effect.render(context, effect);
+    // Draw actor lifebar/status effects on top of effects/projectiles
+
+    // Draw the tile grid for this layer, if one is defined.
+    if (layer.grid) {
+        const w = layer.grid.palette.w;
+        const h = layer.grid.palette.h;
+        const image = layer.grid.palette.source.image;
+        for (let y = 0; y < layer.grid.h; y++) {
+            let x = Math.floor(area.cameraX / w);
+            for (;x * w < area.cameraX + ADVENTURE_WIDTH; x++) {
+                const tile = layer.grid.tiles[y][x];
+                // Not all tiles will be defined.
+                if (!tile) {
+                    continue;
+                }
+                const frame = {
+                    image, w, h,
+                    x: layer.grid.palette.source.x + w * tile.x,
+                    y: layer.grid.palette.source.y + h * tile.y,
+                };
+                drawFrame(context, frame, {w, h, x: layer.x + x * w - area.cameraX, y: layer.y + y * h});
+            }
+        }
+    }
+    if (layer.key === 'floor') {
+        // Action circle is on top of the floor, but underneath everything else.
+        drawActionTargetCircle(context);
+    }
+    // Walls are on top of background tiles, but below backgrond objects.
+    if (layer.key === 'background') {
+        drawLeftWall(context, area);
+        drawRightWall(context, area);
+    }
+    if (layer.key === 'field') {
+        const objects: {
+            z?: number,
+            drawGround?: Function,
+            getAreaTarget?: Function,
+            render?: Function,
+        }[] = [
+            ...area.allies,
+            ...area.enemies,
+            ...layer.objects,
+            ...area.projectiles,
+            ...area.treasurePopups,
+            ...area.effects
+        ];
+        const allActors = area.allies.concat(area.enemies);
+        const fairy = getSprite();
+        // Usually fairy is not in the list of enemies/allies so she doesn't effect combat,
+        // but during cutscenes she will be in the list of allies.
+        if (fairy.area === area && objects.indexOf(fairy) < 0) {
+            objects.push(fairy);
+            allActors.push(fairy);
+        }
+        // Draw effects that appear underneath sprites. Do not sort these, rather, just draw them in
+        // the order they are present in the arrays.
+        for (const sprite of objects) {
+            sprite.drawGround?.(context);
+        }
+        for (const actor of allActors) {
+            drawActorShadow(context, actor);
+            drawActorGroundEffects(context, actor);
+        }
+
+        const sortedObjects = objects.slice().sort(function (spriteA, spriteB) {
+            const A = spriteA.getAreaTarget ? spriteA.getAreaTarget().z : (spriteA.z || 0);
+            const B = spriteB.getAreaTarget ? spriteB.getAreaTarget().z : (spriteB.z || 0);
+            return B - A;
+        });
+        for (const object of sortedObjects) {
+            if (object.render) {
+                object.render(context);
+            }
+        }
+        allActors.forEach(actor => drawActorEffects(context, actor));
+    } else {
+        for (const object of layer.objects) {
+            if (object.render) {
+                object.render(context);
+            }
+        }
+    }
+    if (layer.key === 'foreground' && areaType.drawForeground) {
         areaType.drawForeground(context, area);
     }
 }

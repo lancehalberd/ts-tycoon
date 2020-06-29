@@ -60,6 +60,7 @@ export default class IntroScene extends Cutscene {
         await this.panCamera(60, 500);
         await this.pause(500);
         await this.speak(this.guildSpirit, `Ashley! And who's that with you?`);
+        this.panCamera(this.area.width - ADVENTURE_WIDTH, 500);
         await this.speak(this.ruthven, `This is ${this.hero.name}, they've volunteered to refound your guild.`);
         this.guildSpirit.heading = [1, 0, 0];
         await this.speak(this.guildSpirit, `This again? You know I won't risk opening the guild-`);
@@ -122,7 +123,7 @@ export default class IntroScene extends Cutscene {
             this.speak(this.ruthven, `I've got dozens of refugees at my estate with more coming each day, but we can't keep them forever.`),
         ]);
         await this.speak(this.ruthven, `Sprite, if you please.`),
-        this.sprite.x = 340;
+        this.sprite.x = 350;
         this.sprite.z = this.ruthven.z;
         this.sprite.heading = [-1, 0, 0];
         await this.pause(500);
@@ -137,7 +138,7 @@ export default class IntroScene extends Cutscene {
         await this.speak(this.guildSpirit, `I understand.`);
         await this.speak(this.guildSpirit, `${this.hero.name}, if you are ready then, step through the gate to begin.`);
         await this.pause(1000);
-        await this.moveActor(this.hero, {x: this.ruthven.x + 30, z: this.ruthven.z});
+        await this.moveActor(this.hero, {x: this.ruthven.x + 35, z: this.ruthven.z});
         // Make the hero "teleport" away. Want to add a teleport effect here eventually.
         this.hero.x = 40;
         await this.pause(500);

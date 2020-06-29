@@ -2,6 +2,7 @@
 // add fields to areaObjectFactories.
 export * from 'app/content/areas/areaObjectFactories';
 export * from 'app/content/areas/utils';
+export * from 'app/content/areas/palettes';
 // Most area objects extend EditableAreaObject, so it should be included before them.
 export * from 'app/content/areas/EditableAreaObject';
 export * from 'app/content/areas/AnimaOrb';
@@ -10,6 +11,7 @@ export * from 'app/content/areas/AreaDoor';
 export * from 'app/content/areas/AreaObjectTarget';
 export * from 'app/content/areas/Bed';
 export * from 'app/content/areas/CoinStash';
+export * from 'app/content/areas/FlameThrower';
 export * from 'app/content/areas/GuildGate';
 export * from 'app/content/areas/HeroApplication';
 export * from 'app/content/areas/MapTable';

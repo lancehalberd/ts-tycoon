@@ -8,16 +8,47 @@ const entrance: AreaDefinition = {
     type: 'field',
     width: 500,
     rightWallType: 'caveWall',
-    objects: {
-    },
-    backgroundObjects: {
-        door: {
-            type: 'door',
-            x: 477, zAlign: 'back', z: -54,
-            animation: "caveDoorOpen",
-            exitKey: "shrine:door",
+    layers: [
+        {
+            key: 'floor', x: 0, y: 84,
+            objects: [
+            ],
+            grid: {
+                palette: 'meadowFloor', w: 16, h: 3,
+                tiles: [[{x:5,y:0},{x:1,y:0},{x:4,y:0},{x:2,y:0},{x:3,y:0},{x:0,y:0},{x:5,y:0},{x:3,y:0},{x:5,y:0},{x:1,y:0},{x:2,y:0},{x:5,y:0},{x:1,y:0},{x:0,y:0},{x:2,y:0},{x:5,y:0}],[{x:1,y:0},{x:1,y:0},{x:3,y:0},{x:4,y:0},{x:1,y:0},{x:2,y:0},{x:4,y:0},{x:3,y:0},{x:2,y:0},{x:0,y:0},{x:3,y:0},{x:4,y:0},{x:0,y:0},{x:1,y:0},{x:0,y:0},{x:4,y:0}],[{x:2,y:0},{x:5,y:0},{x:5,y:0},{x:2,y:0},{x:5,y:0},{x:1,y:0},{x:0,y:0},{x:4,y:0},{x:1,y:0},{x:0,y:0},{x:0,y:0},{x:4,y:0},{x:1,y:0},{x:2,y:0},{x:0,y:0},{x:5,y:0}]],
+            },
         },
-    },
+        {
+            key: 'background', x: 0, y: 0,
+            objects: [
+                {
+                    type: 'door',
+                    x: 476, zAlign: 'back', z: -48,
+                    key: "door",
+                    animation: "caveDoorOpen",
+                    exitKey: "shrine:door",
+                },
+            ],
+            grid: {
+                palette: 'meadowBackground', w: 2, h: 1,
+                tiles: [[{x:1,y:0},{x:0,y:0}]],
+            },
+        },
+        {
+            key: 'field', x: 0, y: 84,
+            objects: [
+            ],
+        },
+        {
+            key: 'foreground', x: 0, y: 148,
+            objects: [
+            ],
+            grid: {
+                palette: 'meadowForeground', w: 4, h: 1,
+                tiles: [[{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0}]],
+            },
+        },
+    ],
 };
 
 const shrine: AreaDefinition = {
@@ -26,54 +57,120 @@ const shrine: AreaDefinition = {
     leftWallType: 'caveWall',
     rightWallType: 'caveWall',
     seed: 7654615776495261,
-    objects: {
-        shrineOfCreation: {
-            type: 'shrineOfCreation',
-            x: 132, z: 57,
+    layers: [
+        {
+            key: 'floor', x: 0, y: 84,
+            objects: [
+            ],
+            grid: {
+                palette: 'caveFloor', w: 10, h: 3,
+                tiles: [[{x:4,y:0},{x:4,y:0},{x:2,y:0},{x:1,y:0},{x:4,y:0},{x:4,y:0},{x:1,y:0},{x:4,y:0},{x:5,y:0},{x:1,y:0}],[{x:0,y:0},{x:0,y:0},{x:4,y:0},{x:5,y:0},{x:0,y:0},{x:4,y:0},{x:4,y:0},{x:3,y:0},{x:5,y:0},{x:3,y:0}],[{x:5,y:0},{x:4,y:0},{x:0,y:0},{x:2,y:0},{x:5,y:0},{x:5,y:0},{x:2,y:0},{x:5,y:0},{x:3,y:0},{x:2,y:0}]],
+            },
         },
-        door3: {
-            type: 'door',
-            x: 183, z: -57,
-            animation: "downstairs",
-            exitKey: "trialOfFaith:door",
+        {
+            key: 'background', x: 0, y: 8,
+            objects: [
+                {
+                    type: 'door',
+                    zAlign: 'back', z: -55, flipped: true,
+                    key: "door",
+                    animation: "caveDoorOpen",
+                    exitKey: "entrance:door",
+                },
+                {
+                    type: 'door',
+                    x: 219, zAlign: 'back', z: 28,
+                    key: "door2",
+                    animation: "backDoor",
+                    exitKey: "trialOfResolve:door",
+                },
+                {
+                    type: 'door',
+                    x: 296, zAlign: 'back', z: -56,
+                    key: "door4",
+                    animation: "caveDoorOpen",
+                    exitKey: "boss:door",
+                },
+            ],
+            grid: {
+                palette: 'caveBackground', w: 3, h: 1,
+                tiles: [[{x:1,y:0},{x:0,y:0},{x:1,y:0}]],
+            },
         },
-    },
-    backgroundObjects: {
-        door: {
-            type: 'door',
-            zAlign: 'back', z: -55, flipped: true,
-            animation: "caveDoorOpen",
-            exitKey: "entrance:door",
+        {
+            key: 'field', x: 0, y: 84,
+            objects: [
+                {
+                    type: 'shrineOfCreation',
+                    x: 129, z: 57,
+                    key: "shrineOfCreation",
+                },
+                {
+                    type: 'door',
+                    x: 182, z: -57,
+                    key: "door3",
+                    animation: "downstairs",
+                    exitKey: "trialOfFaith:door",
+                },
+            ],
         },
-        door2: {
-            type: 'door',
-            x: 219, zAlign: 'back', z: 29,
-            animation: "backDoor",
-            exitKey: "trialOfResolve:door",
+        {
+            key: 'foreground', x: 0, y: 148,
+            objects: [
+            ],
+            grid: {
+                palette: 'caveForeground', w: 4, h: 1,
+                tiles: [[{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0}]],
+            },
         },
-        door4: {
-            type: 'door',
-            x: 297, zAlign: 'back', z: -54,
-            animation: "caveDoorOpen",
-            exitKey: "boss:door",
-        },
-    },
+    ],
 };
 
 const trialOfResolve: AreaDefinition = {
     type: 'cave',
     width: 500,
     seed: 3167875903276947,
-    objects: {
-        door: {
-            type: 'door',
-            x: 10, z: -57,
-            animation: "downstairs",
-            exitKey: "shrine:door2",
+    layers: [
+        {
+            key: 'floor', x: 0, y: 84,
+            objects: [
+            ],
+            grid: {
+                palette: 'caveFloor', w: 16, h: 3,
+                tiles: [[{x:0,y:0},{x:4,y:0},{x:2,y:0},{x:3,y:0},{x:5,y:0},{x:2,y:0},{x:5,y:0},{x:3,y:0},{x:0,y:0},{x:2,y:0},{x:0,y:0},{x:3,y:0},{x:4,y:0},{x:3,y:0},{x:0,y:0},{x:5,y:0}],[{x:1,y:0},{x:5,y:0},{x:5,y:0},{x:3,y:0},{x:0,y:0},{x:4,y:0},{x:2,y:0},{x:3,y:0},{x:3,y:0},{x:4,y:0},{x:1,y:0},{x:3,y:0},{x:3,y:0},{x:5,y:0},{x:1,y:0},{x:4,y:0}],[{x:3,y:0},{x:1,y:0},{x:3,y:0},{x:3,y:0},{x:1,y:0},{x:2,y:0},{x:3,y:0},{x:2,y:0},{x:5,y:0},{x:1,y:0},{x:0,y:0},{x:1,y:0},{x:5,y:0},{x:4,y:0},{x:2,y:0},{x:4,y:0}]],
+            },
         },
-    },
-    backgroundObjects: {
-    },
+        {
+            key: 'background', x: 0, y: 8,
+            objects: [
+            ],
+            grid: {
+                palette: 'caveBackground', w: 4, h: 1,
+                tiles: [[{x:0,y:0},{x:0,y:0},{x:1,y:0},{x:1,y:0}]],
+            },
+        },
+        {
+            key: 'field', x: 0, y: 84,
+            objects: [
+                {
+                    type: 'door',
+                    x: 18, z: -57,
+                    key: "door",
+                    animation: "downstairs",
+                    exitKey: "shrine:door2",
+                },
+            ],
+        },
+        {
+            key: 'foreground', x: 0, y: 148,
+            objects: [
+            ],
+            grid: {
+                palette: 'caveForeground', w: 6, h: 1,
+                tiles: [[{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0}]],
+            },
+        },
+    ],
 };
 
 const trialOfFaith: AreaDefinition = {
@@ -82,16 +179,47 @@ const trialOfFaith: AreaDefinition = {
     leftWallType: 'caveWall',
     rightWallType: 'caveWall',
     seed: 7389566328205333,
-    objects: {
-    },
-    backgroundObjects: {
-        door: {
-            type: 'door',
-            x: 53, zAlign: 'back', z: 30,
-            animation: "upstairs",
-            exitKey: "shrine:door3",
+    layers: [
+        {
+            key: 'floor', x: 0, y: 84,
+            objects: [
+            ],
+            grid: {
+                palette: 'caveFloor', w: 16, h: 3,
+                tiles: [[{x:2,y:0},{x:2,y:0},{x:2,y:0},{x:5,y:0},{x:3,y:0},{x:3,y:0},{x:3,y:0},{x:5,y:0},{x:3,y:0},{x:1,y:0},{x:1,y:0},{x:5,y:0},{x:0,y:0},{x:2,y:0},{x:4,y:0},{x:2,y:0}],[{x:4,y:0},{x:3,y:0},{x:2,y:0},{x:1,y:0},{x:1,y:0},{x:3,y:0},{x:5,y:0},{x:5,y:0},{x:2,y:0},{x:4,y:0},{x:2,y:0},{x:0,y:0},{x:2,y:0},{x:4,y:0},{x:2,y:0},{x:4,y:0}],[{x:1,y:0},{x:3,y:0},{x:4,y:0},{x:0,y:0},{x:0,y:0},{x:4,y:0},{x:0,y:0},{x:2,y:0},{x:3,y:0},{x:0,y:0},{x:0,y:0},{x:1,y:0},{x:5,y:0},{x:5,y:0},{x:3,y:0},{x:1,y:0}]],
+            },
         },
-    },
+        {
+            key: 'background', x: 0, y: 8,
+            objects: [
+                {
+                    type: 'door',
+                    x: 53, zAlign: 'back', z: 24,
+                    key: "door",
+                    animation: "upstairs",
+                    exitKey: "shrine:door3",
+                },
+            ],
+            grid: {
+                palette: 'caveBackground', w: 4, h: 1,
+                tiles: [[{x:0,y:0},{x:1,y:0},{x:0,y:0},{x:0,y:0}]],
+            },
+        },
+        {
+            key: 'field', x: 0, y: 84,
+            objects: [
+            ],
+        },
+        {
+            key: 'foreground', x: 0, y: 148,
+            objects: [
+            ],
+            grid: {
+                palette: 'caveForeground', w: 6, h: 1,
+                tiles: [[{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0}]],
+            },
+        },
+    ],
 };
 
 const boss: AreaDefinition = {
@@ -99,16 +227,47 @@ const boss: AreaDefinition = {
     width: 500,
     leftWallType: 'caveWall',
     rightWallType: 'caveWall',
-    objects: {
-    },
-    backgroundObjects: {
-        door: {
-            type: 'door',
-            zAlign: 'back', z: -54, flipped: true,
-            animation: "caveDoorOpen",
-            exitKey: "shrine:door4",
+    layers: [
+        {
+            key: 'floor', x: 0, y: 84,
+            objects: [
+            ],
+            grid: {
+                palette: 'caveFloor', w: 16, h: 3,
+                tiles: [[{x:5,y:0},{x:1,y:0},{x:4,y:0},{x:2,y:0},{x:3,y:0},{x:0,y:0},{x:5,y:0},{x:3,y:0},{x:5,y:0},{x:1,y:0},{x:2,y:0},{x:5,y:0},{x:1,y:0},{x:0,y:0},{x:2,y:0},{x:5,y:0}],[{x:1,y:0},{x:1,y:0},{x:3,y:0},{x:4,y:0},{x:1,y:0},{x:2,y:0},{x:4,y:0},{x:3,y:0},{x:2,y:0},{x:0,y:0},{x:3,y:0},{x:4,y:0},{x:0,y:0},{x:1,y:0},{x:0,y:0},{x:4,y:0}],[{x:2,y:0},{x:5,y:0},{x:5,y:0},{x:2,y:0},{x:5,y:0},{x:1,y:0},{x:0,y:0},{x:4,y:0},{x:1,y:0},{x:0,y:0},{x:0,y:0},{x:4,y:0},{x:1,y:0},{x:2,y:0},{x:0,y:0},{x:5,y:0}]],
+            },
         },
-    },
+        {
+            key: 'background', x: 0, y: 8,
+            objects: [
+                {
+                    type: 'door',
+                    x: 2, zAlign: 'back', z: -54, flipped: true,
+                    key: "door",
+                    animation: "caveDoorOpen",
+                    exitKey: "shrine:door4",
+                },
+            ],
+            grid: {
+                palette: 'caveBackground', w: 4, h: 1,
+                tiles: [[{x:1,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0}]],
+            },
+        },
+        {
+            key: 'field', x: 0, y: 84,
+            objects: [
+            ],
+        },
+        {
+            key: 'foreground', x: 0, y: 148,
+            objects: [
+            ],
+            grid: {
+                palette: 'caveForeground', w: 6, h: 1,
+                tiles: [[{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0}]],
+            },
+        },
+    ],
 };
 
 zones.shrineHeal = {

@@ -183,6 +183,11 @@ export function getTargetLocation(area: Area, canvasX: number, canvasY: number):
     return {targetType: 'location', area, x: area.cameraX + canvasX, y: 0, z, w: 0, h: 0, d: 0};
 }
 export function setActorDestination(actor: Actor, target: Target) {
+    // Don't set actor destination when the actor can't actually move.
+    // Probably need to add some other conditions here as well or add a `canActorMove` function.
+    if (actor.pull || actor.stunned || actor.isDead) {
+        return;
+    }
     const activity: ActorActivity = {
         type: 'move',
         x: target.x,

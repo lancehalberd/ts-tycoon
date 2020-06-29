@@ -374,6 +374,11 @@ export default class Cutscene {
                     }
                 }
             }
+            for (const layer of this.area.layers) {
+                for (const object of layer.objects) {
+                    object.update?.();
+                }
+            }
         }
     }
 

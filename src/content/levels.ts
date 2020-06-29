@@ -111,7 +111,6 @@ export function instantiateLevel(
             isBossArea: false,
             width: ADVENTURE_WIDTH,
             areaType: levelData.background,
-            objects: [],
             drawMinimapIcon: eventsLeft.length > 1 ? drawMinimapMonsterIcon : drawMinimapBossIcon,
             areas,
             time: 0,
@@ -123,8 +122,8 @@ export function instantiateLevel(
             enemyBonuses: levelBonuses,
             treasurePopups: [],
             textPopups: [],
-            backgroundObjects: [],
             seed: areas.size + levelData.coords[0] + levelData.coords[1],
+            layers: [],
         };
         const isFirstArea = !lastArea;
         const isLastArea = !eventsLeft.length;
@@ -148,6 +147,7 @@ export function instantiateLevel(
             }
             area.width += RANGE_UNIT * 2;
             area.width = Math.max(area.width, ADVENTURE_WIDTH);
+            areaType.addLayers(area);
             areaType.addObjects(area, {
                 exits: [entranceDestination, exitDestination],
                 loot,
@@ -191,15 +191,12 @@ export function instantiateLevel(
         if (maxLoops-- < 0) debugger;
 
         area.width = Math.max(area.width, ADVENTURE_WIDTH);
+        areaType.addLayers(area);
         areaType.addObjects(area, {
             monsters: areaMonsters,
             exits: [entranceDestination, exitDestination],
         });
     };
-    areas.forEach(area => {
-        for (const object of area.objects)
-            object.area = area;
-    });
     return level;
 }
 

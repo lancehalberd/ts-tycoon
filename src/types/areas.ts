@@ -1,6 +1,6 @@
 import {
     ActiveEffect, Actor, AreaObject, AreaObjectDefinition,
-    BonusSource, Character, FrameAnimation,
+    BonusSource, Character, Frame, FrameAnimation,
     MonsterDefinition, MonsterSpawn,
 } from 'app/types';
 
@@ -38,16 +38,71 @@ export interface ActiveMission {
     failed: boolean,
 }
 
+export type AreaObjectHash = {[key in string]: AreaObjectDefinition};
+
+export interface TilePalette {
+    // The size of the tiles
+    w: number,
+    h: number,
+    // The source frame of the tiles.
+    source: Frame,
+}
+
+export interface Tile {
+    // The column/row coordinates of the tile in the source frame.
+    x: number,
+    y: number,
+}
+
+export interface TileGrid {
+    // The dimensions of the grid.
+    w: number,
+    h: number,
+    // The palette to use for this grid (controls the size of tiles)
+    palette: TilePalette,
+    // The matrix of tiles
+    tiles: Tile[][],
+}
+
+export interface TileGridDefinition {
+    // The dimensions of the grid.
+    w: number,
+    h: number,
+    // The palette to use for this grid (controls the size of tiles)
+    palette: string,
+    // The matrix of tiles
+    tiles: Tile[][],
+}
+
+export interface AreaLayerDefinition {
+    // Unique identifier for this layer.
+    key: string,
+    grid?: TileGridDefinition,
+    objects: AreaObjectDefinition[],
+    // Coordinates for the layer origin, if not (0, 0).
+    x?: number,
+    y?: number,
+}
+
 export interface AreaDefinition {
     zoneKey?: ZoneType,
     type: string,
     width: number,
     leftWallType?: string,
     rightWallType?: string,
-    objects: {[key in string]: AreaObjectDefinition},
-    backgroundObjects: {[key in string]: AreaObjectDefinition},
     seed?: number,
     monsters?: MonsterDefinition[],
+    layers: AreaLayerDefinition[],
+}
+
+export interface AreaLayer {
+    // Unique identifier for this layer.
+    key: string,
+    grid?: TileGrid,
+    objects: AreaObject[],
+    // Coordinates for the layer origin, if not (0, 0).
+    x: number,
+    y: number,
 }
 
 export interface Area {
@@ -76,9 +131,8 @@ export interface Area {
     effects: ActiveEffect[],
     textPopups: any[],
     treasurePopups: any[],
-    objects: AreaObject[],
-    backgroundObjects: AreaObject[],
     objectsByKey?: {[key in string]: AreaObject},
+    layers: AreaLayer[],
 
     // Used to show the chest open icon for the minimap.
     chestOpened?: boolean,

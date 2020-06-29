@@ -198,9 +198,10 @@ function exportGuildAreas(): SavedGuildAreas {
     for (let areaKey in zones.guild) {
         const area = getArea('guild', areaKey);
         const savedGuildArea: SavedGuildArea = {'objects': {}};
-        for (const object of area.objects) {
-            if (object.key && object.level) {
-                savedGuildArea.objects[object.key] = {level: object.level};
+        for (const key in area.objectsByKey) {
+            const object = area.objectsByKey[key];
+            if (object.level) {
+                savedGuildArea.objects[key] = {level: object.level};
             }
         }
         if (Object.keys(savedGuildArea.objects).length) {
