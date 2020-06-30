@@ -1074,13 +1074,13 @@ actionDefinitions.leap = {
         }
         // Use the skill directly if the target is already in range.
         if (isTargetInRangeOfSkill(actor, followupAction, target)) return false;
-        const skillDefinition = actionDefinitions[followupAction.source.key];
+        const skillDefinition = actionDefinitions[followupAction.base.type];
         if (!skillDefinition.isValid) return true;
         return skillDefinition.isValid(actor, followupAction, target);
     },
     shouldUse: (actor, leapSkill, target) => {
         const followupAction: Action = _.find(actor.actions, {source: {key: leapSkill.stats.action}});
-        const skillDefinition = actionDefinitions[followupAction.source.key];
+        const skillDefinition = actionDefinitions[followupAction.base.type];
         if (!skillDefinition.shouldUse) return true;
         return skillDefinition.shouldUse(actor, followupAction, target);
     },

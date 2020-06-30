@@ -679,7 +679,9 @@ function promptToCreateNewArea(zoneKey: ZoneType): void {
             type: 'oldGuild',
             width: 600,
             zoneKey,
-            layers: getStandardLayers(),
+            // Leave this empty so it will get initialized with the
+            // correct default layers for the area type.
+            layers: [],
         }
         zones[areaDefinition.zoneKey][areaKey] = areaDefinition;
     }

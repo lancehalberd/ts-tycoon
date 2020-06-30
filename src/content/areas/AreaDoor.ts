@@ -38,22 +38,45 @@ const southDoorHover = frameAnimation({...northSouthGuildBase, x: 4 * 32, y: 0, 
 const upstairs = frameAnimation({image: guildImage, x: 270, y: 94, w: 30, h: 51, d: 8});
 const downstairs = frameAnimation({image: guildImage, x: 300, y: 94, w: 30, h: 51, d: 8});
 
+const northCaveDoorGeometry = {w: 256, h: 86, content: {x: 120, y: 34, w: 32, h: 48}};
+const northCaveDoor = createAnimation('gfx2/areas/northdoor1.png', northCaveDoorGeometry);
+const northCaveDoorHover = createAnimation('gfx2/areas/northdoor2.png', northCaveDoorGeometry);
+
+const southCaveDoorGeometry = {w: 86, h: 24, content: {x: 24, y: 0, w: 32, h: 24}};
+const southCaveDoor = createAnimation('gfx2/areas/southdoor1.png', southCaveDoorGeometry);
+const southCaveDoorHover = createAnimation('gfx2/areas/southdoor2.png', southCaveDoorGeometry);
+
+const northMeadowDoorGeometry = {w: 256, h: 88, content: {x: 110, y: 40, w: 28, h: 48}};
+const northMeadowDoor = createAnimation('gfx2/areas/northdoormeadow.png', northMeadowDoorGeometry);
+const northMeadowDoorHover = createAnimation('gfx2/areas/northdoormeadowlight.png', northMeadowDoorGeometry);
+
+const southMeadowDoorGeometry = {w: 128, h: 16, content: {x: 46, y: 0, w: 32, h: 16}};
+const southMeadowDoor = createAnimation('gfx2/areas/southwalldoormeadow.png', southMeadowDoorGeometry);
+const southMeadowDoorHover = createAnimation('gfx2/areas/southwalldoormeadowlight.png', southMeadowDoorGeometry);
+
+
 const [sideDoorClosed, sideDoorAjar, sideDoorOpen] = createAnimation('gfx2/areas/guilddoorsheet.png', { w: 38, h: 50}, {cols: 3}).frames;
 
 export class AreaDoor extends EditableAreaObject {
     static animations = {
+        // Slanted/old guild doors
         openDoor: {normal: frameAnimation(guildRightDoor), hover: frameAnimation(guildRightDoorEmpty)},
         closedDoor: {normal: frameAnimation(guildRightDoor), hover: frameAnimation(guildRightDoorEmpty)},
-        //boardedDoor: frameAnimation(guildRightBoardedDoor),
-        woodBridge: {normal: woodBridge, hover: woodBridge},
-        caveDoorOpen: {normal: frameAnimation(caveDoorOpen), hover: frameAnimation(caveDoorOpen)},
-        caveDoorClosed: {normal: frameAnimation(caveDoorClosed), hover: frameAnimation(caveDoorClosed)},
-        backDoor: {normal: northDoor, hover: northDoorHover},
-        southDoor: {normal: southDoor, hover: southDoorHover},
         upstairs: {normal: upstairs, hover: upstairs},
         downstairs: {normal: downstairs, hover: downstairs},
+        // Straigh guild doors
         sideDoorClosed: {normal: frameAnimation(sideDoorClosed), hover: frameAnimation(sideDoorOpen)},
+        backDoor: {normal: northDoor, hover: northDoorHover},
+        southDoor: {normal: southDoor, hover: southDoorHover},
+        //boardedDoor: frameAnimation(guildRightBoardedDoor),
+        caveDoorOpen: {normal: frameAnimation(caveDoorOpen), hover: frameAnimation(caveDoorOpen)},
+        caveDoorClosed: {normal: frameAnimation(caveDoorClosed), hover: frameAnimation(caveDoorClosed)},
+        northCaveDoor: {normal: northCaveDoor, hover: northCaveDoorHover},
+        southCaveDoor: {normal: southCaveDoor, hover: southCaveDoorHover},
         //sideDoorAjar: frameAnimation(sideDoorAjar),
+        woodBridge: {normal: woodBridge, hover: woodBridge},
+        northMeadowDoor: {normal: northMeadowDoor, hover: northMeadowDoorHover},
+        southMeadowDoor: {normal: southMeadowDoor, hover: southMeadowDoorHover},
     };
 
     exit: Exit;

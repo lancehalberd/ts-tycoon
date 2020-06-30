@@ -59,6 +59,7 @@ export function displayPropertyPanel(properties: (EditorProperty<any> | Property
 export function hidePropertyPanel() {
     if (propertyPanelElement) {
         propertyPanelElement.remove();
+        propertyPanelElement = null;
     }
 }
 
