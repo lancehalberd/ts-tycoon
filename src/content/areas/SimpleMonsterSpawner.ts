@@ -18,6 +18,7 @@ import {
 
 export class SimpleMonsterSpawner implements MonsterSpawner {
     area: Area;
+    key: string;
     x: number;
     y: number;
     z: number;

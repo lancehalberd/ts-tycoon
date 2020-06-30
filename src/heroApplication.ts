@@ -84,7 +84,7 @@ export function showHeroApplication(application: HeroApplication) {
 }
 
 export function increaseAgeOfApplications() {
-    for (const application of HeroApplication.instances) {
+    for (const application of Object.values(HeroApplication.instances)) {
         if (!application || !application.applicant) return;
         application.applicant.applicationAge++;
     }

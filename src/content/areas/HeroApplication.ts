@@ -20,7 +20,7 @@ import {
 const paper = createAnimation('gfx2/objects/billboardpaper.png', {w: 24, h: 32, d: 0});
 
 export class HeroApplication extends EditableAreaObject {
-    static instances: HeroApplication[];
+    static instances: {[key: string]: HeroApplication} = {};
 
     name = 'Application';
     applicant: Applicant;
@@ -42,8 +42,16 @@ export class HeroApplication extends EditableAreaObject {
             draw = drawWhiteOutlinedFrame;
         }
         draw(context, this.getFrame(), rectangle);
+        // If no applicant is set yet, check if an applicant exists on the state.
+        // If not, create a new applicant.
         if (!this.applicant) {
-            this.setApplicant(createNewHeroApplicant());
+            const index = Object.keys(HeroApplication.instances).indexOf(this.key);
+            const applicants = getState().applicants;
+            if (index >= 0 && index < applicants.length) {
+                this.applicant = getState().applicants[index];
+            } else {
+                this.setApplicant(createNewHeroApplicant());
+            }
         }
         // Draw a faded job icon on the this application.
         context.save();
@@ -57,7 +65,7 @@ export class HeroApplication extends EditableAreaObject {
 
     setApplicant(applicant: Applicant) {
         this.applicant = applicant;
-        const index = HeroApplication.instances.indexOf(this);
+        const index = Object.keys(HeroApplication.instances).indexOf(this.key);
         if (index >= 0) {
             getState().applicants[index] = this.applicant;
         }

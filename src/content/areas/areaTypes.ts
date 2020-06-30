@@ -365,15 +365,16 @@ function addExits(area: Area, exits: Exit[], animations: {normal: FrameAnimation
         door.hoverAnimation = animations.hover;
         door.exit = exits[0];
         door.definition = {
-            "type": "door",
+            type: 'door',
+            key: 'entrance',
             // These fields are required on the definition, but
             // we are bypassing them in this context.
             exitKey: null,
             animation: null,
-            "x": 0,
-            "y": 0,
-            "z": -7,
-            "flipped": true,
+            x: 0,
+            y: 0,
+            z: -7,
+            flipped: true,
         };
         background.objects.push(door);
     }
@@ -383,15 +384,16 @@ function addExits(area: Area, exits: Exit[], animations: {normal: FrameAnimation
         door.hoverAnimation = animations.hover;
         door.exit = exits[1];
         door.definition = {
-            "type": "door",
+            type: 'door',
+            key: 'exit',
             // These fields are required on the definition, but
             // we are bypassing them in this context.
             exitKey: null,
             animation: null,
             x: 0,
-            xAlign: "right",
-            "y": 0,
-            "z": -7,
+            xAlign: 'right',
+            y: 0,
+            z: -7,
         };
         background.objects.push(door);
     }
@@ -409,6 +411,7 @@ function addChest(area: Area, loot: LootGenerator[]) {
     chest.loot = loot;
     chest.definition = {
         type: "treasureChest",
+        key: 'shrineChest',
         chestType: 'silverChest',
         x: area.width + SRandom.addSeed(area.seed).range(0, RANGE_UNIT * 4),
         y: 0,
@@ -426,6 +429,7 @@ function addShrine(area: Area, ability: Ability) {
     const shrine: SkillShrine = new SkillShrine();
     shrine.definition = {
         type: "skillShrine",
+        key: 'shrine',
         x: area.width + SRandom.addSeed(area.seed).range(0, RANGE_UNIT * 4),
         y: 0,
         z: 10,

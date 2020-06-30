@@ -20,12 +20,12 @@ export class EditableAreaObject implements AreaObject {
     static createFromDefinition(objectDefinition: AreaObjectDefinition): EditableAreaObject {
         const instance = new this().applyDefinition(objectDefinition);
         if (this.instances) {
-            this.instances.push(instance);
+            this.instances[objectDefinition.key] = instance;
         }
         return instance;
     }
 
-    static instances: EditableAreaObject[];
+    static instances: {[key: string]: EditableAreaObject};
 
     _areaTarget: AreaObjectTarget;
     definition: AreaObjectDefinition;

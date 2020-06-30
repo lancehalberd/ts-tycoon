@@ -250,12 +250,13 @@ export function importState(savedState: SavedState) {
         }
     }
     state.applicants = (savedState.applicants || []).map(importApplicant);
+    const allApplications = Object.values(HeroApplication.instances);
     for (let i = 0; i < state.applicants.length; i++) {
-        if (!HeroApplication.instances[i]) {
+        if (!allApplications[i]) {
             console.error(`No hero application available for applicant ${i}`);
             continue;
         }
-        HeroApplication.instances[i].applicant = state.applicants[i];
+        allApplications[i].applicant = state.applicants[i];
     }
     setMaxAnimaJewelBonus(savedState.maxAnimaJewelMultiplier || 1);
     // Read trophy data before characters so that their bonuses will be applied when
@@ -283,7 +284,7 @@ export function importState(savedState: SavedState) {
         addTrophyToAltar(altar, trophy);
     }
     addAllUnlockedFurnitureBonuses();
-    for (const bed of Bed.instances) {
+    for (const bed of Object.values(Bed.instances)) {
         if (savedState.unlockedGuildAreas[bed.area.key]) {
             state.availableBeds.push(bed);
         }

@@ -461,12 +461,12 @@ export function getEditingContextMenu(): MenuOption[] {
     ];
 }
 
-export function createObjectAtContextCoords(definition: AreaObjectDefinition): AreaObject {
+export function createObjectAtContextCoords(definition: Partial<AreaObjectDefinition>): AreaObject {
     const area = getState().selectedCharacter.hero.area;
     if (!definition.key || area.objectsByKey[definition.key]) {
         definition.key = uniqueObjectId(definition.type, area);
     }
-    return createObjectAtScreenCoords(definition, editingAreaState.contextCoords);
+    return createObjectAtScreenCoords(definition as AreaObjectDefinition, editingAreaState.contextCoords);
 }
 
 export function refreshPropertyPanel(): void {

@@ -20,7 +20,7 @@ export interface LocationDefinition {
 
 export interface BaseAreaObjectDefinition extends LocationDefinition {
     type: string,
-    key?: string,
+    key: string,
     shapeType?: 'oval' | 'rectangle',
     // Can be used to scale the entire size of the object.
     scale?: number,
@@ -62,7 +62,7 @@ export interface AreaObject {
     // definitions is what is actually updated and emitted by the editor.
     definition?: AreaObjectDefinition,
     applyDefinition?: (definition: AreaObjectDefinition) => this,
-    key?: string,
+    key: string,
     // Only used on upgradeable objects.
     level?: number,
     getActiveBonusSources?: () => BonusSource[],

@@ -2,7 +2,7 @@
 import { enterArea, getArea, startLevel } from 'app/adventure';
 import { addBonusSourceToObject, createVariableObject } from 'app/bonuses';
 import { newCharacter,updateHero } from 'app/character';
-import { Bed, HeroApplication } from 'app/content/areas';
+import { HeroApplication } from 'app/content/areas';
 import { zones } from 'app/content/zones';
 import { addAllItems } from 'app/content/equipment/index';
 import { addAllUnlockedFurnitureBonuses } from 'app/content/furniture';
@@ -37,10 +37,6 @@ import { showInitialWorldState } from 'app/worldState';
 import { Applicant, GuildStats } from 'app/types';
 
 export function initializeGuildAreas() {
-    // We need to reset these each time this function is called, otherwise we will
-    // double up on beds/applications.
-    HeroApplication.instances = [];
-    Bed.instances = [];
     for (let areaKey in zones.guild) {
         getArea('guild', areaKey);
     }
@@ -89,8 +85,9 @@ export function initializeGame() {
         hireCharacter(startingCharacter as Applicant);
         const otherKeys = jobRanks[0].slice();
         removeElementFromArray(otherKeys, jobKey, true);
-        for (let i = 0; i < HeroApplication.instances.length && otherKeys.length; i++) {
-            HeroApplication.instances[i].setApplicant(createNewHeroApplicant(otherKeys.pop()));
+        const allApplications = Object.values(HeroApplication.instances);
+        for (let i = 0; i < allApplications.length && otherKeys.length; i++) {
+            allApplications[i].setApplicant(createNewHeroApplicant(otherKeys.pop()));
         }
         enterArea(state.selectedCharacter.hero, guildYardEntrance);
     }

@@ -25,7 +25,9 @@ import {
 export class MonsterDefinitionAreaObject implements AreaObject {
     area: Area;
     index: number;
+    key: string;
     constructor(area: Area, index: number) {
+        this.key = `monster-${index}`;
         this.area = area;
         this.index = index;
     }
