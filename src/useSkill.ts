@@ -216,6 +216,10 @@ export function prepareToUseSkillOnTarget(actor: Actor, skill: Action, target: T
             skill.stats.recoveryTime || 0,
             1 / skill.stats.attackSpeed - skill.totalPreparationTime
         );
+    } else if (skill.variableObject.tags.triggersAction) {
+        const followupAction = _.find(actor.actions, {source: {key: skill.stats.action}});
+        skill.totalPreparationTime = followupAction?.stats?.prepTime || .2;
+        actor.totalRecoveryTime = followupAction?.stats?.recoveryTime || .1;
     } else {
         // As of writing this, no skill uses prepTime, but we could use it to make certain spells
         // take longer to cast than others.
@@ -1088,8 +1092,10 @@ actionDefinitions.leap = {
         const combinedRadius = (target.w + actor.w) / 2;
         const distance = getDistance(actor, target);
         actor.pull = {
-            x: (target.x < actor.x) ? target.x + combinedRadius : target.x - combinedRadius,
-            z: (target.z < actor.z) ? target.z + combinedRadius : target.z - combinedRadius,
+            // This used to aim for next to the target, but now that we introduced a delay,
+            // it seems better to just aim for the target directly.
+            x: target.x, //(target.x < actor.x) ? target.x + combinedRadius : target.x - combinedRadius,
+            z: target.z, //(target.z < actor.z) ? target.z + combinedRadius : target.z - combinedRadius,
             y: Math.min(100, Math.max(20, distance / 2)),
             time: actor.time + .3, damage: 0,
             action: _.find(actor.actions, {base: {key: leapSkill.stats.action}}),

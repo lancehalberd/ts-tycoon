@@ -90,7 +90,6 @@ function spellAction(type, rawAction: Partial<ActionData>, bonuses: Bonuses, hel
     return action;
 }
 
-
 export function buffEffect(rawEffect: Partial<Effect>, bonuses: Bonuses): Effect {
     return {
         ...rawEffect,
@@ -115,9 +114,10 @@ export const skills: {[key: string]: ActionData} = {
     'sideStep': movementAction('sideStep', {'icon': jobIcons.samurai, 'rangedOnly': true}, {'+cooldown': 10, '+moveDuration': .1, '+distance': 192,
                                         '$buff': buffEffect({}, {'++critChance': .2, '+duration': 2})},
                             'Side step a ranged attack and advance toward enemis gaining: {$buff}'),
-    // The preparation time for this depends on the skill set under $action, and $action will be used immediately after leaping with no preparation time.
+    // The preparation time for this depends on the skill set under $action,
+    // and $action will be used immediately after leaping with no preparation time.
     // The actor must actually have the skill specified under $action to use it.
-    leap: movementAction('leap', {icon: jobIcons.dancer}, {'+range': 8, '$action': 'basicAttack'}, 'Leap to a target'),
+    leap: movementAction('leap', {icon: jobIcons.dancer, tags: ['targetsLocation', 'triggersAction']}, {'+range': 8, '$action': 'basicAttack'}, 'Leap to a target'),
     // Attack actions
     'basicAttack': attackAction('attack', {'tags': ['basic']}, {}, 'A basic attack'),
     'healingAttack': attackAction('attack', {'animation': projectileAnimations.wandHealing, 'restrictions': ['wand'], 'target': 'otherAllies'}, {'$heals': true}, 'Basic attacks heal allies instead of damage enemies.'),

@@ -145,11 +145,6 @@ function exportHero(hero: Hero): SavedActor {
 }
 function importHero(heroData: SavedActor): Hero {
     const hero = makeHeroFromData(heroData);
-    /*if (window.location.search.substr(1) === 'test') {
-        for (const ability of (window.testAbilities || [])) {
-            hero.abilities.push(ability);
-        }
-    }*/
     for (let key in heroData.equipment) {
         const itemData = heroData.equipment[key];
         if (itemData) {

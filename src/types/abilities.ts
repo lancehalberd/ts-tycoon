@@ -128,6 +128,14 @@ export interface Ability {
     helpText?: string,
 }
 
+export interface ActionAbility extends Ability {
+    action: ActionData,
+}
+
+export interface ReactionAbility extends Ability {
+    reaction: ActionData,
+}
+
 export interface AttackData {
     // How far the attack has traveled (used on projectiles).
     distance: number,

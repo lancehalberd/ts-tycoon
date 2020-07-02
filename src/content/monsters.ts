@@ -1,7 +1,7 @@
 import { isPointOverActor } from 'app/actor';
 import { createVariableObject, addBonusSourceToObject, recomputeDirtyStats } from 'app/bonuses';
 import { actorHelpText, addActions, coreStatBonusSource, personFrames, recomputeActorTags } from 'app/character';
-import { abilities, leapAndAct } from 'app/content/abilities';
+import { abilities, leapAndAct, telegraphedAbility } from 'app/content/abilities';
 import { getPositionFromLocationDefinition } from 'app/content/areas';
 import { itemsByKey } from 'app/content/equipment/index';
 import { map } from 'app/content/mapData';
@@ -591,7 +591,7 @@ export function initializeMonsters() {
     }, monsters.wolf);
     // Should be tinted white.
     addMonster('snowWolf', {'name': 'Snow Wolf',
-            abilities: [leapAndAct('freeze'), abilities.freeze, abilities.minorIntelligence, abilities.sage]}, monsters.wolf);
+            abilities: [leapAndAct('freeze'), telegraphedAbility(abilities.freeze, 1.5), abilities.minorIntelligence, abilities.sage]}, monsters.wolf);
     addMonster('frostBite', {name: 'Frost Bite', abilities: [abilities.secondWind, abilities.wizard]}, monsters.snowWolf);
     addMonster('giantSpider', {
         'name': 'Giant Spider', 'source': spiderSource,

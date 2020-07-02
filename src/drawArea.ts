@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import { returnToGuild, returnToMap } from 'app/adventure';
 import { getSprite } from 'app/content/actors';
 import { areaTargetToScreenTarget, areaTypes } from 'app/content/areas';
@@ -24,8 +25,8 @@ import { drawFrame, getFrame } from 'app/utils/animations';
 import { arrMod, isPointInShortRect, rectangle, toR } from 'app/utils/index';
 
 import {
-    ActionData, Actor, ActorEffect, FrameAnimation,
-    Area, AreaLayer, AreaObject, AreaType
+    Action, ActionData, Actor, ActorEffect, FrameAnimation,
+    Area, AreaLayer, AreaObject, AreaType, ShortRectangle
 } from 'app/types';
 
 export const bufferCanvas: HTMLCanvasElement = createCanvas(ADVENTURE_WIDTH, ADVENTURE_HEIGHT);
@@ -149,12 +150,12 @@ function drawAreaLayer(this: void, context: CanvasRenderingContext2D, area: Area
         }
         // Draw effects that appear underneath sprites. Do not sort these, rather, just draw them in
         // the order they are present in the arrays.
-        for (const sprite of objects) {
-            sprite.drawGround?.(context);
-        }
         for (const actor of allActors) {
             drawActorShadow(context, actor);
             drawActorGroundEffects(context, actor);
+        }
+        for (const sprite of objects) {
+            sprite.drawGround?.(context);
         }
 
         const sortedObjects = objects.slice().sort(function (spriteA, spriteB) {
@@ -208,35 +209,81 @@ function drawActorGroundEffects(context: CanvasRenderingContext2D, actor: Actor)
             }
         }
     }
-    // Draw skill warnings for scary avoidable attacks.
-    if (actor.skillInUse &&
-        actor.area.enemies.indexOf(actor) >= 0 &&
+    if (
         // Don't bother showing warnings if the prep time isn't at least 0.5 seconds.
-        actor.skillInUse.totalPreparationTime >= 0.5
+        actor.skillInUse?.totalPreparationTime >= 0.5 &&
+        // Only draw warnings for enemy skills for now.
+        actor.area.enemies.indexOf(actor) >= 0
+
     ) {
-        const data: ActionData = actor.skillInUse.source.action;
+        drawSkillWarning(context, actor, actor.skillInUse);
+    }
+}
+
+// Draw skill warnings for scary avoidable attacks.
+function drawSkillWarning(context: CanvasRenderingContext2D, actor: Actor, skill: Action) {
+    const data: ActionData = skill.source.action;
+    const p = Math.min(1, actor.preparationTime / skill.totalPreparationTime);
+    if (skill.variableObject.tags.targetsDirection) {
         // Draw a line from the actor to the target for skills that
         // target a direction like 'recklessCharge'.
-        if (actor.skillInUse.variableObject.tags.targetsDirection) {
-            const source = areaTargetToScreenTarget(actor);
-            const target = areaTargetToScreenTarget(actor.skillTarget);
-            context.strokeStyle = 'red';
-            context.lineWidth = actor.d;
-            context.save();
-                context.globalAlpha = 0.3;
-                context.beginPath();
-                context.moveTo(source.x + source.w / 2, source.y + source.h);
-                context.lineTo(target.x + target.w / 2, target.y + target.h);
-                context.stroke();
-            context.restore();
-            const p = Math.min(1, actor.preparationTime / actor.skillInUse.totalPreparationTime);
+        const source = areaTargetToScreenTarget(actor);
+        const target = areaTargetToScreenTarget(actor.skillTarget);
+        context.strokeStyle = 'red';
+        context.lineWidth = actor.d;
+        context.save();
+            context.globalAlpha = 0.2;
+            context.beginPath();
+            context.moveTo(source.x + source.w / 2, source.y + source.h - source.d / 4);
+            context.lineTo(target.x + target.w / 2, target.y + target.h - target.d / 4);
+            context.stroke();
+            context.globalAlpha = 0.5;
             context.lineWidth = actor.d * p;
             context.beginPath();
-            context.moveTo(source.x + source.w / 2, source.y + source.h);
-            context.lineTo(target.x + target.w / 2, target.y + target.h);
+            context.moveTo(source.x + source.w / 2, source.y + source.h - source.d / 4);
+            context.lineTo(target.x + target.w / 2, target.y + target.h - target.d / 4);
             context.stroke();
+        context.restore();
+    }
+    if (skill.variableObject.tags.nova) {
+        const source = areaTargetToScreenTarget(actor);
+        drawWarningCircle(context, source, skill.stats.area, p);
+    }
+    if (skill.variableObject.tags.triggersAction) {
+        const followupAction = _.find(actor.actions, {source: {key: skill.stats.action}});
+        if (followupAction?.variableObject?.tags?.nova) {
+            // The x/y here should actually be based on what the expected coords are
+            // when the followup action will be applied. Using the target is an approximation
+            // of this for the leap skill spefically, but that is the only skill with a followup
+            // action currently.
+            const target = areaTargetToScreenTarget(actor.skillTarget);
+            drawWarningCircle(context, target, followupAction.stats.area, p);
         }
     }
+}
+function drawWarningCircle(context: CanvasRenderingContext2D, {x, y, w, h, d = 0}: ShortRectangle, r: number, p: number): void {
+    context.fillStyle = 'red';
+    context.save();
+        // Circles need to be drawn at half height for our perspective.
+        context.translate(x + w / 2, y + h - d / 4);
+        context.scale(1, 0.5);
+        context.globalAlpha = 0.2;
+        context.beginPath();
+        context.arc(
+            0, 0,
+            r * RANGE_UNIT,
+            0, 2 * Math.PI,
+        );
+        context.fill();
+        context.globalAlpha = 0.5;
+        context.beginPath();
+        context.arc(
+            0, 0,
+            p * r * RANGE_UNIT,
+            0, 2 * Math.PI,
+        );
+        context.fill();
+    context.restore();
 }
 export function drawMinimap(context: CanvasRenderingContext2D, area: Area) {
     const height = 3;

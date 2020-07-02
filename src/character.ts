@@ -154,12 +154,6 @@ export function newCharacter(job: Job): Character {
     };
     hero.character = character;
     character.board = readBoardFromData(job.startingBoard, character, abilities[abilityKey], true)
-    /*if (window.location.search.substr(1) === 'test') {
-        for (let i = 0; i < (window.testAbilities || []).length; i++) {
-            hero.abilities.push(window.testAbilities[i]);
-            console.log(abilityHelpText(testAbilities[i], hero));
-        }
-    }*/
     centerShapesInRectangle(character.board.fixed.map(j => j.shape).concat(character.board.spaces), rectangle(0, 0, character.boardCanvas.width, character.boardCanvas.height));
     drawBoardBackground(character.boardContext, character.board);
     for (const loot of (job.jewelLoot || [smallJewelLoot, smallJewelLoot, smallJewelLoot])) {
