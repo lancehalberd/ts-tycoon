@@ -245,13 +245,18 @@ function drawSkillWarning(context: CanvasRenderingContext2D, actor: Actor, skill
             context.stroke();
         context.restore();
     }
-    if (skill.variableObject.tags.nova) {
+    // Nova warning looks bad if it lingers after the skill starts because it
+    // interferes with the effect, and the warning is bound to the source, but the
+    // actual effect doesn't move once it starts. We don't have a way of getting the
+    // actual effect here so we can't bind the warning to the location the effect
+    // actually used.
+    if (skill.variableObject.tags.nova && p < 1) {
         const source = areaTargetToScreenTarget(actor);
         drawWarningCircle(context, source, skill.stats.area, p);
     }
     if (skill.variableObject.tags.triggersAction) {
         const followupAction = _.find(actor.actions, {source: {key: skill.stats.action}});
-        if (followupAction?.variableObject?.tags?.nova) {
+        if (followupAction?.variableObject?.tags?.nova && p < 1) {
             // The x/y here should actually be based on what the expected coords are
             // when the followup action will be applied. Using the target is an approximation
             // of this for the leap skill spefically, but that is the only skill with a followup
