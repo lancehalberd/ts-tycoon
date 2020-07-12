@@ -210,6 +210,8 @@ export function enterArea(actor: Actor, {x, z, areaKey, objectKey, zoneKey}: Exi
         updateSprite(area, actor, 0);
         // Update editing property panel when area changes so it doesn't become stale.
         if (editingAreaState.isEditing) {
+            editingAreaState.selectedLayer = null;
+            editingAreaState.selectedTiles = null;
             refreshPropertyPanel();
         }
     }

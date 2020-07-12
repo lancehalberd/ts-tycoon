@@ -9,6 +9,7 @@ import {
     areaObjectFactories, areaTargetToScreenTarget, areaTypes, areaWalls,
     createAreaObjectFromDefinition, createAreaFromDefinition,
     getLayer, getPositionFromLocationDefinition, getStandardLayers, isPointOverAreaTarget,
+    palettes,
 } from 'app/content/areas';
 import {
     MonsterDefinitionAreaObject,
@@ -24,11 +25,12 @@ import {
     deleteObject,
     getAddObjectMenuItem,
     getObjectContextMenu,
+    getObjectProperties,
     moveObject,
     refreshObjectDefinition,
     uniqueObjectId,
 } from 'app/development/editObjects';
-import { displayPropertyPanel, hidePropertyPanel } from 'app/development/propertyPanel';
+import { displayPropertyPanel, hidePropertyPanel, updateBrushCanvas } from 'app/development/propertyPanel';
 import { mainCanvas } from 'app/dom';
 import { ADVENTURE_HEIGHT, ADVENTURE_WIDTH, ADVENTURE_SCALE, BACKGROUND_HEIGHT, GROUND_Y, MAX_Z, MIN_Z } from 'app/gameConstants';
 import { isKeyDown, KEY } from 'app/keyCommands';
@@ -41,7 +43,7 @@ import {
     Actor, Area, AreaDefinition, AreaEntity, AreaObject, AreaObjectDefinition, AreaObjectTarget,
     EditorProperty, Frame, FrameDimensions,
     LocationDefinition, MenuOption, Monster, MonsterData, MonsterDefinition,
-    PropertyRow, ShortRectangle, ZoneType,
+    PropertyRow, ShortRectangle, TileGrid, ZoneType,
 } from 'app/types';
 
 interface Position {
@@ -52,6 +54,8 @@ interface EditingAreaState {
     isEditing: boolean,
     selectedObject: AreaObject,
     selectedMonsterIndex: number,
+    selectedLayer?: string,
+    selectedTiles?: TileGrid,
     // This will override the cameraX for the area.
     cameraX: number,
     contextCoords: number[],
@@ -61,6 +65,8 @@ export const editingAreaState: EditingAreaState = {
     isEditing: false,
     selectedObject: null,
     selectedMonsterIndex: -1,
+    selectedLayer: null,
+    selectedTiles: null,
     cameraX: null,
     contextCoords: null,
 }
@@ -74,10 +80,9 @@ export function getAreaDefinition(): AreaDefinition {
     return zones[area.zoneKey][area.key];
 }
 
-export function refreshArea() {
+export function refreshArea(area: Area = getCurrentArea()) {
     const { selectedObject } = editingAreaState;
-    const area = getCurrentArea();
-    applyDefinitionToArea(area, getAreaDefinition());
+    applyDefinitionToArea(area, zones[area.zoneKey][area.key]);
     // Select the most recently created object.
     if (selectedObject) {
         editingAreaState.selectedObject = area.objectsByKey[selectedObject.key];
@@ -97,12 +102,40 @@ export function deleteSelectedObject(): void {
     }
 }
 
+function attemptToPaintGrid(x: number, y: number) {
+    const area = getCurrentArea();
+    const areaDefinition = getAreaDefinition();
+    const layer = area.layers.find(l => l.key === editingAreaState.selectedLayer);
+    const brush = editingAreaState.selectedTiles;
+    if (!brush) {
+        return;
+    }
+    const tx = Math.floor((x + area.cameraX - layer.x) / layer.grid.palette.w);
+    const ty = Math.floor((y - layer.y) / layer.grid.palette.h);
+    const layerDefinition = areaDefinition.layers.find(l => l.key === editingAreaState.selectedLayer);
+    // console.log('painting', {tx, ty});
+    // Nothing will happen if the brush is completely outside of the grid.
+    for (let fty = Math.max(ty, 0); fty < layer.grid.h && fty < ty + brush.h; fty++) {
+        layerDefinition.grid.tiles[ty] = layer.grid.tiles[ty] = layer.grid.tiles[ty] || [];
+        for (let ftx = Math.max(tx, 0); ftx < layer.grid.w && ftx < tx + brush.w; ftx++) {
+            // Holding shift allows you to delete tiles instead.
+            layerDefinition.grid.tiles[ty][tx] =
+                layer.grid.tiles[ty][tx] = isKeyDown(KEY.SHIFT) ? null : brush.tiles[fty -ty]?.[ftx - tx];
+        }
+    }
+}
+
 // Note this actually fires on mousedown, not on click.
 export function handleEditAreaClick(x: number, y: number): void {
     //console.log('click', x, y);
     const hero = getState().selectedCharacter.hero;
     const area = hero.area;
     const areaDefinition = getAreaDefinition();
+    const layer = area.layers.find(l => l.key === editingAreaState.selectedLayer);
+    if (layer?.grid) {
+        attemptToPaintGrid(x, y);
+        return;
+    }
     editingAreaState.selectedMonsterIndex = -1;
     editingAreaState.selectedObject = null;
     editingAreaState.initialObjectPosition = null;
@@ -150,9 +183,12 @@ export function handleEditAreaClick(x: number, y: number): void {
 }
 
 export function handleEditMouseDragged(x: number, y: number, sx: number, sy: number): void {
-    const { selectedMonsterIndex, selectedObject } = editingAreaState;
+    const { selectedMonsterIndex, selectedLayer, selectedObject } = editingAreaState;
     const dx = x - sx, dy = y - sy;
-    if (selectedObject) {
+    const layer = getCurrentArea().layers.find(l => l.key === selectedLayer);
+    if (layer?.grid) {
+        attemptToPaintGrid(x, y);
+    } else if (selectedObject) {
         const area = getCurrentArea();
         dragLocationDefinition(selectedObject.definition, dx, dy);
         // Objects on the field area bound by the z limits.
@@ -179,16 +215,17 @@ function dragLocationDefinition(definition: LocationDefinition, dx: number, dy: 
             z: definition.z || 0,
         };
     }
+    const maxZ = getMaxZ(definition);
     definition.x = Math.round(dx + editingAreaState.initialObjectPosition.x);
     const targetY = Math.round(-dy
         + editingAreaState.initialObjectPosition.y
-        - (MAX_Z - editingAreaState.initialObjectPosition.z) / 2);
+        - (maxZ - editingAreaState.initialObjectPosition.z) / 2);
     if (targetY <= 0) {
         definition.y = 0;
-        definition.z = MAX_Z + targetY * 2
+        definition.z = maxZ + targetY * 2
     } else {
         definition.y = targetY;
-        definition.z = MAX_Z;
+        definition.z = maxZ;
     }
 }
 
@@ -214,6 +251,16 @@ function uniqueAreaId(): string {
     return id;
 }
 
+export function getMaxZ(definition: LocationDefinition): number {
+    if (definition.zAlign === 'back') {
+        return 0;
+    }
+    if (definition.zAlign === 'front') {
+        return 2 * MAX_Z;
+    }
+    return MAX_Z;
+}
+
 export function moveLocationDefinition(definition: LocationDefinition, dx: number, dy: number, dz: number): void {
     definition.x = (definition.x || 0 ) + dx;
     definition.y = (definition.y || 0 ) + dy;
@@ -221,18 +268,20 @@ export function moveLocationDefinition(definition: LocationDefinition, dx: numbe
     // Move items from the wall to the floor and vice-versa if they are aligned to the area
     // and hit the seam of the floor and back wall.
     if (!definition.parentKey) {
+        // The max z value for this location definition depends on the z-alignment.
+        const maxZ = getMaxZ(definition);
         if (definition.y < 0) {
             // Rather than move the object into the floor, start moving it along
             // the z-axis when it hits the floor.
             definition.z += definition.y;
             definition.y = 0;
-        } else if (definition.y > 0 && definition.z < MAX_Z) {
+        } else if (definition.y > 0 && definition.z < maxZ) {
             // Conversely, if something is moved up in the y direction, but isn't up against the back wall,
             // move it back in the z-direction before moving it up the wall.
             definition.z += definition.y;
             // If they moved it all the way to the back wall, start moving up the wall.
-            definition.y = Math.max(0, definition.z - MAX_Z);
-            definition.z = Math.min(definition.z, MAX_Z);
+            definition.y = Math.max(0, definition.z - maxZ);
+            definition.z = Math.min(definition.z, maxZ);
         }
     }
 }
@@ -307,7 +356,8 @@ export function updateEditArea(): boolean {
         return false;
     }
     const area = getState().selectedCharacter.hero.area;
-    let [x, y] = getMousePosition(mainCanvas, ADVENTURE_SCALE);
+    // DISABLE panning on mouse over, it is annoying.
+    /*let [x, y] = getMousePosition(mainCanvas, ADVENTURE_SCALE);
     x = Math.round(x);
     y = Math.round(y);
     if (x >= 0 && x < 30) {
@@ -315,7 +365,9 @@ export function updateEditArea(): boolean {
     }
     if (x <= ADVENTURE_WIDTH && x > ADVENTURE_WIDTH - 30) {
         adjustCamera(5);
-    }
+    }*/
+    // This will change which property panel is displayed based on the current selection.
+    updatePropertyPanel();
     return true;
 }
 
@@ -469,23 +521,44 @@ export function createObjectAtContextCoords(definition: Partial<AreaObjectDefini
     return createObjectAtScreenCoords(definition as AreaObjectDefinition, editingAreaState.contextCoords);
 }
 
+let lastPropertyTarget = null;
 export function refreshPropertyPanel(): void {
+    lastPropertyTarget = null;
+    return;
+}
+export function updatePropertyPanel(): void {
     if (!editingAreaState.isEditing) {
         hidePropertyPanel();
         return;
     }
     if (editingAreaState.selectedMonsterIndex >= 0) {
-        displayPropertyPanel(getSelectedMonsterProperties());
+        const monster = getAreaDefinition().monsters[editingAreaState.selectedMonsterIndex];
+        if (lastPropertyTarget !== monster) {
+            lastPropertyTarget = monster;
+            displayPropertyPanel(getSelectedMonsterProperties());
+        }
     } else if (editingAreaState.selectedObject) {
-
+        if (lastPropertyTarget !== editingAreaState.selectedObject) {
+            lastPropertyTarget = editingAreaState.selectedObject;
+            displayPropertyPanel(getSelectedObjectProperties());
+        }
     } else {
-        displayPropertyPanel(getAreaProperties());
+        const area = getCurrentArea();
+        if (lastPropertyTarget !== area) {
+            lastPropertyTarget = area;
+            displayPropertyPanel(getAreaProperties());
+        }
     }
 }
 
 function startEditing() {
+    // Cannot edit areas outside of zones (procedurely generated shrine quests, for example).
+    if (!getCurrentArea().zoneKey) {
+        return;
+    }
     editingAreaState.isEditing = true;
     editingAreaState.cameraX = getState().selectedCharacter.hero.area.cameraX;
+    (document.querySelector('.js-mainGame') as HTMLElement).style.marginLeft = '0';
     refreshPropertyPanel();
 }
 
@@ -493,6 +566,7 @@ export function stopEditing() {
     editingAreaState.isEditing = false;
     editingAreaState.selectedObject = null;
     editingAreaState.selectedMonsterIndex = -1;
+    (document.querySelector('.js-mainGame') as HTMLElement).style.marginLeft = 'auto';
     hidePropertyPanel();
 }
 
@@ -585,7 +659,10 @@ export function getAreaProperties(this: void): (EditorProperty<any> | PropertyRo
         value: areaDefinition.type,
         values: Object.keys(areaTypes),
         onChange(type) {
-            updateAreaDefinition({type});
+            if (getAreaDefinition().type !== type) {
+                editingAreaState.selectedLayer = null;
+                updateAreaDefinition({type});
+            }
         },
     });
     props.push([
@@ -639,7 +716,66 @@ export function getAreaProperties(this: void): (EditorProperty<any> | PropertyRo
         },
     }]);
 
+    props.push({
+        name: 'layer',
+        value: editingAreaState.selectedLayer || '',
+        values: ['Select Layer', ...area.layers.map(layer => layer.key)],
+        onChange(layerKey: string) {
+            if (layerKey === 'Select Layer') {
+                layerKey = null;
+            }
+            if (editingAreaState.selectedLayer === layerKey) {
+                return;
+            }
+            editingAreaState.selectedLayer = layerKey;
+            const layer = area.layers.find(l => l.key === layerKey);
+            if (layer?.grid) {
+                setSelectedTiles({
+                    palette: layer.grid.palette, w: 1, h: 1,
+                    tiles: [[{x: 0, y: 0}]],
+                });
+            }
+            refreshPropertyPanel();
+        }
+    });
+
+    const layer = area.layers.find(l => l.key === editingAreaState.selectedLayer);
+    if (layer?.grid) {
+        const layerDefinition = areaDefinition.layers.find(l => l.key === editingAreaState.selectedLayer);
+        props.push({
+            name: 'palette',
+            value: layerDefinition.grid.palette,
+            values: Object.keys(palettes),
+            onChange(paletteKey: string) {
+                if (paletteKey === layerDefinition.grid.palette) {
+                    return;
+                }
+                layerDefinition.grid.palette = paletteKey;
+                layer.grid.palette = palettes[paletteKey];
+                layer.grid.w = Math.ceil(area.width / layer.grid.palette.w);
+                setSelectedTiles({
+                    palette: layer.grid.palette, w: 1, h: 1,
+                    tiles: [[{x: 0, y: 0}]],
+                });
+                refreshPropertyPanel();
+            }
+        });
+        props.push({
+            name: 'brush',
+            value: editingAreaState.selectedTiles,
+            palette: layer.grid.palette,
+            onChange(tiles: TileGrid) {
+                setSelectedTiles(tiles);
+            }
+        });
+    }
+
     return props;
+}
+
+export function setSelectedTiles(selectedTiles: TileGrid): void {
+    editingAreaState.selectedTiles = selectedTiles;
+    updateBrushCanvas(selectedTiles);
 }
 
 export function getSelectedObjectContextMenu(): MenuOption[] {
@@ -669,6 +805,11 @@ export function getSelectedMonsterProperties(this: void): (EditorProperty<any> |
     const { selectedMonsterIndex } = editingAreaState;
     const monsterDefinition = getAreaDefinition().monsters[selectedMonsterIndex];
     return getMonsterProperties(monsterDefinition, getCurrentArea());
+}
+
+export function getSelectedObjectProperties(this: void): (EditorProperty<any> | PropertyRow | string)[] {
+    const { selectedObject } = editingAreaState;
+    return getObjectProperties(selectedObject);
 }
 
 function promptToCreateNewArea(zoneKey: ZoneType): void {
@@ -790,54 +931,59 @@ export function getSetWallTypeMenuItem(wallType: string, callback: (string) => v
     }
 }
 
+// One can adjust tiles by putting the mouse over them and moving the scroll wheel.
+// Usually it is better to use the tile brush, but this is fine in some cases.
 document.body.addEventListener('wheel', (event: WheelEvent) => {
     if (!editingAreaState.isEditing) {
+        return;
+    }
+    adjustCamera(event.deltaY);
+    // Used to be able to adjust tiles with mouse wheel, but replaced this with camera panning.
+    /*const layer = getCurrentArea().layers.find(l => l.key === editingAreaState.selectedLayer);
+    if (!layer?.grid) {
         return;
     }
     const area = getCurrentArea();
     const areaDefinition = getAreaDefinition();
     const [x, y] = getMousePosition(mainCanvas, ADVENTURE_SCALE);
-    for (const layer of [...getCurrentArea().layers].reverse()) {
-        if (!layer.grid) {
-            continue;
+    const tx = Math.floor((x + area.cameraX - layer.x) / layer.grid.palette.w);
+    const ty = Math.floor((y - layer.y) / layer.grid.palette.h);
+    if (tx < 0 || tx >= layer.grid.w || ty < 0 || ty >= layer.grid.h) {
+        return;
+    }
+    const layerDefinition = _.find(areaDefinition.layers, {key: layer.key});
+    layerDefinition.grid.tiles[ty] = layerDefinition.grid.tiles[ty] || [];
+    let tile = layerDefinition.grid.tiles[ty][tx];
+    const R = layer.grid.palette.source.w / layer.grid.palette.w;
+    const B = layer.grid.palette.source.h / layer.grid.palette.h;
+    if (!tile) {
+        if (event.deltaY > 0) {
+            tile = {x: 0, y: 0};
+        } else {
+            tile = {x: R - 1, y: B - 1};
         }
-        const tx = Math.floor((x + area.cameraX - layer.x) / layer.grid.palette.w);
-        const ty = Math.floor((y - layer.y) / layer.grid.palette.h);
-        if (tx >= 0 && tx < layer.grid.w && ty >= 0 && ty < layer.grid.h) {
-            const layerDefinition = _.find(areaDefinition.layers, {key: layer.key});
-            layerDefinition.grid.tiles[y] = layerDefinition.grid.tiles[y] || [];
-            let tile = layerDefinition.grid.tiles[ty][tx];
-            const R = layer.grid.palette.source.w / layer.grid.palette.w;
-            const B = layer.grid.palette.source.h / layer.grid.palette.h;
-            if (!tile) {
-                if (event.deltaY > 0) {
-                    tile = {x: 0, y: 0};
-                } else {
-                    tile = {x: R - 1, y: B - 1};
-                }
-            } else if (event.deltaY > 0) {
-                tile.x++;
-                if (tile.x >= R) {
-                    tile.x = 0;
-                    tile.y++;
-                    if (tile.y >= B) {
-                        tile = null;
-                    }
-                }
-            } else if (event.deltaY < 0) {
-                tile.x--;
-                if (tile.x < 0) {
-                    tile.x = R - 1;
-                    tile.y--;
-                    if (tile.y < 0) {
-                        tile = null;
-                    }
-                }
+    } else if (event.deltaY > 0) {
+        tile.x++;
+        if (tile.x >= R) {
+            tile.x = 0;
+            tile.y++;
+            if (tile.y >= B) {
+                tile = null;
             }
-            layerDefinition.grid.tiles[ty][tx] = tile;
-            refreshArea();
-            break;
+        }
+    } else if (event.deltaY < 0) {
+        tile.x--;
+        if (tile.x < 0) {
+            tile.x = R - 1;
+            tile.y--;
+            if (tile.y < 0) {
+                tile = null;
+            }
         }
     }
+    // Rather than refresh the entire area, just apply the change to both
+    // the definition and area simultaneously.
+    layerDefinition.grid.tiles[ty][tx] = tile;
+    layer.grid.tiles[ty][tx] = tile;*/
 });
 

@@ -169,6 +169,16 @@ const FieldArea: AreaType = {
     }
 };
 
+const VillageArea: AreaType = {
+    ...FieldArea,
+    addLayers(area) {
+        setStandardLayersOnArea(area);
+        getLayer(area, 'background').grid = {w: 1, h: 1, palette: palettes.meadowBackground, tiles: []};
+        getLayer(area, 'floor').grid = {w: 1, h: 3, palette: palettes.villageFloor, tiles: []};
+        getLayer(area, 'foreground').grid = {w: 1, h: 1, palette: palettes.meadowForeground, tiles: []};
+    },
+}
+
 const [stoneWallMid, stoneWallLeft, stoneWallRight, ...caveBackFrames] = createAnimation('gfx2/areas/cavebackground.png',
     {w: 128, h: 86}, {cols: 6}).frames;
 const caveThingFrames = createAnimation('gfx2/areas/cavethings.png',
@@ -449,5 +459,6 @@ export const areaTypes = {
     cave: CaveArea,
     beach: FieldArea,
     town: GuildArea,
+    village: VillageArea,
 };
 window['areaTypes'] = areaTypes;

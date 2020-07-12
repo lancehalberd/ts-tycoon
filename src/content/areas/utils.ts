@@ -40,7 +40,7 @@ export function createAreaObjectFromDefinition(areaObjectDefinition: AreaObjectD
 
 export function createNewArea(areaKey: string): Area {
     return {
-        areaType: 'field',
+        areaType: null,
         key: areaKey,
         width: 600,
         allies: [],

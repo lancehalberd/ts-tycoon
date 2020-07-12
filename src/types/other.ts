@@ -1,4 +1,5 @@
 import { JobIcon } from 'app/content/jobs';
+import { TileGrid, TilePalette } from 'app/types';
 
 export type Color = string;
 
@@ -99,7 +100,31 @@ export interface MenuOption {
     getChildren?: () => MenuOption[],
 }
 
-export interface EditorProperty<T> {
+export interface EditorArrayProperty<T> {
+    name: string,
+    // A button property will have no value.
+    value?: T[],
+    // If the property is an enum, you can set the list of all values.
+    values?: T[],
+    // If the property is editable, you can specify what happens when it is changed.
+    onChange: (newValue: T[]) => void,
+}
+
+// This is used to allow a user to select a tile/group of tiles from a tile palette.
+export interface EditorPaletteProperty {
+    name: string,
+    // The selection is a complete tile grid, but will often be used to represent a single tile.
+    value?: TileGrid,
+    palette: TilePalette,
+    onChange: (newValue: TileGrid) => void,
+}
+
+export interface EditorButtonProperty {
+    name: string,
+    onClick: () => void,
+}
+
+export interface EditorSingleProperty<T> {
     name: string,
     // A button property will have no value.
     value?: T,
@@ -107,7 +132,6 @@ export interface EditorProperty<T> {
     values?: T[],
     // If the property is editable, you can specify what happens when it is changed.
     onChange?: (newValue: T) => (T | void),
-    // For buttons, use instead of onChange.
-    onClick?: () => void,
 }
+export type EditorProperty<T> = EditorArrayProperty<T> | EditorSingleProperty<T> | EditorButtonProperty | EditorPaletteProperty;
 export type PropertyRow = (EditorProperty<any> | string)[];

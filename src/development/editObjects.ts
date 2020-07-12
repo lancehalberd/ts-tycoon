@@ -1,8 +1,9 @@
-import { addMonstersFromAreaDefinition } from 'app/adventure';
+import { addMonstersFromAreaDefinition, getArea } from 'app/adventure';
 import {
     applyDefinitionToArea,
     areaObjectFactories,
     getLayer, getLayerDefinition,
+    AreaDoorDefinition, SwitchDefinition,
 } from 'app/content/areas';
 import { getMonsterDefinitionAreaEntity, makeMonster, monsters } from 'app/content/monsters';
 import { zones } from 'app/content/zones';
@@ -16,13 +17,16 @@ import {
     refreshArea,
     refreshPropertyPanel,
 } from 'app/development/editArea';
-import { ADVENTURE_HEIGHT, BACKGROUND_HEIGHT, GROUND_Y } from 'app/gameConstants';
+import {
+    ADVENTURE_HEIGHT, BACKGROUND_HEIGHT, GROUND_Y, MAX_Z, MIN_Z
+} from 'app/gameConstants';
 import { getBasicAttack } from 'app/performAttack';
 import { getState } from 'app/state';
 import { abbreviate, fixedDigits, percent } from 'app/utils/formatters';
 
 import {
-    Area, AreaDefinition, AreaObject, AreaObjectDefinition, AreaObjectTarget,
+    Area, AreaDefinition, AreaObject,
+    AreaObjectDefinition, AreaObjectTarget,
     EditorProperty,
     MenuOption, Monster, MonsterDefinition, PropertyRow,
 } from 'app/types';
@@ -188,4 +192,121 @@ export function createObjectAtScreenCoords(definition: AreaObjectDefinition, coo
     }
     refreshArea();
     return area.objectsByKey[definition.key];
+}
+
+function isDoorDefinition(definition: AreaObjectDefinition): definition is AreaDoorDefinition {
+    return definition.type === 'door';
+}
+
+function isSwitchDefinition(definition: AreaObjectDefinition): definition is SwitchDefinition {
+    return definition.type === 'switch';
+}
+
+function updateObjectKey(object: AreaObject, key: string): void {
+    const updatedAreas = new Set<Area>([object.area]);
+    // Update all existing references to the current object key.
+    // 1. Alignment parents
+    for (const otherObject of Object.values(object.area.objectsByKey)) {
+        if (otherObject.definition.parentKey === object.key) {
+            otherObject.definition.parentKey = key;
+        }
+    }
+    // 2. Door exits
+    for (let areaKey in zones[object.area.zoneKey]) {
+        console.log('checking', areaKey);
+        const area = getArea(object.area.zoneKey, areaKey);
+        for (const otherObject of Object.values(area.objectsByKey)) {
+            const definition = otherObject.definition;
+            if (isDoorDefinition(definition)) {
+                console.log('checking', definition.exitKey);
+                let [targetAreaKey, targetObjectKey] = definition.exitKey.split(':');
+                if (targetAreaKey === object.area.key && targetObjectKey === object.key) {
+                    definition.exitKey = `${targetAreaKey}:${key}`;
+                    updatedAreas.add(area);
+                }
+            }
+        }
+    }
+    // 3. Switch targets
+    for (const otherObject of Object.values(object.area.objectsByKey)) {
+        const definition = otherObject.definition;
+        if (isSwitchDefinition(definition)) {
+            const index = definition.targets.indexOf(object.key);
+            if (index >=0) {
+                definition.targets.splice(index, 1, key);
+            }
+        }
+    }
+    console.log('update key', key);
+    object.definition.key = key;
+    for (const area of [...updatedAreas]) {
+        console.log('updating area', area.key);
+        refreshArea(area);
+    }
+}
+
+export function getObjectProperties(object: AreaObject): (EditorProperty<any> | PropertyRow | string)[] {
+    const definition = object.definition;
+    let props: (EditorProperty<any> | PropertyRow | string)[] = [];
+    props.push(object.definition.type);
+    const areaObjectFactory = areaObjectFactories[definition.type];
+    props.push({
+        name: 'key',
+        value: definition.key,
+        onChange: (key: string) => {
+            if (!key) {
+                return definition.x;
+            }
+            // Make sure new key is unique.
+            let newKey = key, n = 1;
+            // If the key is not unique, add a number to the end until it is.
+            while (object.area.objectsByKey[newKey]) {
+                newKey = `${key}${n++}`;
+            }
+            updateObjectKey(object, newKey);
+        },
+    });
+    if (areaObjectFactory.getProperties) {
+        props = [...props, ...areaObjectFactory.getProperties(object)];
+    }
+    props.push([{
+        name: 'x',
+        value: definition.x || 0,
+        onChange: (x: number) => {
+            if (isNaN(x)) {
+                return definition.x;
+            }
+            definition.x = Math.round(x);
+            refreshObjectDefinition(object);
+        },
+    }, {
+        name: 'y',
+        value: definition.y || 0,
+        onChange: (y: number) => {
+            if (isNaN(y)) {
+                return definition.y;
+            }
+            definition.y = Math.round(y);
+            refreshObjectDefinition(object);
+        },
+    }, {
+        name: 'z',
+        value: definition.z || 0,
+        onChange: (z: number) => {
+            if (isNaN(z)) {
+                return definition.z;
+            }
+            definition.z = Math.round(z);
+            refreshObjectDefinition(object);
+        },
+    }]);
+    props.push({
+        name: 'flipped',
+        value: definition.flipped || false,
+        onChange: (flipped: boolean) => {
+            definition.flipped = flipped;
+            refreshObjectDefinition(object);
+        },
+    });
+    return props;
 }

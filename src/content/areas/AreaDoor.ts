@@ -15,8 +15,9 @@ import { createAnimation, frame, getFrame, drawFrame, frameAnimation } from 'app
 import { r } from 'app/utils/index';
 
 import {
-    FrameAnimation, Area, AreaObject, BaseAreaObjectDefinition, AreaObjectTarget, Exit, Frame, Hero,
-    MenuOption, ShortRectangle,
+    EditorProperty, FrameAnimation, Area, AreaObject,
+    BaseAreaObjectDefinition, AreaObjectTarget, Exit, Frame, Hero,
+    MenuOption, PropertyRow, ShortRectangle,
 } from 'app/types';
 
 const [
@@ -194,6 +195,12 @@ export class AreaDoor extends EditableAreaObject {
                 });
             }
         }]
+    }
+
+    static getProperties(object: AreaDoor): (EditorProperty<any> | PropertyRow | string)[] {
+        const props = [];
+
+        return props;
     }
 }
 areaObjectFactories.door = AreaDoor;

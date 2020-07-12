@@ -57,6 +57,18 @@ const meadowFloor: TilePalette = {...fieldTileDims, source: meadowFieldTiles};
 const meadowBackground: TilePalette = {...meadowBgTileDims, source: meadowBackgroundTiles};
 const meadowForeground: TilePalette = {...meadowForegroundTileDims, source: meadowForegroundTiles};
 
+const smallDirtTiles = {image: requireImage('gfx2/areas/dirtpath.png'),
+    x: 0, y: 0, w: 16 * fieldTileDims.w, h: fieldTileDims.h};
+const largeDirtTiles = {image: requireImage('gfx2/areas/64dirtsheet.png'),
+    x: 0, y: 0, w: 26 * fieldTileDims.w, h: 2 * fieldTileDims.h};
+
+const dirtPaths: TilePalette = {...fieldTileDims, source: smallDirtTiles};
+const dirtRoads: TilePalette = {...fieldTileDims, source: largeDirtTiles};
+
+const villageFloor: TilePalette = combinePalettes([
+    dirtPaths, dirtRoads, meadowFloor,
+]);
+
 export const palettes = {
     caveFloor,
     caveBackground,
@@ -67,6 +79,7 @@ export const palettes = {
     meadowFloor,
     meadowBackground,
     meadowForeground,
+    villageFloor,
 };
 window['palettes'] = palettes;
 

@@ -127,6 +127,13 @@ const tunnel2: AreaDefinition = {
         {
             key: 'background', x: 0, y: 8,
             objects: [
+                {
+                    type: 'door',
+                    x: 572, zAlign: 'back', z: -54,
+                    animation: "openDoor",
+                    exitKey: "trapRoom:entrance",
+                    key: "templeDoor",
+                },
             ],
             grid: {
                 palette: 'caveBackground', w: 5, h: 1,
@@ -151,7 +158,180 @@ const tunnel2: AreaDefinition = {
             ],
             grid: {
                 palette: 'caveForeground', w: 7, h: 1,
-                tiles: [[{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0}]],
+                tiles: [[{x:0,y:0},null,{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0}]],
+            },
+        },
+    ],
+};
+
+const trapRoom: AreaDefinition = {
+    type: 'oldGuild',
+    width: 600,
+    layers: [
+        {
+            key: 'floor', x: 0, y: 84,
+            objects: [
+            ],
+            grid: {
+                palette: 'guildFloor', w: 19, h: 3,
+                tiles: [[{x:0,y:0},{x:0,y:2},{x:0,y:1},{x:0,y:0},{x:0,y:1},{x:0,y:0},{x:0,y:0},{x:0,y:1},{x:0,y:1},{x:0,y:2},{x:0,y:2},{x:0,y:1},{x:0,y:2},{x:0,y:1},{x:0,y:1},{x:0,y:2},{x:0,y:2},{x:0,y:1},{x:0,y:0}],[{x:0,y:1},{x:0,y:2},{x:0,y:1},{x:0,y:2},{x:0,y:1},{x:0,y:1},{x:0,y:0},{x:0,y:1},{x:0,y:2},{x:0,y:2},{x:0,y:2},{x:0,y:1},{x:0,y:1},{x:0,y:1},{x:0,y:2},{x:0,y:1},{x:0,y:0},{x:0,y:1},{x:0,y:0}],[{x:0,y:2},{x:0,y:1},{x:0,y:1},{x:0,y:2},{x:0,y:2},{x:0,y:1},{x:0,y:1},{x:0,y:1},{x:0,y:0},{x:0,y:0},{x:0,y:2},{x:0,y:0},{x:0,y:0},{x:0,y:1},{x:0,y:2},{x:0,y:2},{x:0,y:2},{x:0,y:0},{x:0,y:0}]],
+            },
+        },
+        {
+            key: 'backgroundWalls', x: 0, y: 0,
+            objects: [
+            ],
+            grid: {
+                palette: 'guildBackground', w: 5, h: 1,
+                tiles: [[{x:2,y:0},{x:0,y:0},{x:1,y:0},{x:0,y:0},{x:0,y:0}]],
+            },
+        },
+        {
+            key: 'background', x: 0, y: 0,
+            objects: [
+                {
+                    type: 'flameThrower',
+                    x: 127, zAlign: 'back', z: 22,
+                    animationKey: "nozzleAnimation",
+                    key: "flameThrower",
+                    onDuration: 1500,
+                    offDuration: 1000,
+                },
+                {
+                    type: 'door',
+                    x: 312, zAlign: 'back', z: 2,
+                    animation: "backDoor",
+                    exitKey: "treasureRoom:door",
+                    key: "treasureDoor",
+                },
+                {
+                    type: 'door',
+                    zAlign: 'back', z: -58, flipped: true,
+                    animation: "sideDoorClosed",
+                    exitKey: "tunnel2:templeDoor",
+                    key: "entrance",
+                },
+            ],
+            grid: {
+                palette: 'guildForeground', w: 19, h: 2,
+                tiles: [[{x:2,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:1,y:0}],[{x:4,y:0},null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,{x:3,y:0}],[]],
+            },
+        },
+        {
+            key: 'field', x: 0, y: 84,
+            objects: [
+            ],
+        },
+        {
+            key: 'foreground', x: 0, y: 0,
+            objects: [
+            ],
+            grid: {
+                palette: 'guildForeground', w: 19, h: 3,
+                tiles: [[],[],[{x:0,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:1,y:1}]],
+            },
+        },
+    ],
+};
+
+const treasureRoom: AreaDefinition = {
+    type: 'oldGuild',
+    width: 600,
+    layers: [
+        {
+            key: 'floor', x: 0, y: 84,
+            objects: [
+            ],
+            grid: {
+                palette: 'guildFloor', w: 19, h: 3,
+                tiles: [[{x:0,y:0},{x:0,y:2},{x:0,y:1},{x:0,y:0},{x:0,y:1},{x:0,y:0},{x:0,y:0},{x:0,y:1},{x:0,y:1},{x:0,y:2},{x:0,y:2},{x:0,y:1},{x:0,y:2},{x:0,y:1},{x:0,y:1},{x:0,y:2},{x:0,y:2},{x:0,y:1},{x:0,y:0}],[{x:0,y:1},{x:0,y:2},{x:0,y:1},{x:0,y:2},{x:0,y:1},{x:0,y:1},{x:0,y:0},{x:0,y:1},{x:0,y:2},{x:0,y:2},{x:0,y:2},{x:0,y:1},{x:0,y:1},{x:0,y:1},{x:0,y:2},{x:0,y:1},{x:0,y:0},{x:0,y:1},{x:0,y:0}],[{x:0,y:2},{x:0,y:1},{x:0,y:1},{x:0,y:2},{x:0,y:2},{x:0,y:1},{x:0,y:1},{x:0,y:1},{x:0,y:0},{x:0,y:0},{x:0,y:2},{x:0,y:0},{x:0,y:0},{x:0,y:1},{x:0,y:2},{x:0,y:2},{x:0,y:2},{x:0,y:0},{x:0,y:0}]],
+            },
+        },
+        {
+            key: 'backgroundWalls', x: 0, y: 0,
+            objects: [
+            ],
+            grid: {
+                palette: 'guildBackground', w: 5, h: 1,
+                tiles: [[{x:2,y:0},{x:0,y:0},{x:1,y:0},{x:0,y:0},{x:0,y:0}]],
+            },
+        },
+        {
+            key: 'background', x: 0, y: 0,
+            objects: [
+                {
+                    type: 'flameThrower',
+                    x: 380, zAlign: 'back', z: 22,
+                    animationKey: "nozzleAnimation",
+                    key: "flameC",
+                },
+                {
+                    type: 'flameThrower',
+                    x: 352, zAlign: 'back', z: 22,
+                    animationKey: "nozzleAnimation",
+                    key: "flameB",
+                    on: false,
+                },
+                {
+                    type: 'flameThrower',
+                    x: 323, zAlign: 'back', z: 22,
+                    animationKey: "nozzleAnimation",
+                    key: "flameA",
+                    on: true,
+                },
+                {
+                    type: 'switch',
+                    x: 236, zAlign: 'back', z: 8,
+                    animation: "backSwitch",
+                    targets: ["flameB","flameA"],
+                    key: "switch",
+                },
+                {
+                    type: 'switch',
+                    x: 268, zAlign: 'back', z: 8,
+                    animation: "backSwitch",
+                    targets: ["flameA","flameC","flameB"],
+                    key: "switch2",
+                },
+                {
+                    type: 'switch',
+                    x: 298, zAlign: 'back', z: 6,
+                    animation: "backSwitch",
+                    targets: ["flameB","flameC"],
+                    key: "switch3",
+                },
+            ],
+            grid: {
+                palette: 'guildForeground', w: 19, h: 2,
+                tiles: [[{x:2,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:1,y:0}],[{x:4,y:0},null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,{x:3,y:0}],[]],
+            },
+        },
+        {
+            key: 'field', x: 0, y: 84,
+            objects: [
+                {
+                    type: 'obstacle',
+                    x: 553, z: 16,
+                    animationGroup: "guildFurniture",
+                    animationKey: "silverChest",
+                    key: "obstacle",
+                },
+            ],
+        },
+        {
+            key: 'foreground', x: 0, y: 0,
+            objects: [
+                {
+                    type: 'door',
+                    x: 64, z: -100,
+                    animation: "southDoor",
+                    exitKey: "trapRoom:treasureDoor",
+                    key: "door",
+                },
+            ],
+            grid: {
+                palette: 'guildForeground', w: 19, h: 3,
+                tiles: [[],[],[{x:0,y:1},{x:2,y:1},{x:3,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:1,y:1}]],
             },
         },
     ],
@@ -161,4 +341,6 @@ zones.prologue = {
     entrance,
     tunnel,
     tunnel2,
+    trapRoom,
+    treasureRoom,
 };

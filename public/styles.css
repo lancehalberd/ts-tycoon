@@ -1704,3 +1704,27 @@ p {
     margin: 0;
     margin-left: 4px;
 }
+.pp-container input[type="number"] {
+    margin: 0;
+    margin-left: 4px;
+    width: 4em;
+}
+.pp-tag-container {
+    border: 1px solid black;
+    padding: 4px;
+    background: white;
+}
+.pp-tag {
+    background-color: #AAA;
+    border-radius: 4px;
+    padding: 2px 4px;
+    cursor: pointer;
+    color: white;
+}
+.pp-tag:after-content {
+    content: 'x';
+    color: #AAA;
+}
+.pp-tag:hover:after-content {
+    color: red;
+}

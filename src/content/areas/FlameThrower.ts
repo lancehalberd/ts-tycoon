@@ -9,6 +9,7 @@ import {
 } from 'app/content/areas';
 import { map } from 'app/content/mapData';
 import { createObjectAtContextCoords } from 'app/development/editArea';
+import { refreshObjectDefinition } from 'app/development/editObjects';
 import { bodyDiv, titleDiv } from 'app/dom';
 import { FRAME_LENGTH, MAX_Z } from 'app/gameConstants';
 import { requireImage } from 'app/images';
@@ -18,10 +19,9 @@ import { createAnimation, drawFrame, frameAnimation, getFrame } from 'app/utils/
 
 import {
     Area, AreaObject, AreaObjectTarget, AreaTarget, BaseAreaObjectDefinition,
-    Exit, Frame, FrameAnimation, Hero,
-    LootGenerator, MenuOption, ShortRectangle, TreasureChestDefinition,
+    EditorProperty, Exit, Frame, FrameAnimation, Hero,
+    LootGenerator, MenuOption, PropertyRow, ShortRectangle, TreasureChestDefinition,
 } from 'app/types';
-
 
 const nozzleAnimation = createAnimation('gfx2/objects/firetrapsheet.png', {w: 24, h: 24});
 
@@ -31,9 +31,17 @@ const flameEndAnimation = createAnimation('gfx2/effects/fireanimation.png', {w: 
 
 const flameHitAnimation = createAnimation('gfx2/effects/firehit.png', {w: 32, h: 24}, {cols: 2});
 
-
 export interface FlameThrowerDefinition extends BaseAreaObjectDefinition {
     animationKey: string,
+    // How long the warmup phase is before the flame actually comes out.
+    warmupDuration: number,
+    // Whether the flamethrower is on initially.
+    on: boolean,
+    // How long, in ms, the flame thrower stays on before automatically switching off.
+    // 0 means forever
+    onDuration: number,
+    // How long, in ms, the flame thrower stays off before automatically switching on.
+    offDuration: number,
 }
 
 export class FlameThrower extends EditableAreaObject {
@@ -44,25 +52,27 @@ export class FlameThrower extends EditableAreaObject {
     // Whether the flame thrower is currently on.
     // Note that there is a delay for it actually firing after it turns on.
     on = false;
-    // How long the warmup phase is before the flame actually comes out.
-    warmupDuration = 500;
-    // How long, in ms, the flame thrower stays on before automatically switching off.
-    // 0 means forever
-    onDuration = 0;
-    // How long, in ms, the flame thrower stays off before automatically switching on.
-    offDuration = 0;
 
     onAnimationTime: number;
     offAnimationTime: number;
 
     target: AreaTarget;
-    constructor() {
-        super();
-        // Start these higher than the animation durations.
-        this.onAnimationTime = 2000;
-        this.offAnimationTime = 2000;
-        this.onDuration = this.warmupDuration + 1000;
-        this.offDuration = 800;
+    applyDefinition(definition: FlameThrowerDefinition): this {
+        this._areaTarget = null;
+        this.definition = definition;
+        this.on = definition.on || false;
+        this.onAnimationTime = this.getOnDuration() + 1000;
+        this.offAnimationTime = this.getOffDuration() + 1000;
+        return this;
+    }
+    getOnDuration() {
+        return this.definition.onDuration || 0;
+    }
+    getOffDuration() {
+        return this.definition.offDuration || 0;
+    }
+    getWarmupDuration() {
+        return this.definition.warmupDuration || 500;
     }
     onToggle() {
         if (this.on) {
@@ -83,7 +93,7 @@ export class FlameThrower extends EditableAreaObject {
             return;
         }
         this.on = false;
-        if (this.onAnimationTime < this.warmupDuration) {
+        if (this.onAnimationTime < this.getWarmupDuration()) {
             this.offAnimationTime = flameEndAnimation.duration + 1000;
         } else {
             this.offAnimationTime = 0;
@@ -92,9 +102,11 @@ export class FlameThrower extends EditableAreaObject {
     update() {
         this.onAnimationTime += FRAME_LENGTH;
         this.offAnimationTime += FRAME_LENGTH;
-        if (this.on && this.onAnimationTime >= this.onDuration) {
+        const onDuration = this.getOnDuration();
+        const offDuration = this.getOffDuration();
+        if (this.on && onDuration && this.onAnimationTime >= onDuration) {
             this.turnOff();
-        } else if (!this.on && this.offAnimationTime >= this.offDuration) {
+        } else if (!this.on && offDuration && this.offAnimationTime >= offDuration) {
             this.turnOn();
         }
         let {x, w} = this.getAreaTarget();
@@ -105,7 +117,7 @@ export class FlameThrower extends EditableAreaObject {
         let smallestDistance = 0;
         if (this.on) {
             const frameIndex = Math.floor(
-                (this.onAnimationTime - this.warmupDuration) / (flameAnimation.frameDuration * FRAME_LENGTH)
+                (this.onAnimationTime - this.getWarmupDuration()) / (flameAnimation.frameDuration * FRAME_LENGTH)
             );
             // The flame doesn't reach full length initially
             if (frameIndex === 0) smallestDistance = 56;
@@ -186,11 +198,12 @@ export class FlameThrower extends EditableAreaObject {
             h = Math.floor((MAX_Z - this.target.z - this.target.d / 2) / 2) + 8;
         }
         if (this.on) {
-            if (this.onAnimationTime < this.warmupDuration) {
+            const warmupDuration = this.getWarmupDuration();
+            if (this.onAnimationTime < warmupDuration) {
                 const frame = getFrame(flameStartAnimation, this.onAnimationTime);
                 drawFrame(context, {...frame, h}, {...frame, x, y, h});
             } else {
-                const frame = getFrame(flameAnimation, this.onAnimationTime - this.warmupDuration);
+                const frame = getFrame(flameAnimation, this.onAnimationTime - warmupDuration);
                 drawFrame(context, {...frame, h}, {...frame, x, y, h});
             }
         }
@@ -215,6 +228,50 @@ export class FlameThrower extends EditableAreaObject {
                 createObjectAtContextCoords({type: 'flameThrower', animationKey: 'nozzleAnimation'});
             }
         };
+    }
+
+    static getProperties(object: FlameThrower): (EditorProperty<any> | PropertyRow | string)[] {
+        const props = [];
+        props.push({
+            name: 'Style',
+            value: object.definition.animationKey,
+            values: Object.keys(FlameThrower.animations),
+            onChange: (animationKey: string) => {
+                object.definition.animationKey = animationKey;
+                refreshObjectDefinition(object);
+            },
+        });
+        props.push([{
+            name: 'On',
+            value: object.definition.on || false,
+            onChange: (on: boolean) => {
+                object.definition.on = on;
+                refreshObjectDefinition(object);
+            },
+        }, {
+            name: 'Warmup',
+            value: object.getWarmupDuration(),
+            onChange: (duration: number) => {
+                object.definition.warmupDuration = duration;
+                refreshObjectDefinition(object);
+            },
+        }]);
+        props.push([{
+            name: 'On Time',
+            value: object.getOnDuration(),
+            onChange: (duration: number) => {
+                object.definition.onDuration = duration;
+                refreshObjectDefinition(object);
+            },
+        }, {
+            name: 'Off Time',
+            value: object.getOffDuration(),
+            onChange: (duration: number) => {
+                object.definition.offDuration = duration;
+                refreshObjectDefinition(object);
+            },
+        }]);
+        return props;
     }
 }
 areaObjectFactories.flameThrower = FlameThrower;

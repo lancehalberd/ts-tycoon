@@ -64,7 +64,17 @@ export function drawArea(context: CanvasRenderingContext2D, area: Area) {
     const cameraX = area.cameraX;
     context.clearRect(0, 0, ADVENTURE_WIDTH, ADVENTURE_HEIGHT);
     for (const layer of area.layers) {
-        drawAreaLayer(context, area, layer);
+        if (editingAreaState.isEditing &&
+            editingAreaState.selectedLayer &&
+            editingAreaState.selectedLayer !== layer.key
+        ) {
+            context.save();
+                context.globalAlpha *= 0.5;
+                drawAreaLayer(context, area, layer);
+            context.restore();
+        } else {
+            drawAreaLayer(context, area, layer);
+        }
     }
 
     // Draw text popups such as damage dealt, item points gained, and so on.

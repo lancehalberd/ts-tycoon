@@ -110,7 +110,7 @@ const guildFoyer: AreaDefinition = {
                 },
                 {
                     type: 'decoration',
-                    x: 50, y: 25, zAlign: 'back',
+                    x: 50, y: 10, zAlign: 'back',
                     key: "nicheA",
                     animationGroup: "guildWall",
                     animationKey: "niche",
@@ -124,7 +124,7 @@ const guildFoyer: AreaDefinition = {
                 },
                 {
                     type: 'decoration',
-                    xAlign: 'middle', x: -30, y: 35, zAlign: 'back',
+                    xAlign: 'middle', x: -30, y: 20, zAlign: 'back',
                     key: "nicheB",
                     animationGroup: "guildWall",
                     animationKey: "niche",
@@ -145,7 +145,7 @@ const guildFoyer: AreaDefinition = {
                 },
                 {
                     type: 'decoration',
-                    xAlign: 'middle', x: 30, y: 35, zAlign: 'back',
+                    xAlign: 'middle', x: 30, y: 20, zAlign: 'back',
                     key: "nicheC",
                     animationGroup: "guildWall",
                     animationKey: "niche",
@@ -166,7 +166,7 @@ const guildFoyer: AreaDefinition = {
                 },
                 {
                     type: 'decoration',
-                    xAlign: 'right', x: -50, y: 25, zAlign: 'back',
+                    xAlign: 'right', x: -50, y: 10, zAlign: 'back',
                     key: "nicheD",
                     animationGroup: "guildWall",
                     animationKey: "niche",

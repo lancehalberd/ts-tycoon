@@ -1,6 +1,11 @@
-import { tagElement } from 'app/dom';
+import { createCanvas, tagElement } from 'app/dom';
+import { drawFrame } from 'app/utils/animations';
+import { getMousePosition, isMouseDown } from 'app/utils/mouse';
 
-import { EditorProperty, PropertyRow } from 'app/types';
+import {
+    EditorArrayProperty, EditorButtonProperty, EditorPaletteProperty, EditorProperty, EditorSingleProperty,
+    PropertyRow, TileGrid,
+} from 'app/types';
 
 let propertyPanelElement = null;
 let propertiesByName: {[key: string]: EditorProperty<any>} = {};
@@ -9,19 +14,14 @@ let propertiesByName: {[key: string]: EditorProperty<any>} = {};
 export function displayPropertyPanel(properties: (EditorProperty<any> | PropertyRow | string)[]): void {
     hidePropertyPanel();
     propertiesByName = {};
-    const lines = [];
+    propertyPanelElement = tagElement('div', 'pp-container');
     for (const property of properties) {
         if (Array.isArray(property)) {
-            lines.push(renderPropertyRow(property));
+            propertyPanelElement.append(renderPropertyRow(property));
         } else {
-            lines.push(renderPropertyRow([property]));
+            propertyPanelElement.append(renderPropertyRow([property]));
         }
     }
-    propertyPanelElement = tagElement('div', 'pp-container', lines.join(''));
-    /*propertyPanelElement.addEventListener('click', (event: MouseEvent) => {
-        console.log('click');
-        console.log(event.target);
-    });*/
     propertyPanelElement.addEventListener('change', (event: InputEvent) => {
         const input = (event.target as HTMLElement).closest('input')
             || (event.target as HTMLElement).closest('select');
@@ -30,7 +30,7 @@ export function displayPropertyPanel(properties: (EditorProperty<any> | Property
             if (isStringProperty(property) && property.onChange) {
                 // If there is a validation error, onChange will return
                 // the value to set the input to.
-                const newValue = property.onChange(input.value);
+                const newValue = property.onChange(input.value.trim());
                 if (newValue) {
                     input.value = newValue;
                 }
@@ -43,14 +43,36 @@ export function displayPropertyPanel(properties: (EditorProperty<any> | Property
                 }
             } else if (isBooleanProperty(property) && property.onChange) {
                 property.onChange((input as HTMLInputElement).checked);
+            } else if (isStringArrayProperty(property)) {
+                property.value.push(input.value);
+                // The value gets added to the tags UI, so we don't keep it
+                // selected in the select. Also, the value will be removed from
+                // the select options.
+                input.value = '';
+                property.onChange(property.value);
             }
         }
     });
     propertyPanelElement.addEventListener('click', (event: InputEvent) => {
         const button = (event.target as HTMLElement).closest('button');
-        const property = button && propertiesByName[button.name];
-        if (property && property.onClick) {
-            property.onClick();
+        if (button) {
+            const property = propertiesByName[button.name];
+            if (isButtonProperty(property)) {
+                property.onClick();
+            }
+        }
+        const tag = (event.target as HTMLElement).closest('.pp-tag');
+        if (tag) {
+            const container = tag.closest('.pp-tag-container') as HTMLElement;
+            const property = container && propertiesByName[container.getAttribute('name')];
+            if (isStringArrayProperty(property)) {
+                const value = tag.textContent;
+                const index = property.value.indexOf(value);
+                if (index >= 0) {
+                    property.value.splice(index, 1);
+                    property.onChange(property.value);
+                }
+            }
         }
     });
     document.body.append(propertyPanelElement);
@@ -58,30 +80,128 @@ export function displayPropertyPanel(properties: (EditorProperty<any> | Property
 
 export function hidePropertyPanel() {
     if (propertyPanelElement) {
-        propertyPanelElement.remove();
+        const temp = propertyPanelElement;
+        // Set this to null before removing, otherwise if there is an on blur handle that also
+        // triggers hidePropertyPanel, it will try to remove the element twice.
         propertyPanelElement = null;
+        temp.remove();
     }
 }
 
-function renderPropertyRow(row: PropertyRow): string {
-    return `<div class="pp-row">${row.map(property => renderProperty(property)).join('')}</div>`
+function renderPropertyRow(row: PropertyRow): HTMLElement {
+    const div = tagElement('div', 'pp-row');
+    for (const property of row) {
+        const element = renderProperty(property);
+        if (typeof element === 'string') {
+            div.innerHTML += element;
+        } else {
+            div.append(element);
+        }
+    }
+    return div;
 }
 
-function isStringProperty(property: EditorProperty<any>): property is EditorProperty<string> {
-    return typeof(property.value) === 'string';
+// For now stringArray is the only supported type of array prop.
+// We might be able to support other types if we check the type of the option values.
+function isStringArrayProperty(property: EditorProperty<any>): property is EditorArrayProperty<string> {
+    return Array.isArray(property?.['value']);
 }
-function isNumberProperty(property: EditorProperty<any>): property is EditorProperty<number> {
-    return typeof(property.value) === 'number';
+function isStringProperty(property: EditorProperty<any>): property is EditorSingleProperty<string> {
+    return typeof(property?.['value']) === 'string';
 }
-function isBooleanProperty(property: EditorProperty<any>): property is EditorProperty<boolean> {
-    return typeof(property.value) === 'boolean';
+function isNumberProperty(property: EditorProperty<any>): property is EditorSingleProperty<number> {
+    return typeof(property?.['value']) === 'number';
+}
+function isBooleanProperty(property: EditorProperty<any>): property is EditorSingleProperty<boolean> {
+    return typeof(property?.['value']) === 'boolean';
+}
+function isButtonProperty(property: EditorProperty<any>): property is EditorButtonProperty {
+    return !!property?.['onClick'];
+}
+function isPaletteProperty(property: EditorProperty<any>): property is EditorPaletteProperty {
+    return !!property?.['palette'];
 }
 
-function renderProperty(property: EditorProperty<any> | string): string {
+const brushCanvas = createCanvas(100, 100);
+brushCanvas.style.border = '1px solid black';
+const brushContext = brushCanvas.getContext('2d');
+export function updateBrushCanvas(selectedTiles: TileGrid): void {
+    const brushWidth = selectedTiles.w * selectedTiles.palette.w;
+    const brushHeight = selectedTiles.h * selectedTiles.palette.h;
+    const scale = Math.min(brushCanvas.width / brushWidth, brushCanvas.height / brushHeight);
+    // TODO: Make this light grey 5px checkers to indicate transparent areas.
+    brushContext.fillStyle = 'white';
+    brushContext.fillRect(0, 0, brushCanvas.width, brushCanvas.height);
+    brushContext.save();
+    {
+        // Center the brush in the canvas?
+        brushContext.translate(
+            (brushCanvas.width - brushWidth * scale) / 2,
+            (brushCanvas.height - brushHeight * scale) / 2,
+        );
+        brushContext.scale(scale, scale);
+        const image = selectedTiles.palette.source.image;
+        const w = selectedTiles.palette.w;
+        const h = selectedTiles.palette.h;
+        for (let tx = 0; tx < selectedTiles.w; tx++) {
+            for (let ty = 0; ty < selectedTiles.h; ty++) {
+                const tile = selectedTiles.tiles[ty]?.[tx];
+                if (!tile) {
+                    continue;
+                }
+                const frame = {
+                    image, w, h,
+                    x: selectedTiles.palette.source.x + w * tile.x,
+                    y: selectedTiles.palette.source.y + h * tile.y,
+                };
+                drawFrame(brushContext, frame, {w, h, x: tx * w, y: ty * h});
+            }
+        }
+    }
+    brushContext.restore();
+}
+
+// TODO: only return HTMLElements from this function
+function renderProperty(property: EditorProperty<any> | string): string | HTMLElement {
     if (typeof(property) === 'string') {
         return `<span class="pp-property">${property}</span>`;
     }
-    if (property.onChange) {
+    if (isPaletteProperty(property)) {
+        propertiesByName[property.name] = property;
+        const width = property.palette.source.w;
+        const height = property.palette.source.h;
+        const span = tagElement('span', 'pp-property');
+        const image = property.palette.source.image;
+
+        const selectTile = () => {
+            let [x, y] = getMousePosition(image);
+            const tx = Math.floor(x / property.palette.w);
+            const ty = Math.floor(y / property.palette.h);
+            property.onChange({
+                palette: property.palette, w: 1, h: 1,
+                tiles: [[{x: tx, y: ty}]],
+            });
+        }
+        // Prevent dragging ghost preview of the image around.
+        image.draggable = false;
+        image.onclick = (e) => {
+            selectTile();
+        }
+        image.onmousemove = () => {
+            if (isMouseDown()) {
+                selectTile();
+            }
+        }
+        span.style.display = 'flex';
+        span.style.flexDirection = 'column';
+        span.style.alignItems = 'center';
+        span.append(property.palette.source.image);
+        span.append(brushCanvas);
+        return span;
+    } else if (isButtonProperty(property)) {
+        propertiesByName[property.name] = property;
+        return `<span class="pp-property"><button name="${property.name}">${property.name}</button></span>`;
+    } else if (property.onChange) {
         propertiesByName[property.name] = property;
         if (isStringProperty(property)) {
             if (property.values) {
@@ -108,10 +228,25 @@ function renderProperty(property: EditorProperty<any> | string): string {
                         ${property.name}
                         <input type="checkbox" ${property.value ? 'checked' : ''} name="${property.name}" />
                     </span>`;
+        } else if (isStringArrayProperty(property)) {
+            const options = property.values.filter(v => !property.value.includes(v));
+            const selectedContainer = property.value.length ? `
+                <div class="pp-tag-container" name="${property.name}">
+                    ${property.value.map(v => `<span class="pp-tag">${v}</span>`).join('')}
+                </div>
+                ` : '';
+
+            return `<span class="pp-property">
+                        <div>
+                            ${property.name} <select name="${property.name}" ${!options.length ? 'disabled' : ''}>
+                                <option disabled selected value> -- Add -- </option>
+                                ${options.map(val => `<option>${val}</option>`)}
+                            </select>
+                        </div>
+                        ${selectedContainer}
+                    </span>`;
         }
-    } else if (property.onClick) {
-        propertiesByName[property.name] = property;
-        return `<span class="pp-property"><button name="${property.name}">${property.name}</button></span>`;
+    } else {
+        return `<span class="pp-property">${property.name}: ${property.value}</span>`;
     }
-    return `<span class="pp-property">${property.name}: ${property.value}</span>`;
 }

@@ -4,7 +4,10 @@ import {
     Frame, Hero, JobAchievement, MonsterSpawn, ZoneType,
 } from 'app/types';
 
-import { AreaDecorationDefinition, AreaDoorDefinition, FlameThrowerDefinition } from 'app/content/areas';
+import {
+    AreaDecorationDefinition, AreaDoorDefinition, FlameThrowerDefinition,
+    SwitchDefinition,
+} from 'app/content/areas';
 
 export interface LocationDefinition {
     // Default to 0, relative to the parent coordinates.
@@ -39,6 +42,7 @@ export type AreaObjectDefinition = BaseAreaObjectDefinition
     | AreaDecorationDefinition
     | AreaDoorDefinition
     | FlameThrowerDefinition
+    | SwitchDefinition
     | TreasureChestDefinition
     | UpgradeableObjectDefinition
     ;
@@ -47,6 +51,7 @@ export interface AreaObject {
     update?: () => void,
     getAreaTarget: () => AreaObjectTarget,
     onInteract?: (actor: Actor) => void,
+    onToggle?: (switchOn: boolean) => void,
     shouldInteract?: (actor: Actor) => boolean,
     isEnabled?: () => boolean,
     render?: (context: CanvasRenderingContext2D) => void,

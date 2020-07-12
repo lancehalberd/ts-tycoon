@@ -19,6 +19,7 @@ export * from 'app/content/areas/SimpleMonsterSpawner';
 export * from 'app/content/areas/ShrineOfCreation';
 export * from 'app/content/areas/ShrineOfFortune';
 export * from 'app/content/areas/SkillShrine';
+export * from 'app/content/areas/Switch';
 export * from 'app/content/areas/TreasureChest';
 export * from 'app/content/areas/TrophyAltar';
 export * from 'app/content/areas/areaTypes';
