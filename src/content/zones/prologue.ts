@@ -28,6 +28,13 @@ const entrance: AreaDefinition = {
                     exitKey: "tunnel:door",
                     key: "door",
                 },
+                {
+                    type: 'message',
+                    x: 33, y: 99, zAlign: 'back',
+                    messages: ["Your salvation lies ahead."],
+                    key: "message",
+                    delay: 1000,
+                },
             ],
             grid: {
                 palette: 'meadowBackground', w: 2, h: 1,
@@ -83,6 +90,13 @@ const tunnel: AreaDefinition = {
                     exitKey: "tunnel2:door",
                     key: "door2",
                 },
+                {
+                    type: 'message',
+                    x: 51, y: 77, zAlign: 'back',
+                    messages: ["Are you strong enough to seize it?"],
+                    key: "message",
+                    delay: 1000,
+                },
             ],
             grid: {
                 palette: 'caveBackground', w: 5, h: 1,
@@ -133,6 +147,13 @@ const tunnel2: AreaDefinition = {
                     animation: "openDoor",
                     exitKey: "trapRoom:entrance",
                     key: "templeDoor",
+                },
+                {
+                    type: 'message',
+                    x: 44, y: 75, zAlign: 'back',
+                    messages: ["Your enemies will outnumber you"],
+                    key: "message",
+                    delay: 1000,
                 },
             ],
             grid: {
@@ -210,6 +231,13 @@ const trapRoom: AreaDefinition = {
                     animation: "sideDoorClosed",
                     exitKey: "tunnel2:templeDoor",
                     key: "entrance",
+                },
+                {
+                    type: 'message',
+                    x: 29, y: 66, zAlign: 'back',
+                    messages: ["Your path is perilous"],
+                    key: "message",
+                    delay: 1000,
                 },
             ],
             grid: {

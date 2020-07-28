@@ -4,21 +4,32 @@ import {
 } from 'app/content/areas';
 import { map } from 'app/content/mapData';
 import { bodyDiv, titleDiv } from 'app/dom';
-import { requireImage } from 'app/images';
 import { getState } from 'app/state';
 import { activateShrine } from 'app/ui/chooseBlessing';
+import { createAnimation } from 'app/utils/animations';
 
 import {
     Area, AreaObject, AreaObjectDefinition, AreaObjectTarget, Exit, Frame, Hero,
     MenuOption, ShortRectangle,
 } from 'app/types';
-const guildImage = requireImage('gfx/guildhall.png');
-const shrineFrame:Frame = {image: guildImage, x: 360, y: 180, w: 60, h: 60, content: {x: 20, y: 0, w: 20, h: 60, d: 30}};
+
+const [
+    dexterityStatue,
+    strengthStatue,
+    intelligenceStatue,
+] = createAnimation('gfx2/objects/God statues.png', {w: 40, h: 68}, {cols: 3}).frames;
 
 export class SkillShrine extends EditableAreaObject {
+    static animations = {
+        dexterityStatue,
+        strengthStatue,
+        intelligenceStatue,
+    };
+
+    frame = dexterityStatue;
     name = 'Shrine of Divinity';
     getFrame(): Frame {
-        return shrineFrame;
+        return this.frame;
     }
     onInteract = activateShrine;
     helpMethod() {

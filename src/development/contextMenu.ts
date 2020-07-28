@@ -1,5 +1,6 @@
 import { initializeActorForAdventure } from 'app/actor';
 import { enterArea } from 'app/adventure';
+import { setSelectedCharacter } from 'app/character';
 import { cutscenes } from 'app/content/cutscenes';
 import { missions, setupMission } from 'app/content/missions';
 import { getEditingContextMenu, stopEditing } from 'app/development/editArea';
@@ -132,7 +133,7 @@ function getCutsceneMenu(): MenuOption[] {
 }
 
 function getMissionMenu(): MenuOption[] {
-    const character = getState().selectedCharacter;
+    let character = getState().selectedCharacter;
     return [{
         getLabel() {
             return 'Mission...';
@@ -143,6 +144,12 @@ function getMissionMenu(): MenuOption[] {
                 return {
                     label: `Start ${missionKey}: ${mission.name}`,
                     onSelect() {
+                        if (mission.getCharacter) {
+                            character = mission.getCharacter();
+                            //const importedCharacter = importCharacter(savedCharacter);
+                            character.hero.heading = [1, 0, 0];
+                            setSelectedCharacter(character);
+                        }
                         setupMission(character, missionKey);
                         initializeActorForAdventure(character.hero)
                         enterArea(character.hero, {zoneKey: mission.zoneKey, areaKey: mission.areaKey, x: 60, z: 0});

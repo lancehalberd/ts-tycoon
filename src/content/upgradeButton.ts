@@ -79,8 +79,8 @@ export function drawUpgradeBox() {
     drawRectangleBackground(mainContext, upgradeRectangle);
     const currentTier = upgradingObject.getCurrentTier();
     const nextTier = upgradingObject.getNextTier();
-    drawFrame(mainContext, currentTier.frame, {x: upgradeRectangle.x + 5, y: upgradeRectangle.y + 2, w: 20, h: 20});
-    drawFrame(mainContext, nextTier.frame, {x: upgradeRectangle.x + 5, y: upgradeRectangle.y + 35, w: 20, h: 20});
+    //drawFrame(mainContext, currentTier.frame, {x: upgradeRectangle.x + 5, y: upgradeRectangle.y + 2, w: 20, h: 20});
+    //drawFrame(mainContext, nextTier.frame, {x: upgradeRectangle.x + 5, y: upgradeRectangle.y + 35, w: 20, h: 20});
     //drawImage(mainContext, currentTier.source.image, currentTier.source, {'x': upgradeRectangle.x + 5, 'y': upgradeRectangle.y + 2, 'w': 20, 'h': 20});
     //drawImage(mainContext, nextTier.source.image, nextTier.source, {'x': upgradeRectangle.x + 5, 'y': upgradeRectangle.y + 35, 'w': 20, 'h': 20});
     mainContext.textAlign = 'left'

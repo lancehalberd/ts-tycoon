@@ -437,6 +437,7 @@ function addShrine(area: Area, ability: Ability) {
     }
     area.isShrineArea = true;
     const shrine: SkillShrine = new SkillShrine();
+    shrine.frame = SRandom.addSeed(area.seed).element(SkillShrine.animations);
     shrine.definition = {
         type: "skillShrine",
         key: 'shrine',
@@ -444,6 +445,7 @@ function addShrine(area: Area, ability: Ability) {
         y: 0,
         z: 10,
     };
+
     getLayer(area, 'field').objects.push(shrine);
     area.width = shrine.definition.x + RANGE_UNIT * 20;
 }

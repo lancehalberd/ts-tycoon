@@ -6,7 +6,7 @@ import {
 
 import {
     AreaDecorationDefinition, AreaDoorDefinition, FlameThrowerDefinition,
-    SwitchDefinition,
+    MessageDefinition, SwitchDefinition,
 } from 'app/content/areas';
 
 export interface LocationDefinition {
@@ -42,6 +42,7 @@ export type AreaObjectDefinition = BaseAreaObjectDefinition
     | AreaDecorationDefinition
     | AreaDoorDefinition
     | FlameThrowerDefinition
+    | MessageDefinition
     | SwitchDefinition
     | TreasureChestDefinition
     | UpgradeableObjectDefinition
@@ -95,7 +96,6 @@ export type FixedObject = AreaObject;
 
 export interface UpgradeableObjectTier {
     name: string,
-    frame: Frame,
     bonuses?: Bonuses,
     // This tier cannot be upgraded to the next tier unless this requirement is met.
     requires?: 'workshop' | 'magicWorkshop',

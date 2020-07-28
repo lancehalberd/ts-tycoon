@@ -1,9 +1,19 @@
 import { GuildGate } from 'app/content/areas';
 import { getZone } from 'app/content/zones';
 import { getArea } from 'app/adventure';
+import { getMysteriousSage } from 'app/development/testCharacters/special';
 import { ActiveMission, Character, MissionParameters, Zone } from 'app/types';
 
 const allMissions: MissionParameters[] = [
+    {
+        key: 'prlogue',
+        name: 'Prologue',
+        zoneKey: 'prologue',
+        areaKey: 'entrance',
+        type: 'dream',
+        getCharacter: getMysteriousSage,
+        //timeLimit: 1000000,
+    },
     {
         key: 'mission1',
         name: 'Clear the Outpost',

@@ -3,6 +3,9 @@ import { ADVENTURE_HEIGHT, ADVENTURE_WIDTH, BACKGROUND_HEIGHT, BOTTOM_HUD_HEIGHT
 import { ActiveMission } from 'app/types';
 
 export function drawMissionHUD(context: CanvasRenderingContext2D, mission: ActiveMission) {
+    if (mission.parameters.type === 'dream') {
+        return;
+    }
     context.fillStyle = 'white';
     context.fillRect(0, ADVENTURE_HEIGHT - BOTTOM_HUD_HEIGHT, ADVENTURE_WIDTH, BOTTOM_HUD_HEIGHT);
     context.fillStyle = 'black';

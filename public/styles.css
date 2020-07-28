@@ -1612,14 +1612,26 @@ p {
     letter-spacing: 1px;
     text-align: center;
     white-space: normal;
-}
-.textBubble .revealedText {
     color: black;
 }
-.textBubble .fadedText {
+.textBanner {
+    position: absolute;
+    top: 30px;
+    left: 30px;
+    width: 900px;
+    min-height: 50px;
+    background-color: rgba(0, 0, 150, 0.6);
+    padding: 10px 15px;
+    letter-spacing: 1px;
+    text-align: left;
+    white-space: normal;
+    color: white;
+    font-size: 30px;
+}
+.textBubble .fadedText, .textBanner .hiddenText {
     color: #999;
 }
-.textBubble .hiddenText {
+.textBubble .hiddenText, .textBanner .hiddenText {
     color: transparent;
 }
 .arrow {

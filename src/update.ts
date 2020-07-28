@@ -101,6 +101,10 @@ export function update() {
             activeGuildAreaHash[hero.area.key] = true;
         } else if (character.mission) {
             const mission = character.mission;
+            // Dream missions have no start delay.
+            if (!mission.started && mission.parameters.type === 'dream') {
+                mission.started = true;
+            }
             mission.animationTime += FRAME_LENGTH;
             const parameters = mission.parameters;
             if (mission.started) {

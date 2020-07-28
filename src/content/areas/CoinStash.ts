@@ -31,7 +31,11 @@ const [
     smallSafe, largeSafe,
 ] = createAnimation('gfx2/objects/coinstash.png', {w: 32, h: 40, content: {x: 6, y: 20, w: 20, h: 20, d: 18}}, {cols: 8}).frames;
 
-const coinStashTiers: UpgradeableObjectTier[] = [
+interface CoinStashTier extends UpgradeableObjectTier {
+    frame: Frame,
+}
+
+const coinStashTiers: CoinStashTier[] = [
     {'name': 'Coin Bag', 'bonuses': {'+maxCoins': 500}, 'upgradeCost': 500, frame: smallBag},
     {'name': 'Large Coin Bag', 'bonuses': {'+maxCoins': 4000}, 'upgradeCost': 10000, frame: largeBag},
     {'name': 'Coin Bank', 'bonuses': {'+maxCoins': 30000}, 'upgradeCost': 150000, 'requires': 'workshop', frame: smallBank},
@@ -113,7 +117,7 @@ export class CoinStash extends EditableAreaObject implements UpgradeableObject {
             getLabel: () => 'Level',
             getChildren() {
                 const zoneKey = object.area.zoneKey;
-                return coinStashTiers.map((stashTier: UpgradeableObjectTier, index: number): MenuOption => {
+                return coinStashTiers.map((stashTier: CoinStashTier, index: number): MenuOption => {
                     return {
                         getLabel: () => `${(index + 1)} ${stashTier.name}`,
                         onSelect() {

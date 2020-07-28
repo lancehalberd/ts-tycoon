@@ -15,6 +15,7 @@ export * from 'app/content/areas/FlameThrower';
 export * from 'app/content/areas/GuildGate';
 export * from 'app/content/areas/HeroApplication';
 export * from 'app/content/areas/MapTable';
+export * from 'app/content/areas/Message';
 export * from 'app/content/areas/SimpleMonsterSpawner';
 export * from 'app/content/areas/ShrineOfCreation';
 export * from 'app/content/areas/ShrineOfFortune';

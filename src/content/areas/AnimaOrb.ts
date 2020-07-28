@@ -9,7 +9,7 @@ import { editingAreaState } from 'app/development/editArea';
 import { titleDiv, bodyDiv } from 'app/dom';
 import { ADVENTURE_WIDTH, GROUND_Y } from 'app/gameConstants';
 import { bonusSourceHelpText } from 'app/helpText';
-import { drawWhiteOutlinedFrame, drawTintedFrame, requireImage } from 'app/images';
+import { drawWhiteOutlinedFrame, drawTintedFrame } from 'app/images';
 import { isKeyDown, KEY } from 'app/keyCommands';
 import { canAffordCost, costHelpText, hidePointsPreview, previewCost } from 'app/points';
 import { getCanvasPopupTarget, removePopup } from 'app/popup';
@@ -18,20 +18,60 @@ import { createAnimation, frame, getFrame, drawFrame, frameAnimation } from 'app
 import { r, fillRect, isPointInRect } from 'app/utils/index';
 
 import {
-    Area, AreaObject, AreaObjectTarget, Exit, Frame, Hero,
+    Area, AreaObject, AreaObjectTarget, Exit, Frame, FrameAnimation, FrameDimensions, Hero,
     ShortRectangle, UpgradeableObject, UpgradeableObjectDefinition, UpgradeableObjectTier,
 } from 'app/types';
-const guildImage = requireImage('gfx/guildhall.png');
 
-const brokenOrbFrame:Frame = {image: guildImage, x: 240, y: 150, w: 30, h: 30};
-const fixedOrbFrame:Frame = {image: guildImage, x: 270, y: 150, w: 30, h: 30};
+const dimensions: FrameDimensions = {w: 50, h: 50, content: {x: 19, y: 11, w: 11, h: 37, d: 10}};
 
-const animaOrbTiers: UpgradeableObjectTier[] = [
-    {'name': 'Cracked Anima Orb', 'bonuses': {'+maxAnima': 100}, 'upgradeCost': {'coins': 1000, 'anima': 50}, frame: brokenOrbFrame},
-    {'name': '"Fixed" Anima Orb', 'bonuses': {'+maxAnima': 2500}, 'upgradeCost': {'coins': 10000, 'anima': 5000}, frame: brokenOrbFrame},
-    {'name': 'Restored Anima Orb', 'bonuses': {'+maxAnima': 50000}, 'upgradeCost': {'coins': 10e6, 'anima': 250000}, 'requires': 'workshop', frame: fixedOrbFrame},
-    {'name': 'Enchanted Anima Orb', 'bonuses': {'+maxAnima': 5e6}, 'upgradeCost': {'coins': 10e9, 'anima': 50e6}, 'requires': 'magicWorkshop', frame: fixedOrbFrame},
-    {'name': 'Perfected Anima Orb', 'bonuses': {'+maxAnima': 500e6}, 'requires': 'magicWorkshop', frame: fixedOrbFrame},
+const [
+    brokenPedestal,
+    fixedPedestal,
+    silverPedestal,
+    goldenPedestal,
+] = createAnimation('gfx2/objects/pedastalsheet.png', dimensions, {cols: 4}).frames;
+
+const crackedOrb = createAnimation('gfx2/objects/orbsheet.png', dimensions, {cols: 2, duration: 25});
+const dullOrb = createAnimation('gfx2/objects/orbsheet.png', dimensions, {x: 2, cols: 2, duration: 25});
+const brightOrb = createAnimation('gfx2/objects/orbsheet.png', dimensions, {x: 4, cols: 2, duration: 25});
+const perfectOrb = createAnimation('gfx2/objects/orbsheet.png', dimensions, {x: 6, cols: 2, duration: 25});
+
+const smallGlow = createAnimation('gfx2/objects/glowsheet.png', dimensions, {cols: 2, duration: 15});
+const mediumGlow = createAnimation('gfx2/objects/glowsheet.png', dimensions, {x: 1, cols: 2, duration: 15});
+const bigGlow = createAnimation('gfx2/objects/glowsheet.png', dimensions, {x: 2, cols: 2, duration: 15});
+const fullGlow = createAnimation('gfx2/objects/glowsheet.png', dimensions, {x: 3, cols: 2, duration: 15});
+
+interface AnimaOrbTier extends UpgradeableObjectTier {
+    orbAnimation: FrameAnimation,
+    pedestalFrame: Frame,
+}
+
+const animaOrbTiers: AnimaOrbTier[] = [
+    {
+        name: 'Cracked Anima Orb', bonuses: {'+maxAnima': 100},
+        upgradeCost: {coins: 1000, anima: 50},
+        orbAnimation: crackedOrb, pedestalFrame: brokenPedestal,
+    },
+    {
+        name: '"Fixed" Anima Orb', bonuses: {'+maxAnima': 2500},
+        upgradeCost: {coins: 10000, anima: 5000},
+        orbAnimation: crackedOrb, pedestalFrame: fixedPedestal,
+    },
+    {
+        name: 'Restored Anima Orb', bonuses: {'+maxAnima': 50000},
+        upgradeCost: {coins: 10e6, anima: 250000}, requires: 'workshop',
+        orbAnimation: dullOrb, pedestalFrame: fixedPedestal,
+    },
+    {
+        name: 'Enchanted Anima Orb', bonuses: {'+maxAnima': 5e6},
+        upgradeCost: {coins: 10e9, anima: 50e6}, requires: 'magicWorkshop',
+        orbAnimation: brightOrb, pedestalFrame: silverPedestal,
+    },
+    {
+        name: 'Perfected Anima Orb', bonuses: {'+maxAnima': 500e6},
+        requires: 'magicWorkshop',
+        orbAnimation: perfectOrb, pedestalFrame: goldenPedestal,
+    },
 ];
 
 function drawFlashing(context: CanvasRenderingContext2D, frame: Frame, target: ShortRectangle): void {
@@ -58,20 +98,48 @@ export class AnimaOrb extends EditableAreaObject implements UpgradeableObject {
     }
 
     getFrame(): Frame {
-        return animaOrbTiers[this.level - 1].frame;
+        return getFrame(animaOrbTiers[this.level - 1].orbAnimation, this.area.time * 1000);
     }
 
     render(context: CanvasRenderingContext2D) {
-        // Draw with white outlines when this is the canvas target.
-        const frame = this.getFrame();
-        let draw = drawFrame;
-        if (getCanvasPopupTarget() === this) {
-            draw = drawWhiteOutlinedFrame;
-        } else if (animaOrbTiers[this.level - 1].upgradeCost && canAffordCost(animaOrbTiers[this.level - 1].upgradeCost)) {
-            draw = drawFlashing;
-        }
+        const tier = this.getCurrentTier();
+        const { orbAnimation, pedestalFrame } = tier;
+        const orbFrame = getFrame(orbAnimation, this.area.time * 1000);
+        const target = this.getAreaTarget();
         const isEditing = editingAreaState.selectedObject === this;
-        drawFrameToAreaTarget(context, this.getAreaTarget(), {...frame, flipped: this.definition.flipped}, draw, isEditing && isKeyDown(KEY.SHIFT));
+        drawFrameToAreaTarget(context, target, {...pedestalFrame, flipped: this.definition.flipped}, drawFrame, isEditing && isKeyDown(KEY.SHIFT));
+        drawFrameToAreaTarget(context, target, {...orbFrame, flipped: this.definition.flipped}, drawFrame);
+
+        // We use a static glow frame to indicate the hover state.
+        if (getCanvasPopupTarget() === this) {
+            drawFrameToAreaTarget(context, target, {...smallGlow.frames[0], flipped: this.definition.flipped}, drawFrame);
+            return;
+        }
+
+        // Normally the glow animation is determined by how much anima is in the orb and how
+        // full it is, but we always show the full glow when an upgrade is available.
+        let glowAnimation = null;
+        const canUpgrade = tier.upgradeCost && canAffordCost(tier.upgradeCost);
+        if (canUpgrade) {
+            glowAnimation = fullGlow;
+        } else {
+            const gameState = getState();
+            const anima = gameState.savedState.anima;
+            const maxAnima = gameState.guildStats.maxAnima;
+            if (anima >= 50e6 && anima >= 0.95 * maxAnima) {
+                glowAnimation = fullGlow;
+            } else if (anima >= 250000 && anima >= 0.65 * maxAnima) {
+                glowAnimation = bigGlow;
+            } else if (anima >= 5000 && anima >= 0.35 * maxAnima) {
+                glowAnimation = mediumGlow;
+            } else if (anima >= 50 && anima >= 0.05 * maxAnima) {
+                glowAnimation = smallGlow;
+            }
+        }
+        if (glowAnimation) {
+            const glowFrame =  getFrame(glowAnimation, this.area.time * 1000);
+            drawFrameToAreaTarget(context, target, {...glowFrame, flipped: this.definition.flipped}, drawFrame);
+        }
     }
 
     getActiveBonusSources() {

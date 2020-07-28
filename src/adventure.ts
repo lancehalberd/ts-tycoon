@@ -5,7 +5,7 @@ import {
     addVariableChildToObject,
     recomputeDirtyStats, removeBonusSourceFromObject, setStat,
 } from 'app/bonuses';
-import { baseDivinity, refreshStatsPanel} from 'app/character';
+import { baseDivinity, refreshStatsPanel, setSelectedCharacter} from 'app/character';
 import { getSprite } from 'app/content/actors';
 import { createAreaFromDefinition, getLayer, getPositionFromLocationDefinition } from 'app/content/areas';
 import { addAreaFurnitureBonuses } from 'app/content/furniture';
@@ -904,7 +904,17 @@ export function returnToMap(character: Character) {
 }
 
 export function returnToGuild(character: Character) {
-    character.mission = null;
+    if (character.mission) {
+        if (character.mission.parameters.getCharacter) {
+            setSelectedCharacter(getState().characters[0]);
+        }
+        character.mission = null;
+    }
+    // If this was a temporary character, they have been deleted,
+    // and we can ignore the rest of this cleanup.
+    if (!character.hero) {
+        return;
+    }
     removeAdventureEffects(character.hero);
     character.hero.goalTarget = null;
     character.activeShrine = null;

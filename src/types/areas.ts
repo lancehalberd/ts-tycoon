@@ -15,12 +15,14 @@ export interface MissionParameters {
     name: string,
     zoneKey: ZoneType,
     areaKey: string,
-    type: 'clearZone' | 'defeatTarget' | 'survive',
+    type: 'clearZone' | 'defeatTarget' | 'survive' | 'dream',
     timeLimit?: number,
     // Optional cutscene to play when starting the mission.
     introKey?: string,
     // Optional cutscene to play on completing the mission.
     outroKey?: string,
+    // Optional character to be used when running the mission.
+    getCharacter?: () => Character,
 }
 
 export interface ActiveMission {
