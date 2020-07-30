@@ -115,7 +115,6 @@ export default class Cutscene {
             await this.runEndScript();
             getState().cutscene = null;
             await this.setupNextScene();
-            updateNPCs();
         } catch (e) {
             if (e && e.message) {
                 console.error(e);
@@ -129,7 +128,8 @@ export default class Cutscene {
 
     }
     async setupNextScene(): Promise<void> {
-
+        setContext('field');
+        updateNPCs();
     }
 
     async skip(): Promise<void> {

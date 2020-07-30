@@ -1,6 +1,6 @@
 import { allImagesLoaded, requireImage } from 'app/images';
 
-import { Frame, FrameDimensions, TilePalette } from 'app/types';
+import { Frame, FrameDimensions, ShortRectangle, Tile, TilePalette } from 'app/types';
 
 const fieldTileDims: FrameDimensions = {w: 32, h: 32};
 
@@ -57,17 +57,24 @@ const meadowFloor: TilePalette = {...fieldTileDims, source: meadowFieldTiles};
 const meadowBackground: TilePalette = {...meadowBgTileDims, source: meadowBackgroundTiles};
 const meadowForeground: TilePalette = {...meadowForegroundTileDims, source: meadowForegroundTiles};
 
-const smallDirtTiles = {image: requireImage('gfx2/areas/dirtpath.png'),
-    x: 0, y: 0, w: 16 * fieldTileDims.w, h: fieldTileDims.h};
-const largeDirtTiles = {image: requireImage('gfx2/areas/64dirtsheet.png'),
-    x: 0, y: 0, w: 26 * fieldTileDims.w, h: 2 * fieldTileDims.h};
+const dirtTiles = {image: requireImage('gfx2/areas/dirt32tiles.png'),
+    x: 0, y: 0, w: 7 * fieldTileDims.w, h: fieldTileDims.h};
+const grassOverlayTiles = {image: requireImage('gfx2/areas/meadowgrasssheet.png'),
+    x: 0, y: 0, w: 320, h: 16};
+const dirtFloor: TilePalette = {...fieldTileDims, source: dirtTiles};
+const grassOverlay: TilePalette = {
+    w: 16, h: 16, source: grassOverlayTiles,
+    defaultTiles: tileRange({x: 12, y: 0, w: 8, h: 1}),
+};
 
-const dirtPaths: TilePalette = {...fieldTileDims, source: smallDirtTiles};
-const dirtRoads: TilePalette = {...fieldTileDims, source: largeDirtTiles};
-
-const villageFloor: TilePalette = combinePalettes([
-    dirtPaths, dirtRoads, meadowFloor,
-]);
+const fenceBgTileDims: FrameDimensions = {w: 128, h: 32};
+const fenceWallTiles = {image: requireImage('gfx2/areas/Fence north.png'),
+    x: 0, y: 0, w: 2 * fenceBgTileDims.w, h: fenceBgTileDims.h};
+const fenceForegroundTileDims: FrameDimensions = {w: 128, h: 16};
+const fenceForegroundTiles = {image: requireImage('gfx2/areas/fencesouthwall.png'),
+    x: 0, y: 0, w: 2 * fenceForegroundTileDims.w, h: fenceForegroundTileDims.h};
+const fenceBackground: TilePalette = {...fenceBgTileDims, source: fenceWallTiles};
+const fenceForeground: TilePalette = {...fenceForegroundTileDims, source: fenceForegroundTiles};
 
 export const palettes = {
     caveFloor,
@@ -79,9 +86,22 @@ export const palettes = {
     meadowFloor,
     meadowBackground,
     meadowForeground,
-    villageFloor,
+    dirtFloor,
+    grassOverlay,
+    fenceBackground,
+    fenceForeground,
 };
 window['palettes'] = palettes;
+
+export function tileRange({x, y, w, h}: ShortRectangle): Tile[] {
+    const tiles: Tile[] = [];
+    for (let Y = y; Y < y + h; Y++) {
+        for (let X = x; X < x + w; X++) {
+            tiles.push({x: X, y: Y});
+        }
+    }
+    return tiles;
+}
 
 export function drawCombinedPalettes(canvas: HTMLCanvasElement, palettes: TilePalette[]): void {
     const {w, h} = palettes[0];

@@ -311,6 +311,13 @@ const guildFrontHall: AreaDefinition = {
                     exitKey: "guildFoyer:hallDoor",
                     animation: "sideDoorClosed",
                 },
+                {
+                    type: 'door',
+                    x: 569, zAlign: 'back', z: -60,
+                    animation: "sideDoorClosed",
+                    exitKey: "guildGarden:door",
+                    key: "gardenDoor",
+                },
             ],
             grid: {
                 palette: 'guildForeground', w: 19, h: 2,
@@ -603,6 +610,63 @@ const guildVault: AreaDefinition = {
     ],
 };
 
+const guildGarden: AreaDefinition = {
+    type: 'guildGarden',
+    width: 584,
+    leftWallType: 'guildWall',
+    rightWallType: 'fenceWall',
+    layers: [
+        {
+            key: 'dirt', x: 0, y: 84,
+            objects: [
+            ],
+            grid: {
+                palette: 'dirtFloor', w: 19, h: 3,
+                tiles: [[{x:5,y:0},{x:1,y:0},{x:5,y:0},{x:2,y:0},{x:4,y:0},{x:1,y:0},{x:6,y:0},{x:4,y:0},{x:5,y:0},{x:1,y:0},{x:2,y:0},{x:6,y:0},{x:1,y:0},{x:0,y:0},{x:3,y:0},{x:6,y:0},{x:1,y:0},{x:6,y:0},{x:5,y:0}],[{x:1,y:0},{x:1,y:0},{x:4,y:0},{x:4,y:0},{x:2,y:0},{x:2,y:0},{x:4,y:0},{x:3,y:0},{x:3,y:0},{x:0,y:0},{x:4,y:0},{x:5,y:0},{x:0,y:0},{x:1,y:0},{x:0,y:0},{x:5,y:0},{x:2,y:0},{x:2,y:0},{x:6,y:0}],[{x:2,y:0},{x:6,y:0},{x:6,y:0},{x:2,y:0},{x:6,y:0},{x:1,y:0},{x:0,y:0},{x:5,y:0},{x:1,y:0},{x:0,y:0},{x:0,y:0},{x:5,y:0},{x:1,y:0},{x:3,y:0},{x:0,y:0},{x:6,y:0},{x:5,y:0},{x:4,y:0},{x:1,y:0}]],
+            },
+        },
+        {
+            key: 'floor', x: 0, y: 84,
+            objects: [
+            ],
+            grid: {
+                palette: 'grassOverlay', w: 19, h: 6,
+                tiles: [[{x:17,y:0},{x:17,y:0},{x:17,y:0},{x:12,y:0},{x:13,y:0},{x:2,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:3,y:0},{x:18,y:0},{x:17,y:0},{x:18,y:0},{x:18,y:0},{x:2,y:0},{x:10,y:0},null,null,null,null,null,{x:6,y:0},{x:15,y:0},{x:12,y:0},{x:16,y:0},{x:16,y:0}],[{x:17,y:0},{x:15,y:0},{x:13,y:0},{x:17,y:0},{x:2,y:0},{x:10,y:0},null,null,null,null,null,null,null,null,null,null,null,null,null,null,{x:6,y:0},{x:2,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:10,y:0},null,null,null,null,null,{x:9,y:0},{x:1,y:0},{x:17,y:0},{x:17,y:0},{x:16,y:0},{x:17,y:0}],[{x:17,y:0},{x:17,y:0},{x:12,y:0},{x:17,y:0},{x:5,y:0},null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,{x:11,y:0},{x:10,y:0},null,null,null,null,null,null,null,null,null,{x:6,y:0},{x:17,y:0},{x:16,y:0},{x:17,y:0},{x:16,y:0},{x:17,y:0}],[{x:17,y:0},{x:13,y:0},{x:17,y:0},{x:15,y:0},{x:5,y:0},null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,{x:9,y:0},{x:1,y:0},{x:15,y:0},{x:17,y:0},{x:17,y:0},{x:15,y:0},{x:16,y:0}],[{x:17,y:0},{x:17,y:0},{x:2,y:0},{x:12,y:0},{x:0,y:0},{x:8,y:0},null,null,null,null,null,null,null,null,null,null,null,null,null,{x:9,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:1,y:0},{x:16,y:0},{x:17,y:0},{x:17,y:0},{x:16,y:0},{x:17,y:0},{x:17,y:0}],[{x:6,y:0},{x:2,y:0},{x:1,y:0},{x:5,y:0},{x:13,y:0},{x:0,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:1,y:0},{x:17,y:0},{x:17,y:0},{x:16,y:0},{x:17,y:0},{x:17,y:0},{x:17,y:0},{x:17,y:0},{x:16,y:0},{x:17,y:0},{x:17,y:0},{x:17,y:0},{x:17,y:0},{x:15,y:0},{x:17,y:0},{x:17,y:0},{x:17,y:0},{x:17,y:0}]],
+            },
+        },
+        {
+            key: 'background', x: 36, y: 52,
+            objects: [
+                {
+                    type: 'door',
+                    x: 7, zAlign: 'back', z: -60, flipped: true,
+                    animation: "openDoor",
+                    exitKey: "guildFrontHall:gardenDoor",
+                    key: "door",
+                },
+            ],
+            grid: {
+                palette: 'fenceBackground', w: 5, h: 1,
+                tiles: [[{x:1,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},null]],
+            },
+        },
+        {
+            key: 'field', x: 0, y: 84,
+            objects: [
+            ],
+        },
+        {
+            key: 'foreground', x: 0, y: 148,
+            objects: [
+            ],
+            grid: {
+                palette: 'fenceForeground', w: 5, h: 1,
+                tiles: [[{x:1,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0}]],
+            },
+        },
+    ],
+};
+
 zones.guild = {
     guildYard,
     guildFoyer,
@@ -610,4 +674,5 @@ zones.guild = {
     guildGuestRoom,
     guildBasement,
     guildVault,
+    guildGarden,
 };

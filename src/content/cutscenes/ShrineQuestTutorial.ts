@@ -69,8 +69,4 @@ export default class ShrineQuestTutorial extends Cutscene {
         hero.allies = hero.area.allies;
         hero.enemies = hero.area.enemies;
     }
-
-    async setupNextScene() {
-        setContext('field');
-    }
 }

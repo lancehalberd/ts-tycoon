@@ -105,8 +105,4 @@ export default class Mission2Intro extends Cutscene {
     shouldSaveSceneCompleted(): boolean {
         return this.getArmorCount() >= 6;
     }
-
-    async setupNextScene() {
-        setContext('field');
-    }
 }

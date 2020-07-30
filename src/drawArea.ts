@@ -111,7 +111,7 @@ function drawAreaLayer(this: void, context: CanvasRenderingContext2D, area: Area
         const h = layer.grid.palette.h;
         const image = layer.grid.palette.source.image;
         for (let y = 0; y < layer.grid.h; y++) {
-            let x = Math.floor(area.cameraX / w);
+            let x = Math.floor((area.cameraX - layer.x) / w);
             for (;x * w < area.cameraX + ADVENTURE_WIDTH; x++) {
                 const tile = layer.grid.tiles[y][x];
                 // Not all tiles will be defined.

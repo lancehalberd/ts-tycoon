@@ -76,8 +76,4 @@ export default class Mission1Intro extends Cutscene {
         hero.allies = hero.area.allies;
         hero.enemies = hero.area.enemies;
     }
-
-    async setupNextScene() {
-        setContext('field');
-    }
 }

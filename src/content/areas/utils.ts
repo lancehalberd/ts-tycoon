@@ -20,11 +20,13 @@ const river = createAnimation('gfx2/areas/meadowbridge.png', frame(0, 0, 39, 148
 const caveWall = createAnimation('gfx2/areas/cavebridge2.png', frame(0, 0, 39, 148, r(16, 92, 23, 35)));
 const guildWall = createAnimation('gfx2/areas/guildbridge.png', frame(0, 0, 39, 148, r(11, 50, 20, 70)));
 const straightGuildWall = createAnimation('gfx2/areas/guildsidewall.png', {w: 40, h: 148});
+const fenceWall = createAnimation('gfx2/areas/Fence side.png', {w: 36, h: 153}, {left: 3, top: -5});
 export const areaWalls: {[key in string]: FrameAnimation} = {
     caveWall,
     river,
     guildWall,
-    straightGuildWall
+    straightGuildWall,
+    fenceWall,
 };
 
 export function createAreaObjectFromDefinition(areaObjectDefinition: AreaObjectDefinition): AreaObject {
@@ -201,10 +203,16 @@ export function populateLayerGrid(this: void, area: Area, layer: AreaLayer): voi
     for (let y = 0; y < layer.grid.h; y++) {
         layer.grid.tiles[y] = [];
         for (let x = 0; x < layer.grid.w; x++) {
-            layer.grid.tiles[y][x] = {
-                x: random.addSeed(x * layer.grid.h + y).range(0, maxX),
-                y: random.addSeed(x * layer.grid.h + y + 1000).range(0, maxY),
-            };
+            // Only use the default tiles if some are defined,
+            // otherwise randomly use the entire palette.
+            if (layer.grid.palette.defaultTiles?.length) {
+                layer.grid.tiles[y][x] = _.sample(layer.grid.palette.defaultTiles);
+            } else {
+                layer.grid.tiles[y][x] = {
+                    x: random.addSeed(x * layer.grid.h + y).range(0, maxX),
+                    y: random.addSeed(x * layer.grid.h + y + 1000).range(0, maxY),
+                };
+            }
         }
     }
 }

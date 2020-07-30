@@ -5,46 +5,55 @@ import { AreaDefinition } from 'app/types';
 export const mission1 = 'mission1';
 
 const villageWest: AreaDefinition = {
-    type: 'cave',
-    width: 450,
-    leftWallType: 'caveWall',
-    rightWallType: 'river',
+    type: 'village',
+    width: 455,
+    leftWallType: 'fenceWall',
+    rightWallType: 'fenceWall',
     layers: [
+        {
+            key: 'dirt', x: 0, y: 84,
+            objects: [
+            ],
+            grid: {
+                palette: 'dirtFloor', w: 15, h: 3,
+                tiles: [[{x:5,y:0},{x:1,y:0},{x:5,y:0},{x:2,y:0},{x:4,y:0},{x:1,y:0},{x:6,y:0},{x:4,y:0},{x:5,y:0},{x:1,y:0},{x:2,y:0},{x:6,y:0},{x:1,y:0},{x:0,y:0},{x:3,y:0}],[{x:1,y:0},{x:1,y:0},{x:4,y:0},{x:4,y:0},{x:2,y:0},{x:2,y:0},{x:4,y:0},{x:3,y:0},{x:3,y:0},{x:0,y:0},{x:4,y:0},{x:5,y:0},{x:0,y:0},{x:1,y:0},{x:0,y:0}],[{x:2,y:0},{x:6,y:0},{x:6,y:0},{x:2,y:0},{x:6,y:0},{x:1,y:0},{x:0,y:0},{x:5,y:0},{x:1,y:0},{x:0,y:0},{x:0,y:0},{x:5,y:0},{x:1,y:0},{x:3,y:0},{x:0,y:0}]],
+            },
+        },
         {
             key: 'floor', x: 0, y: 84,
             objects: [
             ],
             grid: {
-                palette: 'caveFloor', w: 15, h: 3,
-                tiles: [[{x:5,y:0},{x:1,y:0},{x:4,y:0},{x:2,y:0},{x:3,y:0},{x:0,y:0},{x:5,y:0},{x:3,y:0},{x:5,y:0},{x:1,y:0},{x:2,y:0},{x:5,y:0},{x:1,y:0},{x:0,y:0},{x:2,y:0}],[{x:1,y:0},{x:1,y:0},{x:3,y:0},{x:4,y:0},{x:1,y:0},{x:2,y:0},{x:4,y:0},{x:3,y:0},{x:2,y:0},{x:0,y:0},{x:3,y:0},{x:4,y:0},{x:0,y:0},{x:1,y:0},{x:0,y:0}],[{x:2,y:0},{x:5,y:0},{x:5,y:0},{x:2,y:0},{x:5,y:0},{x:1,y:0},{x:0,y:0},{x:4,y:0},{x:1,y:0},{x:0,y:0},{x:0,y:0},{x:4,y:0},{x:1,y:0},{x:2,y:0},{x:0,y:0}]],
+                palette: 'grassOverlay', w: 15, h: 6,
+                tiles: [[{x:14,y:0},{x:14,y:0},{x:14,y:0},{x:12,y:0},{x:14,y:0},{x:14,y:0},{x:15,y:0},{x:17,y:0},{x:12,y:0},{x:13,y:0},{x:18,y:0},{x:2,y:0},{x:4,y:0},{x:10,y:0},null,{x:11,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:3,y:0},{x:17,y:0},{x:12,y:0},{x:12,y:0},{x:18,y:0},{x:14,y:0},{x:14,y:0},{x:12,y:0}],[{x:19,y:0},{x:14,y:0},{x:19,y:0},{x:18,y:0},{x:19,y:0},{x:18,y:0},{x:15,y:0},{x:16,y:0},{x:12,y:0},{x:2,y:0},{x:4,y:0},{x:10,y:0},null,null,null,null,null,null,null,null,null,{x:11,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0}],[{x:19,y:0},{x:17,y:0},{x:19,y:0},{x:18,y:0},{x:18,y:0},{x:13,y:0},{x:16,y:0},{x:18,y:0},{x:14,y:0},{x:0,y:0},{x:7,y:0},{x:7,y:0},{x:8,y:0},null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[{x:12,y:0},{x:13,y:0},{x:18,y:0},{x:13,y:0},{x:16,y:0},{x:13,y:0},{x:19,y:0},{x:13,y:0},{x:12,y:0},{x:13,y:0},{x:13,y:0},{x:13,y:0},{x:0,y:0},{x:7,y:0},{x:7,y:0},{x:8,y:0},null,null,null,null,null,null,{x:9,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0}],[{x:15,y:0},{x:16,y:0},{x:14,y:0},{x:15,y:0},{x:16,y:0},{x:16,y:0},{x:13,y:0},{x:14,y:0},{x:17,y:0},{x:18,y:0},{x:16,y:0},{x:15,y:0},{x:14,y:0},{x:15,y:0},{x:18,y:0},{x:0,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:1,y:0},{x:17,y:0},{x:15,y:0},{x:13,y:0},{x:14,y:0},{x:17,y:0},{x:15,y:0}],[{x:17,y:0},{x:17,y:0},{x:19,y:0},{x:18,y:0},{x:14,y:0},{x:14,y:0},{x:12,y:0},{x:13,y:0},{x:13,y:0},{x:16,y:0},{x:15,y:0},{x:16,y:0},{x:19,y:0},{x:12,y:0},{x:16,y:0},{x:15,y:0},{x:15,y:0},{x:18,y:0},{x:18,y:0},{x:16,y:0},{x:16,y:0},{x:16,y:0},{x:12,y:0},{x:13,y:0},{x:17,y:0},{x:17,y:0},{x:16,y:0},{x:17,y:0},{x:14,y:0}]],
             },
         },
         {
-            key: 'background', x: 0, y: 8,
+            key: 'background', x: 36, y: 52,
             objects: [
                 {
                     type: 'door',
-                    x: 205, zAlign: 'back', z: -10,
+                    x: 216, y: 15, zAlign: 'back',
                     key: "door",
-                    animation: "backDoor",
+                    animation: "northFenceDoor",
                     exitKey: "villageWestHouse:door",
+                },
+                {
+                    type: 'door',
+                    x: 433, zAlign: 'back', z: -94,
+                    animation: "sideFenceDoor",
+                    exitKey: "villageSquare:door",
+                    key: "door2",
                 },
             ],
             grid: {
-                palette: 'caveBackground', w: 4, h: 1,
-                tiles: [[{x:1,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0}]],
+                palette: 'fenceBackground', w: 4, h: 1,
+                tiles: [[{x:1,y:0},null,{x:0,y:0},null]],
             },
         },
         {
             key: 'field', x: 0, y: 84,
             objects: [
-                {
-                    type: 'door',
-                    x: 427, z: -10,
-                    key: "door2",
-                    animation: "woodBridge",
-                    exitKey: "villageSquare:door",
-                },
             ],
         },
         {
@@ -52,8 +61,8 @@ const villageWest: AreaDefinition = {
             objects: [
             ],
             grid: {
-                palette: 'caveForeground', w: 6, h: 1,
-                tiles: [[{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0}]],
+                palette: 'fenceForeground', w: 4, h: 1,
+                tiles: [[{x:1,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0}]],
             },
         },
     ],
@@ -66,8 +75,6 @@ const villageWest: AreaDefinition = {
 const villageWestHouse: AreaDefinition = {
     type: 'oldGuild',
     width: 320,
-    leftWallType: 'guildWall',
-    rightWallType: 'guildWall',
     layers: [
         {
             key: 'floor', x: 0, y: 84,
@@ -90,13 +97,6 @@ const villageWestHouse: AreaDefinition = {
         {
             key: 'background', x: 0, y: 0,
             objects: [
-                {
-                    type: 'door',
-                    x: 44, zAlign: 'back', z: 35,
-                    key: "door",
-                    animation: "backDoor",
-                    exitKey: "villageWest:door",
-                },
             ],
             grid: {
                 palette: 'guildForeground', w: 10, h: 2,
@@ -111,10 +111,17 @@ const villageWestHouse: AreaDefinition = {
         {
             key: 'foreground', x: 0, y: 0,
             objects: [
+                {
+                    type: 'door',
+                    x: 64, z: -102,
+                    animation: "southDoor",
+                    exitKey: "villageWest:door",
+                    key: "door",
+                },
             ],
             grid: {
                 palette: 'guildForeground', w: 10, h: 3,
-                tiles: [[],[],[{x:0,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:1,y:1}]],
+                tiles: [[],[],[{x:0,y:1},{x:2,y:1},null,{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:1,y:1}]],
             },
         },
     ],
@@ -125,57 +132,57 @@ const villageWestHouse: AreaDefinition = {
 };
 
 const villageSquare: AreaDefinition = {
-    type: 'town',
-    width: 600,
-    leftWallType: 'river',
+    type: 'village',
+    width: 580,
+    leftWallType: 'fenceWall',
     rightWallType: 'river',
     layers: [
+        {
+            key: 'dirt', x: 0, y: 84,
+            objects: [
+            ],
+            grid: {
+                palette: 'dirtFloor', w: 19, h: 3,
+                tiles: [[{x:5,y:0},{x:1,y:0},{x:5,y:0},{x:2,y:0},{x:4,y:0},{x:1,y:0},{x:6,y:0},{x:4,y:0},{x:5,y:0},{x:1,y:0},{x:2,y:0},{x:6,y:0},{x:1,y:0},{x:0,y:0},{x:3,y:0},{x:6,y:0},{x:1,y:0},{x:6,y:0},{x:5,y:0}],[{x:1,y:0},{x:1,y:0},{x:4,y:0},{x:4,y:0},{x:2,y:0},{x:2,y:0},{x:4,y:0},{x:3,y:0},{x:3,y:0},{x:0,y:0},{x:4,y:0},{x:5,y:0},{x:0,y:0},{x:1,y:0},{x:0,y:0},{x:5,y:0},{x:2,y:0},{x:2,y:0},{x:6,y:0}],[{x:2,y:0},{x:6,y:0},{x:6,y:0},{x:2,y:0},{x:6,y:0},{x:1,y:0},{x:0,y:0},{x:5,y:0},{x:1,y:0},{x:0,y:0},{x:0,y:0},{x:5,y:0},{x:1,y:0},{x:3,y:0},{x:0,y:0},{x:6,y:0},{x:5,y:0},{x:4,y:0},{x:1,y:0}]],
+            },
+        },
         {
             key: 'floor', x: 0, y: 84,
             objects: [
             ],
             grid: {
-                palette: 'guildFloor', w: 19, h: 3,
-                tiles: [[{x:0,y:0},{x:0,y:2},{x:0,y:1},{x:0,y:0},{x:0,y:1},{x:0,y:0},{x:0,y:0},{x:0,y:1},{x:0,y:1},{x:0,y:2},{x:0,y:2},{x:0,y:1},{x:0,y:2},{x:0,y:1},{x:0,y:1},{x:0,y:2},{x:0,y:2},{x:0,y:1},{x:0,y:0}],[{x:0,y:1},{x:0,y:2},{x:0,y:1},{x:0,y:2},{x:0,y:1},{x:0,y:1},{x:0,y:0},{x:0,y:1},{x:0,y:2},{x:0,y:2},{x:0,y:2},{x:0,y:1},{x:0,y:1},{x:0,y:1},{x:0,y:2},{x:0,y:1},{x:0,y:0},{x:0,y:1},{x:0,y:0}],[{x:0,y:2},{x:0,y:1},{x:0,y:1},{x:0,y:2},{x:0,y:2},{x:0,y:1},{x:0,y:1},{x:0,y:1},{x:0,y:0},{x:0,y:0},{x:0,y:2},{x:0,y:0},{x:0,y:0},{x:0,y:1},{x:0,y:2},{x:0,y:2},{x:0,y:2},{x:0,y:0},{x:0,y:0}]],
+                palette: 'grassOverlay', w: 38, h: 6,
+                tiles: [[{x:13,y:0},{x:12,y:0},{x:18,y:0},{x:19,y:0},{x:17,y:0},{x:5,y:0},null,{x:6,y:0},{x:12,y:0},{x:15,y:0},{x:14,y:0},{x:13,y:0},{x:14,y:0},{x:12,y:0},{x:19,y:0},{x:17,y:0},{x:12,y:0},{x:18,y:0},{x:12,y:0},{x:16,y:0},{x:15,y:0},{x:5,y:0},null,{x:6,y:0},{x:13,y:0},{x:13,y:0},{x:17,y:0},{x:13,y:0},{x:12,y:0},{x:5,y:0},null,{x:6,y:0},{x:16,y:0},{x:14,y:0},{x:14,y:0},{x:14,y:0},{x:19,y:0},{x:16,y:0}],[{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:10,y:0},null,{x:11,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:10,y:0},null,{x:11,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:10,y:0},null,{x:11,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:16,y:0}],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,{x:15,y:0},{x:13,y:0}],[{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:16,y:0}],[{x:14,y:0},{x:18,y:0},{x:14,y:0},{x:16,y:0},{x:16,y:0},{x:18,y:0},{x:18,y:0},{x:15,y:0},{x:13,y:0},{x:18,y:0},{x:12,y:0},{x:19,y:0},{x:15,y:0},{x:15,y:0},{x:19,y:0},{x:14,y:0},{x:14,y:0},{x:14,y:0},{x:18,y:0},{x:14,y:0},{x:16,y:0},{x:15,y:0},{x:13,y:0},{x:19,y:0},{x:14,y:0},{x:17,y:0},{x:18,y:0},{x:13,y:0},{x:14,y:0},{x:13,y:0},{x:12,y:0},{x:12,y:0},{x:15,y:0},{x:14,y:0},{x:16,y:0},{x:19,y:0},{x:12,y:0},{x:18,y:0}],[{x:17,y:0},{x:12,y:0},{x:13,y:0},{x:15,y:0},{x:15,y:0},{x:18,y:0},{x:18,y:0},{x:12,y:0},{x:13,y:0},{x:17,y:0},{x:16,y:0},{x:18,y:0},{x:12,y:0},{x:18,y:0},{x:17,y:0},{x:18,y:0},{x:16,y:0},{x:13,y:0},{x:12,y:0},{x:17,y:0},{x:19,y:0},{x:14,y:0},{x:15,y:0},{x:14,y:0},{x:14,y:0},{x:16,y:0},{x:18,y:0},{x:14,y:0},{x:15,y:0},{x:17,y:0},{x:15,y:0},{x:13,y:0},{x:16,y:0},{x:17,y:0},{x:17,y:0},{x:14,y:0},{x:17,y:0},{x:18,y:0}]],
             },
         },
         {
-            key: 'backgroundWalls', x: 0, y: 0,
-            objects: [
-            ],
-            grid: {
-                palette: 'guildBackground', w: 5, h: 1,
-                tiles: [[{x:2,y:0},{x:0,y:0},{x:1,y:0},{x:0,y:0},{x:0,y:0}]],
-            },
-        },
-        {
-            key: 'background', x: 0, y: 0,
+            key: 'background', x: 36, y: 52,
             objects: [
                 {
                     type: 'door',
-                    x: 99, zAlign: 'back', z: 2,
+                    x: 88, y: 15, zAlign: 'back',
                     key: "door2",
-                    animation: "backDoor",
+                    animation: "northFenceDoor",
                     exitKey: "VillageSquareSmallHouse:door",
                 },
                 {
                     type: 'door',
-                    x: 304, zAlign: 'back', z: 4,
+                    x: 344, y: 15, zAlign: 'back',
                     key: "door3",
-                    animation: "backDoor",
+                    animation: "northFenceDoor",
                     exitKey: "villageSquareLongHouse:door",
                 },
                 {
                     type: 'door',
-                    x: 497, zAlign: 'back', z: 2,
+                    x: 472, y: 15, zAlign: 'back',
                     key: "door4",
-                    animation: "backDoor",
+                    animation: "northFenceDoor",
                     exitKey: "villageSquareLongHouse:door2",
                 },
             ],
             grid: {
-                palette: 'guildForeground', w: 19, h: 2,
-                tiles: [[{x:2,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:1,y:0}],[{x:4,y:0},null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,{x:3,y:0}],[]],
+                palette: 'fenceBackground', w: 5, h: 1,
+                tiles: [[null,{x:0,y:0},null,null,null]],
             },
         },
         {
@@ -183,14 +190,14 @@ const villageSquare: AreaDefinition = {
             objects: [
                 {
                     type: 'door',
-                    z: 8, flipped: true,
+                    x: 10, z: -12, flipped: true,
                     key: "door",
-                    animation: "woodBridge",
+                    animation: "sideFenceDoor",
                     exitKey: "villageWest:door2",
                 },
                 {
                     type: 'door',
-                    x: 577, z: 6,
+                    x: 557,
                     key: "door5",
                     animation: "woodBridge",
                     exitKey: "villageEast:door",
@@ -198,19 +205,19 @@ const villageSquare: AreaDefinition = {
             ],
         },
         {
-            key: 'foreground', x: 0, y: 0,
+            key: 'foreground', x: 0, y: 148,
             objects: [
             ],
             grid: {
-                palette: 'guildForeground', w: 19, h: 3,
-                tiles: [[],[],[{x:0,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:2,y:1},{x:1,y:1}]],
+                palette: 'fenceForeground', w: 5, h: 1,
+                tiles: [[{x:1,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:1,y:0}]],
             },
         },
     ],
     monsters: [
-        {key: 'gremlin', level: 1, location: {x: 219, z: 42}, },
-        {key: 'gremlin', level: 1, location: {x: 217, z: -32}, },
-        {key: 'gremlin', level: 1, location: {x: 532}, },
+        {key: 'gremlin', level: 1, location: {x: 230, z: 58}, },
+        {key: 'gremlin', level: 1, location: {x: 261, z: -8}, },
+        {key: 'gremlin', level: 1, location: {x: 523, z: -2}, },
     ],
 };
 
@@ -341,27 +348,36 @@ const villageSquareLongHouse: AreaDefinition = {
 };
 
 const villageEast: AreaDefinition = {
-    type: 'field',
+    type: 'village',
     width: 600,
     leftWallType: 'river',
     rightWallType: 'caveWall',
     layers: [
         {
+            key: 'dirt', x: 0, y: 84,
+            objects: [
+            ],
+            grid: {
+                palette: 'dirtFloor', w: 19, h: 3,
+                tiles: [[{x:5,y:0},{x:1,y:0},{x:5,y:0},{x:2,y:0},{x:4,y:0},{x:1,y:0},{x:6,y:0},{x:4,y:0},{x:5,y:0},{x:1,y:0},{x:2,y:0},{x:6,y:0},{x:1,y:0},{x:0,y:0},{x:3,y:0},{x:6,y:0},{x:1,y:0},{x:6,y:0},{x:5,y:0}],[{x:1,y:0},{x:1,y:0},{x:4,y:0},{x:4,y:0},{x:2,y:0},{x:2,y:0},{x:4,y:0},{x:3,y:0},{x:3,y:0},{x:0,y:0},{x:4,y:0},{x:5,y:0},{x:0,y:0},{x:1,y:0},{x:0,y:0},{x:5,y:0},{x:2,y:0},{x:2,y:0},{x:6,y:0}],[{x:2,y:0},{x:6,y:0},{x:6,y:0},{x:2,y:0},{x:6,y:0},{x:1,y:0},{x:0,y:0},{x:5,y:0},{x:1,y:0},{x:0,y:0},{x:0,y:0},{x:5,y:0},{x:1,y:0},{x:3,y:0},{x:0,y:0},{x:6,y:0},{x:5,y:0},{x:4,y:0},{x:1,y:0}]],
+            },
+        },
+        {
             key: 'floor', x: 0, y: 84,
             objects: [
             ],
             grid: {
-                palette: 'meadowFloor', w: 19, h: 3,
-                tiles: [[{x:5,y:0},{x:1,y:0},{x:4,y:0},{x:2,y:0},{x:3,y:0},{x:0,y:0},{x:5,y:0},{x:3,y:0},{x:5,y:0},{x:1,y:0},{x:2,y:0},{x:5,y:0},{x:1,y:0},{x:0,y:0},{x:2,y:0},{x:5,y:0},{x:1,y:0},{x:5,y:0},{x:4,y:0}],[{x:1,y:0},{x:1,y:0},{x:3,y:0},{x:4,y:0},{x:1,y:0},{x:2,y:0},{x:4,y:0},{x:3,y:0},{x:2,y:0},{x:0,y:0},{x:3,y:0},{x:4,y:0},{x:0,y:0},{x:1,y:0},{x:0,y:0},{x:4,y:0},{x:2,y:0},{x:2,y:0},{x:5,y:0}],[{x:2,y:0},{x:5,y:0},{x:5,y:0},{x:2,y:0},{x:5,y:0},{x:1,y:0},{x:0,y:0},{x:4,y:0},{x:1,y:0},{x:0,y:0},{x:0,y:0},{x:4,y:0},{x:1,y:0},{x:2,y:0},{x:0,y:0},{x:5,y:0},{x:4,y:0},{x:4,y:0},{x:0,y:0}]],
+                palette: 'grassOverlay', w: 38, h: 6,
+                tiles: [[{x:14,y:0},{x:14,y:0},{x:15,y:0},{x:19,y:0},{x:13,y:0},{x:17,y:0},{x:17,y:0},{x:17,y:0},{x:12,y:0},{x:13,y:0},{x:13,y:0},{x:12,y:0},{x:19,y:0},{x:16,y:0},{x:14,y:0},{x:2,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:3,y:0},{x:14,y:0},{x:12,y:0},{x:12,y:0},{x:16,y:0},{x:18,y:0}],[{x:12,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:4,y:0},{x:10,y:0},null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,{x:11,y:0},{x:3,y:0},{x:18,y:0},{x:19,y:0},{x:18,y:0},{x:13,y:0}],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,{x:6,y:0},{x:15,y:0},{x:18,y:0},{x:13,y:0},{x:15,y:0}],[{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:8,y:0},null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,{x:9,y:0},{x:1,y:0},{x:17,y:0},{x:18,y:0},{x:16,y:0},{x:18,y:0}],[{x:14,y:0},{x:17,y:0},{x:12,y:0},{x:19,y:0},{x:16,y:0},{x:18,y:0},{x:18,y:0},{x:15,y:0},{x:15,y:0},{x:17,y:0},{x:16,y:0},{x:19,y:0},{x:12,y:0},{x:19,y:0},{x:17,y:0},{x:0,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:7,y:0},{x:1,y:0},{x:18,y:0},{x:17,y:0},{x:13,y:0},{x:14,y:0},{x:18,y:0}],[{x:16,y:0},{x:18,y:0},{x:16,y:0},{x:14,y:0},{x:17,y:0},{x:14,y:0},{x:12,y:0},{x:15,y:0},{x:17,y:0},{x:19,y:0},{x:12,y:0},{x:18,y:0},{x:17,y:0},{x:13,y:0},{x:12,y:0},{x:18,y:0},{x:19,y:0},{x:17,y:0},{x:15,y:0},{x:19,y:0},{x:14,y:0},{x:19,y:0},{x:15,y:0},{x:14,y:0},{x:12,y:0},{x:17,y:0},{x:16,y:0},{x:15,y:0},{x:15,y:0},{x:15,y:0},{x:18,y:0},{x:13,y:0},{x:13,y:0},{x:19,y:0},{x:15,y:0},{x:14,y:0},{x:13,y:0},{x:19,y:0}]],
             },
         },
         {
-            key: 'background', x: 0, y: 0,
+            key: 'background', x: 36, y: 52,
             objects: [
             ],
             grid: {
-                palette: 'meadowBackground', w: 3, h: 1,
-                tiles: [[{x:1,y:0},{x:0,y:0},{x:0,y:0}]],
+                palette: 'fenceBackground', w: 5, h: 1,
+                tiles: [[{x:1,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0}]],
             },
         },
         {
@@ -369,7 +385,7 @@ const villageEast: AreaDefinition = {
             objects: [
                 {
                     type: 'door',
-                    z: 10, flipped: true,
+                    z: -2, flipped: true,
                     key: "door",
                     animation: "woodBridge",
                     exitKey: "villageSquare:door5",
@@ -381,8 +397,8 @@ const villageEast: AreaDefinition = {
             objects: [
             ],
             grid: {
-                palette: 'meadowForeground', w: 5, h: 1,
-                tiles: [[{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0}]],
+                palette: 'fenceForeground', w: 5, h: 1,
+                tiles: [[{x:1,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0}]],
             },
         },
     ],

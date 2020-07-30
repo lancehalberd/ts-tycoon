@@ -12,6 +12,7 @@ export * from 'app/content/areas/AreaObjectTarget';
 export * from 'app/content/areas/Bed';
 export * from 'app/content/areas/CoinStash';
 export * from 'app/content/areas/FlameThrower';
+export * from 'app/content/areas/GardenPlot';
 export * from 'app/content/areas/GuildGate';
 export * from 'app/content/areas/HeroApplication';
 export * from 'app/content/areas/MapTable';

@@ -48,6 +48,8 @@ export interface TilePalette {
     h: number,
     // The source frame of the tiles.
     source: Frame,
+    // Array of tiles to randomly apply by default.
+    defaultTiles?: Tile[],
 }
 
 export interface Tile {

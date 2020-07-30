@@ -6,10 +6,11 @@ export function drawMissionHUD(context: CanvasRenderingContext2D, mission: Activ
     if (mission.parameters.type === 'dream') {
         return;
     }
-    context.fillStyle = 'white';
-    context.fillRect(0, ADVENTURE_HEIGHT - BOTTOM_HUD_HEIGHT, ADVENTURE_WIDTH, BOTTOM_HUD_HEIGHT);
-    context.fillStyle = 'black';
+    context.strokeStyle = 'white';
+    context.fillStyle = 'rgba(0, 0, 0, 0.5)';
     context.fillRect(2, ADVENTURE_HEIGHT - BOTTOM_HUD_HEIGHT + 2, ADVENTURE_WIDTH - 4, BOTTOM_HUD_HEIGHT - 4);
+    context.lineWidth = 2;
+    context.strokeRect(1, ADVENTURE_HEIGHT - BOTTOM_HUD_HEIGHT + 1, ADVENTURE_WIDTH - 2, BOTTOM_HUD_HEIGHT - 2);
 
     context.font = "12px sans-serif";
     context.fillStyle = 'white';

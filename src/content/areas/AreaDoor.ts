@@ -15,7 +15,7 @@ import { createAnimation, frame, getFrame, drawFrame, frameAnimation } from 'app
 import { r } from 'app/utils/index';
 
 import {
-    EditorProperty, FrameAnimation, Area, AreaObject,
+    EditorProperty, FrameAnimation, FrameDimensions, Area, AreaObject,
     BaseAreaObjectDefinition, AreaObjectTarget, Exit, Frame, Hero,
     MenuOption, PropertyRow, ShortRectangle,
 } from 'app/types';
@@ -28,6 +28,8 @@ const [, caveDoorOpen, caveDoorClosed] = createAnimation('gfx2/areas/cavebridge2
     {w: 39, h: 148, content: r(16, 92, 23, 35)}, {cols: 3}).frames;
 const woodBridge = createAnimation('gfx2/areas/meadowbridge.png',
     {w: 39, h: 148, content: r(16, 92, 23, 35)}, {x: 1, cols: 1});
+const woodBridgeHover = createAnimation('gfx2/areas/meadowbridge.png',
+    {w: 39, h: 148, content: r(16, 92, 23, 35)}, {x: 2, cols: 1});
 
 const northSouthGuildBase = {image: requireImage('gfx2/areas/northsouthguild2.png'), w: 32, h: 64};
 
@@ -56,10 +58,26 @@ const southMeadowDoor = createAnimation('gfx2/areas/southwalldoormeadow.png', so
 const southMeadowDoorHover = createAnimation('gfx2/areas/southwalldoormeadowlight.png', southMeadowDoorGeometry);
 
 
+const [, sideFenceDoor, sideFenceDoorHover] = createAnimation('gfx2/areas/Fence side.png',
+    {w: 40, h: 148, content: r(16, 67, 12, 65)}, {cols: 3}).frames;
+
+const northFenceDoorGeometry: FrameDimensions = {w: 128, h: 32, content: {x: 52, y: 0, w: 29, h: 32}};
+const northFenceDoor = createAnimation('gfx2/areas/Fence north.png', northFenceDoorGeometry, {x: 2});
+const northFenceDoorHover = createAnimation('gfx2/areas/Fence north.png', northFenceDoorGeometry, {x: 3});
+
+const southFenceDoorGeometry = {w: 128, h: 16, content: {x: 46, y: 0, w: 32, h: 16}};
+const southFenceDoor = createAnimation('gfx2/areas/fencesouthwall.png', southFenceDoorGeometry, {x: 2});
+const southFenceDoorHover = createAnimation('gfx2/areas/fencesouthwall.png', southMeadowDoorGeometry, {x: 3});
+
 const [sideDoorClosed, sideDoorAjar, sideDoorOpen] = createAnimation('gfx2/areas/guilddoorsheet.png', { w: 38, h: 50}, {cols: 3}).frames;
 
+interface DoorAnimationGroup {
+    normal: FrameAnimation,
+    hover: FrameAnimation,
+}
+
 export class AreaDoor extends EditableAreaObject {
-    static animations = {
+    static animations: {[key: string]: DoorAnimationGroup} = {
         // Slanted/old guild doors
         openDoor: {normal: frameAnimation(guildRightDoor), hover: frameAnimation(guildRightDoorEmpty)},
         closedDoor: {normal: frameAnimation(guildRightDoor), hover: frameAnimation(guildRightDoorEmpty)},
@@ -75,9 +93,13 @@ export class AreaDoor extends EditableAreaObject {
         northCaveDoor: {normal: northCaveDoor, hover: northCaveDoorHover},
         southCaveDoor: {normal: southCaveDoor, hover: southCaveDoorHover},
         //sideDoorAjar: frameAnimation(sideDoorAjar),
-        woodBridge: {normal: woodBridge, hover: woodBridge},
+        woodBridge: {normal: woodBridge, hover: woodBridgeHover},
         northMeadowDoor: {normal: northMeadowDoor, hover: northMeadowDoorHover},
         southMeadowDoor: {normal: southMeadowDoor, hover: southMeadowDoorHover},
+
+        sideFenceDoor: {normal: frameAnimation(sideFenceDoor), hover: frameAnimation(sideFenceDoorHover)},
+        northFenceDoor: {normal: northFenceDoor, hover: northFenceDoorHover},
+        southFenceDoor: {normal: southFenceDoor, hover: southFenceDoorHover},
     };
 
     exit: Exit;

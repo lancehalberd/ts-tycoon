@@ -301,7 +301,7 @@ export function boundZPosition(definition: LocationDefinition, d: number): void 
 }
 
 export function handleEditAreaKeyDown(keyCode: number): boolean {
-    const { isEditing, selectedMonsterIndex, selectedObject } = editingAreaState;
+    const { isEditing, selectedMonsterIndex, selectedObject, selectedLayer } = editingAreaState;
     if ((isKeyDown(KEY.COMMAND) || isKeyDown(KEY.CONTROL)) && keyCode === KEY.E) {
         if (isEditing) {
             stopEditing();
@@ -314,6 +314,13 @@ export function handleEditAreaKeyDown(keyCode: number): boolean {
         return false;
     }
     const area = getState().selectedCharacter.hero.area;
+    if (keyCode === KEY.ESCAPE) {
+        if (selectedLayer) {
+            editingAreaState.selectedLayer = null;
+            refreshPropertyPanel();
+            return;
+        }
+    }
     if (isKeyDown(KEY.COMMAND) || isKeyDown(KEY.CONTROL)) {
         if (keyCode === KEY.UP) {
             changeObjectOrder(selectedObject, -10);
@@ -753,6 +760,15 @@ export function getAreaProperties(this: void): (EditorProperty<any> | PropertyRo
                 layerDefinition.grid.palette = paletteKey;
                 layer.grid.palette = palettes[paletteKey];
                 layer.grid.w = Math.ceil(area.width / layer.grid.palette.w);
+                // If this palette has default tiles, randomly apply them to the whole grid.
+                if (layer.grid.palette.defaultTiles?.length) {
+                    for (let y = 0; y < layer.grid.h; y++) {
+                        layer.grid.tiles[y] = layer.grid.tiles[y] || [];
+                        for (let x = 0; x < layer.grid.w; x++) {
+                            layer.grid.tiles[y][x] = _.sample(layer.grid.palette.defaultTiles);
+                        }
+                    }
+                }
                 setSelectedTiles({
                     palette: layer.grid.palette, w: 1, h: 1,
                     tiles: [[{x: 0, y: 0}]],

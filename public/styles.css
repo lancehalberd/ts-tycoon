@@ -1,3 +1,14 @@
+@font-face {
+    font-family: "Cormorant SC";
+    src: url("Cormorant_SC/CormorantSC-Regular.ttf");
+}
+
+@font-face {
+    font-family: "Cormorant SC";
+    font-weight: bold;
+    src: url("Cormorant_SC/CormorantSC-Bold.ttf");
+}
+
 .gameContent {
     position: relative;
     overflow-x: hidden;

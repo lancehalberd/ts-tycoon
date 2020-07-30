@@ -111,8 +111,4 @@ export default class Mission1Return extends Cutscene {
         // End the current mission.
         hero.character.mission = null;
     }
-
-    async setupNextScene() {
-        setContext('field');
-    }
 }

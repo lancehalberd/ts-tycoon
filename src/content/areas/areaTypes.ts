@@ -173,9 +173,22 @@ const VillageArea: AreaType = {
     ...FieldArea,
     addLayers(area) {
         setStandardLayersOnArea(area);
-        getLayer(area, 'background').grid = {w: 1, h: 1, palette: palettes.meadowBackground, tiles: []};
-        getLayer(area, 'floor').grid = {w: 1, h: 3, palette: palettes.villageFloor, tiles: []};
-        getLayer(area, 'foreground').grid = {w: 1, h: 1, palette: palettes.meadowForeground, tiles: []};
+        const floor = getLayer(area, 'floor');
+        floor.grid = { w: 1, h: 6, palette: palettes.grassOverlay, tiles: [] }
+        const floorIndex = area.layers.indexOf(floor);
+        area.layers.splice(floorIndex, 0, {
+            key: 'dirt',
+            objects: [],
+            x: floor.x, y: floor.y,
+            grid: {
+                w: 1, h: 3, palette: palettes.dirtFloor, tiles: []
+            }
+        });
+        const background = getLayer(area, 'background');
+        background.y = BACKGROUND_HEIGHT - palettes.fenceBackground.h;
+        background.x = 36;
+        background.grid = {w: 1, h: 1, palette: palettes.fenceBackground, tiles: []};
+        getLayer(area, 'foreground').grid = {w: 1, h: 1, palette: palettes.fenceForeground, tiles: []};
     },
 }
 
@@ -454,7 +467,7 @@ export const areaTypes = {
     oldGuild: GuildArea,
     guildBasement: GuildArea,
     forest: FieldArea,
-    garden: FieldArea,
+    garden: VillageArea,
     orchard: FieldArea,
     field: FieldArea,
     cemetery: CaveArea,
