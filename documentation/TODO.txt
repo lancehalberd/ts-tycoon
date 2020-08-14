@@ -1,7 +1,17 @@
 Test at http://localhost:81/ttt/public/
 
+    [M] Add new guild furniture:
+        Map
+        Shrine of Fortune
+        Enchanting pedestal
+        Jewel crafting bench
+        Carpenter bench (No graphics for this yet actually)
+
+
     [M] Add pillar decorations.
     [M] Fix flat walls need different bounding rules than angled walls.
+    [L] Update charge shot to allow you to manually charge the hit for % increased damage + accuracy. Remove cooldown?
+        This could be applied to some other abilities like "aim"
 
 Features:
     [H] Add flat walls, south walls, North and South Door graphics. Keep angled wall for guild exterior
