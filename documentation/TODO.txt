@@ -14,7 +14,6 @@ Test at http://localhost:81/ttt/public/
         This could be applied to some other abilities like "aim"
 
 Features:
-    [H] Add flat walls, south walls, North and South Door graphics. Keep angled wall for guild exterior
     [L] Add "Endless Discovery" section off of the guild exit to replace autofarming
         - Randomly generated seed for each character
         - Maps to the globe so areas get harder as you move north, and you can go in circles at latitude to fight monsters of similar difficulty but different composition.
@@ -40,7 +39,6 @@ Editor Improvements:
         parentKey (add to monsters)
         flipped
         object specific properties, similar to object specific context menu
-        key - update parentKey, door exit object keys (make sure changing area key has this applied as well)
     [H] Add NPC placement (to be used with tracker in mission 2)
     [H] Add Ally placement (to be used with villagers in mission 3)
     [M] Add PositionQueue objects to editor that can be used for controlling where NPCs are positioned and where actors appear/move to in cutscenes.
@@ -51,7 +49,6 @@ Editor Improvements:
         - number input for monster level, area width, x, y, z
         - toggle for flipped
     [M] Set parent key + alignment on objects/monsters
-    [L] Export test character jewel board as just abilities+bonusSource and disable jewelboard for them?
     [L] Add library of object groups (like niche+candle+flame)
 
 Missions:

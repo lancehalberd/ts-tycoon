@@ -1,3 +1,4 @@
+import { isActorPaused } from 'app/actor';
 import {
     actorShouldAutoplay, getAllInRange, getDistance,
     getDistanceOverlap, getPlanarDistanceSquared, limitZ,
@@ -35,7 +36,7 @@ export function moveActor(actor: Actor, ignoreCollisions: boolean = false) {
         switch (activity.type) {
             case 'move':
                 if (getPlanarDistanceSquared(actor, activity) < 25
-                    || (actor.type === 'hero' && actor.character.paused && !isMouseDown())
+                    || (isActorPaused(actor) && !isMouseDown())
                 ) {
                     actor.activity = {type: 'none'};
                     break;

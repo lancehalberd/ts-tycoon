@@ -100,12 +100,12 @@ const guildFoyer: AreaDefinition = {
                 },
                 {
                     type: 'application',
-                    x: 111, zAlign: 'back', z: 32,
+                    x: 110, y: 16, zAlign: 'back',
                     key: "applicationA",
                 },
                 {
                     type: 'application',
-                    x: 137, zAlign: 'back', z: 32,
+                    x: 136, y: 16, zAlign: 'back',
                     key: "applicationB",
                 },
                 {

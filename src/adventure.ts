@@ -1,4 +1,4 @@
-import { damageActor, healActor, initializeActorForAdventure, updateActorFrame } from 'app/actor';
+import { damageActor, healActor, initializeActorForAdventure, isActorPaused, updateActorFrame } from 'app/actor';
 import { pause, updateAdventureButtons } from 'app/adventureButtons';
 import { getEndlessLevel, showAreaMenu } from 'app/areaMenu';
 import {
@@ -630,7 +630,7 @@ function runActorLoop(actor: Actor) {
             return;
         } else {
             actor.skillInUse = null;
-            if (actor.type === 'hero' && actor.character.paused && !isMouseDown()) {
+            if (isActorPaused(actor) && !isMouseDown()) {
                 actor.activity = {type: 'none'};
             }
         }
@@ -643,7 +643,7 @@ function runActorLoop(actor: Actor) {
                 } else {
                     const target = actor.activity.target;
                     // If the actor is in manual mode, only do auto attacks.
-                    if (actor.character && actor.character.paused) {
+                    if (isActorPaused(actor)) {
                         const basicAttack = getBasicAttack(actor);
                         if (!basicAttack) {
                             actor.activity = {type: 'none'};
@@ -697,7 +697,7 @@ function runActorLoop(actor: Actor) {
         }
     }
     // Manual control doesn't use the auto targeting logic.
-    if (actor.type === 'hero' && actor.character.paused) {
+    if (isActorPaused(actor)) {
         return;
     }
     const targets: Actor[] = [];

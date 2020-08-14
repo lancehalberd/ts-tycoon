@@ -99,3 +99,10 @@ export function getActorMouseTarget(actor: Actor): ShortRectangle {
 export function isPointOverActor(this: Actor, x: number, y: number): boolean {
     return isPointInShortRect(x, y, getActorMouseTarget(this));
 }
+
+// Actors can only pause in dynamic zones (not in missions, guilds or static shrine missions).
+// We might eventually extend this behavior to a "wait"/"strategic" mode in general though.
+// It would still be disabled in the guild though.
+export function isActorPaused(actor: Actor): boolean {
+    return actor.type === 'hero' && actor.character.paused && !actor.area.zoneKey;
+}
