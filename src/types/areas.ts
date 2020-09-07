@@ -1,10 +1,12 @@
+import { AreaDoor } from 'app/content/areas';
 import {
-    ActiveEffect, Actor, AreaObject, AreaObjectDefinition,
-    BonusSource, Character, Frame, FrameAnimation,
+    Ability, ActiveEffect, Actor, AreaObject, AreaObjectDefinition,
+    BonusSource, CardinalDirection, Character, Exit, Frame, FrameAnimation,
     MonsterDefinition, MonsterSpawn,
 } from 'app/types';
 
-export type ZoneType = 'prologue' | 'guild' | 'mission1' | 'mission2';
+// With endless zones, it is simpler to just allow any string here.
+export type ZoneType = string; //'prologue' | 'guild' | 'mission1' | 'mission2';
 
 export type Zones = {[key: string]: Zone};
 
@@ -78,6 +80,21 @@ export interface TileGridDefinition {
     tiles: Tile[][],
 }
 
+export interface AreaType {
+    addObjects: (area: Area, args: {
+        monsters?: MonsterSpawn[],
+        exits?: Exit[],
+        loot?: any[],
+        ability?: Ability,
+    }) => void,
+    addDoor: (area: Area, direction: CardinalDirection, door: AreaDoor) => void,
+    addLayers: (area: Area) => void,
+    drawFloor: (context: CanvasRenderingContext2D, area: Area) => void,
+    drawBackground: (context: CanvasRenderingContext2D, area: Area) => void,
+    drawForeground?: (context: CanvasRenderingContext2D, area: Area) => void,
+    populateGrids?: (area: Area) => void,
+}
+
 export interface AreaLayerDefinition {
     // Unique identifier for this layer.
     key: string,
@@ -119,7 +136,6 @@ export interface Area {
     width: number,
     rightWall?: FrameAnimation,
     leftWall?: FrameAnimation,
-    southWall?: FrameAnimation,
     cameraX: number,
     time: number,
     // Used for randomly generating area.

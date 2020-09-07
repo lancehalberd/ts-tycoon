@@ -17,20 +17,6 @@ export interface LootGenerator {
     generateLootDrop: () => LootDrop,
 }
 
-export interface AreaType {
-    addObjects: (area: Area, args: {
-        monsters?: MonsterSpawn[],
-        exits?: Exit[],
-        loot?: any[],
-        ability?: Ability,
-    }) => void,
-    addLayers: (area: Area) => void,
-    drawFloor: (context: CanvasRenderingContext2D, area: Area) => void,
-    drawBackground: (context: CanvasRenderingContext2D, area: Area) => void,
-    drawForeground?: (context: CanvasRenderingContext2D, area: Area) => void,
-    populateGrids?: (area: Area) => void,
-}
-
 export type Target = LocationTarget | Actor;
 
 export type LevelDifficulty = 'easy' | 'normal' | 'hard' | 'endless';

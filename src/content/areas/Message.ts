@@ -41,7 +41,7 @@ export class Message extends EditableAreaObject {
     messageBox: MessageBox;
     time: number = 0;
 
-    onToggle() {
+    onTrigger() {
         if (!this.displayed) {
             this.displayed = true;
             this.messageBox = new MessageBox();
@@ -60,7 +60,7 @@ export class Message extends EditableAreaObject {
                 this.messageBox = null;
             }
         } else if (!this.displayed && this.definition.delay && this.time > this.definition.delay) {
-            this.onToggle();
+            this.onTrigger();
         }
     }
 

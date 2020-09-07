@@ -74,7 +74,7 @@ export class FlameThrower extends EditableAreaObject {
     getWarmupDuration() {
         return this.definition.warmupDuration || 500;
     }
-    onToggle() {
+    onTrigger() {
         if (this.on) {
             this.turnOff();
         } else {

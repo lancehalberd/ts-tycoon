@@ -42,8 +42,8 @@ const guildYard: AreaDefinition = {
                 {
                     type: 'door',
                     x: -1, z: 8, flipped: true,
-                    key: "mapExit",
-                    exitKey: "worldMap",
+                    key: "bridge",
+                    exitKey: "endlessAdventure:bridge",
                     animation: "woodBridge",
                 },
                 {
@@ -667,6 +667,75 @@ const guildGarden: AreaDefinition = {
     ],
 };
 
+const endlessAdventure: AreaDefinition = {
+    type: 'forest',
+    width: 320,
+    leftWallType: 'caveWall',
+    rightWallType: 'river',
+    layers: [
+        {
+            key: 'floor', x: 0, y: 84,
+            objects: [
+            ],
+            grid: {
+                palette: 'meadowFloor', w: 19, h: 3,
+                tiles: [[{x:5,y:0},{x:1,y:0},{x:4,y:0},{x:2,y:0},{x:3,y:0},{x:0,y:0},{x:5,y:0},{x:3,y:0},{x:5,y:0},{x:1,y:0},{x:2,y:0},{x:5,y:0},{x:1,y:0},{x:0,y:0},{x:2,y:0},{x:5,y:0},{x:1,y:0},{x:5,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0}],[{x:1,y:0},{x:1,y:0},{x:3,y:0},{x:4,y:0},{x:1,y:0},{x:2,y:0},{x:4,y:0},{x:3,y:0},{x:2,y:0},{x:0,y:0},{x:3,y:0},{x:4,y:0},{x:0,y:0},{x:1,y:0},{x:0,y:0},{x:4,y:0},{x:2,y:0},{x:2,y:0},{x:5,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0}],[{x:2,y:0},{x:5,y:0},{x:5,y:0},{x:2,y:0},{x:5,y:0},{x:1,y:0},{x:0,y:0},{x:4,y:0},{x:1,y:0},{x:0,y:0},{x:0,y:0},{x:4,y:0},{x:1,y:0},{x:2,y:0},{x:0,y:0},{x:5,y:0},{x:4,y:0},{x:4,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0}]],
+            },
+        },
+        {
+            key: 'background', x: 0, y: 0,
+            objects: [
+                {
+                    type: 'door',
+                    x: 139, y: 12, zAlign: 'back',
+                    animation: "northMeadowDoor",
+                    exitKey: "endless:1:1:0",
+                    key: "door:endless:1:1:0",
+                },
+                {
+                    type: 'door',
+                    x: 298, zAlign: 'back', z: -66,
+                    animation: "woodBridge",
+                    exitKey: "guildYard:bridge",
+                    key: "bridge",
+                },
+                {
+                    type: 'door',
+                    x: 1, zAlign: 'back', z: -60, flipped: true,
+                    animation: "caveDoorOpen",
+                    exitKey: "endless:1:1:2",
+                    key: "door:endless:1:1:2",
+                },
+            ],
+            grid: {
+                palette: 'meadowBackground', w: 3, h: 1,
+                tiles: [[null,null,{x:0,y:0}]],
+            },
+        },
+        {
+            key: 'field', x: 0, y: 84,
+            objects: [
+            ],
+        },
+        {
+            key: 'foreground', x: 0, y: 148,
+            objects: [
+                {
+                    type: 'door',
+                    x: 174, z: -56,
+                    animation: "southMeadowDoor",
+                    exitKey: "endless:1:1:4",
+                    key: "door:endless:1:1:4",
+                },
+            ],
+            grid: {
+                palette: 'meadowForeground', w: 5, h: 1,
+                tiles: [[{x:0,y:0},null,{x:0,y:0},{x:0,y:0},{x:0,y:0}]],
+            },
+        },
+    ],
+};
+
 zones.guild = {
     guildYard,
     guildFoyer,
@@ -675,4 +744,5 @@ zones.guild = {
     guildBasement,
     guildVault,
     guildGarden,
+    endlessAdventure,
 };

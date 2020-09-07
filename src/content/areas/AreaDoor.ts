@@ -73,17 +73,24 @@ const [sideDoorClosed, sideDoorAjar, sideDoorOpen] = createAnimation('gfx2/areas
 
 interface DoorAnimationGroup {
     normal: FrameAnimation,
+    // Optional frame for when the door is blocked.
+    // The normal frame is used by default.
+    blocked?: FrameAnimation,
     hover: FrameAnimation,
 }
 
 export class AreaDoor extends EditableAreaObject {
     static animations: {[key: string]: DoorAnimationGroup} = {
         // Slanted/old guild doors
-        openDoor: {normal: frameAnimation(guildRightDoor), hover: frameAnimation(guildRightDoorEmpty)},
+        openDoor: {
+            normal: frameAnimation(guildRightDoor),
+            blocked: frameAnimation(guildRightDoor),
+            hover: frameAnimation(guildRightDoorEmpty)
+        },
         closedDoor: {normal: frameAnimation(guildRightDoor), hover: frameAnimation(guildRightDoorEmpty)},
         upstairs: {normal: upstairs, hover: upstairs},
         downstairs: {normal: downstairs, hover: downstairs},
-        // Straigh guild doors
+        // Straight guild doors
         sideDoorClosed: {normal: frameAnimation(sideDoorClosed), hover: frameAnimation(sideDoorOpen)},
         backDoor: {normal: northDoor, hover: northDoorHover},
         southDoor: {normal: southDoor, hover: southDoorHover},
@@ -104,10 +111,15 @@ export class AreaDoor extends EditableAreaObject {
 
     exit: Exit;
     animation: FrameAnimation;
-    hoverAnimation?: FrameAnimation;
+    blockedAnimation: FrameAnimation;
+    hoverAnimation: FrameAnimation;
     definition: AreaDoorDefinition;
+    blocked = false;
 
     getFrame(): Frame {
+        if (this.blocked) {
+            return getFrame(this.blockedAnimation, this.area.time * 1000);
+        }
         if (getCanvasPopupTarget() === this) {
             return getFrame(this.hoverAnimation, this.area.time * 1000);
         }
@@ -118,29 +130,52 @@ export class AreaDoor extends EditableAreaObject {
         this._areaTarget = null;
         this.definition = definition;
         const [targetArea, targetObject] = definition.exitKey.split(':');
-        this.exit = {areaKey: targetArea, objectKey: targetObject};
-        if (!AreaDoor.animations[definition.animation]) {
-            console.error('Missing door animation', definition.animation);
-            this.animation = AreaDoor.animations.openDoor.normal;
-            this.hoverAnimation = AreaDoor.animations.openDoor.hover;
+        if (targetArea === 'endless') {
+            // This should only occur for the guild doors connecting to the initial three endless
+            // areas. Those doors have the endless zone key on them for the corresponding zone,
+            // and the objectKey will always be 'door:endless:0:0:0' for the entrances.
+            this.exit = {zoneKey: definition.exitKey, objectKey: 'door:endless:0:0:0'};
+        } else if (targetArea && targetObject) {
+            this.exit = {areaKey: targetArea, objectKey: targetObject};
         } else {
-            this.animation = AreaDoor.animations[definition.animation].normal;
-            this.hoverAnimation = AreaDoor.animations[definition.animation].hover;
+            this.exit = null;
         }
+        let animationGroup = AreaDoor.animations[definition.animation];
+        if (!animationGroup) {
+            console.error('Missing door animation', definition.animation);
+            animationGroup = AreaDoor.animations.openDoor;
+        }
+        this.blocked = definition.blocked;
+        this.animation = animationGroup.normal;
+        this.hoverAnimation = animationGroup.hover;
+        this.blockedAnimation = animationGroup.blocked || animationGroup.normal;
         return this;
     }
 
+    onTrigger() {
+        // We could later add doors that can toggle closed again if we need.
+        this.blocked = false;
+    }
+
     onInteract(hero: Hero) {
-        enterArea(hero, this.exit);
+        if (this.blocked) {
+            return;
+        }
+        if (this.exit) {
+            enterArea(hero, this.exit);
+        }
     }
 
     // The game runs from left to right, so this logic tells the autoplayer to only
     // enter doors to the right, which advance the level.
     shouldInteract(hero: Hero) {
-        return this.getAreaTarget().x > 100;
+        return !this.blocked && this.getAreaTarget().x > 100;
     }
 
     isEnabled() {
+        if (!this.exit) {
+            return false;
+        }
         // Outside the guild, only boss doors are disabled until all enemies are defeated.
         if (this.area.zoneKey !== 'guild') {
             if (this.area.isBossArea) {
@@ -172,73 +207,72 @@ export class AreaDoor extends EditableAreaObject {
     static getCreateMenu(): MenuOption {
         return {
             getLabel: () => 'Door',
-            getChildren() {
-                return chooseAnimationMenu((animation: string) => {
-                    const area: Area = getState().selectedCharacter.hero.area;
-                    // Generate the objectKey now so we can use it for the initial target of this door.
-                    const objectKey: string = uniqueObjectId('door', area);
-                    createObjectAtContextCoords({type: 'door', animation, exitKey: `${area.key}:${objectKey}`, key: objectKey});
-                });
+            onSelect() {
+                const area: Area = getState().selectedCharacter.hero.area;
+                createObjectAtContextCoords({type: 'door', animation: 'openDoor', exitKey: `:`});
             }
         }
     }
 
-    static getEditMenu(object: AreaDoor): MenuOption[] {
-        return [{
-            getLabel: () => 'Door Animation',
-            getChildren() {
-                return chooseAnimationMenu((animation: string) => {
-                    object.definition.animation = animation;
-                    refreshObjectDefinition(object)
-                });
-            }
-        }, {
-            getLabel: () => 'Door Exit',
-            getChildren() {
-                const zoneKey = object.area.zoneKey;
-                return Object.keys(zones[zoneKey]).map((areaKey: string): MenuOption => {
-                    const area: Area = getArea(zoneKey, areaKey);
-                    return {
-                        getLabel: () => areaKey,
-                        getChildren() {
-                            return Object.keys(area.objectsByKey)
-                                .filter(key => area.objectsByKey[key].definition.type === 'door')
-                                .map(key => {
-                                    return {
-                                        getLabel: () => key,
-                                        onSelect() {
-                                            object.definition.exitKey = `${areaKey}:${key}`;
-                                            refreshObjectDefinition(object)
-                                        }
-                                    }
-                                });
-                        }
-                    };
-                });
-            }
-        }]
-    }
-
     static getProperties(object: AreaDoor): (EditorProperty<any> | PropertyRow | string)[] {
+        const definition = object.definition;
         const props = [];
-
+        const zone = zones[object.area.zoneKey];
+        const [areaKey, doorKey] = definition.exitKey.split(':');
+        const targetArea = areaKey && getArea(object.area.zoneKey, areaKey);
+        const exitKeyProperties = [{
+            name: 'Exit Area',
+            value: areaKey,
+            values: ['', ...Object.keys(zone)],
+            onChange: (key: string) => {
+                const [areaKey] = definition.exitKey.split(':');
+                if (key === areaKey) {
+                    return;
+                }
+                definition.exitKey = `${key}:`;
+                refreshObjectDefinition(object);
+            },
+        }];
+        if (targetArea) {
+            exitKeyProperties.push({
+                name: ':',
+                value: doorKey,
+                values: ['', ...Object.keys(targetArea.objectsByKey).filter( k => targetArea.objectsByKey[k].definition.type === 'door')],
+                onChange: (key: string) => {
+                    const [, doorKey] = definition.exitKey.split(':');
+                    if (key === doorKey) {
+                        return;
+                    }
+                    definition.exitKey = `${areaKey}:${key}`;
+                    refreshObjectDefinition(object);
+                },
+            })
+        }
+        props.push(exitKeyProperties);
+        props.push({
+            name: 'type',
+            value: definition.animation,
+            values: Object.keys(AreaDoor.animations),
+            onChange: (animation: string) => {
+                object.definition.animation = animation;
+                refreshObjectDefinition(object)
+            },
+        });
+        props.push([{
+            name: 'blocked',
+            value: definition.blocked || false,
+            onChange: (blocked: boolean) => {
+                definition.blocked = blocked;
+                object.blocked = blocked;
+            },
+        }]);
         return props;
     }
 }
 areaObjectFactories.door = AreaDoor;
 
-function chooseAnimationMenu(callback: (animation: string) => void): MenuOption[] {
-    return Object.keys(AreaDoor.animations).map((animation: string) => {
-        return {
-            getLabel: () => animation,
-            onSelect() {
-                  callback(animation);
-            }
-        }
-    })
-}
-
 export interface AreaDoorDefinition extends BaseAreaObjectDefinition {
     exitKey: string,
     animation: string,
+    blocked?: boolean,
 }

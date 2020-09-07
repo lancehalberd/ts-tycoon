@@ -17,6 +17,7 @@ import { abbreviate } from 'app/utils/formatters';
 import { getThetaDistance, rectangle, removeElementFromArray } from 'app/utils/index';
 import { centerShapesInRectangle, isPointInPoints } from 'app/utils/polygon';
 import Random from 'app/utils/Random';
+import SRandom from 'app/utils/SRandom';
 
 
 import {
@@ -45,9 +46,11 @@ export function instantiateLevel(
     const dexterityMonsters = ['spider', 'jumpingSpider', 'wolf', 'caterpillar', 'spongeyCaterpillar'];
     const dexterityEventMonsters = ['dragon','giantSkeleton', 'alphaWolf', 'motherfly', 'battlefly', 'gnomecromancer'];
     const dexterityBosses = ['lightningBug', 'dragon', 'frostGiant', 'packLeader', 'giantSpider'];
-    const allMonsters = strengthMonsters.concat(strengthEventMonsters).concat(strengthBosses)
-                        .concat(intelligenceMonsters).concat(intelligenceEventMonsters).concat(intelligenceBosses)
-                        .concat(dexterityMonsters).concat(dexterityEventMonsters).concat(dexterityBosses);
+    const allMonsters = [
+        ...strengthMonsters, ...strengthEventMonsters, ...strengthBosses,
+        ...intelligenceMonsters, ...intelligenceEventMonsters, ...intelligenceBosses,
+        ...dexterityMonsters, ...dexterityEventMonsters, ...dexterityBosses,
+    ];
     for (const monsterKey of allMonsters) {
         if (!monsters[monsterKey]) {
             throw new Error('Invalid monster key: ' + monsterKey);
@@ -198,6 +201,27 @@ export function instantiateLevel(
         });
     };
     return level;
+}
+
+// This should probably be moved to monsters.
+export function generateRandomMonsterList(theta: number, seed: number = Math.random()): string[] {
+    const possibleMonsters = [];
+    const strengthMonsters = ['skeleton','skeletalBuccaneer','undeadPaladin','undeadWarrior', 'stealthyCaterpillar'];
+    const intelligenceMonsters = ['gnome', 'gnomeCleric', 'gnomeWizard', 'bat', 'vampireBat'];
+    const dexterityMonsters = ['spider', 'jumpingSpider', 'wolf', 'caterpillar', 'spongeyCaterpillar'];
+    const degress = 180 * theta / Math.PI;
+    const random = SRandom.seed(seed);
+    for (let i = 0; i < 45; i++) {
+        const roll = (360 + degress - 30 + random.generateAndMutate() * 60) % 360;
+        if (roll >= 330 || roll < 90) { // Strength
+            possibleMonsters.push(random.removeElement(strengthMonsters))
+        } else if (roll < 210) { // Intelligence
+            possibleMonsters.push(random.removeElement(intelligenceMonsters))
+        } else { //Dexterity
+            possibleMonsters.push(random.removeElement(dexterityMonsters))
+        }
+    }
+    return possibleMonsters;
 }
 
 function generateLevelLoot(

@@ -8,6 +8,7 @@ import {
 import { baseDivinity, refreshStatsPanel, setSelectedCharacter} from 'app/character';
 import { getSprite } from 'app/content/actors';
 import { createAreaFromDefinition, getLayer, getPositionFromLocationDefinition } from 'app/content/areas';
+import { clearEndlessAreaMinimap, generateEndlessZone, highlightEndlessArea } from 'app/content/endlessZone';
 import { addAreaFurnitureBonuses } from 'app/content/furniture';
 import { instantiateLevel } from 'app/content/levels';
 import { map } from 'app/content/mapData';
@@ -43,7 +44,7 @@ import { isMouseDown } from 'app/utils/mouse';
 import { playSound } from 'app/utils/sounds';
 
 import {
-    Actor, Area, AreaDefinition, AreaEntity, AreaTarget, BonusSource, Character, Exit, Frame,
+    Actor, Area, AreaDefinition, AreaEntity, AreaObject, AreaTarget, BonusSource, Character, Exit, Frame,
     Hero, Level, LevelData, LevelDifficulty, MonsterData, MonsterSpawn, Target,
     ZoneType,
 } from 'app/types';
@@ -124,14 +125,75 @@ export function addMonstersFromAreaDefinition(area: Area) {
     addMonstersToArea(area, monsters);
 }
 
+const endlessZones = {};
 export function enterArea(actor: Actor, {x, z, areaKey, objectKey, zoneKey}: Exit) {
     if (areaKey === 'worldMap' && actor.type === 'hero') {
         returnToMap(actor.character);
         return;
     }
-    zoneKey = zoneKey || ((actor.owner || actor).area ? (actor.owner || actor).area.zoneKey : null);
     let area: Area;
-    if (!zoneKey) {
+    zoneKey = zoneKey || ((actor.owner || actor).area ? (actor.owner || actor).area.zoneKey : null);
+    // Someday all areas will have a `zoneKey` and we will be able to remove this block.
+    if (zoneKey) {
+        const [endless, levelString, radiusString, thetaIString] = zoneKey.split(':');
+        const level = Number(levelString);
+        const radius = Number(radiusString);
+        const thetaI = Number(thetaIString);
+        if (endless !== 'endless') {
+            area = getArea(zoneKey, areaKey);
+        } else if (level === 0) {
+            area = getArea('guild', 'endlessAdventure');
+        } else {
+            let character: Character = null;
+            if (actor.type === 'hero') {
+                character = actor.character;
+            }
+            if (actor.owner && actor.owner.type === 'hero') {
+                character = actor.owner.character;
+            }
+            if (!character) {
+                console.error('This actor does not have access to endless zones', actor);
+                debugger;
+                return;
+            }
+            if (character.endlessZone?.key !== zoneKey) {
+                // This will instantiate all areas in the zone, so no further initialization needs to
+                // done after generating the zone.
+                character.endlessZone = generateEndlessZone(
+                    character.endlessSeed,
+                    { thetaI, radius, level }
+                );
+            }
+            if (!objectKey) {
+                console.error('Missing objectKey when moving to endlessZone');
+                debugger;
+                return;
+            }
+            if (areaKey) {
+                area = character.endlessZone.areas[areaKey];
+                if (!area) {
+                    console.error('Missing endless zone area', character.endlessZone, areaKey);
+                    debugger;
+                    return;
+                }
+            } else {
+                for (const checkArea of Object.values(character.endlessZone.areas)) {
+                    if (checkArea.objectsByKey[objectKey]) {
+                        area = checkArea;
+                    }
+                }
+            }
+            if (!area) {
+                console.error('Failed to find endless zone area', character.endlessZone, {areaKey, objectKey, zoneKey});
+                debugger;
+                return;
+            }
+            if (character === getState().selectedCharacter) {
+                character.endlessAreasVisited[area.zoneKey + ':' + area.key] = true;
+                highlightEndlessArea(character, area);
+            }
+        }
+    } else {
         const levelInstance: Level = (actor.owner || actor).levelInstance;
         if (!levelInstance) {
             console.log('Warning, could not determine what zone to enter.');
@@ -139,8 +201,6 @@ export function enterArea(actor: Actor, {x, z, areaKey, objectKey, zoneKey}: Exi
             return;
         }
         area = levelInstance.areas.get(areaKey);
-    } else {
-        area = getArea(zoneKey, areaKey);
     }
     leaveCurrentArea(actor);
     const state = getState();
@@ -149,6 +209,9 @@ export function enterArea(actor: Actor, {x, z, areaKey, objectKey, zoneKey}: Exi
     // This will only happen if they exit the mission or use the editor to jump to a new zone.
     if (actor.type === 'hero' && actor.character.mission && actor.character.mission.parameters.zoneKey !== area.zoneKey) {
         actor.character.mission = null;
+        if (actor.character.endlessZone?.key !== area.key) {
+            clearEndlessAreaMinimap();
+        }
     }
     if (area.zoneKey === 'guild') {
         // Heal+restore cooldowns on switching guild areas.
@@ -179,7 +242,8 @@ export function enterArea(actor: Actor, {x, z, areaKey, objectKey, zoneKey}: Exi
     if (objectKey) {
         const object = area.objectsByKey[objectKey];
         if (!object) {
-            console.log('missing object', objectKey);
+            console.error('missing object', objectKey, area);
+            debugger;
         } else {
             const target = object.getAreaTarget();
             z = target.z;

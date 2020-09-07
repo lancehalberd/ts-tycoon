@@ -52,7 +52,7 @@ export interface AreaObject {
     update?: () => void,
     getAreaTarget: () => AreaObjectTarget,
     onInteract?: (actor: Actor) => void,
-    onToggle?: (switchOn: boolean) => void,
+    onTrigger?: (switchOn: boolean) => void,
     shouldInteract?: (actor: Actor) => boolean,
     isEnabled?: () => boolean,
     render?: (context: CanvasRenderingContext2D) => void,
@@ -112,7 +112,9 @@ export interface Exit {
     // The zone to enter when using this exit, if different than the current zone.
     zoneKey?: ZoneType,
     // The area to enter when using this exit.
-    areaKey: string,
+    // If the area key is not set, all areas in the zone will be searched until an
+    // object matching objectKey is found.
+    areaKey?: string,
     // The target door in the area, can be used instead of x/z coords.
     objectKey?: string,
     // The target location to appear when entering the next area.

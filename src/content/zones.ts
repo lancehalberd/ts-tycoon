@@ -25,7 +25,6 @@ for (let zoneKey in zones) {
     }
 }
 
-
 export function getZone(zoneKey: string): Zone {
     const zone = zones[zoneKey];
     if (!zone) {

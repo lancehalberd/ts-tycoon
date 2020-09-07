@@ -13,6 +13,7 @@ import {
 } from 'app/bonuses';
 import { abilities } from 'app/content/abilities';
 import { updateTrophy } from 'app/content/achievements';
+import { clearEndlessAreaMinimap, highlightEndlessArea } from 'app/content/endlessZone';
 import { createHeroColors, updateHeroGraphics } from 'app/content/heroGraphics';
 import { characterClasses } from 'app/content/jobs';
 import { updateSkillConfirmationButtons } from 'app/ui/chooseBlessing';
@@ -84,7 +85,7 @@ export const coreStatBonusSource: BonusSource = {'bonuses': {
     '*magicBlock': '{levelCoefficient}',
     '&maxHealth': '{bonusMaxHealth}',
     '*healthRegen': '{levelCoefficient}',
-    '+healthRegen': [['{maxHealth}', '/', 50], '/', '{levelCoefficient}'],
+    //'+healthRegen': [['{maxHealth}', '/', 50], '/', '{levelCoefficient}'],
     '+magicPower': [['{intelligence}', '*', '{levelCoefficient}'], '+', [['{minWeaponMagicDamage}', '+' ,'{maxWeaponMagicDamage}'], '*', 3]],
     '+minPhysicalDamage': '{minWeaponPhysicalDamage}',
     '+maxPhysicalDamage': '{maxWeaponPhysicalDamage}',
@@ -151,6 +152,8 @@ export function newCharacter(job: Job): Character {
         autoActions: {},
         manualActions: {},
         board: null,
+        endlessSeed: 0.9865189956451494 || Math.random(),
+        endlessAreasVisited: {},
     };
     hero.character = character;
     character.board = readBoardFromData(job.startingBoard, character, abilities[abilityKey], true)
@@ -592,6 +595,12 @@ export function setSelectedCharacter(character: Character) {
     if (state.selectedCharacter !== character) {
         clearSelectedAction();
     }
+    // Draw or clear the endless minimap as appropriate.
+    if (character.endlessZone?.key === character.hero.area.zoneKey) {
+        highlightEndlessArea(character);
+    } else {
+        clearEndlessAreaMinimap();
+    }
     state.selectedCharacter = character;
     // For debug purposes, put selected hero on window.Hero.
     window['Hero'] = character.hero;
@@ -636,5 +645,16 @@ export function recomputeAllCharacterDirtyStats() {
     recomputeDirtyStats(state.guildVariableObject);
     for (const { hero } of state.characters) {
         recomputeDirtyStats(hero.variableObject);
+    }
+}
+
+export function addFixedAbilities(character: Character, abilities: Ability[]): void {
+    character.fixedAbilities = character.fixedAbilities || [];
+    for (const ability of abilities) {
+        // Fixed abilities need to be placed on the character for serialization since hero.abilities is not saved.
+        character.fixedAbilities.push(ability);
+        // Abilities need to be added directly to hero.abilities as they are only applied from fixedAbilities when
+        // the character is loaded.
+        character.hero.abilities.push(ability);
     }
 }

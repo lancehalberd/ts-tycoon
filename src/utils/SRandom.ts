@@ -43,6 +43,12 @@ class SRandom {
         return nextSeed(this._seed);
     }
 
+    // This generates a random number and advances *this* geneator to the next seed.
+    generateAndMutate(): number {
+        this._seed = nextSeed(this._seed);
+        return this._seed;
+    }
+
     /**
      * @param {number} min  The smallest returned value
      * @param {number} max  The largest returned value

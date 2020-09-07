@@ -2,6 +2,7 @@ import { JobIcon } from 'app/content/jobs';
 import { TileGrid, TilePalette } from 'app/types';
 
 export type Color = string;
+export type CardinalDirection = 'N' | 'S' | 'W' | 'E';
 
 export type Point = [number, number];
 export type Range = [number, number];

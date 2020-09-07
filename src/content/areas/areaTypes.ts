@@ -44,7 +44,6 @@ const meadowBackMidFrames = createAnimation('gfx2/areas/meadowBackMid.png',
 const meadowThingFrames = createAnimation('gfx2/areas/meadowThings.png',
     {w: 32, h: 32}, {cols: 6}).frames;
 
-
 const [meadowRiver, meadowBridge] = createAnimation('gfx2/areas/meadowbridge.png',
     frame(0, 0, 39, 148, r(16, 92, 23, 35)), {cols: 2}).frames;
 const meadowClouds = createAnimation('gfx2/areas/meadowClouds.png',
@@ -53,6 +52,59 @@ const meadowClouds = createAnimation('gfx2/areas/meadowClouds.png',
 const bushAnimation = createAnimation('gfx2/areas/meadowBush.png', {w: 32, h: 32}, {cols: 4});
 
 const FieldArea: AreaType = {
+    addDoor(area, direction, door) {
+        door.definition.y = 0;
+        door.definition.z = 0;
+        if (direction === 'N') {
+            door.animation = AreaDoor.animations.northMeadowDoor.normal;
+            door.hoverAnimation = AreaDoor.animations.northMeadowDoor.hover;
+            door.definition.z = 24;
+            door.definition.zAlign = 'back';
+            const background = getLayer(area, 'background');
+            const tileWidth = background.grid.palette.w;
+            const gridPosition = Math.round(door.definition.x / tileWidth);
+            // Center the door in the tile.
+            door.definition.xAlign = 'middle';
+            door.definition.x = tileWidth * gridPosition + tileWidth / 2 - area.width / 2;
+            // The northern meadow door just replaces the tile behind it for now.
+            background.grid.tiles[0][gridPosition] = null;
+            // Right now this appears in front of the river which doesn't look great.
+            background.objects.push(door);
+        } else if (direction === 'S') {
+            door.animation = AreaDoor.animations.southMeadowDoor.normal;
+            door.hoverAnimation = AreaDoor.animations.southMeadowDoor.hover;
+            door.definition.z = 16;
+            door.definition.zAlign = 'front';
+            const foreground = getLayer(area, 'foreground');
+            const tileWidth = foreground.grid.palette.w;
+            const gridPosition = Math.round(door.definition.x / tileWidth);
+            // Align the door to the grid.
+            door.definition.xAlign = 'middle';
+            // Slight adjustment necessary to make this line up perfectly.
+            door.definition.x = tileWidth * gridPosition + tileWidth / 2 - area.width / 2 - 2;
+            // Remove the foreground tile behind the door
+            foreground.grid.tiles[0][gridPosition] = null;
+            // TODO: the path should appear under the player but the bushes need to
+            // be over the player, so this should be split into two somehow.
+            foreground.objects.push(door);
+        } else if (direction === 'W') {
+            door.animation = AreaDoor.animations.woodBridge.normal;
+            door.hoverAnimation = AreaDoor.animations.woodBridge.hover;
+            door.definition.flipped = true;
+            door.definition.x = 0;
+            door.definition.z = -7;
+            getLayer(area, 'background').objects.push(door);
+            area.leftWall = areaWalls.river;
+        } else if (direction === 'E') {
+            door.animation = AreaDoor.animations.woodBridge.normal;
+            door.hoverAnimation = AreaDoor.animations.woodBridge.hover;
+            door.definition.xAlign = 'right';
+            door.definition.x = 0;
+            door.definition.z = -7;
+            getLayer(area, 'background').objects.push(door);
+            area.rightWall = areaWalls.river;
+        }
+    },
     addLayers(area) {
         setStandardLayersOnArea(area);
         getLayer(area, 'background').grid = {w: 1, h: 1, palette: palettes.meadowBackground, tiles: []};
@@ -171,6 +223,35 @@ const FieldArea: AreaType = {
 
 const VillageArea: AreaType = {
     ...FieldArea,
+    addDoor(area, direction, door) {
+        door.definition.y = 0;
+        door.definition.z = 0;
+        if (direction === 'N') {
+            door.animation = AreaDoor.animations.northFenceDoor.normal;
+            door.hoverAnimation = AreaDoor.animations.northFenceDoor.hover;
+            door.definition.zAlign = 'back';
+            getLayer(area, 'background').objects.push(door);
+        } else if (direction === 'S') {
+            door.animation = AreaDoor.animations.southFenceDoor.normal;
+            door.hoverAnimation = AreaDoor.animations.southFenceDoor.hover;
+            door.definition.zAlign = 'front';
+            getLayer(area, 'foreground').objects.push(door);
+        } else if (direction === 'W') {
+            door.animation = AreaDoor.animations.sideFenceDoor.normal;
+            door.hoverAnimation = AreaDoor.animations.sideFenceDoor.hover;
+            door.definition.x = 0;
+            door.definition.flipped = true;
+            door.definition.z = -7;
+            getLayer(area, 'background').objects.push(door);
+        } else if (direction === 'E') {
+            door.animation = AreaDoor.animations.sideFenceDoor.normal;
+            door.hoverAnimation = AreaDoor.animations.sideFenceDoor.hover;
+            door.definition.x = 0;
+            door.definition.xAlign = 'right';
+            door.definition.z = -7;
+            getLayer(area, 'background').objects.push(door);
+        }
+    },
     addLayers(area) {
         setStandardLayersOnArea(area);
         const floor = getLayer(area, 'floor');
@@ -201,6 +282,57 @@ const [caveWall, caveDoorOpen, caveDoorClosed] = createAnimation('gfx2/areas/cav
     frame(0, 0, 39, 148, r(16, 92, 23, 35)), {cols: 3}).frames;
 
 const CaveArea: AreaType = {
+    addDoor(area, direction, door) {
+        door.definition.y = 0;
+        door.definition.z = 0;
+        if (direction === 'N') {
+            door.animation = AreaDoor.animations.northCaveDoor.normal;
+            door.hoverAnimation = AreaDoor.animations.northCaveDoor.hover;
+            door.definition.z = 20;
+            door.definition.zAlign = 'back';
+            const background = getLayer(area, 'background');
+            const tileWidth = background.grid.palette.w;
+            const gridPosition = Math.round(door.definition.x / tileWidth);
+            // Center the door in between the two tiles
+            door.definition.xAlign = 'middle';
+            door.definition.x = tileWidth * gridPosition - area.width / 2;
+            // The northern cave door needs to replace two tiles in the background.
+            background.grid.tiles[0][gridPosition - 1] = null;
+            background.grid.tiles[0][gridPosition] = null;
+            // Right now this appears in front of the river which doesn't look great.
+            background.objects.push(door);
+        } else if (direction === 'S') {
+            door.animation = AreaDoor.animations.southCaveDoor.normal;
+            door.hoverAnimation = AreaDoor.animations.southCaveDoor.hover;
+            door.definition.zAlign = 'front';
+            const foreground = getLayer(area, 'foreground');
+            const tileWidth = foreground.grid.palette.w;
+            const gridPosition = Math.round(door.definition.x / tileWidth);
+            // Align the door to the grid.
+            door.definition.xAlign = 'middle';
+            // Slight adjustment necessary to make this line up perfectly.
+            door.definition.x = tileWidth * gridPosition + tileWidth / 2 - area.width / 2 - 3;
+            // Remove the foreground tile behind the door
+            foreground.grid.tiles[0][gridPosition] = null;
+            // TODO: the path should appear under the player but the bushes need to
+            // be over the player, so this should be split into two somehow.
+            foreground.objects.push(door);
+        } else if (direction === 'W') {
+            door.animation = AreaDoor.animations.caveDoorOpen.normal;
+            door.hoverAnimation = AreaDoor.animations.caveDoorOpen.hover;
+            door.definition.x = 0;
+            door.definition.flipped = true;
+            door.definition.z = 2;
+            getLayer(area, 'background').objects.push(door);
+        } else if (direction === 'E') {
+            door.animation = AreaDoor.animations.caveDoorOpen.normal;
+            door.hoverAnimation = AreaDoor.animations.caveDoorOpen.hover;
+            door.definition.x = 0;
+            door.definition.xAlign = 'right';
+            door.definition.z = 2;
+            getLayer(area, 'background').objects.push(door);
+        }
+    },
     addLayers(area) {
         setStandardLayersOnArea(area);
         const background = getLayer(area, 'background');
@@ -208,6 +340,8 @@ const CaveArea: AreaType = {
         background.grid = {w: 1, h: 1, palette: palettes.caveBackground, tiles: []};
         getLayer(area, 'floor').grid = {w: 1, h: 3, palette: palettes.caveFloor, tiles: []};
         getLayer(area, 'foreground').grid = {w: 1, h: 1, palette: palettes.caveForeground, tiles: []};
+        area.leftWall = areaWalls.caveWall;
+        area.rightWall = areaWalls.caveWall;
     },
     addObjects(area, {monsters = [], exits, loot, ability}) {
         const random = SRandom.addSeed(area.seed);
@@ -315,6 +449,57 @@ const GuildArea: AreaType = {
         addExits(area, exits);
         finalizeArea(area);
     },
+    addDoor(area, direction, door) {
+        door.definition.y = 0;
+        door.definition.z = 0;
+        if (direction === 'N') {
+            door.animation = AreaDoor.animations.backDoor.normal;
+            door.hoverAnimation = AreaDoor.animations.backDoor.hover;
+            door.definition.zAlign = 'back';
+            const backgroundWalls = getLayer(area, 'backgroundWalls');
+            const tileWidth = backgroundWalls.grid.palette.w;
+            let gridPosition = Math.round(door.definition.x / tileWidth);
+            // Prevent the door from being too far to the left or right.
+            if (gridPosition * tileWidth + tileWidth >= area.width) {
+                gridPosition--;
+            } else if (gridPosition < 1) {
+                gridPosition++;
+            }
+            // Center the door in the tile.
+            door.definition.xAlign = 'middle';
+            door.definition.x = tileWidth * gridPosition + tileWidth / 2 - area.width / 2;
+            // Make the background behind the north door plain, we don't want to
+            // accidentally render a window behind the door.
+            backgroundWalls.grid.tiles[0][gridPosition] = {x: 1, y : 0}
+            backgroundWalls.objects.push(door);
+        } else if (direction === 'S') {
+            door.animation = AreaDoor.animations.southDoor.normal;
+            door.hoverAnimation = AreaDoor.animations.southDoor.hover;
+            door.definition.z = -18;
+            door.definition.zAlign = 'front';
+            const foreground = getLayer(area, 'foreground');
+            const gridPosition = Math.round(door.definition.x / foreground.grid.palette.w);
+            // Align the door to the grid.
+            door.definition.x = foreground.grid.palette.w * gridPosition;
+            // Remove the foreground tile behind the door
+            foreground.grid.tiles[2][gridPosition] = null;
+            foreground.objects.push(door);
+        } else if (direction === 'W') {
+            door.animation = AreaDoor.animations.sideDoorClosed.normal;
+            door.hoverAnimation = AreaDoor.animations.sideDoorClosed.hover;
+            door.definition.x = 0;
+            door.definition.flipped = true;
+            door.definition.z = -7;
+            getLayer(area, 'background').objects.push(door);
+        } else if (direction === 'E') {
+            door.animation = AreaDoor.animations.sideDoorClosed.normal;
+            door.hoverAnimation = AreaDoor.animations.sideDoorClosed.hover;
+            door.definition.x = 0;
+            door.definition.xAlign = 'right';
+            door.definition.z = -7;
+            getLayer(area, 'background').objects.push(door);
+        }
+    },
     drawFloor(context, area) {
     },
     drawBackground(context, area) {
@@ -379,6 +564,11 @@ const GuildArea: AreaType = {
         }
     }*/
 };
+
+function addDoorToLayer(area: Area, layer: string, door: AreaDoor): void {
+    const background: AreaLayer = getLayer(area, layer);
+    background.objects.push(door);
+}
 
 function addExits(area: Area, exits: Exit[], animations: {normal: FrameAnimation, hover: FrameAnimation} = AreaDoor.animations.openDoor) {
     const background: AreaLayer = getLayer(area, 'background');

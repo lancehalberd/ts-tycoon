@@ -228,9 +228,17 @@ export function finalizeArea(area: Area) {
             populateLayerGrid(area, layer);
         }
     }
+    linkAreaObjects(area);
+}
+
+export function linkAreaObjects(area: Area) {
     for (const layer of area.layers) {
         for (const object of layer.objects) {
             object.area = area;
+            const key = object.key || object.definition.key;
+            if (key) {
+                area.objectsByKey[key] = object;
+            }
         }
     }
 }

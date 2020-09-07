@@ -1,5 +1,7 @@
 Test at http://localhost:81/ttt/public/
 
+
+    [M] Fix flat guild walls need to block movement.
     [M] Add new guild furniture:
         Map
         Shrine of Fortune
@@ -10,6 +12,7 @@ Test at http://localhost:81/ttt/public/
 
     [M] Add pillar decorations.
     [M] Fix flat walls need different bounding rules than angled walls.
+    [L] Fix guild side doors block movement and have broken depth sorting.
     [L] Update charge shot to allow you to manually charge the hit for % increased damage + accuracy. Remove cooldown?
         This could be applied to some other abilities like "aim"
 
@@ -24,6 +27,61 @@ Features:
     [L] Help system where fairy floats on top of other UIs to give advice, during item/jewel crafting, world map, etc.
     [L] Add option for Pantheon dialogue at quest shrines.
     [L] Death recap for quests. Maybe not important with the more hands on gameplay.
+
+Endless Adventure:
+    * Infinite procedurally generated world for autoplay that allows players to move through connected random zones organized by biome (longitude), distance, and difficulty.
+    * Players will get endless adventure specific progression and passive bonuses that let them advance without significantly impacting the difficulty of the game story.
+    * World is composed of connected overworld zones as well as isolated underworld zones with various reward types like passive bonuses, jewels, seeds/food, trophies, unique relics.
+
+    Generating zone graph:
+        Zones are organized cylindrical space: r(distance), theta(longitude), z(difficulty)
+        r is an integer >= 1,
+        t is an integer in the range [ 0, 3(r + 1) ) where theta = 2 * PI * t / 3(r + 1)
+        z is an integer >= r (meaning there is an unused cone about the origin)
+
+        The zone at (r, t, z) can connect to any existing distinct zone among:
+            r' = [r - 1, r + 1],
+            t' = [ceil(t*(r+2)/(r+1) - 1), floor(t*(r+2)/(r+1) + 1)]
+            z' = [z - 1, z + 1]
+        Which is up to 26 possible connections
+        Connections are randomly decided to exist such that zones will have an averages of 3 expected connections, but some could in theory have 0 or even 26 connections. Some zones may be in isolated groups that are disconnected from the origin. These will either be inaccessible or perhaps some mechanism for teleporting directly to zones will be available (perhaps via a consumable reward item).
+        There is no limit on the size of zones, so we can always make a zone larger to support the number of chosen connections for the zone.
+        Progression is ensured by the following:
+            All zones at a given r/z value constitute a ring.
+            Within each ring we create 6 wedges centered around theta = 2 * PI * k / 6 where the wedge has 2 * PI / 12 diameter (so there is space between the edges) but each wedge is at least 3 zones and at most 7 zones.
+            Within each wedge, we randomly choose a guaranteed connection between ring r-1 and r, as well as r and r+1.
+            Within that wedge, all zones between the two randomly chosen guaranteed connections are also guaranteed, which
+            guarantees a path inside this wedge to every ring.
+        All other connections are determined with weighter probabilities respecting the given limitations. Although there are no guaranteed connections between z and z + 1, since there are infinite accessible nodes, it will always be possible to eventually find such a connection, and the probabilities can be set so that it never takes an excessive amount of time to find such a connection if you are looking for one.
+
+    Rewards:
+        Manual Rewards: Only granted through manual encounters, like puzzles + trap gauntlets which are placed next to way points for easy access and indicated in the waypoint description whether they are completed. These are things that would be annoying if they accumulated automatically like jewels and max affixed rare equipment. These encounters can also give other rewards.
+
+        Unique Rewards: (found after puzzles/trap gauntlets, dungeon boss fights)
+            Relics (unique items that give interesting bonuses that may vary between endless adventure and the main game)
+            Trophies/banners or trophy/banner upgrades for guild.
+            (If no available unique reward, gives big reward instead).
+            Endless Adventure Passive Skill Point (up to 3 per level)
+                Endless Adventure Passive Web:
+                    Possibly infinite passive tree where points are arranged spatially and you spend resources to connect nodes based on distance from eachother, can also create empty nodes to try to optimize connections. Cost of edges is linear, so the shorter your paths are the more passives you can obtain. For a given collections of passives you would ideally try to find the minimal spanning tree, which is a computationally difficult problem to solve.
+        Big Rewards: (found after puzzles/trap gauntlets, boss fights and ambushes)
+            Passive improvements, things like (3 strength and 3% increased strength) for str/dex/int health, armor, block/mblock, evasion, accuracy.
+            Rare seeds/food
+            Divinity based on level of area at least 10, up to 20% of base divinity cost for current level.
+            Passive respec points based on level (only if at maximum passive skill points for current level)
+        Medium Rewards (found in basic dead ends, or in addition to larger rewards, and small rewards have 10% chance to upgrade to medium rewards):
+            Normal Seeds/food
+            Large coin/anima rewards (like quest chests)
+            5 min buffs (damage, defense, speed, increased coins/anima)
+            Map + Compass for current area?
+        Small Rewards (found randomly in any area, or in addition to larger rewards)
+
+
+        Some set of relics can be found in small reward
+
+
+
+
 
 Graphics:
     [M] Arrange HUD so skill tooltips+mission quest don't overlap. Remove minimap.

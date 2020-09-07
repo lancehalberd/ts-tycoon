@@ -1,5 +1,7 @@
 import {
-    Ability, Action, ActiveMission, Actor, Board, BonusSource, GameContext, FixedObject, Hero, HUDElement,
+    Ability, Action, ActiveMission, Actor,
+    Board, BonusSource, EndlessZone, FixedObject, GameContext,
+    Hero, HUDElement,
     JobKey, LevelDifficulty, SavedActor, SavedBoard,
 } from 'app/types';
 import { JobIcon } from 'app/content/jobs';
@@ -47,6 +49,9 @@ export interface Character {
     mission?: ActiveMission,
 
     fixedAbilities?: Ability[],
+    endlessSeed: number,
+    endlessZone?: EndlessZone,
+    endlessAreasVisited: {[key in string]: boolean},
 }
 
 export interface Applicant extends Character {
@@ -78,6 +83,7 @@ export interface SavedCharacter {
     autoActions: {[key in string]: boolean},
 
     fixedAbilities?: Ability[],
+    endlessSeed: number,
 }
 
 export interface SavedApplicant extends SavedCharacter {

@@ -68,7 +68,7 @@ export class Switch extends EditableAreaObject {
         this.switchOn = !this.switchOn;
         for (const key of this.definition.targets) {
             const object = this.area.objectsByKey[key];
-            object?.onToggle?.(this.switchOn);
+            object?.onTrigger?.(this.switchOn);
         }
     }
 
@@ -128,7 +128,7 @@ export class Switch extends EditableAreaObject {
         props.push({
             name: 'targets',
             value: [...object.definition.targets],
-            values: Object.keys(object.area.objectsByKey).filter( k => object.area.objectsByKey[k].onToggle),
+            values: Object.keys(object.area.objectsByKey).filter( k => object.area.objectsByKey[k].onTrigger),
             onChange: (targets: string[]) => {
                 console.log('change targets', targets);
                 object.definition.targets = targets;
