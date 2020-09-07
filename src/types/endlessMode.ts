@@ -8,6 +8,8 @@ export interface EndlessZone {
     coordinates: EndlessZoneCoordinates,
     connections: EndlessZoneConnection[],
     grid: EndlessGridNode[][],
+    // Base seed for random generation for this zone.
+    seed: number,
 
     // This is `${level}:${radius}:${thetaI}` and is used to store/lookup the zone when it is in memory.
     key: string,

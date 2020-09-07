@@ -15,6 +15,7 @@ import { drawActor } from 'app/render/drawActor';
 import { createAnimation } from 'app/utils/animations';
 import { ifdefor } from 'app/utils/index';
 import Random from 'app/utils/Random';
+import SRandom from 'app/utils/SRandom';
 
 import {
     Ability, Actor, ActorSource, ActorStats, Affix, AffixData,
@@ -84,6 +85,49 @@ const monsterSuffixes: AffixData[][] = [
         {'name': 'Stealth', 'bonuses': {'$cloaking': true}}
     ]
 ];
+
+
+export const strengthMonsters = [
+    'skeleton','skeletalBuccaneer','undeadPaladin','undeadWarrior', 'stealthyCaterpillar'
+];
+export const intelligenceMonsters = [
+    'gnome', 'gnomeCleric', 'gnomeWizard', 'bat', 'vampireBat'
+];
+export const dexterityMonsters = [
+    'spider', 'jumpingSpider', 'wolf', 'caterpillar', 'spongeyCaterpillar'
+];
+export const strengthEventMonsters = ['dragon','giantSkeleton', 'butcher', 'alphaWolf', 'battlefly', 'motherfly'];
+export const intelligenceEventMonsters = ['dragon','giantSkeleton', 'butcher', 'frostGiant', 'battlefly', 'gnomecromancer'];
+export const dexterityEventMonsters = ['dragon','giantSkeleton', 'alphaWolf', 'motherfly', 'battlefly', 'gnomecromancer'];
+
+export const strengthBosses = ['skeletonOgre', 'dragon', 'packLeader', 'necrognomekhan'];
+export const intelligenceBosses = ['skeletonOgre', 'lightningBug', 'frostGiant', 'necrognomekhan', 'giantSpider'];
+export const dexterityBosses = ['lightningBug', 'dragon', 'frostGiant', 'packLeader', 'giantSpider'];
+
+
+// This should probably be moved to monsters.
+export function generateMonsterPool(degrees: number, sourceSize: number, poolSize: number, seed: number = Math.random()): string[] {
+    const monsterPool = [];
+    const random = SRandom.seed(seed);
+    const strengthPool = strengthMonsters.slice(0, poolSize);
+    const intelligencePool = intelligenceMonsters.slice(0, poolSize);
+    const dexterityPool = dexterityMonsters.slice(0, poolSize);
+    for (let i = 0; i < poolSize; i++) {
+        const roll = (360 + degrees - 30 + random.generateAndMutate() * 60) % 360;
+        if ((roll >= 300 || roll < 60) && strengthPool.length) { // Strength centerd at 0/360
+            monsterPool.push(random.removeElement(strengthPool));
+        } else if (roll < 180 && intelligencePool.length) { // Intelligence centered at 120
+            monsterPool.push(random.removeElement(intelligencePool));
+        } else if (dexterityPool.length) { // Dexterity centered at 240
+            monsterPool.push(random.removeElement(dexterityPool));
+        } else if (strengthPool.length) {
+            monsterPool.push(random.removeElement(strengthPool));
+        } else if (intelligencePool.length) {
+            monsterPool.push(random.removeElement(intelligencePool));
+        }
+    }
+    return monsterPool;
+}
 
 export function makeMonster(
     area: Area,
@@ -761,6 +805,17 @@ export function initializeMonsters() {
                             '*speed': 2, '*scale': 2}, 'tags': ['ranged'],
         'abilities': [abilities.fireball, abilities.sideStep]
     });
+    // This is just a check to make sure all monsters used in these arrays are actually defined.
+    const allMonsters = [
+        ...strengthMonsters, ...strengthEventMonsters, ...strengthBosses,
+        ...intelligenceMonsters, ...intelligenceEventMonsters, ...intelligenceBosses,
+        ...dexterityMonsters, ...dexterityEventMonsters, ...dexterityBosses,
+    ];
+    for (const monsterKey of allMonsters) {
+        if (!monsters[monsterKey]) {
+            throw new Error('Invalid monster key: ' + monsterKey);
+        }
+    }
 }
 
 export function getMonsterDefinitionAreaEntity(this: void, area: Area, monsterDefinition: MonsterDefinition): AreaEntity {

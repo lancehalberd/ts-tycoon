@@ -3,7 +3,13 @@ import { readBoardFromData, totalCostForNextLevel } from 'app/character';
 import { abilities } from 'app/content/abilities';
 import { areaTypes } from 'app/content/areas';
 import { map } from 'app/content/mapData';
-import { bossMonsterBonuses, easyBonuses, hardBonuses, monsters } from 'app/content/monsters';
+import {
+    bossMonsterBonuses, easyBonuses, hardBonuses, monsters,
+    strengthBosses, strengthEventMonsters,
+    intelligenceBosses, intelligenceEventMonsters,
+    dexterityBosses, dexterityEventMonsters,
+    generateMonsterPool,
+} from 'app/content/monsters';
 import { setContext } from 'app/context';
 import { bodyDiv, divider, mainContext, queryAll, titleDiv, toggleElements } from 'app/dom';
 import { drawBoardPreview } from 'app/drawBoard';
@@ -18,7 +24,6 @@ import { getThetaDistance, rectangle, removeElementFromArray } from 'app/utils/i
 import { centerShapesInRectangle, isPointInPoints } from 'app/utils/polygon';
 import Random from 'app/utils/Random';
 import SRandom from 'app/utils/SRandom';
-
 
 import {
     Actor, Area, AreaType, Board, BoardData, BonusSource, Character, Exit,
@@ -35,49 +40,32 @@ export function instantiateLevel(
     enemyLevel = 0
 ): Level {
     enemyLevel = enemyLevel || levelData.level;
-    const levelDegrees = (360 + 180 * Math.atan2(levelData.coords[1], levelData.coords[0]) / Math.PI) % 360;
-    const possibleMonsters = levelData.monsters.slice();
-    const strengthMonsters = ['skeleton','skeletalBuccaneer','undeadPaladin','undeadWarrior', 'stealthyCaterpillar'];
-    const strengthEventMonsters = ['dragon','giantSkeleton', 'butcher', 'alphaWolf', 'battlefly', 'motherfly'];
-    const strengthBosses = ['skeletonOgre', 'dragon', 'packLeader', 'necrognomekhan'];
-    const intelligenceMonsters = ['gnome', 'gnomeCleric', 'gnomeWizard', 'bat', 'vampireBat'];
-    const intelligenceEventMonsters = ['dragon','giantSkeleton', 'butcher', 'frostGiant', 'battlefly', 'gnomecromancer'];
-    const intelligenceBosses = ['skeletonOgre', 'lightningBug', 'frostGiant', 'necrognomekhan', 'giantSpider'];
-    const dexterityMonsters = ['spider', 'jumpingSpider', 'wolf', 'caterpillar', 'spongeyCaterpillar'];
-    const dexterityEventMonsters = ['dragon','giantSkeleton', 'alphaWolf', 'motherfly', 'battlefly', 'gnomecromancer'];
-    const dexterityBosses = ['lightningBug', 'dragon', 'frostGiant', 'packLeader', 'giantSpider'];
-    const allMonsters = [
-        ...strengthMonsters, ...strengthEventMonsters, ...strengthBosses,
-        ...intelligenceMonsters, ...intelligenceEventMonsters, ...intelligenceBosses,
-        ...dexterityMonsters, ...dexterityEventMonsters, ...dexterityBosses,
-    ];
-    for (const monsterKey of allMonsters) {
-        if (!monsters[monsterKey]) {
-            throw new Error('Invalid monster key: ' + monsterKey);
-        }
-    }
+    // On the map, strength is at 30, int is 150 and dex is 270,
+    // but it is easier to put them at 0, 120, 240, so we subtract 30 here.
+    const levelDegrees = (360 + 180 * Math.atan2(levelData.coords[1], levelData.coords[0]) / Math.PI - 30) % 360;
+    let possibleMonsters = levelData.monsters.slice();
+
+    const random = SRandom.seed(0.040822448356993224)
+        .addSeed(levelData.coords[0]).addSeed(levelData.coords[1]).addSeed(levelData.coords[2]);
+
     if (!possibleMonsters.length) {
         const desiredNumberOfMonsters = Math.min(4, Math.floor(Math.sqrt(enemyLevel)));
-        while (possibleMonsters.length < desiredNumberOfMonsters) {
-            const roll = (360 + levelDegrees - 30 + Math.random() * 60) % 360;
-            if (roll >= 330 || roll < 90) { // Strength
-                possibleMonsters.push(Random.removeElement(strengthMonsters))
-            } else if (roll < 210) { // Intelligence
-                possibleMonsters.push(Random.removeElement(intelligenceMonsters))
-            } else { //Dexterity
-                possibleMonsters.push(Random.removeElement(dexterityMonsters))
-            }
-        }
+        possibleMonsters = generateMonsterPool(
+            levelDegrees,
+            desiredNumberOfMonsters,
+            desiredNumberOfMonsters,
+            random.random()
+        );
         //console.log(JSON.stringify(monsters));
     }
     const events = levelData.events.slice();
     if (!events.length) {
         let eventMonsters, bossMonsters;
         const roll = (360 + levelDegrees - 30 + Math.random() * 60) % 360;
-        if (roll >= 330 || roll < 90) { // strength
+        if (roll >= 300 || roll < 60) { // strength
             eventMonsters = strengthEventMonsters;
             bossMonsters = strengthBosses;
-        } else if (roll < 210) { // int
+        } else if (roll < 180) { // int
             eventMonsters = intelligenceEventMonsters;
             bossMonsters = intelligenceBosses;
         } else { //Dexterity
@@ -201,27 +189,6 @@ export function instantiateLevel(
         });
     };
     return level;
-}
-
-// This should probably be moved to monsters.
-export function generateRandomMonsterList(theta: number, seed: number = Math.random()): string[] {
-    const possibleMonsters = [];
-    const strengthMonsters = ['skeleton','skeletalBuccaneer','undeadPaladin','undeadWarrior', 'stealthyCaterpillar'];
-    const intelligenceMonsters = ['gnome', 'gnomeCleric', 'gnomeWizard', 'bat', 'vampireBat'];
-    const dexterityMonsters = ['spider', 'jumpingSpider', 'wolf', 'caterpillar', 'spongeyCaterpillar'];
-    const degress = 180 * theta / Math.PI;
-    const random = SRandom.seed(seed);
-    for (let i = 0; i < 45; i++) {
-        const roll = (360 + degress - 30 + random.generateAndMutate() * 60) % 360;
-        if (roll >= 330 || roll < 90) { // Strength
-            possibleMonsters.push(random.removeElement(strengthMonsters))
-        } else if (roll < 210) { // Intelligence
-            possibleMonsters.push(random.removeElement(intelligenceMonsters))
-        } else { //Dexterity
-            possibleMonsters.push(random.removeElement(dexterityMonsters))
-        }
-    }
-    return possibleMonsters;
 }
 
 function generateLevelLoot(

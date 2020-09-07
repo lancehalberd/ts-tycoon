@@ -1,5 +1,6 @@
 import _ from 'lodash';
 
+import { addMonsterToArea } from 'app/adventure';
 import {
     areaTypes,
     finalizeArea,
@@ -7,6 +8,7 @@ import {
     linkAreaObjects,
     AreaDoor,
 } from 'app/content/areas';
+import { generateMonsterPool } from 'app/content/monsters';
 import { createCanvas, mainContent } from 'app/dom';
 import {
     Area,
@@ -28,6 +30,11 @@ import {
 import SRandom from 'app/utils/SRandom';
 
 function doesConnectionExist(endlessSeed: number, {coordinatesA, coordinatesB}: EndlessZoneConnection): boolean {
+    // Areas with radius < level do not exist, so no connections to them exist.
+    // Let's enforce this through which connections we check for.
+    //if (coordinatesA.radius < coordinatesA.level || coordinatesB.radius < coordinatesB.level) {
+    //    return false;
+    //}
     // Make sure we always consider coordinatesA/B in the same order so we get the same result
     // regardless of the order they are set in the connection.
     if (coordinatesA.level < coordinatesB.level ||
@@ -97,6 +104,7 @@ function getConnections(endlessSeed: number, coordinates: EndlessZoneCoordinates
         const thetaN = 3 + 3 * radius;
         if (thetaI < 0) thetaI += thetaN;
         else if (thetaI >= thetaN) thetaI %= thetaN;
+        // console.log('trying connection', {radius, level, thetaI});
         const testConnection: EndlessZoneConnection = {
             coordinatesA: coordinates,
             coordinatesB: {thetaI, radius, level}
@@ -105,35 +113,36 @@ function getConnections(endlessSeed: number, coordinates: EndlessZoneCoordinates
             connections.push(testConnection);
         }
     }
-    // Descending paths
-    if (coordinates.level > 1) {
-        const radius = coordinates.radius - 1;
-        const level = coordinates.level - 1;
+    function checkArc(radius: number, level: number) {
         const theta = coordinates.thetaI / (1 + coordinates.radius) * (1 + radius);
-        const minTheta = Math.ceil(theta - 1), maxTheta = Math.floor(theta + 1);
+        let minTheta = theta - 1;
+        if (minTheta === Math.ceil(minTheta) && radius < coordinates.radius) {
+            minTheta = Math.ceil(minTheta + 1);
+        } else {
+            minTheta = Math.ceil(minTheta);
+        }
+        let maxTheta = theta + 1;
+        if (maxTheta === Math.floor(maxTheta) && radius < coordinates.radius) {
+            maxTheta = Math.floor(maxTheta - 1);
+        } else {
+            maxTheta = Math.floor(maxTheta);
+        }
         for (let thetaI = minTheta; thetaI <= maxTheta; thetaI++) {
             checkCoordinates(thetaI, radius, level);
         }
+    }
+    // Descending paths
+    if (coordinates.level > 1) {
+        checkArc(coordinates.radius - 1, coordinates.level - 1);
     }
     // Ascending paths
     {
-        const radius = coordinates.radius + 1;
-        const level = coordinates.level + 1;
-        const theta = coordinates.thetaI / (1 + coordinates.radius) * (1 + radius);
-        const minTheta = Math.ceil(theta - 1), maxTheta = Math.floor(theta + 1);
-        for (let thetaI = minTheta; thetaI <= maxTheta; thetaI++) {
-            checkCoordinates(thetaI, radius, level);
-        }
+        checkArc(coordinates.radius + 1, coordinates.level + 1);
     }
     const level = coordinates.level;
-    // Backward paths
-    if (coordinates.radius > 1) {
-        const radius = coordinates.radius - 1;
-        const theta = coordinates.thetaI / (1 + coordinates.radius) * (1 + radius);
-        const minTheta = Math.ceil(theta - 1), maxTheta = Math.floor(theta + 1);
-        for (let thetaI = minTheta; thetaI <= maxTheta; thetaI++) {
-            checkCoordinates(thetaI, radius, level);
-        }
+    // Backward paths, radius can never decrease below level.
+    if (coordinates.radius > coordinates.level) {
+        checkArc(coordinates.radius - 1, coordinates.level);
     } else if (coordinates.radius === 1 && coordinates.thetaI % 2 === 0) {
         // This is a special case for creating the entrances in the three initial zones.
         connections.push({
@@ -143,12 +152,7 @@ function getConnections(endlessSeed: number, coordinates: EndlessZoneCoordinates
     }
     // Forward paths
     {
-        const radius = coordinates.radius + 1;
-        const theta = coordinates.thetaI / (1 + coordinates.radius) * (1 + radius);
-        const minTheta = Math.ceil(theta - 1), maxTheta = Math.floor(theta + 1);
-        for (let thetaI = minTheta; thetaI <= maxTheta; thetaI++) {
-            checkCoordinates(thetaI, radius, level);
-        }
+        checkArc(coordinates.radius + 1, coordinates.level);
     }
     // Side paths
     {
@@ -164,7 +168,7 @@ export function getCoordinatesKey({level, radius, thetaI}: EndlessZoneCoordinate
 
 export function generateEndlessZone(endlessSeed: number, coordinates: EndlessZoneCoordinates): EndlessZone {
     //console.log('generateEndlessZone', {endlessSeed, coordinates});
-    let random = SRandom.seed(endlessSeed)
+    const random = SRandom.seed(endlessSeed)
         .addSeed(0.4018552164626086)
         .addSeed(coordinates.level)
         .addSeed(coordinates.radius)
@@ -213,7 +217,7 @@ export function generateEndlessZone(endlessSeed: number, coordinates: EndlessZon
     const key = getCoordinatesKey(coordinates);
     const areaType = random.addSeed(0.8856792004000178).element(['cave', 'field', 'oldGuild']);
     const {areas, areaBlocks, grid} = generateEndlessZoneAreas(key, areaType, random.random(), events);
-    return {
+    const zone = {
         key,
         areaType,
         areas,
@@ -221,7 +225,62 @@ export function generateEndlessZone(endlessSeed: number, coordinates: EndlessZon
         coordinates,
         connections,
         grid,
+        seed: random._seed,
     };
+    addMonstersToEndlessZone(zone);
+    return zone;
+}
+
+function addMonstersToEndlessZone(endlessZone: EndlessZone): void {
+    const { thetaI, level, radius } = endlessZone.coordinates;
+    const theta = 2 * Math.PI * thetaI / ( 3 + 3 * radius);
+    const random = SRandom.seed(endlessZone.seed).addSeed(0.6420071862889363);
+    const monsterPool = generateMonsterPool(
+        180 * theta / Math.PI,
+        Math.ceil(2 + Math.sqrt(level)), // How deep to explore source pools.
+        Math.floor(1 + Math.sqrt(level / 2)), // How large of a pool to generate.
+        random.generateAndMutate(),
+    );
+    const { grid } = endlessZone;
+    for (let row = 0; row < grid.length; row++) {
+        for (let column = 0; column <= grid[row].length; column++) {
+            const tile = grid[row][column];
+            if (!tile || tile.exit) continue;
+            const area = tile.areaBlock.area;
+            const numberOfMonsters = random.range(0, 3);
+            let x =
+                (tile.areaBlock.area.width) / (tile.areaBlock.w + 1)
+                * (column - tile.areaBlock.x + 1);
+
+            // Move the monsters away from doors if any are present.
+            if (column === tile.areaBlock.x && tile.W) {
+                x += 50;
+            }
+            if (column === tile.areaBlock.x + tile.areaBlock.w - 1 && tile.E) {
+                x -= 50;
+            }
+            let z = 0;
+            if (tile.N) {
+                z -= 50;
+            }
+            if (tile.S) {
+                z += 50;
+            }
+            for (let i = 0; i < 3; i++) {
+                if (random.generateAndMutate() < 0.5) continue;
+                const theta = i * 2 * Math.PI / 3;
+                addMonsterToArea(area, random.element(monsterPool), level,
+                    {
+                        x: Math.floor(x + Math.cos(theta) * 20),
+                        y: 0,
+                        z: Math.floor(z + Math.sin(theta) * 20),
+                    },
+                    [], // bonuses,
+                    0, // rarity,
+                )
+            }
+        }
+    }
 }
 
 function generateEndlessZoneAreas(
@@ -710,3 +769,57 @@ export function renderGrid(grid: any[][], areaBlocks: EndlessAreaBlock[]) {
         }
     }
 }*/
+
+// test connections, run this code to check that connections can always be taken forward and
+// backward between areas.
+/*const testRandom = SRandom.seed(Math.random());
+const testSeed = testRandom.generateAndMutate();
+let connections = getConnections(testSeed, {thetaI: 0, radius: 1, level: 1}), lastConnections = null;
+for (let i = 0; i < 1000; i++) {
+    if (!connections.length) {
+        console.error('Reached a zone with no connections');
+        debugger;
+        break;
+    }
+    const validNextCoordinates = connections.map(c => c.coordinatesB).filter(c => c.level > 0);
+    if (!validNextCoordinates.length) {
+        console.error('Hit a dead end immediately');
+        break;
+    }
+    console.log('zone', getCoordinatesKey(connections[0].coordinatesA));
+    lastConnections = connections;
+    connections = getConnections(testSeed,
+        // Get a random next element that is not the origin (level === 0)
+        testRandom.element(validNextCoordinates)
+    );
+    // Advance generator so we keep changing results.
+    testRandom.generateAndMutate();
+    if (!_.find(connections, {coordinatesB: lastConnections[0].coordinatesA})) {
+        console.error('Missing back path', {connections, lastConnections});
+        debugger;
+        break;
+    }
+}
+
+window['checkArc'] = function (coordinates, radius, level) {
+    const theta = coordinates.thetaI / (1 + coordinates.radius) * (1 + radius);
+    let minTheta = theta - 1;
+    if (minTheta === Math.ceil(minTheta) && radius < coordinates.radius) {
+        minTheta = Math.ceil(minTheta + 1);
+    } else {
+        minTheta = Math.ceil(minTheta);
+    }
+    let maxTheta = theta + 1;
+    if (maxTheta === Math.floor(maxTheta) && radius < coordinates.radius) {
+        maxTheta = Math.floor(maxTheta - 1);
+    } else {
+        maxTheta = Math.floor(maxTheta);
+    }
+    console.log({minTheta, theta, maxTheta});
+    for (let thetaI = minTheta; thetaI <= maxTheta; thetaI++) {
+        console.log({thetaI, radius, level});
+    }
+}
+*/
+
+

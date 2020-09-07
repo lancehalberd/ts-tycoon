@@ -45,7 +45,7 @@ import { playSound } from 'app/utils/sounds';
 
 import {
     Actor, Area, AreaDefinition, AreaEntity, AreaObject, AreaTarget, BonusSource, Character, Exit, Frame,
-    Hero, Level, LevelData, LevelDifficulty, MonsterData, MonsterSpawn, Target,
+    Hero, Level, LevelData, LevelDifficulty, Monster, MonsterData, MonsterSpawn, Target,
     ZoneType,
 } from 'app/types';
 
@@ -302,19 +302,27 @@ export function addMonstersToArea(
     for (const monsterData of (monsters || [])) {
         const bonusSources = [...(monsterData.bonusSources || []), ...extraBonuses];
         const rarity = monsterData.rarity || specifiedRarity;
-        const newMonster = makeMonster(area, monsterData.key, monsterData.level, bonusSources, rarity);
+        const newMonster = addMonsterToArea(
+            area, monsterData.key, monsterData.level, monsterData.location,
+            bonusSources, rarity
+        );
         newMonster.heading = monsterData.heading;
-        newMonster.x = monsterData.location.x;
-        newMonster.y = monsterData.location.y;
-        newMonster.z = monsterData.location.z;
-        newMonster.area = area;
-        initializeActorForAdventure(newMonster);
-        newMonster.time = 0;
-        newMonster.allies = newMonster.area.enemies;
-        newMonster.enemies = newMonster.area.allies;
-        newMonster.allies.push(newMonster);
         newMonster.isTarget = monsterData.isTarget;
     }
+}
+export function addMonsterToArea(area: Area, key: string, level: number, location: {x: number, y: number, z: number}, bonusSources: BonusSource[] = [], rarity = 0): Monster {
+    const newMonster = makeMonster(area, key, level, bonusSources, rarity);
+    newMonster.heading = [-1, 0, 0];
+    newMonster.x = location.x;
+    newMonster.y = location.y;
+    newMonster.z = location.z;
+    newMonster.area = area;
+    initializeActorForAdventure(newMonster);
+    newMonster.time = 0;
+    newMonster.allies = newMonster.area.enemies;
+    newMonster.enemies = newMonster.area.allies;
+    newMonster.allies.push(newMonster);
+    return newMonster;
 }
 function checkIfActorDied(actor: Actor) {
     const area = actor.area;
