@@ -92,8 +92,8 @@ export interface GameState {
     gameHasBeenInitialized: boolean,
 }
 
-export const guildYardEntrance: Exit = {zoneKey: 'guild', areaKey: 'guildYard', objectKey: 'mapExit'};
 export const guildGateEntrance: Exit = {zoneKey: 'guild', areaKey: 'guildYard', objectKey: 'guildGate'};
+export const guildYardEntrance: Exit = guildGateEntrance;//{zoneKey: 'guild', areaKey: 'guildYard', objectKey: 'mapExit'};
 
 function getDefaultSavedState(): SavedState {
     return {

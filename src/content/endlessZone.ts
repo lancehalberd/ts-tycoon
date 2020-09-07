@@ -574,6 +574,7 @@ const endlessMapCanvas = createCanvas(200, 100);
 endlessMapCanvas.style.position = 'absolute';
 endlessMapCanvas.style.top = '15px';
 endlessMapCanvas.style.left = '215px';
+endlessMapCanvas.style.pointerEvents = 'none';
 mainContent.append(endlessMapCanvas);
 export const endlessMapContext = endlessMapCanvas.getContext('2d');
 

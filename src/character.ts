@@ -596,7 +596,7 @@ export function setSelectedCharacter(character: Character) {
         clearSelectedAction();
     }
     // Draw or clear the endless minimap as appropriate.
-    if (character.endlessZone?.key === character.hero.area.zoneKey) {
+    if (character.endlessZone && character.endlessZone.key === character.hero.area?.zoneKey) {
         highlightEndlessArea(character);
     } else {
         clearEndlessAreaMinimap();

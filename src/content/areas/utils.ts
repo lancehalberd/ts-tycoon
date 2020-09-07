@@ -232,6 +232,7 @@ export function finalizeArea(area: Area) {
 }
 
 export function linkAreaObjects(area: Area) {
+    area.objectsByKey = {};
     for (const layer of area.layers) {
         for (const object of layer.objects) {
             object.area = area;

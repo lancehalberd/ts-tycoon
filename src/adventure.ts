@@ -31,7 +31,7 @@ import { updateActorAnimationFrame } from 'app/render/drawActor';
 import { appendTextPopup, applyAttackToTarget, findActionByTag, getBasicAttack, performAttackProper } from 'app/performAttack';
 import { gain } from 'app/points';
 import { saveGame } from 'app/saveGame';
-import { getState, guildGateEntrance, guildYardEntrance } from 'app/state';
+import { getState, guildGateEntrance } from 'app/state';
 import { DialogueBox } from 'app/ui/DialogueBox';
 import {
     canUseReaction, canUseSkillOnTarget, gainReflectionBarrier,
@@ -209,9 +209,9 @@ export function enterArea(actor: Actor, {x, z, areaKey, objectKey, zoneKey}: Exi
     // This will only happen if they exit the mission or use the editor to jump to a new zone.
     if (actor.type === 'hero' && actor.character.mission && actor.character.mission.parameters.zoneKey !== area.zoneKey) {
         actor.character.mission = null;
-        if (actor.character.endlessZone?.key !== area.key) {
-            clearEndlessAreaMinimap();
-        }
+    }
+    if (actor.type === 'hero' && actor.character.endlessZone?.key !== area.zoneKey) {
+        clearEndlessAreaMinimap();
     }
     if (area.zoneKey === 'guild') {
         // Heal+restore cooldowns on switching guild areas.
@@ -428,7 +428,7 @@ export function removeActor(actor: Actor) {
         const area = actor.area;
         if (area.zoneKey) {
             removeAdventureEffects(actor);
-            enterArea(actor, actor.escapeExit || guildYardEntrance);
+            enterArea(actor, actor.escapeExit || guildGateEntrance);
             return;
         }
         const level = actor.levelInstance;
