@@ -30,25 +30,22 @@ import {
 import SRandom from 'app/utils/SRandom';
 
 function doesConnectionExist(endlessSeed: number, {coordinatesA, coordinatesB}: EndlessZoneConnection): boolean {
-    // Areas with radius < level do not exist, so no connections to them exist.
-    // Let's enforce this through which connections we check for.
-    //if (coordinatesA.radius < coordinatesA.level || coordinatesB.radius < coordinatesB.level) {
-    //    return false;
-    //}
     // Make sure we always consider coordinatesA/B in the same order so we get the same result
     // regardless of the order they are set in the connection.
-    if (coordinatesA.level < coordinatesB.level ||
-        (coordinatesA.level === coordinatesB.level &&
-            coordinatesA.radius < coordinatesB.radius ||
-            (coordinatesA.radius === coordinatesB.radius && coordinatesA.thetaI < coordinatesB.thetaI)
+    if (coordinatesB.level < coordinatesA.level ||
+        (coordinatesB.level === coordinatesA.level &&
+            coordinatesB.radius < coordinatesA.radius ||
+            (coordinatesB.radius === coordinatesA.radius && coordinatesB.thetaI < coordinatesA.thetaI)
         )
     ) {
         const t = coordinatesA;
         coordinatesA = coordinatesB;
         coordinatesB = t;
     }
-    const thetaA = coordinatesA.thetaI / (3 + 3 * coordinatesA.radius);
-    const thetaB = coordinatesB.thetaI / (3 + 3 * coordinatesB.radius);
+    const thetaAN = (3 + 3 * coordinatesA.radius);
+    const thetaA = coordinatesA.thetaI / thetaAN;
+    const thetaBN = (3 + 3 * coordinatesB.radius);
+    const thetaB = coordinatesB.thetaI / thetaBN;
     const thetaR = 1 / (3 + 3 * Math.min(coordinatesA.radius, coordinatesB.radius));
     let dTheta = Math.abs(thetaB - thetaA);
     if (dTheta > 0.5) {
@@ -79,6 +76,24 @@ function doesConnectionExist(endlessSeed: number, {coordinatesA, coordinatesB}: 
         .addSeed(coordinatesB.level)
         .addSeed(coordinatesB.radius)
         .addSeed(coordinatesB.thetaI);
+    const spokeAIndex = thetaAN * Math.round(thetaA * 6);
+    const spokeARadius = Math.min(3, Math.ceil(thetaAN / 12));
+    const spokeBIndex = thetaBN * Math.round(thetaB * 6);
+    const spokeBRadius = Math.min(3, Math.ceil(thetaAN / 12));
+    function isIndexInRadius(index, center, radius, modulus): boolean {
+        const distance = (modulus + center - index) % modulus;
+        return distance <= radius || modulus - distance <= radius;
+    }
+    // There is only a forced connection if both coordinates are within their given spoke.
+    if (
+        isIndexInRadius(coordinatesA.thetaI, spokeAIndex, spokeARadius, thetaAN) &&
+        isIndexInRadius(coordinatesB.thetaI, spokeBIndex, spokeBRadius, thetaBN)
+    ) {
+        const entryTheta = spokeAIndex / thetaAN
+        if (dRadius > 0) {
+
+        }
+    }
     // TODO: Calculate forced connections and always return true for those.
     // Find the nearest theta (0, 1/6, 2/6, etc) spoke to coordinatesA.
     // Check both coordinates are in the spoke, if not, there is no forced connection.
