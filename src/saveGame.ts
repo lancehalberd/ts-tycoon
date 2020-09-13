@@ -59,6 +59,9 @@ export function exportCharacter(character: Character | Applicant): SavedCharacte
         loopSkip: character.loopSkip,
         fixedAbilities: character.fixedAbilities,
         endlessSeed: character.endlessSeed,
+        endlessAreaPortal: character.endlessAreaPortal,
+        endlessExperience: character.endlessExperience,
+        endlessLevel: character.endlessLevel,
     };
 }
 export function exportApplicant(applicant: Applicant): SavedApplicant {
@@ -105,6 +108,9 @@ export function importCharacter(characterData: SavedCharacter) {
         // Putting a static value here for now.
         endlessSeed: characterData.endlessSeed || 0.9865189956451494 || Math.random(),
         endlessAreasVisited: {},
+        endlessAreaPortal: characterData.endlessAreaPortal,
+        endlessExperience: characterData.endlessExperience || 0,
+        endlessLevel: characterData.endlessLevel || 1,
     };
     character.characterContext.imageSmoothingEnabled = false;
     if (isNaN(character.divinity) || typeof(character.divinity) !== "number") {

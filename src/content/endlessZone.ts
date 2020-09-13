@@ -1,6 +1,7 @@
 import _ from 'lodash';
 
 import { addMonsterToArea } from 'app/adventure';
+import { experienceToLevel } from 'app/character';
 import {
     areaTypes,
     finalizeArea,
@@ -10,6 +11,9 @@ import {
 } from 'app/content/areas';
 import { generateMonsterPool } from 'app/content/monsters';
 import { createCanvas, mainContent } from 'app/dom';
+import { drawBar } from 'app/drawArea';
+import SRandom from 'app/utils/SRandom';
+
 import {
     Area,
     AreaLayer,
@@ -27,9 +31,27 @@ import {
     FrameAnimation,
 } from 'app/types';
 
-import SRandom from 'app/utils/SRandom';
 
-function doesConnectionExist(endlessSeed: number, {coordinatesA, coordinatesB}: EndlessZoneConnection): boolean {
+const SPOKE_COUNT = 3;
+const SPOKE_RADIUS = 1;
+const THETA_COUNT = SPOKE_COUNT * (1 + 2 *  SPOKE_RADIUS);
+
+// Normalize theta to the range [0, n)
+function normalizeTheta(theta: number, n: number): number {
+    return (theta % n + n) % n;
+}
+// Check if theta is in between the min + max theta values.
+function isThetaInRange(theta: number, min: number, max: number, n: number): boolean {
+    theta = normalizeTheta(theta, n);
+    min = normalizeTheta(min, n);
+    max = normalizeTheta(max, n);
+    return (min <= max && theta >= min && theta <= max) || (min > max && (theta <= max || theta >= min));
+}
+function isThetaInRadius(theta, center, radius, n): boolean {
+    return isThetaInRange(theta, center - radius, center + radius, n);
+}
+
+function doesConnectionExist(endlessSeed: number, {coordinatesA, coordinatesB}: EndlessZoneConnection): number {
     // Make sure we always consider coordinatesA/B in the same order so we get the same result
     // regardless of the order they are set in the connection.
     if (coordinatesB.level < coordinatesA.level ||
@@ -42,29 +64,26 @@ function doesConnectionExist(endlessSeed: number, {coordinatesA, coordinatesB}: 
         coordinatesA = coordinatesB;
         coordinatesB = t;
     }
-    const thetaAN = (3 + 3 * coordinatesA.radius);
-    const thetaA = coordinatesA.thetaI / thetaAN;
-    const thetaBN = (3 + 3 * coordinatesB.radius);
-    const thetaB = coordinatesB.thetaI / thetaBN;
-    const thetaR = 1 / (3 + 3 * Math.min(coordinatesA.radius, coordinatesB.radius));
-    let dTheta = Math.abs(thetaB - thetaA);
-    if (dTheta > 0.5) {
-        dTheta = 1 - dTheta;
+    let dTheta = Math.abs(coordinatesA.thetaI - coordinatesB.thetaI);
+    if (dTheta > THETA_COUNT / 2) {
+        dTheta = THETA_COUNT - dTheta;
     }
-    dTheta /= thetaR;
     const dLevel = Math.abs(coordinatesA.level - coordinatesB.level);
     const dRadius = Math.abs(coordinatesA.radius - coordinatesB.radius);
     // Areas are too far to be connected.
-    if (dLevel > 1 || dRadius > 1 || dTheta > 1.5) {
-        return false;
+    if (dLevel > 1 || dRadius > 1 || dTheta > 1) {
+        return 0;
     }
     // Area cannot be connected to itself.
     if (dLevel === 0 && dRadius === 0 && dTheta <= 0.5) {
-        return false;
+        return 0;
     }
     // When level changes, radius must change by the same amount.
     if (dLevel && coordinatesA.level - coordinatesB.level !== coordinatesA.radius - coordinatesB.radius) {
-        return false;
+        return 0;
+    }
+    if (coordinatesA.radius > coordinatesB.radius) {
+        console.error('Unexpected coordinates order', {coordinatesA, coordinatesB});
     }
     // Create a unique but predictable state for the seeded generator based on the players' endless seed
     // and the current connection.
@@ -76,106 +95,105 @@ function doesConnectionExist(endlessSeed: number, {coordinatesA, coordinatesB}: 
         .addSeed(coordinatesB.level)
         .addSeed(coordinatesB.radius)
         .addSeed(coordinatesB.thetaI);
-    const spokeAIndex = thetaAN * Math.round(thetaA * 6);
-    const spokeARadius = Math.min(3, Math.ceil(thetaAN / 12));
-    const spokeBIndex = thetaBN * Math.round(thetaB * 6);
-    const spokeBRadius = Math.min(3, Math.ceil(thetaAN / 12));
-    function isIndexInRadius(index, center, radius, modulus): boolean {
-        const distance = (modulus + center - index) % modulus;
-        return distance <= radius || modulus - distance <= radius;
-    }
-    // There is only a forced connection if both coordinates are within their given spoke.
-    if (
-        isIndexInRadius(coordinatesA.thetaI, spokeAIndex, spokeARadius, thetaAN) &&
-        isIndexInRadius(coordinatesB.thetaI, spokeBIndex, spokeBRadius, thetaBN)
-    ) {
-        const entryTheta = spokeAIndex / thetaAN
-        if (dRadius > 0) {
 
+    const spokeIndex = (Math.round(coordinatesA.thetaI * SPOKE_COUNT / THETA_COUNT) * THETA_COUNT / SPOKE_COUNT) % THETA_COUNT;
+    // There is only a forced connection if both coordinates are within the same spoke.
+    if (
+        dLevel === 0 &&
+        isThetaInRadius(coordinatesA.thetaI, spokeIndex, SPOKE_RADIUS, THETA_COUNT) &&
+        isThetaInRadius(coordinatesB.thetaI, spokeIndex, SPOKE_RADIUS, THETA_COUNT)
+    ) {
+        // This generator needs to be independent of the coordinate pair since it generates contextual
+        // rules about where forced connections area.
+        const spokeRandom = SRandom.seed(endlessSeed).addSeed(0.5117813131398452).addSeed(coordinatesA.level);
+        const radius = coordinatesA.radius;
+        // The entry to the first rings are always exactly on the spokeIndex.
+        let thetaIn = radius === 1
+            ? spokeIndex
+            : spokeIndex + spokeRandom.addSeed(radius).addSeed(spokeIndex).range(-SPOKE_RADIUS, SPOKE_RADIUS);
+        let thetaOut = spokeIndex + spokeRandom.addSeed(radius + 1).addSeed(spokeIndex).range(-SPOKE_RADIUS, SPOKE_RADIUS);
+        thetaIn = normalizeTheta(thetaIn, THETA_COUNT);
+        thetaOut = normalizeTheta(thetaOut, THETA_COUNT);
+        if (dRadius > 0) {
+            // Check for a forced forward connection.
+            if (thetaOut === coordinatesA.thetaI && thetaOut === coordinatesB.thetaI) {
+                //console.log('Forced forward connection', {spokeIndex, radius, thetaOut, coordinatesA, coordinatesB});
+                return spokeIndex / (THETA_COUNT / SPOKE_COUNT) + 1;
+            } else if (coordinatesA.thetaI === coordinatesB.thetaI) {
+                //console.log('No forced forward connection', {spokeIndex, radius, thetaI: coordinatesA.thetaI, thetaOut, coordinatesA, coordinatesB});
+            }
+        } else {
+            // Check for a forced lateral connection.
+            let min = thetaIn, max = thetaOut;
+            if (normalizeTheta(max - min, THETA_COUNT) > 2 * SPOKE_RADIUS) {
+                min = thetaOut;
+                max = thetaIn;
+            }
+            if (isThetaInRange(coordinatesA.thetaI, min, max, THETA_COUNT) &&
+                isThetaInRange(coordinatesB.thetaI, min, max, THETA_COUNT)
+            ) {
+                //console.log('Forced lateral connection', {spokeIndex, radius, thetaIn, thetaOut, min, max, coordinatesA, coordinatesB});
+                return spokeIndex / (THETA_COUNT / SPOKE_COUNT) + 1;
+            } else {
+                //console.log('No forced lateral connection', {spokeIndex, radius, thetaIn, thetaOut, min, max, coordinatesA, coordinatesB});
+            }
         }
     }
-    // TODO: Calculate forced connections and always return true for those.
-    // Find the nearest theta (0, 1/6, 2/6, etc) spoke to coordinatesA.
-    // Check both coordinates are in the spoke, if not, there is no forced connection.
-    // If the dRadius > 0, calculate the thetaI start + thetaI end values between rA + rB
-    // if those theta values match the coords, then return true, otherwise the is no forced connection.
-    // If dRadius === 0, then calculate the thetaI end for radius - 1 and thetaI start for radius.
-    // There is only a forced connection if the coordinates thetaI values are within this range.
     if (coordinatesA.level === coordinatesB.level) {
         if (dTheta <= 0.5 || dRadius === 0) {
-            return random.random() < 0.4;
+            return random.random() < 0.4 ? -1 : 0;
         }
-        return random.random() < 0.3;
+        return random.random() < 0.3 ? -1 : 0;
     }
     if (dTheta <= 0.5) {
-        return random.random() < 0.2;
+        return random.random() < 0.2 ? -1 : 0;
     }
-    return random.random() < 0.1;
+    return random.random() < 0.1 ? -1 : 0;
 }
 
 function getConnections(endlessSeed: number, coordinates: EndlessZoneCoordinates): EndlessZoneConnection[] {
     const connections: EndlessZoneConnection[] = [];
     function checkCoordinates(thetaI: number, radius: number, level: number) {
-        const thetaN = 3 + 3 * radius;
-        if (thetaI < 0) thetaI += thetaN;
-        else if (thetaI >= thetaN) thetaI %= thetaN;
+        thetaI = normalizeTheta(thetaI, THETA_COUNT);
         // console.log('trying connection', {radius, level, thetaI});
         const testConnection: EndlessZoneConnection = {
             coordinatesA: coordinates,
             coordinatesB: {thetaI, radius, level}
         };
-        if (doesConnectionExist(endlessSeed, testConnection)) {
+        const connectionValue = doesConnectionExist(endlessSeed, testConnection);
+        if (connectionValue) {
+            if (connectionValue > 0) {
+                testConnection.forcedSpoke = connectionValue - 1;
+            }
             connections.push(testConnection);
         }
     }
-    function checkArc(radius: number, level: number) {
-        const theta = coordinates.thetaI / (1 + coordinates.radius) * (1 + radius);
-        let minTheta = theta - 1;
-        if (minTheta === Math.ceil(minTheta) && radius < coordinates.radius) {
-            minTheta = Math.ceil(minTheta + 1);
-        } else {
-            minTheta = Math.ceil(minTheta);
-        }
-        let maxTheta = theta + 1;
-        if (maxTheta === Math.floor(maxTheta) && radius < coordinates.radius) {
-            maxTheta = Math.floor(maxTheta - 1);
-        } else {
-            maxTheta = Math.floor(maxTheta);
-        }
-        for (let thetaI = minTheta; thetaI <= maxTheta; thetaI++) {
-            checkCoordinates(thetaI, radius, level);
-        }
-    }
-    // Descending paths
-    if (coordinates.level > 1) {
-        checkArc(coordinates.radius - 1, coordinates.level - 1);
-    }
-    // Ascending paths
-    {
-        checkArc(coordinates.radius + 1, coordinates.level + 1);
-    }
-    const level = coordinates.level;
-    // Backward paths, radius can never decrease below level.
-    if (coordinates.radius > coordinates.level) {
-        checkArc(coordinates.radius - 1, coordinates.level);
-    } else if (coordinates.radius === 1 && coordinates.thetaI % 2 === 0) {
+    if (coordinates.radius === 1 && coordinates.thetaI % (THETA_COUNT / SPOKE_COUNT) === 0) {
         // This is a special case for creating the entrances in the three initial zones.
         connections.push({
             coordinatesA: coordinates,
             coordinatesB: {thetaI: 0, radius: 0, level: 0},
         });
     }
-    // Forward paths
-    {
-        checkArc(coordinates.radius + 1, coordinates.level);
-    }
-    // Side paths
-    {
-        checkCoordinates(coordinates.thetaI - 1, coordinates.radius, level);
-        checkCoordinates(coordinates.thetaI + 1, coordinates.radius, level);
+    for (let level = coordinates.level - 1; level <= coordinates.level + 1; level++) {
+        if (level < 1) continue;
+        for (let radius = coordinates.radius - 1; radius <= coordinates.radius + 1; radius++) {
+            if (radius < level) continue;
+            // If level changes, radius must change with it.
+            if (level !== coordinates.level && coordinates.radius - radius !== coordinates.level - level) {
+                continue;
+            }
+            for (let thetaI = coordinates.thetaI - 1; thetaI <= coordinates.thetaI + 1; thetaI++) {
+                if (level === coordinates.level && radius === coordinates.radius && thetaI === coordinates.thetaI) {
+                    continue;
+                }
+                checkCoordinates(thetaI, radius, level);
+            }
+        }
     }
     return connections;
 }
+window['getConnections'] = getConnections;
 
 export function getCoordinatesKey({level, radius, thetaI}: EndlessZoneCoordinates): string {
     return `endless:${level}:${radius}:${thetaI}`;
@@ -191,29 +209,32 @@ export function generateEndlessZone(endlessSeed: number, coordinates: EndlessZon
     const connections = getConnections(endlessSeed, coordinates);
     const events:  EndlessZoneEvent[] = connections.map((c, i) => {
         const choices: ('N' | 'E' | 'S' | 'W')[] = [];
-        const dRadius = c.coordinatesB.radius - coordinates.radius;
-        // This will be a number in the range (-1, 1)
-        let dTheta = c.coordinatesB.thetaI / (3 + 3 * c.coordinatesB.radius)
-             - coordinates.thetaI / (3 + 3 * coordinates.radius);
-        // Convert dTheta from (-1, 1) to (-0.5, 0.5).
-        if (dTheta >= 0.5) {
-            dTheta = dTheta - 1;
-        } else if (dTheta <= -0.5) {
-            dTheta = dTheta + 1;
-        }
-        if (dRadius < 0) {
+
+        if (c.coordinatesB.level === 0) {
+            // Links to the initial area are always to the west.
             choices.push('W');
-        } else if (dRadius > 0) {
-            choices.push('E');
-        }
-        if (dTheta < 0) {
-            choices.push('S');
-        } else if (dTheta > 0) {
-            choices.push('N');
+        } else {
+            const dRadius = c.coordinatesB.radius - coordinates.radius;
+            if (dRadius < 0) {
+                choices.push('W');
+            } else if (dRadius > 0) {
+                choices.push('E');
+            }
+            // This will be a number in the range [THETA_COUNT - 1, 0, 1]
+            const dTheta = normalizeTheta(c.coordinatesB.thetaI - c.coordinatesA.thetaI, THETA_COUNT);
+            if (dTheta === THETA_COUNT - 1) {
+                choices.push('S');
+            } else if (dTheta === 1) {
+                choices.push('N');
+            } else if (dTheta === 0) {
+
+            } else {
+                console.error('Unexpected dTheta value', {dTheta, c});
+            }
         }
         return {
             type: 'exit',
-            baseLength: random.addSeed(i).range(4, 6),
+            baseLength: random.addSeed(i).range(3, 5),
             exclusiveLength: random.addSeed(i).nextSeed().range(0, 1),
             choices,
             connection: c,
@@ -225,12 +246,24 @@ export function generateEndlessZone(endlessSeed: number, coordinates: EndlessZon
     for (let i = 0; i < maxEvents; i++) {
         events.push({
             type: 'treasure',
-            baseLength: random.addSeed(0.7220703342715891).addSeed(i).range(4, 6),
-            exclusiveLength: random.addSeed(0.7220703342715891).addSeed(i).nextSeed().range(3, 4),
+            baseLength: random.addSeed(0.7220703342715891).addSeed(i).range(3, 5),
+            exclusiveLength: random.addSeed(0.7220703342715891).addSeed(i).nextSeed().range(2, 3),
         });
     }
     const key = getCoordinatesKey(coordinates);
-    const areaType = random.addSeed(0.8856792004000178).element(['cave', 'field', 'oldGuild']);
+
+    const theta = 2 * Math.PI * coordinates.thetaI / THETA_COUNT;
+    const degrees = 180 * theta / Math.PI;
+    let areaTypePool: string[];
+    const roll = (360 + degrees - 30 + random.addSeed(0.8856792004000178).random() * 60) % 360;
+    if ((roll >= 300 || roll < 60)) { // Strength centerd at 0/360
+        areaTypePool = ['field'];
+    } else if (roll < 180) { // Intelligence centered at 120
+        areaTypePool = ['cave'];
+    } else {
+        areaTypePool = ['oldGuild'];
+    }
+    const areaType = random.addSeed(0.8856792004000178).addSeed(0).element(areaTypePool);
     const {areas, areaBlocks, grid} = generateEndlessZoneAreas(key, areaType, random.random(), events);
     const zone = {
         key,
@@ -245,15 +278,27 @@ export function generateEndlessZone(endlessSeed: number, coordinates: EndlessZon
     addMonstersToEndlessZone(zone);
     return zone;
 }
+window['generateEndlessZone'] = generateEndlessZone;
+/*
+This can be run in the console to check for issues during zone generation.
+for (let i = 0; i < 1000; i++) {
+    const thetaI = Math.floor(Math.random() * 9);
+    const level = 1 + Math.floor(Math.random() * 100);
+    const radius = level + Math.floor(Math.random() * 100);
+    const coordinates = {level, radius, thetaI};
+    console.log(coordinates);
+    console.log(generateEndlessZone(Hero.character.endlessSeed, coordinates));
+}
+*/
 
 function addMonstersToEndlessZone(endlessZone: EndlessZone): void {
     const { thetaI, level, radius } = endlessZone.coordinates;
-    const theta = 2 * Math.PI * thetaI / ( 3 + 3 * radius);
+    const theta = 2 * Math.PI * thetaI / THETA_COUNT;
     const random = SRandom.seed(endlessZone.seed).addSeed(0.6420071862889363);
     const monsterPool = generateMonsterPool(
         180 * theta / Math.PI,
-        Math.ceil(2 + Math.sqrt(level)), // How deep to explore source pools.
-        Math.floor(1 + Math.sqrt(level / 2)), // How large of a pool to generate.
+        Math.ceil(2 + Math.sqrt(radius)), // How deep to explore source pools.
+        Math.ceil(1 + Math.sqrt(radius / 2)), // How large of a pool to generate.
         random.generateAndMutate(),
     );
     const { grid } = endlessZone;
@@ -304,7 +349,7 @@ function generateEndlessZoneAreas(
     zoneAreaGenerationSeed: number,
     events: EndlessZoneEvent[]
 ): {areas: {[key: string]: Area}, areaBlocks: EndlessAreaBlock[], grid: EndlessGridNode[][] } {
-    console.log('generateEndlessZoneAreas', {zoneAreaGenerationSeed, events});
+    // console.log('generateEndlessZoneAreas', {zoneAreaGenerationSeed, events});
     const areas = {};
     // Create the grid map for the areas first.
     const path: {x: number, y: number, seed: number, event: number, exit?: 'N' | 'S' | 'W' | 'E'}[] = [{
@@ -314,7 +359,8 @@ function generateEndlessZoneAreas(
     while (eventIndex < events.length) {
         if (safety++ >= 10000) {
             debugger;
-            throw new Error('Possible infinite loop in generateEndlessZoneAreas');
+            break;
+            //throw new Error('Possible infinite loop in generateEndlessZoneAreas');
         }
         /*const pathNode = eventStep === 0
             // For the first node
@@ -324,6 +370,7 @@ function generateEndlessZoneAreas(
             : path[step];*/
  try {
         const {x, y, seed} = path[step];
+        // console.log({step, eventIndex, eventStep, x, y});
         const event = events[eventIndex];
         let options: {x: number, y: number, exit?: CardinalDirection}[] = [];
         const stepIsExclusive = (eventStep >= event.baseLength);
@@ -433,7 +480,7 @@ function generateEndlessZoneAreas(
     debugger;
 }
     }
-    console.log({safety});
+    // console.log({safety});
     const minX = path.reduce((min, node) => Math.min(min, node.x), 0);
     const minY = path.reduce((min, node) => Math.min(min, node.y), 0);
     const areaBlocks: EndlessAreaBlock[] = [];
@@ -641,10 +688,10 @@ function generateEndlessZoneAreas(
     }
     return {areas, areaBlocks, grid};
 }
-window['generateEndlessZone'] = generateEndlessZone;
+window['generateEndlessZoneAreas'] = generateEndlessZoneAreas;
 
 
-const endlessMapCanvas = createCanvas(200, 100);
+const endlessMapCanvas = createCanvas(200, 150);
 endlessMapCanvas.style.position = 'absolute';
 endlessMapCanvas.style.top = '15px';
 endlessMapCanvas.style.left = '215px';
@@ -665,7 +712,7 @@ export function highlightEndlessArea(character: Character, area: Area = null): v
     }
     area = area || character.hero.area;
     //context.fillStyle = 'white';
-    context.clearRect(0, 0, endlessMapCanvas.width, endlessMapCanvas.height);
+    //context.clearRect(0, 0, endlessMapCanvas.width, endlessMapCanvas.height);
     context.fillStyle = 'white';
     context.fillRect(0, 0, endlessMapCanvas.width, endlessMapCanvas.height);
     const currentAreaBlock = endlessZone.areaBlocks.find(block => block.area === area);
@@ -686,16 +733,15 @@ export function highlightEndlessArea(character: Character, area: Area = null): v
             if (!revealMap && !character.endlessAreasVisited[areaBlock.area.zoneKey + ':' + areaBlock.area.key]) {
                 continue;
             }
-            context.fillStyle = tile.event >= 0 ? 'black' : 'black';
             const x = column * size + size / 2;
             const y = row * size + size / 2;
-            if (tile.exit) {
-                context.fillStyle = 'blue';
-            } else {
+            if (revealMap && !tile.exit) {
+                context.fillStyle = tile.event >= 0 ? 'red' : 'black';
                 context.fillRect(x - 4, y - 4, 8, 8);
             }
-            const length = 1.5 * size;
+            const length = 1.4 * size;
             if (tile.N) {
+                context.fillStyle = 'black';
                 context.fillRect(x - 1, y - size / 2, 2, size / 2);
                 if (endlessZone.grid[row - 1]?.[column]?.exit === 'N') {
                     context.fillStyle = 'blue';
@@ -703,6 +749,7 @@ export function highlightEndlessArea(character: Character, area: Area = null): v
                 }
             }
             if (tile.S) {
+                context.fillStyle = 'black';
                 context.fillRect(x - 1, y, 2, size / 2);
                 if (endlessZone.grid[row + 1]?.[column]?.exit === 'S') {
                     context.fillStyle = 'blue';
@@ -710,6 +757,7 @@ export function highlightEndlessArea(character: Character, area: Area = null): v
                 }
             }
             if (tile.W) {
+                context.fillStyle = 'black';
                 context.fillRect(x - size / 2, y - 1, size / 2, 2);
                 if (endlessZone.grid[row][column - 1]?.exit === 'W') {
                     context.fillStyle = 'blue';
@@ -717,18 +765,17 @@ export function highlightEndlessArea(character: Character, area: Area = null): v
                 }
             }
             if (tile.E) {
+                context.fillStyle = 'black';
                 context.fillRect(x, y - 1, size / 2, 2);
                 if (endlessZone.grid[row][column + 1]?.exit === 'E') {
                     context.fillStyle = 'blue';
                     context.fillRect(x + size / 2, y - 1, length, 2);
                 }
             }
-
-            /*if (tile.exit === 'N') context.fillRect(x - 1, y - length, 2, length);
-            else if (tile.exit === 'S') context.fillRect(x - 1, y, 2, length);
-            else if (tile.exit === 'W') context.fillRect(x - length, y - 1,length, 2);
-            else if (tile.exit === 'E') context.fillRect(x, y - 1, length, 2);*/
         }
+    }
+    if (revealMap) {
+        context.globalAlpha = 0.5;
     }
     for (const areaBlock of endlessZone.areaBlocks) {
         // Don't draw this area until the player has visited once.
@@ -747,50 +794,17 @@ export function highlightEndlessArea(character: Character, area: Area = null): v
     context.fillRect(0, endlessMapCanvas.height - 1, endlessMapCanvas.width, 1);
     context.fillRect(0, 0, 1, endlessMapCanvas.height);
     context.fillRect(endlessMapCanvas.width - 1, 0, 1, endlessMapCanvas.height);
+    renderEndlessExperienceBar(character);
+    // renderZoneMap(character.endlessSeed, endlessZone.coordinates.level);
 }
-/*
-export function renderGrid(grid: any[][], areaBlocks: EndlessAreaBlock[]) {
-    const context = endlessMapContext;
-    context.fillStyle = 'white';
-    context.fillRect(0, 0, 800, 600);
-    const size = 20;
-    for (const areaBlock of areaBlocks) {
-        context.fillStyle = '#AAA';
-        const x = areaBlock.x * size;
-        const y = areaBlock.y * size;
-        context.fillRect(x + 2, y + 2, areaBlock.w * size - 4, size - 4);
-    }
-    for (let row = 0; row < grid.length; row++) {
-        for (let column = 0; column <= grid[row].length; column++) {
-            const tile = grid[row][column];
-            if (!tile) continue;
-            context.fillStyle = tile.event >= 0 ? 'red' : 'black';
-            const x = column * size + size / 2;
-            const y = row * size + size / 2;
-            if (tile.exit) {
-                context.fillStyle = 'blue';
-            } else {
-                context.fillRect(x - 4, y - 4, 8, 8);
-            }
-            if (tile.N) context.fillRect(x - 1, y - size / 2, 2, size / 2);
-            if (tile.S) context.fillRect(x - 1, y, 2, size / 2);
-            if (tile.W) context.fillRect(x - size / 2, y - 1, size / 2, 2);
-            if (tile.E) context.fillRect(x, y - 1, size / 2, 2);
-            context.fillStyle = 'blue';
-            if (tile.exit === 'N') context.fillRect(x - 1, y - 3 * size, 2, 3 * size);
-            else if (tile.exit === 'S') context.fillRect(x - 1, y, 2, 3 * size);
-            else if (tile.exit === 'W') context.fillRect(x - 3 * size, y - 1,3 * size, 2);
-            else if (tile.exit === 'E') context.fillRect(x, y - 1, 3 * size, 2);
-        }
-    }
-}*/
+window['highlightEndlessArea'] = highlightEndlessArea;
 
 // test connections, run this code to check that connections can always be taken forward and
 // backward between areas.
 /*const testRandom = SRandom.seed(Math.random());
 const testSeed = testRandom.generateAndMutate();
 let connections = getConnections(testSeed, {thetaI: 0, radius: 1, level: 1}), lastConnections = null;
-for (let i = 0; i < 1000; i++) {
+for (let i = 0; i < 100; i++) {
     if (!connections.length) {
         console.error('Reached a zone with no connections');
         debugger;
@@ -799,6 +813,7 @@ for (let i = 0; i < 1000; i++) {
     const validNextCoordinates = connections.map(c => c.coordinatesB).filter(c => c.level > 0);
     if (!validNextCoordinates.length) {
         console.error('Hit a dead end immediately');
+        debugger;
         break;
     }
     console.log('zone', getCoordinatesKey(connections[0].coordinatesA));
@@ -814,27 +829,76 @@ for (let i = 0; i < 1000; i++) {
         debugger;
         break;
     }
+}*/
+
+
+const endlessZoneCanvas = createCanvas(200, 150);
+endlessZoneCanvas.style.position = 'absolute';
+endlessZoneCanvas.style.top = '15px';
+endlessZoneCanvas.style.left = '515px';
+endlessZoneCanvas.style.pointerEvents = 'none';
+const endlessZoneContext = endlessZoneCanvas.getContext('2d');
+
+export function renderZoneMap(endlessSeed: number, level: number): void {
+    const context = endlessZoneContext;
+    context.fillStyle = 'white';
+    context.fillRect(0, 0, endlessZoneCanvas.width, endlessZoneCanvas.height);
+    const size = 4;
+    const spacing = 15;
+    function getCoords(radius: number, thetaI: number): {x: number, y: number} {
+        const theta = 2 * Math.PI * thetaI / THETA_COUNT;
+        return {
+            x: Math.cos(theta) * radius * spacing + endlessZoneCanvas.width / 2,
+            y: Math.sin(theta) * radius * spacing + endlessZoneCanvas.height / 2,
+        }
+    }
+    for (let radius = level; radius < 10; radius++) {
+        for (let thetaI = 0; thetaI < THETA_COUNT; thetaI++) {
+            const {x, y} = getCoords(radius, thetaI);
+            for (const c of getConnections(endlessSeed, {level, radius, thetaI})) {
+                if (c.coordinatesB.level > level) {
+                    context.strokeStyle = 'black';
+                    context.beginPath();
+                    context.moveTo(x, y);
+                    context.lineTo(x, y - 8);
+                    context.stroke();
+                } else if (c.coordinatesB.level < level) {
+                    context.strokeStyle = 'black';
+                    context.beginPath();
+                    context.moveTo(x, y);
+                    context.lineTo(x, y + 8);
+                    context.stroke();
+                } else {
+                    const coords = getCoords(c.coordinatesB.radius, c.coordinatesB.thetaI);
+                    context.strokeStyle = '#BBB';
+                    if (c.forcedSpoke >= 0) {
+                        context.strokeStyle = ['red', 'blue', 'green'][c.forcedSpoke];
+                    }
+                    context.beginPath();
+                    context.moveTo(x, y);
+                    context.lineTo((x + coords.x) / 2, (y + coords.y) / 2);
+                    context.stroke();
+                }
+            }
+            context.beginPath();
+            context.arc(x, y, size, 0, 2 * Math.PI);
+            context.fillStyle = 'black';
+            context.fill();
+        }
+    }
+    mainContent.append(endlessZoneCanvas);
+}
+window['renderZoneMap'] = renderZoneMap;
+
+export function renderEndlessExperienceBar(character: Character) {
+    const experienceNeeded = experienceToLevel(character);
+    const width = Math.floor(endlessMapCanvas.width * 0.8);
+    drawBar(endlessMapContext,
+        (endlessMapCanvas.width - width) / 2,
+        endlessMapCanvas.height - 10,
+        width, 5, 'black', 'orange', character.endlessExperience / experienceNeeded
+    );
 }
 
-window['checkArc'] = function (coordinates, radius, level) {
-    const theta = coordinates.thetaI / (1 + coordinates.radius) * (1 + radius);
-    let minTheta = theta - 1;
-    if (minTheta === Math.ceil(minTheta) && radius < coordinates.radius) {
-        minTheta = Math.ceil(minTheta + 1);
-    } else {
-        minTheta = Math.ceil(minTheta);
-    }
-    let maxTheta = theta + 1;
-    if (maxTheta === Math.floor(maxTheta) && radius < coordinates.radius) {
-        maxTheta = Math.floor(maxTheta - 1);
-    } else {
-        maxTheta = Math.floor(maxTheta);
-    }
-    console.log({minTheta, theta, maxTheta});
-    for (let thetaI = minTheta; thetaI <= maxTheta; thetaI++) {
-        console.log({thetaI, radius, level});
-    }
-}
-*/
-
+//renderZoneMap(0.9865189956451494, 1);
 

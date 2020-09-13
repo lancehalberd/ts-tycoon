@@ -5,6 +5,7 @@ export * from 'app/content/areas/utils';
 export * from 'app/content/areas/palettes';
 // Most area objects extend EditableAreaObject, so it should be included before them.
 export * from 'app/content/areas/EditableAreaObject';
+export * from 'app/content/areas/EndlessGate';
 export * from 'app/content/areas/AnimaOrb';
 export * from 'app/content/areas/AreaDecoration';
 export * from 'app/content/areas/AreaDoor';

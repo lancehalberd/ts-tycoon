@@ -18,6 +18,8 @@ export interface EndlessZone {
 export interface EndlessZoneConnection {
     coordinatesA: EndlessZoneCoordinates,
     coordinatesB: EndlessZoneCoordinates,
+    // If this is a forced connection, this will be the index of the spoke.
+    forcedSpoke?: number,
 }
 
 export interface EndlessZoneCoordinates {

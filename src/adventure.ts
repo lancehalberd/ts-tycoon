@@ -5,7 +5,7 @@ import {
     addVariableChildToObject,
     recomputeDirtyStats, removeBonusSourceFromObject, setStat,
 } from 'app/bonuses';
-import { baseDivinity, refreshStatsPanel, setSelectedCharacter} from 'app/character';
+import { baseDivinity, gainEndlessExperience, refreshStatsPanel, setSelectedCharacter, updateHero} from 'app/character';
 import { getSprite } from 'app/content/actors';
 import { createAreaFromDefinition, getLayer, getPositionFromLocationDefinition } from 'app/content/areas';
 import { clearEndlessAreaMinimap, generateEndlessZone, highlightEndlessArea } from 'app/content/endlessZone';
@@ -164,8 +164,8 @@ export function enterArea(actor: Actor, {x, z, areaKey, objectKey, zoneKey}: Exi
                     { thetaI, radius, level }
                 );
             }
-            if (!objectKey) {
-                console.error('Missing objectKey when moving to endlessZone');
+            if (!objectKey && !areaKey) {
+                console.error('Missing objectKey and areaKey when moving to endlessZone');
                 debugger;
                 return;
             }
@@ -202,6 +202,7 @@ export function enterArea(actor: Actor, {x, z, areaKey, objectKey, zoneKey}: Exi
         }
         area = levelInstance.areas.get(areaKey);
     }
+    const oldArea = actor.area;
     leaveCurrentArea(actor);
     const state = getState();
 
@@ -239,6 +240,11 @@ export function enterArea(actor: Actor, {x, z, areaKey, objectKey, zoneKey}: Exi
         area.effects.push(effect);
     });
     actor.area = area;
+
+    // Update hero when changing zones, as some bonuses only apply to certain zones.
+    if (actor.type === 'hero' && (!oldArea || oldArea.zoneKey !== actor.area.zoneKey)) {
+        updateHero(actor);
+    }
     if (objectKey) {
         const object = area.objectsByKey[objectKey];
         if (!object) {
@@ -881,6 +887,12 @@ function defeatedEnemy(hero: Hero, enemy: Actor) {
         hero.character.mission.defeatedTargets++;
     }
 
+    const endlessZoneKey = hero.character.endlessZone?.key;
+    if (endlessZoneKey && endlessZoneKey === hero.area.zoneKey) {
+        const experience = Math.floor(100 * Math.pow(1.25, enemy.stats.level - hero.character.endlessLevel));
+        gainEndlessExperience(hero.character, experience);
+    }
+
     loot.forEach(function (loot, index) {
         loot.gainLoot(hero);
         loot.addTreasurePopup(hero, enemy.x + index * 20, enemy.h, index * 10);
@@ -975,7 +987,7 @@ export function returnToMap(character: Character) {
     }
 }
 
-export function returnToGuild(character: Character) {
+export function returnToGuild(character: Character, exit: Exit = guildGateEntrance) {
     if (character.mission) {
         if (character.mission.parameters.getCharacter) {
             setSelectedCharacter(getState().characters[0]);
@@ -990,7 +1002,7 @@ export function returnToGuild(character: Character) {
     removeAdventureEffects(character.hero);
     character.hero.goalTarget = null;
     character.activeShrine = null;
-    enterArea(character.hero, guildGateEntrance);
+    enterArea(character.hero, exit);
     // Minions despawn when returning to the guild.
     (character.hero.minions || []).forEach(removeActor);
     character.hero.boundEffects = [];

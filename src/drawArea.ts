@@ -19,7 +19,8 @@ import {
 } from 'app/images';
 import { getCanvasPopupTarget } from 'app/popup';
 import { drawActorEffects, drawActorShadow } from 'app/render/drawActor';
-import { getState } from 'app/state';
+import { saveGame } from 'app/saveGame';
+import { endlessPortalEntrance, getState } from 'app/state';
 import { canUseSkillOnTarget } from 'app/useSkill';
 import { drawFrame, getFrame } from 'app/utils/animations';
 import { arrMod, isPointInShortRect, rectangle, toR } from 'app/utils/index';
@@ -385,9 +386,20 @@ const returnToMapButton = {
     },
     onClick() {
         const character = getState().selectedCharacter;
-        if (!character.hero.area?.zoneKey) {
+        const hero = character.hero;
+        if (!hero.area?.zoneKey) {
             character.replay = false;
             returnToMap(character);
+        } else if (character.endlessZone && character.endlessZone.key === hero.area.zoneKey) {
+            character.endlessAreaPortal = {
+                zoneKey: hero.area.zoneKey,
+                areaKey: hero.area.key,
+                // Constrain portal to the interior of the area.
+                x: Math.max(32, Math.min(hero.area.width - 32, hero.x)),
+                z: hero.z,
+            };
+            saveGame();
+            returnToGuild(character, endlessPortalEntrance);
         } else {
             returnToGuild(character);
         }

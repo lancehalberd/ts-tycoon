@@ -88,13 +88,13 @@ const monsterSuffixes: AffixData[][] = [
 
 
 export const strengthMonsters = [
-    'skeleton','skeletalBuccaneer','undeadPaladin','undeadWarrior', 'stealthyCaterpillar'
+    'gremlin', 'skeleton','skeletalBuccaneer','undeadPaladin','undeadWarrior', 'stealthyCaterpillar'
 ];
 export const intelligenceMonsters = [
-    'gnome', 'gnomeCleric', 'gnomeWizard', 'bat', 'vampireBat'
+    'bat', 'gremlin', 'gnome', 'gnomeCleric', 'gnomeWizard', 'bat', 'vampireBat'
 ];
 export const dexterityMonsters = [
-    'spider', 'jumpingSpider', 'wolf', 'caterpillar', 'spongeyCaterpillar'
+    'skeleton', 'bat', 'spider', 'jumpingSpider', 'wolf', 'caterpillar', 'spongeyCaterpillar'
 ];
 export const strengthEventMonsters = ['dragon','giantSkeleton', 'butcher', 'alphaWolf', 'battlefly', 'motherfly'];
 export const intelligenceEventMonsters = ['dragon','giantSkeleton', 'butcher', 'frostGiant', 'battlefly', 'gnomecromancer'];

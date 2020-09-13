@@ -29,30 +29,7 @@ Features:
     [L] Death recap for quests. Maybe not important with the more hands on gameplay.
 
 Endless Adventure:
-    * Infinite procedurally generated world for autoplay that allows players to move through connected random zones organized by biome (longitude), distance, and difficulty.
     * Players will get endless adventure specific progression and passive bonuses that let them advance without significantly impacting the difficulty of the game story.
-    * World is composed of connected overworld zones as well as isolated underworld zones with various reward types like passive bonuses, jewels, seeds/food, trophies, unique relics.
-
-    Generating zone graph:
-        Zones are organized cylindrical space: r(distance), theta(longitude), z(difficulty)
-        r is an integer >= 1,
-        t is an integer in the range [ 0, 3(r + 1) ) where theta = 2 * PI * t / 3(r + 1)
-        z is an integer >= r (meaning there is an unused cone about the origin)
-
-        The zone at (r, t, z) can connect to any existing distinct zone among:
-            r' = [r - 1, r + 1],
-            t' = [ceil(t*(r+2)/(r+1) - 1), floor(t*(r+2)/(r+1) + 1)]
-            z' = [z - 1, z + 1]
-        Which is up to 26 possible connections
-        Connections are randomly decided to exist such that zones will have an averages of 3 expected connections, but some could in theory have 0 or even 26 connections. Some zones may be in isolated groups that are disconnected from the origin. These will either be inaccessible or perhaps some mechanism for teleporting directly to zones will be available (perhaps via a consumable reward item).
-        There is no limit on the size of zones, so we can always make a zone larger to support the number of chosen connections for the zone.
-        Progression is ensured by the following:
-            All zones at a given r/z value constitute a ring.
-            Within each ring we create 6 wedges centered around theta = 2 * PI * k / 6 where the wedge has 2 * PI / 12 diameter (so there is space between the edges) but each wedge is at least 3 zones and at most 7 zones.
-            Within each wedge, we randomly choose a guaranteed connection between ring r-1 and r, as well as r and r+1.
-            Within that wedge, all zones between the two randomly chosen guaranteed connections are also guaranteed, which
-            guarantees a path inside this wedge to every ring.
-        All other connections are determined with weighter probabilities respecting the given limitations. Although there are no guaranteed connections between z and z + 1, since there are infinite accessible nodes, it will always be possible to eventually find such a connection, and the probabilities can be set so that it never takes an excessive amount of time to find such a connection if you are looking for one.
 
     Rewards:
         Manual Rewards: Only granted through manual encounters, like puzzles + trap gauntlets which are placed next to way points for easy access and indicated in the waypoint description whether they are completed. These are things that would be annoying if they accumulated automatically like jewels and max affixed rare equipment. These encounters can also give other rewards.
@@ -80,12 +57,18 @@ Endless Adventure:
         Some set of relics can be found in small reward
 
 
-
-
-
 Graphics:
     [M] Arrange HUD so skill tooltips+mission quest don't overlap. Remove minimap.
     [L] Add sparkles to gold+platinum trophies.
+
+    Fix fence jitters (off by 1px on hover or something).
+
+    Add furniture glow:
+            I'll touch these up later most likely, but this is a bunch of glows for all the different upgradeable furniture when they are ready to be upgraded.
+        They are the same canvas size, so you can put the glow behind the furniture and it should give it a glowing hue like the sample.
+        The glow is animated with 3 frames, going 1-2-3-2-1-2-3-2-...
+        I imagine you can make the glow around like 3 frames a second or something not too quick.
+        The glow made works for all tiers of the furniture's upgrades, since usually it doesn't change size too much. If we don't think it looks good using the same glow for tier 1 and tier 2 glows I can change it, but for right now that's how it is just to see if it works at all.
 
 Abilities:
     [M] Try making ricochet bounce off walls if any are in the correct range.

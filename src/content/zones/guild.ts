@@ -703,8 +703,8 @@ const endlessAdventure: AreaDefinition = {
                     type: 'door',
                     x: 1, zAlign: 'back', z: -60, flipped: true,
                     animation: "caveDoorOpen",
-                    exitKey: "endless:1:1:2",
-                    key: "door:endless:1:1:2",
+                    exitKey: "endless:1:1:3",
+                    key: "door:endless:1:1:3",
                 },
             ],
             grid: {
@@ -715,6 +715,11 @@ const endlessAdventure: AreaDefinition = {
         {
             key: 'field', x: 0, y: 84,
             objects: [
+                {
+                    type: 'endlessGate',
+                    x: 219, z: 80,
+                    key: "endlessPortal",
+                },
             ],
         },
         {
@@ -724,8 +729,8 @@ const endlessAdventure: AreaDefinition = {
                     type: 'door',
                     x: 174, z: -56,
                     animation: "southMeadowDoor",
-                    exitKey: "endless:1:1:4",
-                    key: "door:endless:1:1:4",
+                    exitKey: "endless:1:1:6",
+                    key: "door:endless:1:1:6",
                 },
             ],
             grid: {

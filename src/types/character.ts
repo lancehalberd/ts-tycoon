@@ -1,6 +1,6 @@
 import {
     Ability, Action, ActiveMission, Actor,
-    Board, BonusSource, EndlessZone, FixedObject, GameContext,
+    Board, BonusSource, EndlessZone, Exit, FixedObject, GameContext,
     Hero, HUDElement,
     JobKey, LevelDifficulty, SavedActor, SavedBoard,
 } from 'app/types';
@@ -52,6 +52,9 @@ export interface Character {
     endlessSeed: number,
     endlessZone?: EndlessZone,
     endlessAreasVisited: {[key in string]: boolean},
+    endlessAreaPortal?: Exit,
+    endlessExperience: number,
+    endlessLevel: number,
 }
 
 export interface Applicant extends Character {
@@ -84,6 +87,9 @@ export interface SavedCharacter {
 
     fixedAbilities?: Ability[],
     endlessSeed: number,
+    endlessAreaPortal?: Exit,
+    endlessExperience: number,
+    endlessLevel: number,
 }
 
 export interface SavedApplicant extends SavedCharacter {

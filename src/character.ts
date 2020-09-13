@@ -13,7 +13,7 @@ import {
 } from 'app/bonuses';
 import { abilities } from 'app/content/abilities';
 import { updateTrophy } from 'app/content/achievements';
-import { clearEndlessAreaMinimap, highlightEndlessArea } from 'app/content/endlessZone';
+import { clearEndlessAreaMinimap, highlightEndlessArea, renderEndlessExperienceBar } from 'app/content/endlessZone';
 import { createHeroColors, updateHeroGraphics } from 'app/content/heroGraphics';
 import { characterClasses } from 'app/content/jobs';
 import { updateSkillConfirmationButtons } from 'app/ui/chooseBlessing';
@@ -40,6 +40,7 @@ import { findActionByTag, getBasicAttack, updateDamageInfo } from 'app/performAt
 import { gain } from 'app/points';
 import { clearSelectedAction, updateActionShortcuts } from 'app/render/drawActionShortcuts';
 import { drawActor } from 'app/render/drawActor';
+import { saveGame } from 'app/saveGame';
 import { getState } from 'app/state';
 import { getTargetCameraX } from 'app/update';
 import { createAnimation } from 'app/utils/animations';
@@ -154,6 +155,8 @@ export function newCharacter(job: Job): Character {
         board: null,
         endlessSeed: 0.9865189956451494 || Math.random(),
         endlessAreasVisited: {},
+        endlessExperience: 0,
+        endlessLevel: 0,
     };
     hero.character = character;
     character.board = readBoardFromData(job.startingBoard, character, abilities[abilityKey], true)
@@ -422,8 +425,37 @@ export function updateHero(hero: Hero | Person) {
         }
     });
     if (hero.type === 'hero' && hero.character) {
-        updateJewelBonuses(hero.character);
-        addBonusSourceToObject(hero.variableObject, hero.character.jewelBonuses);
+        const character = hero.character;
+        updateJewelBonuses(character);
+        addBonusSourceToObject(hero.variableObject, character.jewelBonuses);
+        // Add endless adventure bonuses if the character is in an endless zone.
+        const endlessZoneKey = character.endlessZone?.key;
+        if (endlessZoneKey && endlessZoneKey === hero.area?.zoneKey) {
+            const level = character.endlessLevel - 1;
+            // These bonuses are roughly half as good as the bonuses from leveling
+            // during the main game. They stack with the main game levels and are
+            // easier to grind.
+            const endlessBonuses: BonusSource = {
+                name: 'endlessLevelBonuses',
+                bonuses: {
+                    '+level': level,
+                    '+maxHealth': 10 * (level),
+                    '+tenacity': level / 100,
+                    '+levelCoefficient': Math.pow(1.05, level),
+                    '+accuracy': level,
+                    '+evasion': Math.floor(level / 2),
+                    '+block': Math.floor(level / 2),
+                    '+magicBlock': level / 2,
+                    '+dexterity': level * hero.job.dexterityBonus,
+                    '+strength': level * hero.job.strengthBonus,
+                    '+intelligence': level * hero.job.intelligenceBonus,
+                    '+weaponless:accuracy': level / 2,
+                    '+weaponless:minPhysicalDamage': level / 2,
+                    '+weaponless:maxPhysicalDamage': level / 2,
+                },
+            };
+            addBonusSourceToObject(hero.variableObject, endlessBonuses);
+        }
     }
     // Add the hero's current equipment to bonuses and graphics
     equipmentSlots.forEach(function (type) {
@@ -514,7 +546,7 @@ export function actorHelpText(this: Actor) {
     for (var suffix of ifdefor(this.suffixes, [])) suffixNames.push(suffix.base.name);
     if (prefixNames.length) name = prefixNames.join(', ') + ' ' + name;
     if (suffixNames.length) name = name + ' of ' + suffixNames.join(' and ');
-    var title = 'Lvl ' + this.level + ' ' + name;
+    var title = 'Lvl ' + this.stats.level + ' ' + name;
     var sections = ['Health: ' + abbreviate(Math.ceil(this.health)) +
         '/' + abbreviate(Math.ceil(this.stats.maxHealth))];
     if (this.temporalShield > 0) {
@@ -557,6 +589,20 @@ export function gainLevel(hero: Hero) {
     // Enable the skipShrines option only once an hero levels the first time.
     getState().savedState.skipShrinesEnabled = true;
     query('.js-shrineButton').style.display = '';
+}
+export function gainEndlessExperience(character: Character, amount: number): void {
+    character.endlessExperience += amount;
+    const experienceNeeded = experienceToLevel(character);
+    if (character.endlessExperience >= experienceNeeded) {
+        character.endlessExperience -= experienceNeeded;
+        character.endlessLevel++;
+        updateHero(character.hero);
+        saveGame();
+    }
+    renderEndlessExperienceBar(character);
+}
+export function experienceToLevel(character: Character): number {
+    return 900 + 100 * character.endlessLevel;
 }
 
 function divinityToLevelUp(currentLevel: number): number {
