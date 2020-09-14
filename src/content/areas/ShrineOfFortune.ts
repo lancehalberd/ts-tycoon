@@ -11,7 +11,7 @@ const shrineFrame:Frame = {image: requireImage('gfx/guildhall.png'), x: 450, y: 
 
 export class ShrineOfFortune extends EditableAreaObject {
     name = 'Shrine of Fortune';
-    bonusSource = {'bonuses': {'$hasItemCrafting': true}};
+    bonusSource = {'bonuses': {'+itemCraftingLevel': 1}};
     getFrame(): Frame {
         return shrineFrame;
     }

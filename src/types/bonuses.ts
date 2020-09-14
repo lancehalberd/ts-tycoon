@@ -223,9 +223,10 @@ export interface GuildStats {
     maxAnima?: number,
     maxCoins?: number,
     maxHeroes?: number,
-    hasMap?: boolean,
-    hasItemCrafting?: boolean,
-    hasJewelCrafting?: boolean,
+    mapLevel?: number,
+    itemCraftingLevel?: number,
+    jewelCraftingLevel?: number,
+    enchantmentCraftingLevel?: number,
 }
 
 export interface EffectStats {

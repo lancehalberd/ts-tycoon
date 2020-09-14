@@ -16,6 +16,7 @@ export * from 'app/content/areas/FlameThrower';
 export * from 'app/content/areas/GardenPlot';
 export * from 'app/content/areas/GuildGate';
 export * from 'app/content/areas/HeroApplication';
+export * from 'app/content/areas/JewelCraftingTable';
 export * from 'app/content/areas/MapTable';
 export * from 'app/content/areas/Message';
 export * from 'app/content/areas/SimpleMonsterSpawner';

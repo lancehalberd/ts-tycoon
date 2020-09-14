@@ -15,7 +15,7 @@ const shrineFrame:Frame = {
 
 export class ShrineOfCreation extends EditableAreaObject {
     name = 'Shrine of Creation';
-    bonusSource = {'bonuses': {'$hasJewelCrafting': true}};
+    bonusSource = {'bonuses': {'+enchantmentCrafingLevel': 1}};
     getFrame(): Frame {
         return shrineFrame;
     }

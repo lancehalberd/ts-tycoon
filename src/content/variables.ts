@@ -4,9 +4,10 @@ export const allGuildVariables: {[key in keyof GuildStats]: string} = {
     'maxAnima': 'Maximum anima the player can hold, increased by acquiring and upgrading anima stashes',
     'maxCoins': 'Maximum coins the player can hold, increased by acquiring and upgrading coin stashes',
     'maxHeroes': 'Maximum number of heroes the guild can hold, increased by acquiring more beds',
-    'hasMap': 'Whether the guild has access to the world map.',
-    'hasItemCrafting': 'Whether the guild has access to item crafting',
-    'hasJewelCrafting': 'Whether the guild has access to jewel crafting',
+    'mapLevel': 'Level of the guilds map.',
+    'itemCraftingLevel': 'Level of item crafting available.',
+    'jewelCraftingLevel': 'Level of jewel crafting available.',
+    'enchantmentCraftingLevel': 'Level of enchantment crafting available',
 };
 // These are the only variables on actors that can be targeted by effects.
 export const allActorVariables: {[key in keyof ActorStats]: string} = {

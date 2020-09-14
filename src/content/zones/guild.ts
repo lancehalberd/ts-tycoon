@@ -328,11 +328,6 @@ const guildFrontHall: AreaDefinition = {
             key: 'field', x: 0, y: 84,
             objects: [
                 {
-                    type: 'shrineOfCreation',
-                    xAlign: 'middle', x: 2, z: 16,
-                    key: "shrineOfCreation",
-                },
-                {
                     type: 'coinStash',
                     x: 22, zAlign: 'back',
                     key: "coinStashA",
@@ -352,6 +347,11 @@ const guildFrontHall: AreaDefinition = {
                     type: 'trophyAltar',
                     xAlign: 'right', x: -180, z: 10,
                     key: "trophyAltarB",
+                },
+                {
+                    type: 'jewelCraftingTable',
+                    x: 221, z: 79,
+                    key: "jewelCraftingTable",
                 },
             ],
         },

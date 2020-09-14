@@ -131,10 +131,6 @@ export class CoinStash extends EditableAreaObject implements UpgradeableObject {
                             } else {
                                 object.level = index + 1;
                             }
-                            if (getState().savedState.unlockedGuildAreas[object.area.key]) {
-                                removeFurnitureBonuses(object);
-                                addFurnitureBonuses(object);
-                            }
                         }
                     };
                 });

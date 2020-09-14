@@ -119,19 +119,19 @@ document.addEventListener('keydown', function(event: KeyboardEvent) {
             }
         }
     }
-    if ((keyCode === KEY.C || keyCode === KEY.I) && state.guildStats.hasItemCrafting) {
+    if ((keyCode === KEY.C || keyCode === KEY.I) && state.guildStats.itemCraftingLevel > 0) {
         if (state.selectedCharacter.context === 'item') setContext('field');
         else if (state.selectedCharacter.hero.area?.zoneKey === 'guild') {
             setContext('item');
         }
     }
-    if (keyCode === KEY.J && state.guildStats.hasJewelCrafting) {
+    if (keyCode === KEY.J && state.guildStats.jewelCraftingLevel > 0) {
         if (state.selectedCharacter.context === 'jewel') setContext('field');
         else if (state.selectedCharacter.hero.area?.zoneKey === 'guild') {
             setContext('jewel');
         }
     }
-    if (keyCode === KEY.M && state.guildStats.hasMap) {
+    if (keyCode === KEY.M && state.guildStats.mapLevel > 0) {
         if (state.selectedCharacter.context === 'map') {
             if (!state.selectedCharacter.hero.area) {
                 enterArea(state.selectedCharacter.hero, guildYardEntrance);
