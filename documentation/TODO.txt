@@ -61,8 +61,6 @@ Graphics:
     [M] Arrange HUD so skill tooltips+mission quest don't overlap. Remove minimap.
     [L] Add sparkles to gold+platinum trophies.
 
-    Fix fence jitters (off by 1px on hover or something).
-
     Add furniture glow:
             I'll touch these up later most likely, but this is a bunch of glows for all the different upgradeable furniture when they are ready to be upgraded.
         They are the same canvas size, so you can put the glow behind the furniture and it should give it a glowing hue like the sample.

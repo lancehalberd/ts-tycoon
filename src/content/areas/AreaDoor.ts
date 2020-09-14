@@ -59,7 +59,7 @@ const southMeadowDoorHover = createAnimation('gfx2/areas/southwalldoormeadowligh
 
 
 const [, sideFenceDoor, sideFenceDoorHover] = createAnimation('gfx2/areas/Fence side.png',
-    {w: 40, h: 148, content: r(16, 67, 12, 65)}, {cols: 3}).frames;
+    {w: 39, h: 148, content: r(16, 67, 12, 65)}, {cols: 3}).frames;
 
 const northFenceDoorGeometry: FrameDimensions = {w: 128, h: 32, content: {x: 52, y: 0, w: 29, h: 32}};
 const northFenceDoor = createAnimation('gfx2/areas/Fence north.png', northFenceDoorGeometry, {x: 2});
