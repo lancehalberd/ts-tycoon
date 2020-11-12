@@ -179,6 +179,13 @@ const villageSquare: AreaDefinition = {
                     animation: "northFenceDoor",
                     exitKey: "villageSquareLongHouse:door2",
                 },
+                {
+                    type: 'door',
+                    x: 11, zAlign: 'back', z: -94, flipped: true,
+                    animation: "sideFenceDoor",
+                    exitKey: "villageWest:door2",
+                    key: "door",
+                },
             ],
             grid: {
                 palette: 'fenceBackground', w: 5, h: 1,
@@ -188,13 +195,6 @@ const villageSquare: AreaDefinition = {
         {
             key: 'field', x: 0, y: 84,
             objects: [
-                {
-                    type: 'door',
-                    x: 10, z: -12, flipped: true,
-                    key: "door",
-                    animation: "sideFenceDoor",
-                    exitKey: "villageWest:door2",
-                },
                 {
                     type: 'door',
                     x: 557,

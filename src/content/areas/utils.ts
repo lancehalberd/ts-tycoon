@@ -3,6 +3,7 @@ import {
     areaObjectFactories, areaTypes,
     getPositionFromLocationDefinition, palettes,
 } from 'app/content/areas';
+import { zones } from 'app/content/zones';
 import { addAreaFurnitureBonuses, removeAreaFurnitureBonuses } from 'app/content/furniture';
 import { BACKGROUND_HEIGHT } from 'app/gameConstants';
 import { getState } from 'app/state';
@@ -242,4 +243,12 @@ export function linkAreaObjects(area: Area) {
             }
         }
     }
+}
+
+export function getCurrentArea(): Area {
+    return getState().selectedCharacter.hero.area;
+}
+
+export function getAreaDefinition(area: Area = getCurrentArea()): AreaDefinition {
+    return zones[area.zoneKey][area.key];
 }

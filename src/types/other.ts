@@ -13,7 +13,7 @@ export interface Renderable {
     render(context: CanvasRenderingContext2D, target: ShortRectangle): void
 }
 
-export type GameContext = 'cutscene' | 'field' | 'item' | 'jewel' | 'map';
+export type GameContext = 'cutscene' | 'enchant' | 'field' | 'item' | 'jewel' | 'jewelCrafting' | 'map';
 
 export interface FullRectangle {
     left: number,
@@ -38,6 +38,12 @@ export interface FrameDimensions {
     // This is a bit of a hack but it is a simple way of allowing me to
     // associate a depth value for an image.
     d?: number,
+    // If a frame is much larger than the content it represents, this rectangle
+    // represents the position and dimension of the content relative to the whole frame.
+    // The w/h here should be taken as the literal w/h of the rectangle in the image containing
+    // the main content, not as actual in game geometry.
+    // Contrast thiis with AreaObjectTarget where the `h` value is the height of the object in the game,
+    // which is typically less than the height of the image (imageContentHeight = gameHeight + gameDepth / 2).
     content?: ShortRectangle,
 }
 export interface FrameRectangle extends ShortRectangle {
@@ -63,14 +69,6 @@ export interface TintedFrame extends Frame {
     image: HTMLCanvasElement | HTMLImageElement,
 }
 
-export interface BasicFrame {
-    image: HTMLCanvasElement | HTMLImageElement,
-    left: number,
-    top: number,
-    width: number,
-    height: number,
-    render?: (context: CanvasRenderingContext2D, target: FullRectangle) => void,
-}
 export type ArrayFrame = [string, number, number, number, number, number, number];
 
 export interface TextPopup {

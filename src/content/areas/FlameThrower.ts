@@ -35,6 +35,8 @@ export interface FlameThrowerDefinition extends BaseAreaObjectDefinition {
     animationKey: string,
     // How long the warmup phase is before the flame actually comes out.
     warmupDuration: number,
+    // How many milliseconds to start this in its on off cycle. Used to stagger flamethrowers with the same period.
+    offsetTime: number,
     // Whether the flamethrower is on initially.
     on: boolean,
     // How long, in ms, the flame thrower stays on before automatically switching off.
@@ -61,8 +63,8 @@ export class FlameThrower extends EditableAreaObject {
         this._areaTarget = null;
         this.definition = definition;
         this.on = definition.on || false;
-        this.onAnimationTime = this.getOnDuration() + 1000;
-        this.offAnimationTime = this.getOffDuration() + 1000;
+        this.onAnimationTime = this.on ? (this.definition.offsetTime || 0) : this.getOnDuration() + 1000;
+        this.offAnimationTime = this.on ? this.getOffDuration() + 1000 : (this.definition.offsetTime || 0);
         return this;
     }
     getOnDuration() {
@@ -253,6 +255,13 @@ export class FlameThrower extends EditableAreaObject {
             value: object.getWarmupDuration(),
             onChange: (duration: number) => {
                 object.definition.warmupDuration = duration;
+                refreshObjectDefinition(object);
+            },
+        }, {
+            name: 'Offset',
+            value: object.definition.offsetTime || 0,
+            onChange: (offsetTime: number) => {
+                object.definition.offsetTime = offsetTime;
                 refreshObjectDefinition(object);
             },
         }]);

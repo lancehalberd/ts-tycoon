@@ -215,18 +215,18 @@ const guildFoyer: AreaDefinition = {
                 },
                 {
                     type: 'coinStash',
-                    xAlign: 'middle', x: -22, zAlign: 'back', z: -6,
+                    xAlign: 'middle', x: -24, zAlign: 'back', z: -4,
                     key: "coinStash",
                     level: 1,
                 },
                 {
                     type: 'shrineOfFortune',
-                    xAlign: 'middle', zAlign: 'back',
+                    xAlign: 'middle', x: 2, zAlign: 'back', z: -8,
                     key: "shrineOfFortune",
                 },
                 {
                     type: 'animaOrb',
-                    xAlign: 'middle', x: 81, zAlign: 'back', z: -34,
+                    xAlign: 'middle', x: 85, zAlign: 'back', z: -42,
                     key: "animaOrb",
                 },
                 {
@@ -236,14 +236,14 @@ const guildFoyer: AreaDefinition = {
                 },
                 {
                     type: 'obstacle',
-                    xAlign: 'right', x: -77, zAlign: 'back',
+                    xAlign: 'right', x: -77, zAlign: 'back', z: -2,
                     key: "bookShelf",
                     animationGroup: "guildFurniture",
                     animationKey: "bookShelf",
                 },
                 {
                     type: 'coinStash',
-                    x: 267, z: 74,
+                    x: 272, z: 76,
                     key: "coinStash2",
                 },
             ],

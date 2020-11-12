@@ -103,7 +103,9 @@ function serializeAreaDefinition(areaDefinition: AreaDefinition): string {
         for (const monster of areaDefinition.monsters) {
             const location = `location: {${serializeLocation(monster.location)}}, `;
             const isTarget = monster.isTarget ? 'isTarget: true, ' : '';
-            lines.push(`        {key: '${monster.key}', level: ${monster.level}, ${isTarget}${location}},`);
+            const isTriggered = monster.isTriggered ? 'isTriggered: true, ' : '';
+            const triggerKey = monster.triggerKey ? `triggerKey: '${monster.triggerKey}', ` : '';
+            lines.push(`        {key: '${monster.key}', level: ${monster.level}, ${isTarget}${isTriggered}${triggerKey}${location}},`);
         }
         lines.push('    ],')
     }

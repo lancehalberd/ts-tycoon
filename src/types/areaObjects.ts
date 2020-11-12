@@ -5,9 +5,13 @@ import {
 } from 'app/types';
 
 import {
-    AreaDecorationDefinition, AreaDoorDefinition, FlameThrowerDefinition,
+    AreaDecorationDefinition, AreaDoorDefinition, FlameThrowerDefinition, FloorTriggerDefinition,
     MessageDefinition, SwitchDefinition,
 } from 'app/content/areas';
+
+
+export const objectShapes = ['oval', 'rectangle', 'horizontal', 'vertical'] as const;
+export type ObjectShape = typeof objectShapes[number];
 
 export interface LocationDefinition {
     // Default to 0, relative to the parent coordinates.
@@ -24,7 +28,7 @@ export interface LocationDefinition {
 export interface BaseAreaObjectDefinition extends LocationDefinition {
     type: string,
     key: string,
-    shapeType?: 'oval' | 'rectangle',
+    shapeType?: ObjectShape,
     // Can be used to scale the entire size of the object.
     scale?: number,
 }
@@ -42,6 +46,7 @@ export type AreaObjectDefinition = BaseAreaObjectDefinition
     | AreaDecorationDefinition
     | AreaDoorDefinition
     | FlameThrowerDefinition
+    | FloorTriggerDefinition
     | MessageDefinition
     | SwitchDefinition
     | TreasureChestDefinition
@@ -51,6 +56,9 @@ export type AreaObjectDefinition = BaseAreaObjectDefinition
 export interface AreaObject {
     update?: () => void,
     getAreaTarget: () => AreaObjectTarget,
+    // Used by floor triggers, called when a hero walks on them.
+    // Might generalize this for any actor walking on them in the future.
+    onEnter?: (actor: Actor) => void,
     onInteract?: (actor: Actor) => void,
     onTrigger?: (switchOn: boolean) => void,
     shouldInteract?: (actor: Actor) => boolean,
@@ -63,6 +71,9 @@ export interface AreaObject {
     area?: Area,
     isSolid?: boolean,
     helpMethod?: () => string,
+    // This will be called when an actor leaves an area or we switch to a different actor.
+    // Just used for cleaning up dialogue box dom elements at the moment.
+    cleanup?: () => void,
 
     // Only objects with a supplied definition can be edited in the editor, since the
     // definitions is what is actually updated and emitted by the editor.

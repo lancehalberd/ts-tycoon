@@ -12,7 +12,6 @@ import {
     handleEditMapMouseDown,
     handleEditMapMouseMove,
     handleEditMapMouseUp,
-    startEditingLevel,
 } from 'app/development/editLevel';
 import {
     handleChildEvent,

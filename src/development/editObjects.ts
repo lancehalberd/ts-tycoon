@@ -2,8 +2,10 @@ import { addMonstersFromAreaDefinition, getArea } from 'app/adventure';
 import {
     applyDefinitionToArea,
     areaObjectFactories,
+    getAreaDefinition,
+    getCurrentArea,
     getLayer, getLayerDefinition,
-    AreaDoorDefinition, SwitchDefinition,
+    AreaDoorDefinition, FloorTriggerDefinition, SwitchDefinition,
 } from 'app/content/areas';
 import { getMonsterDefinitionAreaEntity, makeMonster, monsters } from 'app/content/monsters';
 import { zones } from 'app/content/zones';
@@ -11,8 +13,6 @@ import {
     boundZPosition,
     createObjectAtContextCoords,
     deleteSelectedObject,
-    getCurrentArea,
-    getAreaDefinition,
     moveLocationDefinition,
     refreshArea,
     refreshPropertyPanel,
@@ -202,6 +202,10 @@ function isSwitchDefinition(definition: AreaObjectDefinition): definition is Swi
     return definition.type === 'switch';
 }
 
+function isFloorTriggerDefinition(definition: AreaObjectDefinition): definition is FloorTriggerDefinition {
+    return definition.type === 'floorTrigger';
+}
+
 function updateObjectKey(object: AreaObject, key: string): void {
     const updatedAreas = new Set<Area>([object.area]);
     // Update all existing references to the current object key.
@@ -230,7 +234,7 @@ function updateObjectKey(object: AreaObject, key: string): void {
     // 3. Switch targets
     for (const otherObject of Object.values(object.area.objectsByKey)) {
         const definition = otherObject.definition;
-        if (isSwitchDefinition(definition)) {
+        if (isSwitchDefinition(definition) || isFloorTriggerDefinition(definition)) {
             const index = definition.targets.indexOf(object.key);
             if (index >=0) {
                 definition.targets.splice(index, 1, key);

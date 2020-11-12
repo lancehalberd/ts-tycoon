@@ -7,7 +7,13 @@ import {
 } from 'app/bonuses';
 import { baseDivinity, gainEndlessExperience, refreshStatsPanel, setSelectedCharacter, updateHero} from 'app/character';
 import { getSprite } from 'app/content/actors';
-import { createAreaFromDefinition, getLayer, getPositionFromLocationDefinition } from 'app/content/areas';
+import {
+    createAreaFromDefinition,
+    getAreaDefinition,
+    getLayer,
+    getPositionFromLocationDefinition,
+} from 'app/content/areas';
+import { cutscenes } from 'app/content/cutscenes';
 import { clearEndlessAreaMinimap, generateEndlessZone, highlightEndlessArea } from 'app/content/endlessZone';
 import { addAreaFurnitureBonuses } from 'app/content/furniture';
 import { instantiateLevel } from 'app/content/levels';
@@ -15,7 +21,6 @@ import { map } from 'app/content/mapData';
 import { getMonsterDefinitionAreaEntity, makeMonster } from 'app/content/monsters';
 import { getZone } from 'app/content/zones';
 import { setContext, showContext } from 'app/context';
-import { editingMapState, stopTestingLevel } from 'app/development/editLevel';
 import { editingAreaState, refreshPropertyPanel } from 'app/development/editArea';
 import { query } from 'app/dom';
 import { drawBoardBackground } from 'app/drawBoard';
@@ -45,7 +50,7 @@ import { playSound } from 'app/utils/sounds';
 
 import {
     Actor, Area, AreaDefinition, AreaEntity, AreaObject, AreaTarget, BonusSource, Character, Exit, Frame,
-    Hero, Level, LevelData, LevelDifficulty, Monster, MonsterData, MonsterSpawn, Target,
+    Hero, Level, LevelData, LevelDifficulty, Monster, MonsterData, MonsterDefinition, MonsterSpawn, Target,
     ZoneType,
 } from 'app/types';
 
@@ -114,15 +119,40 @@ export function getArea(zoneKey: ZoneType, areaKey: string, reset: boolean = fal
 export function addMonstersFromAreaDefinition(area: Area) {
     const zone = getZone(area.zoneKey);
     const areaDefinition: AreaDefinition = zone[area.key];
-    const monsters: MonsterSpawn[] =(areaDefinition.monsters || []).map(monster => {
+    area.enemies = [];
+    addMonstersToAreaFromDefinitions(area, (areaDefinition.monsters || []).filter(monster => !monster.isTriggered));
+}
+
+export function addMonstersToAreaFromDefinitions(area: Area, definitions: MonsterDefinition[]) {
+    const monsterSpawns: MonsterSpawn[] = definitions.map(monster => {
         return {
             ...monster,
+            definition: monster,
             location: getPositionFromLocationDefinition(area, getMonsterDefinitionAreaEntity(area, monster), monster.location),
             // By default monsters face left, but they can be flipped to face right.
             heading: [monster.location.flipped ? 1 : -1, 0, 0],
         };
     });
-    addMonstersToArea(area, monsters);
+    addMonstersToArea(area, monsterSpawns);
+}
+
+export function triggerTargets(this: void, area: Area, targetKeys: string[], cutsceneKey: string, toggleState: boolean): void {
+    for (const key of targetKeys) {
+        const object = area.objectsByKey[key];
+        object?.onTrigger?.(toggleState);
+    }
+    const areaDefinition = getAreaDefinition(area);
+    const triggeredMonsters = (areaDefinition.monsters || []).filter(
+        monster => monster.isTriggered && targetKeys.includes(monster.triggerKey)
+    );
+    addMonstersToAreaFromDefinitions(area, triggeredMonsters);
+    if (cutsceneKey) {
+        if (!cutscenes[cutsceneKey]) {
+            console.error('Missing cutscene', cutsceneKey);
+        } else {
+            cutscenes[cutsceneKey].run();
+        }
+    }
 }
 
 const endlessZones = {};
@@ -304,7 +334,6 @@ export function addMonstersToArea(
     extraBonuses: BonusSource[] = [],
     specifiedRarity = 0
 ) {
-    area.enemies = [];
     for (const monsterData of (monsters || [])) {
         const bonusSources = [...(monsterData.bonusSources || []), ...extraBonuses];
         const rarity = monsterData.rarity || specifiedRarity;
@@ -312,6 +341,7 @@ export function addMonstersToArea(
             area, monsterData.key, monsterData.level, monsterData.location,
             bonusSources, rarity
         );
+        newMonster.definition = monsterData.definition;
         newMonster.heading = monsterData.heading;
         newMonster.isTarget = monsterData.isTarget;
     }
@@ -451,9 +481,7 @@ export function removeActor(actor: Actor) {
             character.levelTimes[character.currentLevelKey][level.levelDifficulty] = currentEndlessLevel - 1;
         }
         returnToMap(actor.character);
-        if (actor.character === getState().selectedCharacter &&
-            !actor.character.replay && !editingMapState.testingLevel
-        ) {
+        if (actor.character === getState().selectedCharacter && !actor.character.replay) {
             showAreaMenu();
         }
     }
@@ -977,8 +1005,6 @@ export function returnToMap(character: Character) {
     updateAdventureButtons();
     if (character.autoplay && character.replay && character.currentLevelKey) {
         startLevel(character, character.currentLevelKey);
-    } else if (editingMapState.testingLevel) {
-        stopTestingLevel();
     } else if (getState().selectedCharacter === character) {
         setContext('map');
         refreshStatsPanel(character, query('.js-characterColumn .js-stats'));
@@ -1017,6 +1043,12 @@ export function returnToGuild(character: Character, exit: Exit = guildGateEntran
 export function leaveCurrentArea(actor: Actor, leavingZone = false) {
     if (!actor.area) {
         return;
+    }
+    for (const objectKey in actor.area.objectsByKey) {
+        const object = actor.area.objectsByKey[objectKey];
+        if (object.cleanup) {
+            object.cleanup();
+        }
     }
     // If this is the currently selected character, make sure to cleanup any dialog boxes
     // associated with characters in this area.

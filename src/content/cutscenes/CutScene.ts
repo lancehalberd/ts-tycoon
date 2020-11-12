@@ -13,9 +13,10 @@ import { drawArea } from 'app/drawArea';
 import { ADVENTURE_WIDTH, ADVENTURE_HEIGHT, FRAME_LENGTH, MAX_Z } from 'app/gameConstants';
 import { setActorDestination } from 'app/main';
 import { moveActor } from 'app/moveActor';
+import { drawActionShortcuts } from 'app/render/drawActionShortcuts';
 import { getState } from 'app/state';
 import { saveGame } from 'app/saveGame';
-import { DialogueBox } from 'app/ui/DialogueBox';
+import { DialogueBox, MessageBox } from 'app/ui/DialogueBox';
 import { actionDefinitions } from 'app/useSkill';
 import { updateNPCs } from 'app/content/updateNPCs';
 
@@ -43,6 +44,9 @@ export default class Cutscene {
     stashedEnemies: Actor[];
     skipped: boolean = false;
     finished: boolean = false;
+    pausedForTutorial: boolean = false;
+    messageBox: MessageBox = null;
+    isTutorial: boolean = false;
 
     setArea(newArea: Area): void {
         this.restoreArea();
@@ -57,8 +61,15 @@ export default class Cutscene {
         if (this.area && this.stashedAllies) {
             this.area.allies = this.stashedAllies;
             this.area.enemies = this.stashedEnemies;
-            for (const actor of [...this.area.allies, ...this.area.enemies]) {
+            for (const actor of this.area.allies) {
                 actor.area = this.area;
+                actor.allies = this.area.allies;
+                actor.enemies = this.area.enemies;
+            }
+            for (const actor of this.area.enemies) {
+                actor.area = this.area;
+                actor.allies = this.area.enemies;
+                actor.enemies = this.area.allies;
             }
             this.area = null;
             this.stashedAllies = null;
@@ -78,7 +89,9 @@ export default class Cutscene {
             actor.activity = {type: 'none'};
             actor.area = this.area;
             actor.allies = this.area.allies;
-            actor.enemies = this.area.enemies;
+            // Cutscenes don't work if actors have enemy targets. We may want to fix this
+            // at some point but for now, we set the enemies to be empty for all actors.
+            actor.enemies = []; // this.area.enemies;
             // Make sure the actor's frame is setup for the first draw operation.
             this.updateActor(actor);
         }
@@ -86,8 +99,20 @@ export default class Cutscene {
 
     async run(): Promise<void> {
         try {
-            this.finished = false;
+            // Reset all instance variables when we run a script. This is necessary
+            // since the cutscenes are singletons that get reused if they are run
+            // a second time.
+            this.activeOperations = [];
+            this.cameraPanOperation = null;
+            this.fadeOperation = null;
+            this.waitForClickOperation = null;
+            this.fadeLevel = 0;
+            this.stashedAllies = null;
+            this.stashedEnemies = null;
             this.skipped = false;
+            this.finished = false;
+            this.pausedForTutorial = false;
+            this.messageBox = null;
             getState().cutscene = this;
             setContext('cutscene');
             await this.runScript();
@@ -291,6 +316,25 @@ export default class Cutscene {
         });
     }
 
+    async waitForMessage(message: string): Promise<void> {
+        this.messageBox = new MessageBox();
+        this.messageBox.message = message;
+        this.messageBox.start(this.area);
+        this.messageBox.waitForInput = true;
+        await this.waitForClick();
+        // If the text is finished, remove the message box and proceed.
+        if (this.messageBox.isTextFinished()) {
+            this.messageBox.remove();
+            this.messageBox = null;
+            return;
+        }
+        // If the text is not finished yet, reveal it all, and then wait.
+        this.messageBox.finish();
+        await this.waitForClick();
+        this.messageBox.remove();
+        this.messageBox = null;
+    }
+
 
     pause(milliseconds: number): Promise<void> {
         return new Promise((resolve, reject) => {
@@ -341,6 +385,9 @@ export default class Cutscene {
     }
 
     update() {
+        if (this.messageBox) {
+            this.messageBox.update();
+        }
         if (this.cameraPanOperation) {
             this.cameraPanOperation.update();
             if (this.cameraPanOperation.done) {
@@ -357,6 +404,9 @@ export default class Cutscene {
             operation.update();
         }
         this.activeOperations = this.activeOperations.filter(operation => !operation.done);
+        if (this.pausedForTutorial) {
+            return;
+        }
         for (const actor of this.actors) {
             this.updateActor(actor);
         }
@@ -404,5 +454,12 @@ export default class Cutscene {
         if (opacity !== cutsceneFadeBox.style.opacity) {
             cutsceneFadeBox.style.opacity = opacity;
         }
+        if (this.isTutorial) {
+            drawActionShortcuts(context, getState().selectedCharacter);
+        }
+    }
+
+    handleKeyInput(keyCode: number): void {
+        // No default implementation, could add something for skipping cutscene.
     }
 }

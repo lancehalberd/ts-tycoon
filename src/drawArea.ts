@@ -458,6 +458,10 @@ function drawActionTargetCircle(targetContext) {
         if (action.stats.range) drawTargetCircle(context, area, action.actor.x, action.actor.z, action.stats.range + 1, .1);
         else if (action.stats.area) drawTargetCircle(context, area, action.actor.x, action.actor.z, action.stats.area, .1);
         else drawTargetCircle(context, area, action.actor.x, action.actor.z, 1, .1);
+        // Only draw the targeting circle if this action is actually selected, not just on hover.
+        if (!getSelectedAction()) {
+            return;
+        }
         const canvasCoords = getCanvasCoords();
         if (!canvasCoords) {
             return;

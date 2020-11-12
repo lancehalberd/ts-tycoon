@@ -77,7 +77,11 @@ export function rectanglesOverlap(A: FullRectangle, B: FullRectangle) {
     return !(A.bottom < B.top || A.top > B.bottom || A.right < B.left || A.left > B.right);
 }
 
-export function collision(element1: HTMLElement, element2: HTMLElement) {
+export function collision(element1: HTMLElement, element2: HTMLElement): boolean {
+    if (!element1 || !element2) {
+        debugger;
+        return false;
+    }
     const { y: t, x: l, width: w, height: h } = element1.getBoundingClientRect();
     const b = t + h;
     const r = l + w;

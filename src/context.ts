@@ -57,9 +57,13 @@ export function showContext(context: GameContext): void {
     }
     // Fade the black bars for the cutscene in/out
     const overlay = document.getElementsByClassName('js-cutsceneOverlay')[0] as HTMLElement;
-    overlay.style.opacity = (context === 'cutscene' ? '1' : '0');
-    toggleElements(queryAll('.js-adventureContext, .js-jewelContext, .js-itemContext, .js-guildContext, .js-mapContext, .js-cutsceneContext'), false);
+    // We don't show the cutsene overlay during tutorials.
+    const showCutsceneOverlay = context === 'cutscene' && state.cutscene && !state.cutscene.isTutorial;
+    overlay.style.opacity = (showCutsceneOverlay ? '1' : '0');
+    toggleElements(queryAll('.js-adventureContext, .js-enchantContext, .js-jewelContext, .js-jewelCraftingContext, .js-itemContext, .js-guildContext, .js-mapContext, .js-cutsceneContext'), false);
     toggleElements(queryAll(`.js-${context}Context`), true);
+    // Only show the "Skip" button when the overlay is present.
+    toggleElements(queryAll(`.js-cutsceneSkipButton`), showCutsceneOverlay);
     if (context === 'map') {
         setVisibleMapLevels();
     }

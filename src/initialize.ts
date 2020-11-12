@@ -11,7 +11,6 @@ import { map } from 'app/content/mapData';
 import { initializeMonsters } from 'app/content/monsters';
 import { initializeProjectileAnimations } from 'app/content/projectileAnimations';
 import { setContext, showContext } from 'app/context';
-import { initializeLevelEditing } from 'app/development/editLevel';
 import { initializeSpecialCharacters } from 'app/development/testCharacters/special';
 import { query } from 'app/dom';
 import { drawMap } from 'app/drawMap';
@@ -49,7 +48,6 @@ export function initializeGame() {
     initializeMonsters();
     initializeCraftingGrid();
     initializeProjectileAnimations();
-    initializeLevelEditing();
     initializeState();
     initializeSpecialCharacters();
     addKeyCommands();

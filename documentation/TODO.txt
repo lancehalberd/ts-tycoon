@@ -3,12 +3,8 @@ Test at http://localhost:81/ttt/public/
 
     [M] Fix flat guild walls need to block movement.
     [M] Add new guild furniture:
-        Map
-        Shrine of Fortune
         Enchanting pedestal
-        Jewel crafting bench
         Carpenter bench (No graphics for this yet actually)
-
 
     [M] Add pillar decorations.
     [M] Fix flat walls need different bounding rules than angled walls.
@@ -16,13 +12,9 @@ Test at http://localhost:81/ttt/public/
     [L] Update charge shot to allow you to manually charge the hit for % increased damage + accuracy. Remove cooldown?
         This could be applied to some other abilities like "aim"
 
-Features:
-    [L] Add "Endless Discovery" section off of the guild exit to replace autofarming
-        - Randomly generated seed for each character
-        - Maps to the globe so areas get harder as you move north, and you can go in circles at latitude to fight monsters of similar difficulty but different composition.
-        - Rewards can be found periodically but can each be obtained only once. Can get jewels, equipment and even permanent buffs for character.
-        - *maybe* include entrances to quest shrines? Finding them would unlock them on the world map for that character.
+    [L] Improve enchantment outcomes by giving (C * [itemLevel - enchantmentLevel])% chance to upgrade an enchantment tier, and repeat untiil the upgrade roll fails. C should probably be something like 3-5%
 
+Features:
     [L] Split core job abilities into multiple jewels with different values. Better hires can have more fixed jewels. Some abilities are shared between job pools like +1 str/level or 5% magic resist.
     [L] Help system where fairy floats on top of other UIs to give advice, during item/jewel crafting, world map, etc.
     [L] Add option for Pantheon dialogue at quest shrines.

@@ -19,12 +19,12 @@ import { redrawInventoryJewels } from 'app/jewelInventory';
 import { drawMissionHUD } from 'app/render/drawMission';
 import { getState } from 'app/state';
 import { renderChooseBlessing } from 'app/ui/chooseBlessing';
+import { createAnimation, drawFrame, getFrame } from 'app/utils/animations';
 import { arrMod, ifdefor, rectangle } from 'app/utils/index';
 import { centerShapesInRectangle } from 'app/utils/polygon';
 import { isPlayingTrack, playTrack } from 'app/utils/sounds';
 
-
-import { createAnimation, drawFrame, getFrame } from 'app/utils/animations';
+const [bookFrame, bookPanels, bookClose, bookCloseHover, bookPerson] = createAnimation('gfx2/hud/menusheet.png', {w: 320, h: 180}, {cols: 5}).frames;
 
 const homeSource = {'image': requireImage('gfx/nielsenIcons.png'), 'left': 32, 'top': 128, 'width': 32, 'height': 32};
 export const shrineSource = {'image': requireImage('gfx/militaryIcons.png'), 'left': 102, 'top': 125, 'width': 16, 'height': 16};
@@ -73,7 +73,14 @@ export function render() {
             else if (!character.hero.area) drawImage(character.characterContext, homeSource.image, homeSource, rectangle(0, 0, 16, 16));
         }
     }
-    if (gameContext === 'field') {
+    if (gameContext === 'enchant' || gameContext === 'item' || gameContext === 'jewel' || gameContext === 'jewelCrafting') {
+        drawFrame(mainContext, bookFrame, {x: 0, y: 0, w: bookFrame.w, h: bookFrame.h});
+        drawFrame(mainContext, bookPanels, {x: 0, y: 0, w: bookFrame.w, h: bookFrame.h});
+        drawFrame(mainContext, bookClose, {x: 0, y: 0, w: bookFrame.w, h: bookFrame.h});
+        if (gameContext === 'item' || gameContext ==='enchant') {
+            drawFrame(mainContext, bookPerson, {x: 0, y: 0, w: bookFrame.w, h: bookFrame.h});
+        }
+    } else if (gameContext === 'field') {
         const area = state.selectedCharacter.hero.area;
         if (editingLevel && !testingLevel) {
             drawArea(mainContext, editingLevel);

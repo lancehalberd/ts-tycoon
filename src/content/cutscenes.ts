@@ -6,6 +6,7 @@ import Mission1Return from 'app/content/cutscenes/Mission1Return';
 import Mission2Intro from 'app/content/cutscenes/Mission2Intro';
 import Mission2Outro from 'app/content/cutscenes/Mission2Outro';
 import Mission2Return from 'app/content/cutscenes/Mission2Return';
+import PrologueAbilityTutorial from 'app/content/cutscenes/PrologueAbilityTutorial';
 import UnlockedFoyer from 'app/content/cutscenes/UnlockedFoyer';
 import ShrineQuestTutorial from 'app/content/cutscenes/ShrineQuestTutorial';
 
@@ -20,5 +21,7 @@ export const cutscenes: {[key: string]: Cutscene} = {
     mission2Intro: new Mission2Intro(),
     mission2Outro: new Mission2Outro(),
     mission2Return: new Mission2Return(),
+    prologueAbilityTutorial: new PrologueAbilityTutorial(),
     shrineQuestTutorial: new ShrineQuestTutorial(),
 };
+window['cutscenes'] = cutscenes;

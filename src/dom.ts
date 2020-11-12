@@ -1,4 +1,7 @@
+import { drawFrame } from 'app/utils/animations';
 import { rectangleCenter } from 'app/utils/index';
+
+import { Frame } from 'app/types';
 
 export function query(className): HTMLElement {
     return document.querySelector(className);
@@ -23,12 +26,24 @@ previewContext.imageSmoothingEnabled = false;
 
 export const craftingCanvas:HTMLCanvasElement = query('.js-craftingCanvas') as HTMLCanvasElement;
 export const craftingContext = craftingCanvas.getContext('2d');
+craftingContext.imageSmoothingEnabled = false;
 
 export function createCanvas(width, height, classes = ''):HTMLCanvasElement {
     const canvas = document.createElement('canvas');
     canvas.className = classes;
     canvas.width = width;
     canvas.height = height;
+    return canvas;
+}
+
+export function createFrameCanvas(frame: Frame, scale: number = 1): HTMLCanvasElement {
+    const canvas = createCanvas(frame.w, frame.h);
+    if (scale !== 1) {
+        canvas.style.transform = `scale(${scale})`;
+    }
+    const context = canvas.getContext('2d');
+    context.imageSmoothingEnabled = false;
+    drawFrame(context, frame, {x: 0, y: 0, w: frame.w, h: frame.h});
     return canvas;
 }
 

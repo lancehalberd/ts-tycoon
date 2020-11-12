@@ -1,4 +1,4 @@
-import { Actor, BasicFrame, Bonuses, EquipmentAffix, Hero, Person, SavedAffix, Tags } from 'app/types';
+import { Actor, Bonuses, EquipmentAffix, Frame, Hero, Person, SavedAffix, Tags } from 'app/types';
 
 type AttackAnimationType = 'bowAttack' | 'throwingAttack' | 'wandAttack';
 
@@ -16,19 +16,6 @@ export type EquipmentType =
     'ring' | 'band' |
     'amulet' | 'sheath' | 'bandolier' | 'cloak' | 'baldric' | 'quiver';
 
-export type EquipmentIconType =
-    'bow' | 'throwing' | 'wand' | 'shuriken' |
-    'staff' | 'knuckles' | 'dagger' | 'fists' |
-    'sword' | 'axe' | 'greatSword' | 'greatAxe' |
-    'heavyShield' | 'lightShield' | 'magicShield' |
-    'featherHat' | 'helmet' | 'mageHat' |
-    'heavyArmor' | 'lightArmor' | 'clothArmor' |
-    'vambracers' | 'bracers' | 'gloves' |
-    'greaves' | 'pants' | 'tights' |
-    'sabatons' | 'boots' | 'shoes' |
-    'ring' | 'band' |
-    'cloak' | 'amulet' | 'quiver' | 'scabbard';
-
 export type Equipment = {[key in EquipmentSlot]?: Item};
 export type EquipmentData = {[key in EquipmentSlot]?: ItemData};
 export type SavedEquipment = {[key in EquipmentSlot]?: SavedItem};
@@ -41,7 +28,7 @@ export interface RawItemData {
     bonuses: Bonuses,
     source?: any,
     animation?: AttackAnimationType,
-    icon: EquipmentIconType,
+    icon: Frame,
     restrictions?: string[],
     gravity?: number,
 }
@@ -66,14 +53,13 @@ export interface ItemData {
     bonuses: Bonuses,
     restrictions?: string[],
     source?: any,
-    icon: EquipmentIconType,
+    icon: Frame,
     unique?: UniqueItemData,
     gravity?: number,
     animation?: AttackAnimationType,
     // Used by the crafting grid
     craftingX?: number,
     craftingY?: number,
-    iconSource?: BasicFrame,
 }
 
 export interface Item {

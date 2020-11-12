@@ -1,13 +1,13 @@
 import { addMonstersFromAreaDefinition } from 'app/adventure';
 import {
     isPointOverAreaTarget,
+    getCurrentArea,
 } from 'app/content/areas';
 import { getMonsterDefinitionAreaEntity, makeMonster, monsters } from 'app/content/monsters';
 import { zones } from 'app/content/zones';
 import {
     boundZPosition,
     deleteSelectedObject,
-    getCurrentArea,
     moveLocationDefinition,
     refreshPropertyPanel,
 } from 'app/development/editArea';
@@ -140,6 +140,21 @@ export function getMonsterProperties(definition: MonsterDefinition, area: Area):
         value: definition.isTarget || false,
         onChange: (isTarget: boolean) => {
             definition.isTarget = isTarget;
+            refreshEnemies();
+        },
+    }]);
+    props.push([{
+        name: 'key',
+        value: definition.triggerKey || '',
+        onChange: (key: string) => {
+            definition.triggerKey = key;
+            refreshEnemies();
+        },
+    }, {
+        name: 'isTriggered',
+        value: definition.isTriggered || false,
+        onChange: (isTriggered: boolean) => {
+            definition.isTriggered = isTriggered;
             refreshEnemies();
         },
     }]);

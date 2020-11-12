@@ -13,7 +13,7 @@ import { isPointInRect } from 'app/utils/index';
 
 import {
     Area, AreaObject, AreaObjectDefinition, AreaObjectTarget, BonusSource,
-    Exit, Frame, FrameAnimation, Hero, ShortRectangle,
+    Exit, Frame, FrameAnimation, Hero, ObjectShape, ShortRectangle,
 } from 'app/types';
 
 export class EditableAreaObject implements AreaObject {
@@ -33,7 +33,7 @@ export class EditableAreaObject implements AreaObject {
     area: Area;
     name: string;
     key: string;
-    shapeType: 'oval' | 'rectangle' = 'rectangle';
+    shapeType: ObjectShape = 'rectangle';
     bonusSource: BonusSource;
 
     applyDefinition(definition: AreaObjectDefinition): this {

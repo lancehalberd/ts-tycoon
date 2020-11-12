@@ -1,7 +1,7 @@
 import { enterArea } from 'app/adventure';
 import {
     areaObjectFactories, drawFrameToAreaTarget,
-    getAreaObjectTargetFromDefinition, isPointOverAreaTarget,
+    isPointOverAreaTarget,
     EditableAreaObject,
 } from 'app/content/areas';
 import { addFurnitureBonuses, removeFurnitureBonuses } from 'app/content/furniture';

@@ -255,13 +255,24 @@ export function moveActor(actor: Actor, ignoreCollisions: boolean = false) {
         if (!collision) {
             for (const layer of area.layers) {
                 for (const object of layer.objects) {
-                    if (object.isSolid === false) continue;
+                    if (object.isSolid === false && !object.onEnter) continue;
                     if (!object.getAreaTarget) {
                         console.log(object);
                         debugger;
                     }
                     const objectTarget = object.getAreaTarget();
-                    if (objectTarget.shapeType === 'rectangle') {
+                    let overlap = false;
+                    if (objectTarget.shapeType === 'oval' || !objectTarget.shapeType) {
+                        // Default handling is oval.
+                        const distance = getDistanceOverlap(actor, objectTarget);
+                        if (distance <= -8 &&
+                            new Vector([(actor.x - currentX), (actor.z - currentZ)])
+                                .dotProduct(new Vector([objectTarget.x - currentX, objectTarget.z - currentZ])) > 0
+                        ) {
+                            overlap = true;
+                        }
+                    } else {
+                        // shapeTypes rectangle/horizontal/vertical are all geometric rectangles.
                         if (actor.z - actor.d / 2 > objectTarget.z + objectTarget.d / 2 ||
                             actor.z + actor.d / 2 < objectTarget.z - objectTarget.d / 2
                         ) {
@@ -277,21 +288,18 @@ export function moveActor(actor: Actor, ignoreCollisions: boolean = false) {
                         const v2 = new Vector([objectTarget.x - currentX, objectTarget.z - currentZ]).normalize();
                         // < 0 means they can move orthogonally, <= -1 requires them to move exactly away,
                         // anything in between is more limiting the closer it gets to -1.
-                        if (v1.dotProduct(v2) < - 0.8) {
+                        if (v1.dotProduct(v2) < -0.8) {
                             continue;
                         }
-                        collision = true;
-                        break;
-                    } else {
-                        // Default handling is oval.
-                        const distance = getDistanceOverlap(actor, objectTarget);
-                        if (distance <= -8 &&
-                            new Vector([(actor.x - currentX), (actor.z - currentZ)])
-                                .dotProduct(new Vector([objectTarget.x - currentX, objectTarget.z - currentZ])) > 0
-                        ) {
-                            collision = true;
-                            break;
+                        overlap = true;
+                    }
+
+                    if (overlap) {
+                        collision = !!object.isSolid;
+                        if (object.onEnter) {
+                            object.onEnter(actor);
                         }
+                        break;
                     }
                 }
             }

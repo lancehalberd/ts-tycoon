@@ -9,7 +9,7 @@ import {
     areaObjectFactories, areaTargetToScreenTarget, areaTypes, areaWalls,
     createAreaObjectFromDefinition, createAreaFromDefinition,
     getLayer, getPositionFromLocationDefinition, getStandardLayers, isPointOverAreaTarget,
-    palettes,
+    palettes, getCurrentArea, getAreaDefinition,
 } from 'app/content/areas';
 import {
     MonsterDefinitionAreaObject,
@@ -71,14 +71,6 @@ export const editingAreaState: EditingAreaState = {
     contextCoords: null,
 }
 window['editingAreaState'] = editingAreaState;
-
-export function getCurrentArea(): Area {
-    return getState().selectedCharacter.hero.area;
-}
-export function getAreaDefinition(): AreaDefinition {
-    const area: Area = getCurrentArea();
-    return zones[area.zoneKey][area.key];
-}
 
 export function refreshArea(area: Area = getCurrentArea()) {
     const { selectedObject } = editingAreaState;

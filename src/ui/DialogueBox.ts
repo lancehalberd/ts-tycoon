@@ -112,6 +112,9 @@ export class DialogueBox {
     isFinished(): boolean {
         return !this.waitForInput && this.revealedTextIndex >= this.message.length;
     }
+    isTextFinished(): boolean {
+        return this.revealedTextIndex >= this.message.length;
+    }
 }
 
 export class MessageBox extends DialogueBox {

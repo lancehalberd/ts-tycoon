@@ -6,12 +6,15 @@ import {
     Frame, LocationDefinition, ShortRectangle,
 } from 'app/types';
 
+// Currently this returns h as the full height of the target as it appears on the screen, but I think
+// we actually should change this to be the in game height, which means subtracting d/2 from the height
+// of the image, since the full visual height is objectHeight + objectDepth / 2.
 export function getAreaObjectTargetFromDefinition(object: AreaObject, content: ShortRectangle, definition: AreaObjectDefinition): AreaObjectTarget {
     const area: Area = object.area;
     let scale = definition.scale || 1;
     let w = content.w * scale;
-    let h = content.h * scale;
     let d = (typeof(content.d) === 'undefined' ? content.w : content.d) * scale;
+    let h = content.h * scale - d / 2;
     return {
         targetType: 'object',
         object,
@@ -76,12 +79,13 @@ export function getPositionFromLocationDefinition(area: Area, {w, h, d}: Dimensi
 export function areaTargetToScreenTarget(target: AreaEntity): ShortRectangle {
     return {
         x: Math.round(target.x - target.area.cameraX - target.w / 2),
-        y: Math.round(GROUND_Y - target.y - target.z / 2 - target.h + target.d / 4),
+        y: Math.round(GROUND_Y - target.y - target.z / 2 - target.h - target.d / 4),
         w: Math.round(target.w),
-        h: Math.round(target.h),
+        h: Math.round(target.h + target.d / 2),
         d: Math.round(target.d),
     };
 }
+window['areaTargetToScreenTarget'] = areaTargetToScreenTarget;
 
 export function isPointOverAreaTarget(target: AreaEntity, x: number, y: number): boolean {
     return isPointInShortRect(x, y, areaTargetToScreenTarget(target));
@@ -99,12 +103,14 @@ export function drawFrameToAreaTarget(
 ): void {
     const content = frame.content || {...frame, x: 0, y: 0};
 
+    const targetScreenHeight = target.h + target.d / 2;
+
     const xScale = target.w / content.w;
-    const yScale = target.h / content.h;
+    const yScale = targetScreenHeight / content.h;
 
     // Calculate the left/top values from x/y/z coords, which drawImage will use.
     const left = Math.round(target.x - target.w / 2 - content.x * xScale - target.area.cameraX);
-    const top = Math.round(GROUND_Y - target.y - target.h - target.z / 2 - content.y * yScale + target.d / 4);
+    const top = Math.round(GROUND_Y - target.y - targetScreenHeight - target.z / 2 - content.y * yScale + target.d / 4);
     context.save();
     // If the object is flipped, flip it about the center of the content, which will keep
     // the content centered at its location.
@@ -129,15 +135,15 @@ export function drawFrameToAreaTarget(
             left + Math.round(content.x * xScale),
             top + Math.round(content.y * yScale),
             target.w,
-            target.h,
+            targetScreenHeight,
         );
         // Content rectangle as defined in the areaTarget (should match above content rectangle)
         context.fillStyle = 'red';
         context.fillRect(Math.round(target.x - target.area.cameraX - target.w / 2),
             // target.d / 4 because it is offset by half the depth and the z-coord is divided by 2 again.
-            Math.round(GROUND_Y - target.y - target.z / 2 - target.h + target.d / 4),
+            Math.round(GROUND_Y - target.y - target.z / 2 - targetScreenHeight - target.d / 4),
             target.w,
-            target.h,
+            targetScreenHeight,
         );
     }
     context.restore();

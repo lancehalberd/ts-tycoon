@@ -1,7 +1,7 @@
 import { enterArea } from 'app/adventure';
 import {
     areaObjectFactories, drawFrameToAreaTarget,
-    getAreaObjectTargetFromDefinition, isPointOverAreaTarget,
+    isPointOverAreaTarget,
     EditableAreaObject,
 } from 'app/content/areas';
 import { setUpgradingObject } from 'app/content/upgradeButton';

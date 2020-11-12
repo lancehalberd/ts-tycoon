@@ -635,6 +635,15 @@ export function deleteCharacter(character: Character): void {
 export function setSelectedCharacter(character: Character) {
     const state = getState();
     // Clean up test characters when they are no longer selected.
+    const currentArea = state.selectedCharacter && state.selectedCharacter.hero.area;
+    if (currentArea) {
+        for (const objectKey in currentArea.objectsByKey) {
+            const object = currentArea.objectsByKey[objectKey];
+            if (object.cleanup) {
+                object.cleanup();
+            }
+        }
+    }
     if (state.selectedCharacter && !state.characters.includes(state.selectedCharacter)) {
         deleteCharacter(state.selectedCharacter);
     }
@@ -662,7 +671,9 @@ export function setSelectedCharacter(character: Character) {
         if (equipment) {
             query('.js-equipment .js-' + type).append(equipment.domElement);
         }
-        query('.js-equipment .js-' + type + ' .js-placeholder').style.display = equipment ? 'none' : '';
+        // Always hide placeholders for now.
+        // query('.js-equipment .js-' + type + ' .js-placeholder').style.display = equipment ? 'none' : '';
+        query('.js-equipment .js-' + type + ' .js-placeholder').style.display = 'none';
     });
     // update stats panel.
     refreshStatsPanel(character, query('.js-characterColumn .js-stats'));

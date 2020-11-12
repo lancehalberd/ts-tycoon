@@ -135,6 +135,63 @@ function createFrames() {
     if (!tinyGoldFrame) tinyGoldFrame = createScaledFrame(rectangle(0, 0, tinySize, tinySize), requireImage('gfx/goldFrame.png'));
     if (!tinySilverFrame) tinySilverFrame = createScaledFrame(rectangle(0, 0, tinySize, tinySize), requireImage('gfx/silverFrame.png'));
 }
+
+export function drawActionShortcut(context: CanvasRenderingContext2D, actionShortcut: ActionShortcut, hero: Hero) {
+    const action = actionShortcut.action;
+
+    const iconSource = getAbilityIconSource(action.source);
+    context.fillStyle = 'white';
+    fillRect(context, pad(actionShortcut, -2));
+    drawAbilityIcon(context, iconSource, pad(actionShortcut, -frameSize));
+    let frame = silverFrame;
+    let tinyFrame = tinySilverFrame;
+    if (isSkillActive(action)) {
+        frame = goldFrame;
+        tinyFrame = tinyGoldFrame;
+    }
+    // Display the cooldown as a clock shadow
+    const cooldown = action.readyAt - hero.time;
+    if (cooldown > 0) {
+        const percent = cooldown / action.stats.cooldown;
+        context.save();
+        context.globalAlpha = .7;
+        context.fillStyle = 'black';
+        context.beginPath();
+        const r = actionShortcut;
+        if (percent < 1) context.moveTo(r.x + r.w / 2, r.y + r.h / 2);
+        context.arc(r.x + r.w / 2, r.y + r.h / 2, actionShortcut.w / 2, -Math.PI / 2 - percent * 2 * Math.PI, -Math.PI / 2);
+        if (percent < 1) context.closePath();
+        context.fill('evenodd');
+
+        context.restore();
+    }
+    // Display the keyboard shortcut indiactor.
+    drawFrame(context, {...actionShortcut, image: frame, x: 0, y: 0}, actionShortcut);
+
+    context.fillStyle = 'white';
+    fillRect(context, pad(actionShortcut.keyIndicator, -1));
+    drawFrame(context, {image: tinyFrame, ...r(0, 0, tinySize, tinySize)}, actionShortcut.keyIndicator);
+    context.fillStyle = 'black';
+    context.fillText(String.fromCharCode(actionShortcut.keyIndicator.keyCode),
+        actionShortcut.keyIndicator.x + actionShortcut.keyIndicator.w / 2,
+        actionShortcut.keyIndicator.y + actionShortcut.keyIndicator.h / 2
+    );
+
+    // Display the Manual/Auto indicator.
+    context.fillStyle = 'white';
+    fillRect(context, pad(actionShortcut.toggle, -1));
+    context.fillStyle = 'black';
+    let letter;
+    if (hero.character.autoplay) letter = hero.character.manualActions[action.base.key] ? 'M' : 'A';
+    else letter = hero.character.autoActions[action.base.key] ? 'A' : 'M';
+    const image = ((letter === 'M') ? tinySilverFrame : tinyGoldFrame);
+    drawFrame(context, {...actionShortcut.toggle, image, x: 0, y: 0}, actionShortcut.toggle);
+    context.fillText(letter,
+        actionShortcut.toggle.x + actionShortcut.toggle.w / 2,
+        actionShortcut.toggle.y + actionShortcut.toggle.h / 2
+    );
+
+}
 export function drawActionShortcuts(context: CanvasRenderingContext2D, character: Character) {
     // Make sure the frames are created
     createFrames();
@@ -143,59 +200,7 @@ export function drawActionShortcuts(context: CanvasRenderingContext2D, character
     context.textBaseline = 'middle';
     context.textAlign = 'center';
     for (const actionShortcut of character.actionShortcuts) {
-        const action = actionShortcut.action;
-
-        const iconSource = getAbilityIconSource(action.source);
-        context.fillStyle = 'white';
-        fillRect(context, pad(actionShortcut, -2));
-        drawAbilityIcon(context, iconSource, pad(actionShortcut, -frameSize));
-        let frame = silverFrame;
-        let tinyFrame = tinySilverFrame;
-        if (isSkillActive(action)) {
-            frame = goldFrame;
-            tinyFrame = tinyGoldFrame;
-        }
-        // Display the cooldown as a clock shadow
-        const cooldown = action.readyAt - hero.time;
-        if (cooldown > 0) {
-            const percent = cooldown / action.stats.cooldown;
-            context.save();
-            context.globalAlpha = .7;
-            context.fillStyle = 'black';
-            context.beginPath();
-            const r = actionShortcut;
-            if (percent < 1) context.moveTo(r.x + r.w / 2, r.y + r.h / 2);
-            context.arc(r.x + r.w / 2, r.y + r.h / 2, actionShortcut.w / 2, -Math.PI / 2 - percent * 2 * Math.PI, -Math.PI / 2);
-            if (percent < 1) context.closePath();
-            context.fill('evenodd');
-
-            context.restore();
-        }
-        // Display the keyboard shortcut indiactor.
-        drawFrame(context, {...actionShortcut, image: frame, x: 0, y: 0}, actionShortcut);
-
-        context.fillStyle = 'white';
-        fillRect(context, pad(actionShortcut.keyIndicator, -1));
-        drawFrame(context, {image: tinyFrame, ...r(0, 0, tinySize, tinySize)}, actionShortcut.keyIndicator);
-        context.fillStyle = 'black';
-        context.fillText(String.fromCharCode(actionShortcut.keyIndicator.keyCode),
-            actionShortcut.keyIndicator.x + actionShortcut.keyIndicator.w / 2,
-            actionShortcut.keyIndicator.y + actionShortcut.keyIndicator.h / 2
-        );
-
-        // Display the Manual/Auto indicator.
-        context.fillStyle = 'white';
-        fillRect(context, pad(actionShortcut.toggle, -1));
-        context.fillStyle = 'black';
-        let letter;
-        if (hero.character.autoplay) letter = hero.character.manualActions[action.base.key] ? 'M' : 'A';
-        else letter = hero.character.autoActions[action.base.key] ? 'A' : 'M';
-        const image = ((letter === 'M') ? tinySilverFrame : tinyGoldFrame);
-        drawFrame(context, {...actionShortcut.toggle, image, x: 0, y: 0}, actionShortcut.toggle);
-        context.fillText(letter,
-            actionShortcut.toggle.x + actionShortcut.toggle.w / 2,
-            actionShortcut.toggle.y + actionShortcut.toggle.h / 2
-        );
+        drawActionShortcut(context, actionShortcut, hero);
     }
 }
 
@@ -275,7 +280,7 @@ export function handleSkillKeyInput(keyCode: number): boolean {
     return false;
 }
 
-function activateAction(action: Action): void {
+export function activateAction(action: Action): void {
     // If this action is currently selected, unselect it.
     if (selectedAction === action) {
         selectedAction = null;
@@ -285,10 +290,10 @@ function activateAction(action: Action): void {
         return;
     }
     // If a skill has no target, trigger it as soon as they click the skill button.
-    if (action.base.target === 'none' || action.variableObject.tags.field) {
-        if (canUseSkillOnTarget(action.actor, action, action.actor)) {
-            prepareToUseSkillOnTarget(action.actor, action, action.actor);
-        }
+    if (action.base.target === 'none' && canUseSkillOnTarget(action.actor, action, action.actor)) {
+        prepareToUseSkillOnTarget(action.actor, action, action.actor);
+    } else if (action.variableObject.tags.field || action.variableObject.tags.nova) {
+        prepareToUseSkillOnTarget(action.actor, action, action.actor);
     } else {
         selectedAction = action;
     }

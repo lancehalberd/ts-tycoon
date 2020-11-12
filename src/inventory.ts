@@ -6,7 +6,7 @@ import { itemsByKey } from 'app/content/equipment/index';
 import { updateHeroGraphics } from 'app/content/heroGraphics';
 import { editingMapState } from 'app/development/editLevel';
 import {
-    craftingOptionsContainer, getElementIndex, handleChildEvent,
+    craftingOptionsContainer, createFrameCanvas, getElementIndex, handleChildEvent,
     mouseContainer, query, queryAll, tag, tagElement,
 } from 'app/dom';
 import { updateEnchantmentOptions } from 'app/enchanting';
@@ -21,7 +21,7 @@ import { collision, getCollisionArea, ifdefor } from 'app/utils/index';
 import { getMousePosition } from 'app/utils/mouse';
 import { exportAffix, importAffix } from 'app/saveGame';
 
-import { Actor, Person, EquipmentSlot, Hero, Item, ItemData, SavedItem } from 'app/types';
+import { Actor, Frame, Person, EquipmentSlot, Hero, Item, ItemData, SavedItem } from 'app/types';
 
 // Div containing items
 const inventoryElement = query('.js-inventory');
@@ -44,6 +44,16 @@ export const inventoryState: InventoryState = {
     dragged: false,
 };
 
+function createItemDomElement(itemData: ItemData): HTMLElement {
+    const domElement = tagElement('div', 'js-item item', tag('div', 'itemLevel', itemData.level));
+    const canvas = createFrameCanvas(itemData.icon, 2);
+    canvas.style.position = 'absolute';
+    canvas.style.top = '12px';
+    canvas.style.left = '12px';
+    domElement.prepend(canvas);
+    return domElement;
+}
+
 export function makeItem(base: ItemData, level: number): Item {
     const state = getState();
     const item: Item = {
@@ -55,7 +65,7 @@ export function makeItem(base: ItemData, level: number): Item {
         // to calculate available enchantments and sell value.
         'itemLevel': level,
         'unique': false,
-        domElement: tagElement('div', 'js-item item', tag('div', 'icon ' + base.icon) + tag('div', 'itemLevel', base.level))
+        domElement: createItemDomElement(base)
     };
     itemMap[item.id] = item;
     item.domElement.setAttribute('itemId', item.id);
@@ -80,13 +90,10 @@ export function importItem(itemData: SavedItem): Item {
     const baseItem = itemsByKey[itemData.itemKey];
     // This can happen if a base item was removed since they last saved the game.
     if (!baseItem) return null;
-    const domElement = tagElement('div', 'js-item item',
-        tag('div', 'icon ' + baseItem.icon) + tag('div', 'itemLevel', '' + baseItem.level)
-    );
     const item: Item = {
         base: baseItem,
         id: `item-${nextItemId++}`,
-        domElement,
+        domElement: createItemDomElement(baseItem),
         itemLevel: itemData.itemLevel,
         unique: itemData.unique,
         prefixes: itemData.prefixes.map(importAffix).filter(v => v),
@@ -158,7 +165,7 @@ function unequipSlot(hero: Hero | Person, slotKey: EquipmentSlot, update: boolea
             updateTags(hero.variableObject, recomputeActorTags(hero), true);
             if (getState().selectedCharacter.hero === hero) {
                 refreshStatsPanel(hero.character, query('.js-characterColumn .js-stats'));
-                query('.js-equipment .js-' + slotKey + ' .js-placeholder').style.display = '';
+                //query('.js-equipment .js-' + slotKey + ' .js-placeholder').style.display = '';
             }
             updateHeroGraphics(hero);
             updateOffhandDisplay();
@@ -328,7 +335,8 @@ handleChildEvent('mousedown', document.body, '.js-item', function (itemElement: 
         checkIfCraftedItemWasClaimed();
         return;
     }
-    inventoryState.dragHelper = itemElement.cloneNode(true) as HTMLElement;
+    inventoryState.dragHelper = createItemDomElement(item.base);
+    inventoryState.dragHelper.setAttribute('itemId', item.id);
     inventoryState.dragHelperSource = itemElement;
     inventoryState.dragItem = item;
     itemElement.style.opacity = '0.3';
@@ -422,7 +430,7 @@ export function equipItem(actor, item) {
     return true;
 }
 // It is important that this is the sell button on the items panel rather than the jewels panel.
-const sellItemButton = query('.js-itemPanel .js-sellItem');
+const sellItemButton = query('.js-sellItem');
 const enchantmentSlot = query('.js-enchantmentSlot');
 function applyDragResults() {
     if (!inventoryState.dragHelper) {

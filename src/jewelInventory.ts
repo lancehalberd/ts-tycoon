@@ -13,6 +13,7 @@ import {
     makeJewel, setMaxAnimaJewelBonus,
     updateAdjacencyBonuses, updateAdjacentJewels, updateJewelBonuses,
 } from 'app/jewels';
+import { updateActionShortcuts } from 'app/render/drawActionShortcuts';
 import { gain, hidePointsPreview, previewPointsChange } from 'app/points';
 import { checkToShowJewelToolTip, removePopup } from 'app/popup';
 import { saveGame } from 'app/saveGame'
@@ -155,11 +156,13 @@ document.body.ondblclick = function (event) {
         removeActions(hero, ability);
         removeBonusSourceFromObject(hero.variableObject, ability, true);
         refreshStatsPanel();
+        updateActionShortcuts(hero.character);
     } else {
         hero.abilities.push(ability);
         addActions(hero, ability);
         addBonusSourceToObject(hero.variableObject, ability, true);
         refreshStatsPanel();
+        updateActionShortcuts(hero.character);
     }
     removePopup();
     saveGame();
@@ -511,7 +514,7 @@ export function stopJewelDrag() {
         inventoryState.dragHelper = null;
         return;
     }
-    if (collision(jewelInventoryState.draggedJewel.canvas, query('.js-sellItem'))) {
+    if (collision(jewelInventoryState.draggedJewel.canvas, query('.js-sellJewel'))) {
         sellJewel(jewelInventoryState.draggedJewel);
         jewelInventoryState.draggedJewel = null;
         inventoryState.dragHelper = null;

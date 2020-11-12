@@ -164,6 +164,16 @@ const tunnel2: AreaDefinition = {
         {
             key: 'field', x: 0, y: 84,
             objects: [
+                {
+                    type: 'floorTrigger',
+                    x: 424,
+                    shapeType: "vertical",
+                    w: 32,
+                    d: 32,
+                    targets: ["snowWolfA","snowWolfB","snowWolfC"],
+                    key: "floorTrigger",
+                    targetCutscene: "prologueAbilityTutorial",
+                },
             ],
         },
         {
@@ -182,6 +192,11 @@ const tunnel2: AreaDefinition = {
                 tiles: [[{x:0,y:0},null,{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0}]],
             },
         },
+    ],
+    monsters: [
+        {key: 'snowWolf', level: 1, isTriggered: true, triggerKey: 'snowWolfA', location: {x: 523, z: 6}, },
+        {key: 'snowWolf', level: 1, isTriggered: true, triggerKey: 'snowWolfB', location: {x: 225, z: 48, flipped: true}, },
+        {key: 'snowWolf', level: 1, isTriggered: true, triggerKey: 'snowWolfC', location: {x: 224, z: -64, flipped: true}, },
     ],
 };
 
@@ -204,7 +219,7 @@ const trapRoom: AreaDefinition = {
             ],
             grid: {
                 palette: 'guildBackground', w: 5, h: 1,
-                tiles: [[{x:2,y:0},{x:0,y:0},{x:1,y:0},{x:0,y:0},{x:0,y:0}]],
+                tiles: [[{x:2,y:0},{x:1,y:0},{x:1,y:0},{x:1,y:0},{x:1,y:0}]],
             },
         },
         {
@@ -238,6 +253,42 @@ const trapRoom: AreaDefinition = {
                     messages: ["Your path is perilous"],
                     key: "message",
                     delay: 1000,
+                },
+                {
+                    type: 'flameThrower',
+                    x: 400, y: 11, zAlign: 'back',
+                    animationKey: "nozzleAnimation",
+                    key: "flameThrower2",
+                    onDuration: 1500,
+                    offDuration: 1000,
+                    offsetTime: 1200,
+                },
+                {
+                    type: 'flameThrower',
+                    x: 425, y: 11, zAlign: 'back',
+                    animationKey: "nozzleAnimation",
+                    key: "flameThrower3",
+                    onDuration: 1500,
+                    offDuration: 1000,
+                    offsetTime: 800,
+                },
+                {
+                    type: 'flameThrower',
+                    x: 450, y: 11, zAlign: 'back',
+                    animationKey: "nozzleAnimation",
+                    key: "flameThrower4",
+                    offDuration: 1000,
+                    onDuration: 1500,
+                    offsetTime: 400,
+                },
+                {
+                    type: 'flameThrower',
+                    x: 475, y: 11, zAlign: 'back',
+                    animationKey: "nozzleAnimation",
+                    key: "flameThrower5",
+                    offsetTime: 0,
+                    onDuration: 1500,
+                    offDuration: 1000,
                 },
             ],
             grid: {

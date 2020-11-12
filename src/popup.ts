@@ -137,12 +137,15 @@ export function checkToShowMainCanvasToolTip(x, y) {
         //console.log(popup, popup && popup.element, mainCanvas.style.display, canvasPopupTarget);
         return;
     }
-    const newCanvasPopupTarget = getMainCanvasMouseTarget(x, y);
+    showMainCanvasToolTip(getMainCanvasMouseTarget(x, y));
+}
+export function showMainCanvasToolTip(newCanvasPopupTarget) {
     // console.log(canvasPopupTarget, newCanvasPopupTarget);
     if (canvasPopupTarget && canvasPopupTarget !== newCanvasPopupTarget && canvasPopupTarget.onMouseOut) {
         canvasPopupTarget.onMouseOut();
     }
-    canvasPopupTarget = newCanvasPopupTarget
+    removePopup();
+    canvasPopupTarget = newCanvasPopupTarget;
     mainCanvas.classList.toggle('clickable', !!canvasPopupTarget);
     if (!canvasPopupTarget) {
         //console.log('no main canvas target');
@@ -239,6 +242,7 @@ export function checkToShowJewelToolTip() {
     } else {
         element = tagElement('div', 'toolTip js-toolTip', helpText);
     }
+    removePopup();
     popup = {
         element,
         target: null,

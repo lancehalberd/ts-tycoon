@@ -79,9 +79,10 @@ document.addEventListener('keydown', function(event: KeyboardEvent) {
     const state = getState();
     //console.log(keyCode);
     if (state.selectedCharacter.context === 'cutscene') {
+        state.cutscene.handleKeyInput(keyCode);
         return;
     }
-    if (handleSkillKeyInput(keyCode)){
+    if (handleSkillKeyInput(keyCode)) {
         event.preventDefault();
         return;
     }

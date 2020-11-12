@@ -15,12 +15,10 @@
     overflow-y: hidden;
     white-space: nowrap;
     height: 540px;
-    background-color: #ccc;
 }
 
 .displayColumn {
     position: relative;
-    background-color: #ccc;
     display: inline-block;
     vertical-align: top;
     height: 570px;
@@ -37,6 +35,7 @@
     right: 0px;
     top: 0px;
     pointer-events: none;
+    white-space: nowrap;
 }
 .pointsIcon {
     display: inline-block;
@@ -119,16 +118,16 @@
 .infoPanel {
     box-sizing: border-box;
 }
+
 .inventory {
     padding-top: 4px;
     padding-left: 4px;
     overflow-x: hidden;
     overflow-y: scroll;
     box-sizing: border-box;
-    width: 365px;
-    height: 270px;
+    width: 100%;
+    height: 100%;
     white-space: normal;
-    background-color: #AAA;
 }
 
 .panelTitle {
@@ -150,18 +149,16 @@
 }
 
 .jewelOptions {
-    height: 95px
+    margin-top: 5px;
+    margin-bottom: 5px;
 }
 .jewel-inventory {
-    padding: 5px;
-    padding-right:0;
     white-space: normal;
     overflow-x: hidden;
     overflow-y: scroll;
-    width: 240px;
-    height: 480px;
+    width: 340px;
+    height: 180px;
     box-sizing: border-box;
-    background-color: #AAA;
 }
 
 .extraJewelSlots {
@@ -198,8 +195,8 @@
 .item, .inventory > .inventorySlot, .sellItem {
     position: relative;
     display: inline-block;
-    width: 46px;
-    height: 46px;
+    width: 44px;
+    height: 44px;
     background-color: white;
     box-sizing: border-box;
     cursor: pointer;
@@ -254,8 +251,8 @@ button {
     pointer-events: auto;
 }
 .stats {
-    padding-top: 25px; /* Leave space for "Level X Job Name" abs positioned at top */
-    padding-left: 65px; /* Leave space for preview image on the left */
+    padding-top: 30px; /* Leave space for "Level X Job Name" abs positioned at top */
+    padding-left: 70px; /* Leave space for preview image on the left */
 }
 .triStatBox {
     position: absolute;
@@ -407,8 +404,8 @@ button {
 
 .itemSlot {
     background-color: #ffffff;
-    height: 50px;
-    width: 50px;
+    height: 48px;
+    width: 48px;
     padding: 2px;
     box-sizing: border-box;
     color: black;
@@ -538,12 +535,6 @@ button {
 }
 .infoPanel div {
     margin-bottom: 5px;
-}
-
-.itemPanel {
-    display: inline-block;
-    width: 560px;
-    height: 570px;
 }
 
 .itemCrafting {
@@ -1009,316 +1000,6 @@ select {
     background-position: -102px -182px;
 }
 
-/* 'game-icons.png' from http://game-icons.net/about.html */
-
-.icon.mageHat {
-    background-image: url('gfx/game-icons.png');
-    background-size: 320px 288px;
-    width: 32px;
-    height: 32px;
-    margin-left: 4px;
-    margin-top: 4px;
-    background-position: 0px 0px;
-}
-.icon.featherHat {
-    background-image: url('gfx/game-icons.png');
-    background-size: 320px 288px;
-    width: 32px;
-    height: 32px;
-    margin-left: 4px;
-    margin-top: 4px;
-    background-position: -32px 0px;
-}
-.icon.helmet {
-    background-image: url('gfx/game-icons.png');
-    background-size: 320px 288px;
-    width: 32px;
-    height: 32px;
-    margin-left: 4px;
-    margin-top: 4px;
-    background-position: -64px 0px;
-}
-.icon.heavyArmor {
-    background-image: url('gfx/game-icons.png');
-    background-size: 320px 288px;
-    width: 32px;
-    height: 32px;
-    margin-left: 4px;
-    margin-top: 4px;
-    background-position: 0px -32px;
-}
-.icon.lightArmor {
-    background-image: url('gfx/game-icons.png');
-    background-size: 320px 288px;
-    width: 32px;
-    height: 32px;
-    margin-left: 4px;
-    margin-top: 4px;
-    background-position: -32px -32px;
-}
-.icon.clothArmor {
-    background-image: url('gfx/game-icons.png');
-    background-size: 320px 288px;
-    width: 32px;
-    height: 32px;
-    margin-left: 4px;
-    margin-top: 4px;
-    background-position: -96px -32px;
-}
-.icon.cloak {
-    background-image: url('gfx/game-icons.png');
-    background-size: 320px 288px;
-    width: 32px;
-    height: 32px;
-    margin-left: 4px;
-    margin-top: 4px;
-    background-position: 0px -64px;
-}
-.icon.quiver {
-    background-image: url('gfx/game-icons.png');
-    background-size: 320px 288px;
-    width: 32px;
-    height: 32px;
-    margin-left: 4px;
-    margin-top: 4px;
-    background-position: -64px -64px;
-}
-.icon.scabbard {
-    background-image: url('gfx/game-icons.png');
-    background-size: 320px 288px;
-    width: 32px;
-    height: 32px;
-    margin-left: 4px;
-    margin-top: 4px;
-    background-position: -96px -64px;
-}
-.icon.gloves {
-    background-image: url('gfx/game-icons.png');
-    background-size: 320px 288px;
-    width: 32px;
-    height: 32px;
-    margin-left: 4px;
-    margin-top: 4px;
-    background-position: 0px -96px;
-}
-.icon.bracers {
-    background-image: url('gfx/game-icons.png');
-    background-size: 320px 288px;
-    width: 32px;
-    height: 32px;
-    margin-left: 4px;
-    margin-top: 4px;
-    background-position: -32px -96px;
-}
-.icon.vambracers {
-    background-image: url('gfx/game-icons.png');
-    background-size: 320px 288px;
-    width: 32px;
-    height: 32px;
-    margin-left: 4px;
-    margin-top: 4px;
-    background-position: -64px -96px;
-}
-.icon.fists {
-    background-image: url('gfx/game-icons.png');
-    background-size: 320px 288px;
-    width: 32px;
-    height: 32px;
-    margin-left: 4px;
-    margin-top: 4px;
-    background-position: 0px -128px;
-}
-.icon.greatSword {
-    background-image: url('gfx/game-icons.png');
-    background-size: 320px 288px;
-    width: 32px;
-    height: 32px;
-    margin-left: 4px;
-    margin-top: 4px;
-    background-position: -32px -128px;
-}
-.icon.throwing {
-    background-image: url('gfx/game-icons.png');
-    background-size: 320px 288px;
-    width: 32px;
-    height: 32px;
-    margin-left: 4px;
-    margin-top: 4px;
-    background-position: -64px -128px;
-}
-.icon.greatAxe {
-    background-image: url('gfx/game-icons.png');
-    background-size: 320px 288px;
-    width: 32px;
-    height: 32px;
-    margin-left: 4px;
-    margin-top: 4px;
-    background-position: -96px -128px;
-}
-.icon.knuckles {
-    background-image: url('gfx/game-icons.png');
-    background-size: 320px 288px;
-    width: 32px;
-    height: 32px;
-    margin-left: 4px;
-    margin-top: 4px;
-    background-position: -128px -128px;
-}
-.icon.sword {
-    background-image: url('gfx/game-icons.png');
-    background-size: 320px 288px;
-    width: 32px;
-    height: 32px;
-    margin-left: 4px;
-    margin-top: 4px;
-    background-position: -160px -128px;
-}
-.icon.bow {
-    background-image: url('gfx/game-icons.png');
-    background-size: 320px 288px;
-    width: 32px;
-    height: 32px;
-    margin-left: 4px;
-    margin-top: 4px;
-    background-position: -192px -128px;
-}
-.icon.staff {
-    background-image: url('gfx/game-icons.png');
-    background-size: 320px 288px;
-    width: 32px;
-    height: 32px;
-    margin-left: 4px;
-    margin-top: 4px;
-    background-position: -224px -128px;
-}
-.icon.shuriken {
-    background-image: url('gfx/game-icons.png');
-    background-size: 320px 288px;
-    width: 32px;
-    height: 32px;
-    margin-left: 4px;
-    margin-top: 4px;
-    background-position: -256px -128px;
-}
-.icon.cudgel {
-    background-image: url('gfx/game-icons.png');
-    background-size: 320px 288px;
-    width: 32px;
-    height: 32px;
-    margin-left: 4px;
-    margin-top: 4px;
-    background-position: -288px -128px;
-}
-.icon.heavyShield {
-    background-image: url('gfx/game-icons.png');
-    background-size: 320px 288px;
-    width: 32px;
-    height: 32px;
-    margin-left: 4px;
-    margin-top: 4px;
-    background-position: 0px -160px;
-}
-.icon.magicShield {
-    background-image: url('gfx/game-icons.png');
-    background-size: 320px 288px;
-    width: 32px;
-    height: 32px;
-    margin-left: 4px;
-    margin-top: 4px;
-    background-position: -64px -160px;
-}
-.icon.lightShield {
-    background-image: url('gfx/game-icons.png');
-    background-size: 320px 288px;
-    width: 32px;
-    height: 32px;
-    margin-left: 4px;
-    margin-top: 4px;
-    background-position: -96px -160px;
-}
-.icon.pants {
-    background-image: url('gfx/game-icons.png');
-    background-size: 320px 288px;
-    width: 32px;
-    height: 32px;
-    margin-left: 4px;
-    margin-top: 4px;
-    background-position: 0px -192px;
-}
-.icon.greaves {
-    background-image: url('gfx/game-icons.png');
-    background-size: 320px 288px;
-    width: 32px;
-    height: 32px;
-    margin-left: 4px;
-    margin-top: 4px;
-    background-position: -32px -192px;
-}
-.icon.tights {
-    background-image: url('gfx/game-icons.png');
-    background-size: 320px 288px;
-    width: 32px;
-    height: 32px;
-    margin-left: 4px;
-    margin-top: 4px;
-    background-position: -64px -192px;
-}
-.icon.amulet {
-    background-image: url('gfx/game-icons.png');
-    background-size: 320px 288px;
-    width: 32px;
-    height: 32px;
-    margin-left: 4px;
-    margin-top: 4px;
-    background-position: 0px -224px;
-}
-.icon.band {
-    background-image: url('gfx/game-icons.png');
-    background-size: 320px 288px;
-    width: 32px;
-    height: 32px;
-    margin-left: 4px;
-    margin-top: 4px;
-    background-position: -32px -224px;
-}
-.icon.feet {
-    background-image: url('gfx/game-icons.png');
-    background-size: 320px 288px;
-    width: 32px;
-    height: 32px;
-    margin-left: 4px;
-    margin-top: 4px;
-    background-position: 0px -256px;
-}
-.icon.sabatons {
-    background-image: url('gfx/game-icons.png');
-    background-size: 320px 288px;
-    width: 32px;
-    height: 32px;
-    margin-left: 4px;
-    margin-top: 4px;
-    background-position: -32px -256px;
-}
-.icon.shoes {
-    background-image: url('gfx/game-icons.png');
-    background-size: 320px 288px;
-    width: 32px;
-    height: 32px;
-    margin-left: 4px;
-    margin-top: 4px;
-    background-position: -32px -256px;
-}
-.icon.boots {
-    background-image: url('gfx/game-icons.png');
-    background-size: 320px 288px;
-    width: 32px;
-    height: 32px;
-    margin-left: 4px;
-    margin-top: 4px;
-    background-position: -64px -256px;
-}
-
-
 .iconLayer {
     position: absolute;
 }
@@ -1334,7 +1015,7 @@ select {
 .sellItem {
     position: absolute;
     right: 5px;
-    top: 2px;
+    bottom: 5px;
     cursor: default;
 }
 
@@ -1750,4 +1431,32 @@ p {
 }
 .pp-tag:hover:after-content {
     color: red;
+}
+
+.topPanel {
+    position: absolute;
+    top: 40px;
+    height: 200px;
+    overflow: hidden;
+}
+
+.bottomPanel {
+    position: absolute;
+    top: 240px;
+    height: 240px;
+    overflow: hidden;
+}
+
+.leftPanel {
+    position: absolute;
+    left: 120px;
+    width: 340px;
+    overflow: hidden;
+}
+
+.rightPanel {
+    position: absolute;
+    left: 510px;
+    width: 340px;
+    overflow: hidden;
 }

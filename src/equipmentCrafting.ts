@@ -7,7 +7,7 @@ import {
 import { augmentItemProper } from 'app/enchanting';
 import { armorSlots } from 'app/gameConstants';
 import { bonusSourceHelpText } from 'app/helpText';
-import { drawTintedImage, images } from 'app/images';
+import { drawTintedFrame, drawTintedImage, images } from 'app/images';
 import {
     addToInventory, baseItemLevelCost, inventoryState, makeItem, tagToDisplayName, updateItem
 } from 'app/inventory';
@@ -33,7 +33,7 @@ export const equipmentCraftingState: {
 };
 
 // Same size as icons for equipment.
-const craftingSlotSize = 32;
+const craftingSlotSize = 36;
 const craftingSlotSpacing = 2;
 const craftingSlotTotal = craftingSlotSize + craftingSlotSpacing;
 const craftingHeaderSize = 4 + craftingSlotSize / 2 + craftingSlotSpacing;
@@ -42,22 +42,22 @@ let craftingCanvasMousePosition = null;
 let itemsFilteredByType = [];
 let selectedCraftingWeight = 0;
 export function initializeCraftingGrid() {
-    craftingCanvas.width = 5 + 16 * craftingSlotTotal;
-    craftingCanvas.height = craftingHeaderSize + 6 * craftingSlotTotal + 1;
+    craftingCanvas.width = 5 + 7.5 * craftingSlotTotal;
+    craftingCanvas.height = craftingHeaderSize + 4 * craftingSlotTotal + 1;
+    craftingContext.imageSmoothingEnabled = false;
     const craftingSections = [
-        {'height': 2, 'slots': ['weapon']},
-        {'height': 3, 'slots': ['offhand', 'head', 'body', 'arms', 'legs', 'feet']},
+        {'height': 1, 'slots': ['weapon']},
+        {'height': 2, 'slots': ['offhand', 'head', 'body', 'arms', 'legs', 'feet']},
         {'height': 1, 'slots': ['back', 'ring']}
     ];
-    const iconSources = {};
     let row = 0, column = 0;
     for (const craftingSection of craftingSections) {
         for (let i = 1; i < items.length; i++) {
-            column = 2 * (i - 1);
+            column = 3 * (i - 1);
             let subColumn = 0, subRow = 0;
             for (let slot of craftingSection.slots) {
                 for (let item of ifdefor(itemsBySlotAndLevel[slot][i], [])) {
-                    if (subColumn > 1) {
+                    if (subColumn > 2) {
                         console.log(craftingSection.slots);
                         console.log(new Error("Too many items in crafting section at level " + i));
                         debugger;
@@ -73,49 +73,6 @@ export function initializeCraftingGrid() {
                         subRow = 0;
                         subColumn++;
                     }
-                    // Some hacky code to read the icon from the css styles. Make a div for the item,
-                    // briefly add to the page and then read the background image/position info and translate
-                    // into values I can use.
-                    const icon = item.icon;
-                    if (!iconSources[icon]) {
-                        const itemDiv:HTMLElement = tagElement('div', 'icon ' + icon);
-                        document.body.appendChild(itemDiv);
-                        let imageFileName;
-                        const computedStyles = getComputedStyle(itemDiv);
-                        try {
-                            const backgroundImage = computedStyles.getPropertyValue('background-image');
-                            imageFileName = 'gfx/' + backgroundImage.split('/gfx/')[1].split('"')[0].split(')')[0];
-                        } catch (e) {
-                            debugger;
-                        }
-                        if (!images[imageFileName]) {
-                            console.log("Need to preload " + imageFileName + " for crafting icons.");
-                            continue;
-                        }
-                        const image = images[imageFileName];
-                        const backgroundSizeValue = computedStyles.getPropertyValue('background-size');
-                        let scale = 1;
-                        if (backgroundSizeValue && backgroundSizeValue != 'initial') {
-                            const sizes = backgroundSizeValue.split(' ').map(function (string) { return parseInt(string);});
-                            scale = sizes[0] / image.width;
-                        }
-                        const backgroundPosition = computedStyles.getPropertyValue('background-position');
-                        if (!backgroundPosition) {
-                            console.log(computedStyles);
-                            debugger;
-                        }
-                        const offsets = backgroundPosition.split(' ').map(string => -parseInt(string));
-                        // console.log([imageFile, offsets.join(',')]);
-                        itemDiv.remove();
-                        iconSources[icon] = {
-                            image,
-                            left: offsets[0] / scale,
-                            top: offsets[1] / scale,
-                            width: craftingSlotSize / scale,
-                            height: craftingSlotSize / scale
-                        };
-                    }
-                    item.iconSource = iconSources[icon];
                 }
             }
         }
@@ -159,12 +116,12 @@ function updateOverCraftingItem() {
     var y = craftingCanvasMousePosition[1];
     var column = Math.floor((x - 2) / craftingSlotTotal);
     var row = Math.floor((y - craftingHeaderSize) / craftingSlotTotal);
-    state.savedState.craftingLevel = Math.min(state.savedState.maxCraftingLevel, Math.floor(column / 2) + 1);
+    state.savedState.craftingLevel = Math.min(state.savedState.maxCraftingLevel, Math.floor(column / 3) + 1);
     if (row < 0) {
         state.savedState.craftingTypeFilter = 'all';
-    } else if (row < 2) {
+    } else if (row < 1) {
         state.savedState.craftingTypeFilter = 'weapon';
-    } else if (row < 5) {
+    } else if (row < 3) {
         state.savedState.craftingTypeFilter = 'armor';
     } else {
         state.savedState.craftingTypeFilter = 'accessory';
@@ -200,9 +157,9 @@ export function updateCraftingCanvas() {
     const state = getState();
     if (!state.selectedCharacter) return;
     if (!craftingCanvasMousePosition) return;
-    var maxX = state.savedState.maxCraftingLevel * 2 * craftingSlotTotal + 4 - craftingCanvas.width;
-    var x = craftingCanvasMousePosition[0];
-    var vx = 0;
+    const maxX = state.savedState.maxCraftingLevel * 3 * craftingSlotTotal + 4 - craftingCanvas.width;
+    const x = craftingCanvasMousePosition[0];
+    let vx = 0;
     if (x < 100) vx = (x - 100) / 5;
     else if (x > craftingCanvas.width - 100) vx = (100 - (craftingCanvas.width - x)) / 5;
     if (vx) {
@@ -210,10 +167,32 @@ export function updateCraftingCanvas() {
         updateOverCraftingItem();
     }
 }
+let lastCraftingProps = {};
+function hasCraftingStateChanged(props): boolean {
+    for (let key in props) {
+        if (props[key] !== lastCraftingProps[key]) {
+            lastCraftingProps = props;
+            return true;
+        }
+    }
+    return false;
+}
 export function drawCraftingCanvas() {
     const state = getState();
-    const { savedState } = state;
-    if (!state.selectedCharacter) return;
+    const { savedState, selectedCharacter } = state;
+    if (!selectedCharacter) return;
+    // In theory this will keep us from rendering when nothing has changed.
+    if (!hasCraftingStateChanged({
+        selectedCharacter,
+        maxCraftingLevel: savedState.maxCraftingLevel,
+        craftingXOffset: savedState.craftingXOffset,
+        craftingLevel: savedState.craftingLevel,
+        craftinTypeFilter: savedState.craftingTypeFilter,
+        overCraftingItem: equipmentCraftingState.overCraftingItem,
+        craftedValues: Object.values(savedState.craftedItems).join(','),
+    })) {
+        return;
+    }
     const context = craftingContext;
     context.clearRect(0, 0, craftingCanvas.width, craftingCanvas.height);
     context.save();
@@ -223,7 +202,7 @@ export function drawCraftingCanvas() {
 
     const firstColumn = Math.floor(savedState.craftingXOffset / craftingSlotTotal);
     for (let column = firstColumn; column < firstColumn + 17; column++) {
-        if (column % 4 > 1) {
+        if (column % 6 > 2) {
             context.fillStyle = '#ededed';
             context.fillRect(1 + column * craftingSlotTotal, 0, craftingSlotTotal, craftingCanvas.height);
         }
@@ -236,26 +215,26 @@ export function drawCraftingCanvas() {
         switch (savedState.craftingTypeFilter) {
             case 'all':
                 offset = -1;
-                rows = 7;
+                rows = 5;
                 break;
             case 'weapon':
-                rows = 2;
+                rows = 1;
                 break;
             case 'armor':
-                offset = 2;
-                rows = 3;
+                offset = 1;
+                rows = 2;
                 break;
             case 'accessory':
-                offset = 5;
+                offset = 3;
                 rows = 1;
                 break
         }
         context.fillStyle = '#8F8';
-        context.fillRect(0, craftingHeaderSize + offset * craftingSlotTotal, 4 + 2 * craftingSlotTotal * Math.min(state.selectedCharacter.hero.level, savedState.craftingLevel), 3 + rows * craftingSlotTotal);
+        context.fillRect(0, craftingHeaderSize + offset * craftingSlotTotal, 4 + 3 * craftingSlotTotal * Math.min(state.selectedCharacter.hero.level, savedState.craftingLevel), 3 + rows * craftingSlotTotal);
         const levelsOverCurrent = savedState.craftingLevel - state.selectedCharacter.hero.level;
         if (levelsOverCurrent > 0) {
             context.fillStyle = '#F88';
-            context.fillRect(2 + 2 * craftingSlotTotal * state.selectedCharacter.hero.level, craftingHeaderSize + offset * craftingSlotTotal, 2 * craftingSlotTotal * levelsOverCurrent, 3 + rows * craftingSlotTotal);
+            context.fillRect(2 + 3 * craftingSlotTotal * state.selectedCharacter.hero.level, craftingHeaderSize + offset * craftingSlotTotal, 3 * craftingSlotTotal * levelsOverCurrent, 3 + rows * craftingSlotTotal);
         }
     }
 
@@ -263,16 +242,16 @@ export function drawCraftingCanvas() {
     context.font = "20px sans-serif";
     for (let column = firstColumn; column < firstColumn + 17; column++) {
         const level = Math.floor(column / 2) + 1;
-        context.fillText('' + level, 2 + (2 * level - 1.5) * craftingSlotTotal + craftingSlotSize / 2,  12);
+        context.fillText('' + level, 2 + (3 * level - 2) * craftingSlotTotal + craftingSlotSize / 2,  12);
     }
 
 
     context.font = (craftingSlotSize - 5) + "px sans-serif";
     for (let column = firstColumn; column < firstColumn + 17; column++) {
-        const level = Math.floor(column / 2) + 1;
+        const level = Math.floor(column / 3) + 1;
         if (level > savedState.maxCraftingLevel) continue;
 
-        for (let row = 0; row < 6; row++) {
+        for (let row = 0; row < 4; row++) {
             const gridRow = craftingGrid[row] || [];
             const item = gridRow[column];
             if (!item) continue;
@@ -283,7 +262,7 @@ export function drawCraftingCanvas() {
                 context.fill();
                 context.fillStyle = 'white';
                 context.fillText('?', item.craftingX + craftingSlotSize / 2, item.craftingY + craftingSlotSize / 2 + 1);
-            } else if (item.iconSource) {
+            } else if (item.icon) {
                 context.fillStyle = '#aaa';
                 context.beginPath();
                 context.arc(item.craftingX + craftingSlotSize / 2, item.craftingY + craftingSlotSize / 2, craftingSlotSize / 2, 0, 2 * Math.PI);
@@ -294,13 +273,14 @@ export function drawCraftingCanvas() {
                 context.fill();
                 const color = (savedState.craftedItems[item.key] & CRAFTED_UNIQUE) ? '#4af' : '#4c4';
                 const tint = (savedState.craftedItems[item.key] & CRAFTED_UNIQUE) ? .7 : 0;
-                const source = item.iconSource;
-                drawTintedImage(context, item.iconSource.image, color, tint,
-                    toR(source),
-                    {x: item.craftingX, y: item.craftingY, w: craftingSlotSize, h: craftingSlotSize}
+                drawTintedFrame(context,
+                    {...item.icon, color, amount: tint},
+                    {
+                        x: item.craftingX + ~~((craftingSlotSize - item.icon.w * 2) / 2),
+                        y: item.craftingY + ~~((craftingSlotSize - item.icon.h * 2) / 2),
+                        w: item.icon.w * 2, h: item.icon.h * 2,
+                    }
                 );
-                //context.drawImage(item.iconSource.image, item.iconSource.left, item.iconSource.top, item.iconSource.width, item.iconSource.height,
-                 //               item.craftingX, item.craftingY, craftingSlotSize, craftingSlotSize);
             } else {
                 context.fillStyle = '#080';
                 context.fillRect(item.craftingX, item.craftingY, craftingSlotSize, craftingSlotSize);

@@ -64,6 +64,23 @@ export class Message extends EditableAreaObject {
         }
     }
 
+    // This is used in the prology tutorial to cancel the message if it is currently displayed when the
+    // cutscene starts.
+    cancel() {
+        this.displayed = true;
+        if (this.messageBox) {
+            this.messageBox.remove();
+            this.messageBox = null;
+        }
+    }
+
+    cleanup() {
+        if (this.messageBox) {
+            this.messageBox.remove();
+            this.messageBox = null;
+        }
+    }
+
     // This is just used by the editor.
     getAreaTarget(): AreaObjectTarget {
         if (!this._areaTarget) {

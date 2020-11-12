@@ -6,7 +6,7 @@ import { addFurnitureBonuses, removeFurnitureBonuses } from 'app/content/furnitu
 import { setContext } from 'app/context';
 import { editingAreaState } from 'app/development/editArea';
 import { bodyDiv, titleDiv } from 'app/dom';
-import { requireImage } from 'app/images';
+import { drawWhiteOutlinedFrame } from 'app/images';
 import { isKeyDown, KEY } from 'app/keyCommands';
 import { getCanvasPopupTarget, removePopup } from 'app/popup';
 import { getState } from 'app/state';
@@ -84,12 +84,11 @@ export class MapTable extends EditableAreaObject implements UpgradeableObject {
     render(context: CanvasRenderingContext2D) {
         let frame = this.getFrame();
         const isEditing = editingAreaState.selectedObject === this;
-        drawFrameToAreaTarget(context, this.getAreaTarget(), {...frame, flipped: this.definition.flipped}, drawFrame, isEditing && isKeyDown(KEY.SHIFT));
-        // Draw a glow over the map when it is under the mouse.
+        let draw = drawFrame;
         if (getCanvasPopupTarget() === this) {
-            frame = getFrame(glowAnimation, this.area.time * 1000);
-            drawFrameToAreaTarget(context, this.getAreaTarget(), {...frame, flipped: this.definition.flipped}, drawFrame, isEditing && isKeyDown(KEY.SHIFT));
+            draw = drawWhiteOutlinedFrame;
         }
+        drawFrameToAreaTarget(context, this.getAreaTarget(), {...frame, flipped: this.definition.flipped}, draw, isEditing && isKeyDown(KEY.SHIFT));
     }
 
     static getProperties(object: MapTable): (EditorProperty<any> | PropertyRow | string)[] {

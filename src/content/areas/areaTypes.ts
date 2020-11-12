@@ -124,6 +124,7 @@ const FieldArea: AreaType = {
                 spawner.z = spawnerMonster.location.z;
                 getLayer(area, 'field').objects.push(spawner);
             }
+            area.enemies = [];
             addMonstersToArea(area, monsters, area.enemyBonuses);
         }
 
@@ -345,6 +346,7 @@ const CaveArea: AreaType = {
     },
     addObjects(area, {monsters = [], exits, loot, ability}) {
         const random = SRandom.addSeed(area.seed);
+        area.enemies = [];
         addMonstersToArea(area, monsters, area.enemyBonuses);
 
         addChest(area, loot);
@@ -442,6 +444,7 @@ const GuildArea: AreaType = {
         ];
     },
     addObjects(area, {monsters, exits, loot, ability}) {
+        area.enemies = [];
         addMonstersToArea(area, monsters, area.enemyBonuses);
         addChest(area, loot);
         addShrine(area, ability);

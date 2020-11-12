@@ -3,7 +3,7 @@ import {
     Ability, ActiveEffect, Actor, Area,
     AreaObject, BonusSource, Exit,
     FixedObject, FrameAnimation, FullRectangle,
-    Hero, MonsterSpawn,
+    Hero, MonsterSpawn, ObjectShape,
     ShortRectangle,
 } from 'app/types';
 
@@ -65,7 +65,7 @@ export interface Level {
 
 export interface AreaEntity {
     area: Area,
-    shapeType?: 'oval' | 'rectangle',
+    shapeType?: ObjectShape,
     x: number,
     y: number,
     z: number,

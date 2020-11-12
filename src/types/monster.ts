@@ -19,12 +19,15 @@ export interface MonsterDefinition {
     level: number,
     location: LocationDefinition,
     isTarget?: boolean,
+    isTriggered?: boolean,
     bonusSources?: BonusSource[],
     rarity?: number,
+    triggerKey?: string,
 }
 
 export interface MonsterSpawn {
     key: string,
+    definition?: MonsterDefinition,
     heading: number[],
     level: number,
     location: {x: number, y: number, z: number},
@@ -35,6 +38,7 @@ export interface MonsterSpawn {
 
 export interface Monster extends BaseActor {
     type: 'monster',
+    definition?: MonsterDefinition,
     base: MonsterData,
     extraSkills: BonusSource[],
     baseY: number,
