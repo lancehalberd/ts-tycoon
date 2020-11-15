@@ -8,7 +8,7 @@ import { fixedDigits, formatValue, properCase, percent } from 'app/utils/formatt
 
 import { Ability, Actor, Affix, BonusSource, Item } from 'app/types';
 
-export function getNameWithAffixes(name: string, prefixes: Affix[], suffixes: Affix[]): string {
+function getNameWithAffixes(name: string, prefixes: Affix[], suffixes: Affix[]): string {
     const prefixNames = prefixes.map(affix => affix.base.name);
     if (prefixNames.length) name = prefixNames.join(', ') + ' ' + name;
     const suffixNames = suffixes.map(affix => affix.base.name);
@@ -94,7 +94,7 @@ const tagToCategoryMap = {
     'fist': 'Fist Weapons',
     'noOffhand': 'With No Offhand'
 };
-export function tagToCategoryDisplayName(tag) {
+function tagToCategoryDisplayName(tag) {
     return tagToCategoryMap[tag] || properCase(tag);
 }
 
@@ -198,7 +198,7 @@ export function bonusSourceHelpText(this: void, bonusSource: BonusSource, coreOb
     }
     return sections.join('<br/>');
 }
-export function renderBonusText(bonusMap, bonusKey, bonusSource, coreObject, localObject) {
+function renderBonusText(bonusMap, bonusKey, bonusSource, coreObject, localObject) {
     const rawValue = bonusSource.bonuses[bonusKey] || bonusSource.bonuses['+' + bonusKey];
     // Don't show help text like +0 accuracy or 0% increased accuracy, but do show 0x accuracy.
     if (rawValue === 0 && bonusKey.charAt(0) !== '*') return null;
@@ -234,7 +234,7 @@ export function abilityHelpText(this: void, ability: Ability, actor: Actor) {
     }
     return titleDiv(ability.name) + sections.join('<br/>');
 }
-export const implicitBonusMap = {
+const implicitBonusMap = {
     // Gear implicits
     '+minPhysicalDamage': function (bonusSource) {
         return 'Damage: ' + formatValue(bonusSource.bonuses['+minPhysicalDamage'], 1) + ' to ' + formatValue(bonusSource.bonuses['+maxPhysicalDamage'], 1);
@@ -273,7 +273,7 @@ export const implicitBonusMap = {
     '+duration': 'Lasts $1 seconds'
 };
 // Use this mapping for stats that are not implicity on an item or ability.
-export const bonusMap: {
+const bonusMap: {
     [key: string]: string | ((bonusSource: BonusSource) => string)
 } = {
     '$setRange': function (bonusSource) {

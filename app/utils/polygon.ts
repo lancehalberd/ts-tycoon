@@ -253,12 +253,12 @@ export function distanceSquared(p1: Point, p2: Point): number {
 export function vector(p1: Point, p2: Point): Point {
     return [p2[0] - p1[0], p2[1] - p1[1]];
 }
-export function dot2d(v1: Point, v2: Point): number {
+/*function dot2d(v1: Point, v2: Point): number {
     return v1[0] * v2[0] + v1[1] * v2[1];
 }
 export function cross2d(v1: Point, v2: Point): number {
     return v1[0] * v2[1] - v1[1] * v2[0];
-}
+}*/
 export function magnitude(vector: Point) {
     return Math.sqrt(vector[0] * vector[0] + vector[1] * vector[1]);
 }

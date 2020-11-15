@@ -213,49 +213,7 @@ function fadeOutPlayingTracks(currentTracks = []) {
     window['playingTracks'] = playingTracks;
 }
 
-export function playTrackCombination(tracks, timeOffset, muted = false) {
-    const currentTracks = [];
-    // If any tracks are already playing, use the timeOffset of the first
-    // track instead of the given timeOffset, in case there is drift between
-    // the bgm time in state and the actual position of the tracks.
-    for (const { source } of tracks) {
-        let sound = requireSound(source);
-        if (playingTracks.includes(sound)) {
-            timeOffset = sound.howl.seek() * 1000;
-            break;
-        }
-    }
-
-    //console.log(tracks.map(JSON.stringify).join(':'))
-    //console.log(playingTracks);
-    for (const {source, volume} of tracks) {
-        let sound = requireSound(source);
-        currentTracks.push(sound);
-        if (playingTracks.includes(sound)) {
-            // console.log('adjusting volume ' + source, sound.props.volume * volume);
-            sound.howl.volume(sound.props.volume * volume);
-            let offset = (timeOffset / 1000);
-            const duration = sound.howl.duration();
-            offset = offset % duration;
-            const delta = Math.abs(sound.howl.seek() - offset);
-            if (delta > 0.05 && delta < duration - 0.05) {
-                // console.log('Sound was off actual:', sound.howl.seek(), 'vs desired:', offset);
-                sound.howl.seek(offset);
-            }
-        } else {
-            // console.log('playing track ', source, volume);
-            sound = playTrack(source, timeOffset, muted, false);
-            if (sound) {
-                sound.howl.volume(sound.props.volume * volume);
-            }
-        }
-        sound.howl
-    }
-    // Make sure to fade out any tracks other than the new ones.
-    fadeOutPlayingTracks(currentTracks);
-}
-
-export function stopTrack() {
+function stopTrack() {
     trackIsPlaying = false;
     for (const playingTrack of playingTracks) {
         // console.log('Stopping from stopTrack ', playingTrack.props.src);
@@ -268,7 +226,7 @@ export function isPlayingTrack() {
     return trackIsPlaying;
 }
 
-export function muteSounds() {
+/*export function muteSounds() {
     for (const sound of playingSounds) sound.howl.mute(true);
 }
 export function unmuteSounds() {
@@ -295,7 +253,7 @@ export function getSoundDuration(key) {
     }
     sound.duration = sound.howl.duration();
     return sound.duration;
-}
+}*/
 
 window['playSound'] = playSound;
 window['playTrack'] = playTrack;

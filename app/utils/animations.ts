@@ -87,7 +87,7 @@ export function drawFrame(
     context.drawImage(image, x | 0, y | 0, w | 0, h | 0, tx | 0, ty | 0, tw | 0, th | 0);
 }
 
-export function drawFrameCenteredInTarget(
+/*export function drawFrameCenteredInTarget(
     context: CanvasRenderingContext2D,
     {image, x, y, w, h}: Frame,
     {x: tx, y: ty, w: tw, h: th}: ShortRectangle
@@ -96,5 +96,5 @@ export function drawFrameCenteredInTarget(
     ty += Math.ceil((th - h) / 2);
     // (x | 0) is faster than Math.floor(x)
     context.drawImage(image, x | 0, y | 0, w | 0, h | 0, tx | 0, ty | 0, w | 0, h | 0);
-}
+}*/
 

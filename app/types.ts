@@ -14,6 +14,4 @@ export * from 'app/types/level';
 export * from 'app/types/monster';
 export * from 'app/types/other';
 export { default as JobAchievement } from 'app/content/JobAchievement';
-export { default as TintIcon } from 'app/content/TintIcon';
-export { JobIcon } from 'app/content/jobs';
 export { FrameAnimation } from 'app/utils/animations';

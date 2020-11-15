@@ -70,7 +70,7 @@ export function getAddObjectMenuItem(type: string): MenuOption {
     }
 }
 
-export function findAndDeleteObject(objectKey: string): void {
+function findAndDeleteObject(objectKey: string): void {
     const areaDefinition = getAreaDefinition();
     for (const layer of areaDefinition.layers) {
         for (let i = 0; i < layer.objects.length; i++) {

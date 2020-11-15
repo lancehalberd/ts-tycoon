@@ -1,6 +1,6 @@
 import { allImagesLoaded, requireImage } from 'app/images';
 
-import { Frame, FrameDimensions, ShortRectangle, Tile, TilePalette } from 'app/types';
+import { FrameDimensions, ShortRectangle, Tile, TilePalette } from 'app/types';
 
 const fieldTileDims: FrameDimensions = {w: 32, h: 32};
 
@@ -93,7 +93,7 @@ export const palettes = {
 };
 window['palettes'] = palettes;
 
-export function tileRange({x, y, w, h}: ShortRectangle): Tile[] {
+function tileRange({x, y, w, h}: ShortRectangle): Tile[] {
     const tiles: Tile[] = [];
     for (let Y = y; Y < y + h; Y++) {
         for (let X = x; X < x + w; X++) {
@@ -103,7 +103,7 @@ export function tileRange({x, y, w, h}: ShortRectangle): Tile[] {
     return tiles;
 }
 
-export function drawCombinedPalettes(canvas: HTMLCanvasElement, palettes: TilePalette[]): void {
+function drawCombinedPalettes(canvas: HTMLCanvasElement, palettes: TilePalette[]): void {
     const {w, h} = palettes[0];
     const context = canvas.getContext('2d');
     let x = 0, y = 0;
@@ -124,7 +124,7 @@ export function drawCombinedPalettes(canvas: HTMLCanvasElement, palettes: TilePa
     }
 }
 
-export function combinePalettes(palettes: TilePalette[]): TilePalette {
+function combinePalettes(palettes: TilePalette[]): TilePalette {
     const {w, h} = palettes[0];
     let totalTiles: number = palettes.reduce(
         (sum, palette) => sum + (palette.source.w / w) * (palette.source.h / h), 0);
@@ -147,7 +147,7 @@ export function combinePalettes(palettes: TilePalette[]): TilePalette {
     };
 }
 
-export function drawPaletteFromFrames(canvas: HTMLCanvasElement, frames: Frame[]): void {
+/*function drawPaletteFromFrames(canvas: HTMLCanvasElement, frames: Frame[]): void {
     const {w, h} = palettes[0];
     const context = canvas.getContext('2d');
     let x = 0, y = 0;
@@ -162,9 +162,9 @@ export function drawPaletteFromFrames(canvas: HTMLCanvasElement, frames: Frame[]
             y += h;
         }
     }
-}
-
-export function createPaletteFromFrames(frames: Frame[]): TilePalette {
+}*/
+/*
+function createPaletteFromFrames(frames: Frame[]): TilePalette {
     const {w, h} = frames[0];
     const canvas = document.createElement('canvas');
     canvas.width = 5 * w;
@@ -182,4 +182,4 @@ export function createPaletteFromFrames(frames: Frame[]): TilePalette {
         h,
         source: {image: canvas, x: 0, y: 0, w: canvas.width, h: canvas.height},
     };
-}
+}*/

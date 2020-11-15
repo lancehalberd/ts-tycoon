@@ -29,8 +29,8 @@ import {
     Area, AreaLayer, AreaType, ShortRectangle
 } from 'app/types';
 
-export const bufferCanvas: HTMLCanvasElement = createCanvas(ADVENTURE_WIDTH, ADVENTURE_HEIGHT);
-export const bufferContext = bufferCanvas.getContext('2d');
+const bufferCanvas: HTMLCanvasElement = createCanvas(ADVENTURE_WIDTH, ADVENTURE_HEIGHT);
+const bufferContext = bufferCanvas.getContext('2d');
 bufferContext.imageSmoothingEnabled = false;
 // document.body.append(bufferCanvas);
 

@@ -178,7 +178,7 @@ export function importAffix(affixData: SavedAffix): EquipmentAffix {
         bonuses: affixData.bonuses
     };
 }
-export function exportJewelBoard(board: Board): SavedBoard {
+function exportJewelBoard(board: Board): SavedBoard {
     return {
         fixed: board.fixed.map(exportFixedJewel),
         jewels: board.jewels.map(exportJewel),

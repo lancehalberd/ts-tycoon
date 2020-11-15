@@ -239,7 +239,7 @@ function uniqueAreaId(): string {
     return id;
 }
 
-export function getMaxZ(definition: LocationDefinition): number {
+function getMaxZ(definition: LocationDefinition): number {
     if (definition.zAlign === 'back') {
         return 0;
     }
@@ -519,7 +519,7 @@ export function refreshPropertyPanel(): void {
     lastPropertyTarget = null;
     return;
 }
-export function updatePropertyPanel(): void {
+function updatePropertyPanel(): void {
     if (!editingAreaState.isEditing) {
         hidePropertyPanel();
         return;
@@ -563,7 +563,7 @@ export function stopEditing() {
     hidePropertyPanel();
 }
 
-export function getAreaContextMenuOption(): MenuOption {
+function getAreaContextMenuOption(): MenuOption {
     const area = getCurrentArea();
     return {
         getLabel() {
@@ -604,7 +604,7 @@ function changeArea(zoneKey: ZoneType, areaKey: string) {
     refreshPropertyPanel();
 }
 
-export function getAreaProperties(this: void): (EditorProperty<any> | PropertyRow | string)[] {
+function getAreaProperties(this: void): (EditorProperty<any> | PropertyRow | string)[] {
     const area = getCurrentArea();
     const areaDefinition = getAreaDefinition();
     const props: (EditorProperty<any> | PropertyRow | string)[] = [];
@@ -775,12 +775,12 @@ export function getAreaProperties(this: void): (EditorProperty<any> | PropertyRo
     return props;
 }
 
-export function setSelectedTiles(selectedTiles: TileGrid): void {
+function setSelectedTiles(selectedTiles: TileGrid): void {
     editingAreaState.selectedTiles = selectedTiles;
     updateBrushCanvas(selectedTiles);
 }
 
-export function getSelectedObjectContextMenu(): MenuOption[] {
+function getSelectedObjectContextMenu(): MenuOption[] {
     const {contextCoords, selectedObject} = editingAreaState;
     if (!selectedObject
         || !selectedObject.isPointOver(contextCoords[0], contextCoords[1])
@@ -790,8 +790,7 @@ export function getSelectedObjectContextMenu(): MenuOption[] {
     }
     return getObjectContextMenu(selectedObject);
 }
-
-export function getSelectedMonsterContextMenu(): MenuOption[] {
+function getSelectedMonsterContextMenu(): MenuOption[] {
     const {contextCoords, selectedMonsterIndex} = editingAreaState;
     const monsterDefinition: MonsterDefinition = (getAreaDefinition().monsters || [])[selectedMonsterIndex];
     // Only add monster context options if the mouse is actually over the monster.
@@ -803,13 +802,13 @@ export function getSelectedMonsterContextMenu(): MenuOption[] {
     return getMonsterContextMenu(monsterDefinition);
 }
 
-export function getSelectedMonsterProperties(this: void): (EditorProperty<any> | PropertyRow | string)[] {
+function getSelectedMonsterProperties(this: void): (EditorProperty<any> | PropertyRow | string)[] {
     const { selectedMonsterIndex } = editingAreaState;
     const monsterDefinition = getAreaDefinition().monsters[selectedMonsterIndex];
     return getMonsterProperties(monsterDefinition, getCurrentArea());
 }
 
-export function getSelectedObjectProperties(this: void): (EditorProperty<any> | PropertyRow | string)[] {
+function getSelectedObjectProperties(this: void): (EditorProperty<any> | PropertyRow | string)[] {
     const { selectedObject } = editingAreaState;
     return getObjectProperties(selectedObject);
 }
@@ -831,7 +830,7 @@ function promptToCreateNewArea(zoneKey: ZoneType): void {
     changeArea(zoneKey, areaKey);
 }
 
-export function getZoneContextMenuOption(): MenuOption {
+function getZoneContextMenuOption(): MenuOption {
     const area = getState().selectedCharacter.hero.area;
     return {
         getLabel() {
@@ -919,17 +918,6 @@ function importZone(zoneFileContents: string) {
     for (let areaKey in zones[zoneKey]) {
         changeArea(zoneKey, areaKey);
         break;
-    }
-}
-
-export function getSetWallTypeMenuItem(wallType: string, callback: (string) => void): MenuOption {
-    return {
-        getLabel() {
-            return wallType;
-        },
-        onSelect() {
-            callback(wallType);
-        }
     }
 }
 

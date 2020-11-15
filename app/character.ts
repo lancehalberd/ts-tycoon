@@ -51,7 +51,7 @@ import {
     EquipmentData, Hero, HeroColors, Job, Tags,
 } from 'app/types';
 
-export const personFrames = 5;
+const personFrames = 5;
 const names = ['Chris', 'Leon', 'Hillary', 'Michelle', 'Rob', 'Reuben', 'Kingston', 'Silver', 'Blaise'];
 
 
@@ -362,7 +362,7 @@ export function removeActions(actor: Actor, source: Ability) {
     }
 }
 
-export function setHeroColors(hero, colors: HeroColors) {
+function setHeroColors(hero, colors: HeroColors) {
     hero.colors = colors;
     updateHeroGraphics(hero);
 }

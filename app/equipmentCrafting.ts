@@ -22,7 +22,7 @@ import { getMousePosition } from 'app/utils/mouse';
 import { Item, ItemData } from 'app/types';
 
 export const CRAFTED_NORMAL = 1;
-export const CRAFTED_UNIQUE = 2;
+const CRAFTED_UNIQUE = 2;
 
 export const equipmentCraftingState: {
     overCraftingItem: ItemData,

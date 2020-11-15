@@ -56,7 +56,7 @@ export function updateActorFrame(actor: Actor): void {
     actor.d = (d || content.w) * scale;
 }
 
-export function getActorAnimationFrame(actor: Actor): Frame {
+function getActorAnimationFrame(actor: Actor): Frame {
     const source = actor.source;
     if (actor.pull || actor.stunned) {
         return source.hurtAnimation.frames[0];

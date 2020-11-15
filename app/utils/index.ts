@@ -2,57 +2,11 @@ import * as _ from 'lodash';
 
 import { FrameDimensions, FullRectangle, ShortRectangle } from 'app/types';
 
-/**
- * Makes a deep copy of an object. Note that this will not make deep copies of
- * objects with prototypes.
- */
-export function copy<T>(object: T): T {
-    if (typeof(object) === 'undefined' || object === null) {
-        return null;
-    }
-    if (typeof(object) === 'string' || typeof(object) === 'number' || typeof(object) === 'boolean') {
-        return object;
-    }
-    return _.cloneDeep(object);
-}
-
-export function shallowCopy<T>(object: T): T {
-    if (typeof(object) === 'undefined' || object === null) {
-        return null;
-    }
-    if (typeof(object) === 'string' || typeof(object) === 'number' || typeof(object) === 'boolean') {
-        return object;
-    }
-    _.clone(object);
-}
-
-/**
- * Returns the angle from (x1, y1) to (x2,y2) which when given an image facing
- * right at angle 0, will point the image from x1,y1 towards x2,y2 when
- * context.rotate(angle) is used.
- *
- * @param {Number} x1
- * @param {Number} y1
- * @param {Number} x2
- * @param {Number} y2
- * @return {Number}
- */
-export function atan2(x1: number, y1: number, x2: number, y2: number): number {
-    if (x1 == x2) {
-        return(y2 > y1) ? Math.PI / 2 : -Math.PI / 2;
-    }
-    return Math.atan((y2 - y1) / (x2 - x1)) + (x2 < x1 ? Math.PI : 0);
-}
-
 export function ifdefor<T>(value: T, defaultValue: T = null): T {
     if (value !== undefined && !(typeof value === 'number' && isNaN(value))) {
         return value;
     }
     return defaultValue;
-}
-
-export function now(): number {
-    return Date.now();
 }
 
 export function isPointInRect(x: number, y: number, l: number, t: number, w: number, h: number): boolean {
@@ -114,16 +68,6 @@ export function getElementRectangle(element: HTMLElement, container = null): Sho
     return rect;
 }
 
-export function resize(element: HTMLElement, width: number, height: number, left: number = null, top: number = null) {
-    element.style.width = `${width}px`;
-    element.style.height = `${height}px`;
-    if (left !== null) element.style.left = `${left}px`;
-    if (top !== null) element.style.top = `${top}px`;
-}
-
-export function constrain(value: number, min: number, max: number): number {
-    return Math.min(max, Math.max(min, value));
-}
 export function fillRectangle(context: CanvasRenderingContext2D, rectangle: FullRectangle, color: string = null) {
     if (color) {
         context.fillStyle = color;
@@ -139,9 +83,7 @@ export function fillRect(context: CanvasRenderingContext2D, {x, y, w, h}: ShortR
 export function drawRectangle(context: CanvasRenderingContext2D, rectangle: FullRectangle) {
     context.rect(rectangle.left, rectangle.top, rectangle.width, rectangle.height);
 }
-export function drawRect(context: CanvasRenderingContext2D, {x, y, w, h}: ShortRectangle) {
-    context.rect(x, y, w, h);
-}
+
 export function rectangle(left: number, top: number, width: number, height: number): FullRectangle {
     return {left: left, top: top, width: width, height: height, right: left + width, bottom: top + height};
 }
@@ -150,9 +92,6 @@ export function r(x: number, y: number, w: number, h: number): ShortRectangle {
 }
 export function d(w: number, h: number): FrameDimensions {
     return {w, h};
-}
-export function toR(r: FullRectangle) {
-    return {x: r.left, y: r.top, w: r.width, h: r.height};
 }
 export function shrinkRectangle(rectangle: FullRectangle, margin: number): FullRectangle {
     return {'left': rectangle.left + margin, 'width': rectangle.width - 2 * margin,
@@ -173,7 +112,7 @@ export function rectangleFromPoints(A: {x: number, y: number}, B: {x: number, y:
 export function drawRunningAnts(context: CanvasRenderingContext2D, rectangle: FullRectangle) {
     context.save();
     context.strokeStyle = 'black';
-    var frame = Math.floor(now() / 80) % 10;
+    var frame = Math.floor(Date.now() / 80) % 10;
     if (frame < 5) {
         context.setLineDash([frame, 5, 5 - frame, 0]);
     } else {
@@ -191,21 +130,9 @@ export function drawRunningAnts(context: CanvasRenderingContext2D, rectangle: Fu
     context.restore();
 }
 
-export function objectIndexOf(object: Object, value: any, defaultValue: string = null): string {
-    for (const key of Object.keys(object)) {
-        if (object[key] === value) {
-            return key;
-        }
-    }
-    return defaultValue;
-}
 
 export function arrMod<T>(array: T[], index: number): T {
     return array[(index % array.length + array.length) % array.length];
-}
-
-export function fixFloat(f: number): number {
-    return Math.round(1000000 * f) / 1000000;
 }
 
 export function removeElementFromArray<T>(array: T[], element: T, throwErrorIfMissing = false): T {
@@ -216,13 +143,7 @@ export function removeElementFromArray<T>(array: T[], element: T, throwErrorIfMi
     }
     return array.splice(index, 1)[0];
 }
-export function countInstancesOfElementInArray<T>(array: T[], element: T): number {
-    let count = 0;
-    for (const arrayElement of array) {
-        if (arrayElement === element) count++;
-    }
-    return count;
-}
+
 
 // Return the minimum angle between two angles, specified in degrees.
 export function getThetaDistance(angle1: number, angle2: number): number {

@@ -9,7 +9,7 @@ import { addWeapons } from 'app/content/equipment/weapons';
 import { addUniques } from 'app/content/uniques';
 import { equipmentSlots } from 'app/gameConstants';
 
-import { ItemData, RawItemData } from 'app/types/items';
+import { ItemData, RawItemData } from 'app/types';
 
 // const nonWeapons = ['body', 'feet', 'head', 'offhand', 'arms', 'legs', 'back', 'ring'];
 export const items: ItemData[][] = [[]];

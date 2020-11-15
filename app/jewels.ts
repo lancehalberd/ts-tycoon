@@ -18,7 +18,7 @@ export const displayJewelShapeScale = 30;
 const qualifierNames: JewelQualifierName[] = ['Perfect', 'Brilliant', 'Shining', '', 'Dull'];
 
 let nextJewelId: number = 0;
-export const jewelMap: {[key: string]: Jewel} = {};
+const jewelMap: {[key: string]: Jewel} = {};
 
 export function convertShapeDataToShape(shapeData) {
     return makeShape(shapeData.p[0] * displayJewelShapeScale / originalJewelScale, shapeData.p[1] * displayJewelShapeScale / originalJewelScale, (shapeData.t % 360 + 360) % 360, shapeDefinitions[shapeData.k][0], displayJewelShapeScale);

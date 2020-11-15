@@ -2,7 +2,7 @@
 /**
  * Draws an animated dashed rectangle to the given context.
  */
-export function drawDashedRectangle(context, rectangle) {
+/*export function drawDashedRectangle(context, rectangle) {
     context.save();
     context.lineWidth = 1;
     context.strokeStyle = 'black';
@@ -22,4 +22,4 @@ export function drawDashedRectangle(context, rectangle) {
     }
     context.strokeRect(rectangle.left, rectangle.top, rectangle.width, rectangle.height);
     context.restore();
-}
+}*/

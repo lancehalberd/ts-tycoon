@@ -77,10 +77,6 @@ export function setupMission(character: Character, missionKey: string): ActiveMi
     return character.mission;
 }
 
-export function startMission(missionKey: string): void {
-
-}
-
 export function setGuildGateMission(missionKey: string): void {
     const guildYard = getArea('guild', 'guildYard');
     if (!missionKey) {
@@ -90,10 +86,10 @@ export function setGuildGateMission(missionKey: string): void {
     }
 }
 
-export function getEnemiesRemaining(mission: ActiveMission): number {
+/*export function getEnemiesRemaining(mission: ActiveMission): number {
     let enemiesRemaining = 0;
     for (let areaKey in mission.zone) {
         enemiesRemaining += getArea(mission.parameters.zoneKey, areaKey).enemies.filter(actor => !actor.owner).length;
     }
     return enemiesRemaining;
-}
+}*/

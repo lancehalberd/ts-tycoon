@@ -85,13 +85,13 @@ const monsterSuffixes: AffixData[][] = [
 ];
 
 
-export const strengthMonsters = [
+const strengthMonsters = [
     'gremlin', 'skeleton','skeletalBuccaneer','undeadPaladin','undeadWarrior', 'stealthyCaterpillar'
 ];
-export const intelligenceMonsters = [
+const intelligenceMonsters = [
     'bat', 'gremlin', 'gnome', 'gnomeCleric', 'gnomeWizard', 'bat', 'vampireBat'
 ];
-export const dexterityMonsters = [
+const dexterityMonsters = [
     'skeleton', 'bat', 'spider', 'jumpingSpider', 'wolf', 'caterpillar', 'spongeyCaterpillar'
 ];
 export const strengthEventMonsters = ['dragon','giantSkeleton', 'butcher', 'alphaWolf', 'battlefly', 'motherfly'];

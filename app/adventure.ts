@@ -122,7 +122,7 @@ export function addMonstersFromAreaDefinition(area: Area) {
     addMonstersToAreaFromDefinitions(area, (areaDefinition.monsters || []).filter(monster => !monster.isTriggered));
 }
 
-export function addMonstersToAreaFromDefinitions(area: Area, definitions: MonsterDefinition[]) {
+function addMonstersToAreaFromDefinitions(area: Area, definitions: MonsterDefinition[]) {
     const monsterSpawns: MonsterSpawn[] = definitions.map(monster => {
         return {
             ...monster,
@@ -499,7 +499,7 @@ function updateAllActorDetails(area: Area): void {
 }
 
 // Special update logic for the sprite which just follow the hero around.
-export function updateSprite(area: Area, hero: Hero, delta: number) {
+function updateSprite(area: Area, hero: Hero, delta: number) {
     if (area.timeStopEffect && area.timeStopEffect.actor !== hero) {
         return;
     }

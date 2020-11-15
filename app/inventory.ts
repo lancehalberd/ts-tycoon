@@ -211,7 +211,7 @@ export function getItemForElement(itemElement: HTMLElement): Item {
     }
     return item;
 }
-export function getAllItems(): Item[] {
+function getAllItems(): Item[] {
     return [...queryAll('.js-item')].map(getItemForElement);
 }
 export function updateEquipableItems() {

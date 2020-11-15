@@ -14,7 +14,7 @@ import { MenuOption } from 'app/types';
 interface ContextMenuState {
     contextMenu: ContextMenu,
 }
-export const contextMenuState: ContextMenuState = {
+const contextMenuState: ContextMenuState = {
     contextMenu: null,
 }
 

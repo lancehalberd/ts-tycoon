@@ -52,7 +52,6 @@ export interface FrameRectangle extends ShortRectangle {
     // exclude the tail when looking at the width/height of the character.
     content?: ShortRectangle,
 }
-export type Rectangle = FullRectangle | ShortRectangle;
 
 export interface Frame extends FrameRectangle {
     image: HTMLCanvasElement | HTMLImageElement,

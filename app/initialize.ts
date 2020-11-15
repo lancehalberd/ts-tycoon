@@ -34,7 +34,7 @@ import { showInitialWorldState } from 'app/worldState';
 
 import { Applicant, GuildStats } from 'app/types';
 
-export function initializeGuildAreas() {
+function initializeGuildAreas() {
     for (let areaKey in zones.guild) {
         getArea('guild', areaKey);
     }

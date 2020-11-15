@@ -27,7 +27,7 @@ export const areaWalls: {[key in string]: FrameAnimation} = {
     fenceWall,
 };
 
-export function createAreaObjectFromDefinition(areaObjectDefinition: AreaObjectDefinition): AreaObject {
+function createAreaObjectFromDefinition(areaObjectDefinition: AreaObjectDefinition): AreaObject {
     const factory = areaObjectFactories[areaObjectDefinition.type];
     if (!factory) {
         console.log('Missing factory for type', areaObjectDefinition.type, areaObjectDefinition)
@@ -38,7 +38,7 @@ export function createAreaObjectFromDefinition(areaObjectDefinition: AreaObjectD
     return object;
 }
 
-export function createNewArea(areaKey: string): Area {
+function createNewArea(areaKey: string): Area {
     return {
         areaType: null,
         key: areaKey,
@@ -61,7 +61,7 @@ export function createAreaFromDefinition(areaKey: string, areaDefinition: AreaDe
     return applyDefinitionToArea(createNewArea(areaKey), areaDefinition);
 }
 
-export function getStandardLayers() {
+function getStandardLayers() {
     return [
         // Additional background layers with parallax <= 1 can be added here.
         // Holds the floor tiles, won't usually have objects on it, as they would be behind the background.

@@ -35,14 +35,14 @@ export function bindMouseListeners() {
     document.addEventListener('mousedown', onMouseDown);
     document.addEventListener('mouseup', onMouseUp);
 }
-
+/* This would in theory be used if we ever cleaned up the application
 export function unbindMouseListeners() {
     document.removeEventListener('mousemove', onMouseMove);
     document.removeEventListener('mousedown', onMouseDown);
     document.removeEventListener('mouseup', onMouseUp);
     // Prevent mouse from being "stuck down"
     mouseIsDown = false;
-}
+}*/
 
 
 export function isMouseOverElement(element: HTMLElement): boolean {

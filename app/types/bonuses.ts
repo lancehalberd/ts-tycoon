@@ -16,7 +16,7 @@ export interface BonusesRange {
     [key: string]: boolean | string | number | [number, number] | [number, number, number],
 }
 
-export type VariableObjectType = 'actor' | 'action' | 'effect' | 'guild' | 'trigger';
+type VariableObjectType = 'actor' | 'action' | 'effect' | 'guild' | 'trigger';
 
 export interface BonusSource extends Partial<Ability> {
     // We often include things that could have bonuses but don't.
@@ -43,7 +43,7 @@ export interface VariableObjectBase {
     bonuses?: Bonuses,
     actor?: Actor,
 }
-export interface UntypedVariableObject {
+interface UntypedVariableObject {
     core: VariableObject,
     base: VariableObjectBase,
     tags: Tags,
@@ -55,19 +55,19 @@ export interface UntypedVariableObject {
     variableChildren: VariableObject[],
     operations: any,
 }
-export interface ActorVariableObject extends UntypedVariableObject {
+interface ActorVariableObject extends UntypedVariableObject {
     type: 'actor',
     stats: ActorStats,
 }
-export interface ActionVariableObject extends UntypedVariableObject {
+interface ActionVariableObject extends UntypedVariableObject {
     type: 'action',
     stats: ActionStats,
 }
-export interface TriggerVariableObject extends UntypedVariableObject {
+interface TriggerVariableObject extends UntypedVariableObject {
     type: 'trigger',
     stats: TriggerStats,
 }
-export interface GuildVariableObject extends UntypedVariableObject {
+ interface GuildVariableObject extends UntypedVariableObject {
     type: 'guild',
     stats: GuildStats,
 }
@@ -235,6 +235,6 @@ export interface EffectStats {
     maxStacks?: number,
 }
 
-export interface TriggerStats {
+interface TriggerStats {
     debuff: EffectVariableObject,
 }

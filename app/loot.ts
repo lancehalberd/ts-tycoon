@@ -17,7 +17,7 @@ import {
 } from 'app/types';
 
 const image = requireImage('gfx/moneyIcon.png');
-export const coins = [
+const coins = [
     {value: 1, image, x: 0, y: 0, w: 16, h: 16},
     {value: 5, image, x: 0, y: 32, w: 20, h: 20},
     {value: 20, image, x: 0, y: 64, w: 24, h: 24},
@@ -28,7 +28,7 @@ export const coins = [
     {value: 50000, image, x: 64, y: 32, w: 20, h: 20},
     {value: 200000, image, x: 64, y: 64, w: 24, h: 24},
 ];
-export const animaDrops = [
+const animaDrops = [
     {value: 1, image, x: 96, y: 0, w: 16, h: 16},
     {value: 5, image, x: 96, y: 32, w: 20, h: 20},
     {value: 20, image, x: 96, y: 64, w: 24, h: 24},

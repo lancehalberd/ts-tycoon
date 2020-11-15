@@ -1,5 +1,3 @@
-import { tag } from 'app/dom';
-
 export function fixedDigits(number: number, digits: number = 1): number {
     return parseFloat(number.toFixed(digits));
 }
@@ -60,20 +58,20 @@ export function percent(number: any, digits: number = 1): string {
         return (parseFloat(number) * 100).toFixed(digits);
     }) + '%';*/
 }
-
-export function coins(amount: any) {
+/*
+function coins(amount: any) {
     if (typeof amount == 'number') {
         amount = abbreviate(amount);
     }
     return tag('span', 'icon coin') + ' ' + tag('span', 'value coins', amount);
 }
 
-export function anima(amount: any) {
+function anima(amount: any) {
     if (typeof amount == 'number') {
         amount = abbreviate(amount);
     }
     return tag('span', 'icon anima') + ' ' + tag('span', 'value anima', amount);
-}
+}*/
 
 export function properCase(string) {
     return string.split(' ').map(function (word) {return word.charAt(0).toUpperCase() + word.substring(1)}).join(' ');

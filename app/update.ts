@@ -19,22 +19,22 @@ import { checkToRemovePopup } from 'app/popup';
 import { saveGame } from 'app/saveGame';
 import { getState } from 'app/state';
 import { getMousePosition, isMouseDown } from 'app/utils/mouse';
-import { isPlayingTrack } from 'app/utils/sounds';
+//import { isPlayingTrack } from 'app/utils/sounds';
 import { updateNPCs } from 'app/content/updateNPCs';
 
 import { Character, Hero } from 'app/types';
 
-let userInteracted = false;
+//let userInteracted = false;
 
 document.body.addEventListener('click', registerInteraction);
 function registerInteraction() {
-    userInteracted = true;
+    //userInteracted = true;
     document.body.removeEventListener('click', registerInteraction);
 }
 
-export function areSoundsReady() {
+/*function areSoundsReady() {
     return areSoundsPreloaded() && (isPlayingTrack() || userInteracted);
-}
+}*/
 
 let isGameInitialized = false;
 preloadSounds();

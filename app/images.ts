@@ -113,25 +113,6 @@ for (const initialImageToLoad of initialImagesToLoad) {
     requireImage(initialImageToLoad);
 }
 
-export function makeFrames(length, size, origin = [0, 0], padding = 0, frameRepeat = 1, columns = 0) {
-    columns = columns || length;
-    var frames = [];
-    for (var r = 0; r < Math.ceil(length / columns); r++) {
-        for (var i = 0; i < columns; i++) {
-            if (r * columns + i >= length) break;
-            for (var j = 0; j < frameRepeat; j++) {
-                frames.push([origin[0] + (size[0] + padding) * i, origin[1] + (size[1] + padding) * r, size[0], size[1]]);
-            }
-        }
-    }
-    return frames;
-}
-export function undoFrames(frames) {
-    var reversedFrames = frames.slice();
-    reversedFrames.pop();
-    return frames.concat(reversedFrames.reverse());
-}
-
 export function drawImage(
     context: CanvasRenderingContext2D,
     image: HTMLCanvasElement | HTMLImageElement,
@@ -185,19 +166,6 @@ export function drawSolidTintedFrame(context, frame: TintedFrame, target: ShortR
     globalTintContext.restore();
 }
 
-export function drawSolidTintedImage(context, image, tint, source: FullRectangle, target: FullRectangle) {
-    // First make a solid color in the shape of the image to tint.
-    globalTintContext.save();
-        globalTintContext.fillStyle = tint;
-        globalTintContext.clearRect(0, 0, source.width, source.height);
-        var tintRectangle = {'left': 0, 'top': 0, 'width': source.width | 0, 'height': source.height | 0};
-        drawImage(globalTintContext, image, source, tintRectangle)
-        globalTintContext.globalCompositeOperation = "source-in";
-        globalTintContext.fillRect(0, 0, source.width, source.height);
-        drawImage(context, globalTintCanvas, tintRectangle, target);
-    globalTintContext.restore();
-}
-
 // This needs to wide enough to draw the entire character image.
 const globalTintCanvas = createCanvas(1200, 300);
 const globalTintContext = globalTintCanvas.getContext('2d');
@@ -240,67 +208,10 @@ export function getTintedImage(image, tint, amount, r: ShortRectangle) {
     return globalCompositeCanvas;
 }
 
-export function drawSourceWithOutline(
-    context,
-    source: FullRectangle & {drawWithOutline?: Function, render: Function},
-    color, thickness,
-    target: FullRectangle
-) {
-    if (source.drawWithOutline) {
-        source.drawWithOutline(context, color, thickness, target);
-        return;
-    }
-    var smallTarget = {...target};
-    for (var dy = -1; dy < 2; dy++) {
-        for (var dx = -1; dx < 2; dx++) {
-            if (dy == 0 && dx == 0) continue;
-            smallTarget.left = target.left + dx * thickness;
-            smallTarget.top = target.top + dy * thickness;
-            drawSourceAsSolidTint(context, source, color, smallTarget);
-        }
-    }
-    source.render(context, target);
-}
-function drawSourceAsSolidTint(context, source: FullRectangle & { render: Function }, tint, target: FullRectangle) {
-    // First make a solid color in the shape of the image to tint.
-    globalTintContext.save();
-        globalTintContext.fillStyle = tint;
-        globalTintContext.clearRect(0, 0, source.width, source.height);
-        var tintRectangle = {'left': 0, 'top': 0, 'width': source.width, 'height': source.height};
-        source.render(globalTintContext, tintRectangle);
-        globalTintContext.globalCompositeOperation = "source-in";
-        globalTintContext.fillRect(0, 0, source.width, source.height);
-        drawImage(context, globalTintCanvas, tintRectangle, target);
-    globalTintContext.restore();
-}
-export function drawOutlinedImage(context, image, color, thickness, source: FullRectangle, target: FullRectangle) {
-
-    const smallTarget = {...target};
-        // First make a solid color in the shape of the image to tint.
-    globalTintContext.save();
-        globalTintContext.fillStyle = color;
-        globalTintContext.clearRect(0, 0, smallTarget.width, smallTarget.height);
-        const tintRectangle = {'left': 0, 'top': 0, 'width': smallTarget.width | 0, 'height': smallTarget.height | 0};
-        drawImage(globalTintContext, image, source, tintRectangle)
-        globalTintContext.globalCompositeOperation = "source-in";
-        globalTintContext.fillRect(0, 0, smallTarget.width, smallTarget.height);
-    globalTintContext.restore();
-
-    for (let dy = -1; dy <= 1; dy++) {
-        for (let dx = -1; dx <= 1; dx++) {
-            if (dy == 0 || dx == 0) continue;
-            smallTarget.left = target.left + dx * thickness;
-            smallTarget.top = target.top + dy * thickness;
-            drawImage(context, globalTintCanvas, tintRectangle, smallTarget);
-            // drawSolidTintedImage(context, image, color, source, smallTarget);
-        }
-    }
-    drawImage(context, image, source, target);
-}
 export function drawWhiteOutlinedFrame(context: CanvasRenderingContext2D, frame: Frame, target: ShortRectangle) {
     drawOutlinedFrame(context, frame, 'white', 1, target);
 }
-export function drawOutlinedFrame(
+function drawOutlinedFrame(
     context: CanvasRenderingContext2D,
     frame: Frame, color: string, thickness: number,
     target: ShortRectangle

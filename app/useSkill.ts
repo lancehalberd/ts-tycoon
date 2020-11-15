@@ -423,7 +423,7 @@ interface ReactionDefinition {
 export const actionDefinitions: {
     [key: string]: ActionDefinition
 } = {};
-export const reactionDefinitions: {
+const reactionDefinitions: {
     [key: string]: ReactionDefinition
 } = {};
 

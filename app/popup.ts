@@ -103,7 +103,7 @@ export function addPopup(target: any, content: string): Popup {
     return popup;
 }
 
-export function updateToolTip() {
+function updateToolTip() {
     if (!popup) {
         return;
     }

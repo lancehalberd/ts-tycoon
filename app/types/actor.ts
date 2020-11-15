@@ -8,7 +8,7 @@ import {
 } from 'app/types';
 import { Ability, Action, ActorEffect } from 'app/types/abilities';
 import { Character } from 'app/types/Character';
-import { Equipment } from 'app/types/items';
+import { Equipment } from 'app/types';
 import { DialogueBox } from 'app/ui/DialogueBox';
 
 export type ActorActivity = {
@@ -158,7 +158,7 @@ export interface BaseActor extends AreaEntity {
     // This is used when clicking on NPCs, for example to talk with them.
     onInteract?: (actor: Actor) => void,
 }
-export interface BasePerson extends BaseActor {
+interface BasePerson extends BaseActor {
     colors: HeroColors,
     personCanvas: HTMLCanvasElement,
     personContext: CanvasRenderingContext2D,

@@ -18,9 +18,9 @@ mainContext.imageSmoothingEnabled = false;
 window['mainContext'] = mainContext;
 
 export const jewelsCanvas:HTMLCanvasElement = query('.js-skillCanvas') as HTMLCanvasElement;
-export const jewelsContext = jewelsCanvas.getContext("2d");
+// export const jewelsContext = jewelsCanvas.getContext("2d");
 
-export const previewCanvas:HTMLCanvasElement = query('.js-characterColumn .js-previewCanvas') as HTMLCanvasElement;
+const previewCanvas:HTMLCanvasElement = query('.js-characterColumn .js-previewCanvas') as HTMLCanvasElement;
 export const previewContext = previewCanvas.getContext("2d")
 previewContext.imageSmoothingEnabled = false;
 

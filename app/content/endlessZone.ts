@@ -191,7 +191,7 @@ function getConnections(endlessSeed: number, coordinates: EndlessZoneCoordinates
 }
 window['getConnections'] = getConnections;
 
-export function getCoordinatesKey({level, radius, thetaI}: EndlessZoneCoordinates): string {
+function getCoordinatesKey({level, radius, thetaI}: EndlessZoneCoordinates): string {
     return `endless:${level}:${radius}:${thetaI}`;
 }
 
@@ -692,7 +692,7 @@ endlessMapCanvas.style.top = '15px';
 endlessMapCanvas.style.left = '215px';
 endlessMapCanvas.style.pointerEvents = 'none';
 mainContent.append(endlessMapCanvas);
-export const endlessMapContext = endlessMapCanvas.getContext('2d');
+const endlessMapContext = endlessMapCanvas.getContext('2d');
 
 export function clearEndlessAreaMinimap(): void {
     endlessMapContext.clearRect(0, 0, endlessMapCanvas.width, endlessMapCanvas.height);
@@ -834,7 +834,7 @@ endlessZoneCanvas.style.left = '515px';
 endlessZoneCanvas.style.pointerEvents = 'none';
 const endlessZoneContext = endlessZoneCanvas.getContext('2d');
 
-export function renderZoneMap(endlessSeed: number, level: number): void {
+function renderZoneMap(endlessSeed: number, level: number): void {
     const context = endlessZoneContext;
     context.fillStyle = 'white';
     context.fillRect(0, 0, endlessZoneCanvas.width, endlessZoneCanvas.height);

@@ -13,7 +13,7 @@ export const MAX_LEVEL = 100;
 
 // Dimensions of the game in document pixels.
 export const DOM_WIDTH = 960;
-export const DOM_HEIGHT = 540;
+// export const DOM_HEIGHT = 540;
 
 // Dimensions of the map canvas in canvas pixels.
 export const MAP_WIDTH = 320;
@@ -36,7 +36,7 @@ export const ADVENTURE_HEIGHT = 180;
 // Scale of adventure canvas pixels relative to document pixels.
 export const ADVENTURE_SCALE = 3;
 
-export const TOP_HUD_HEIGHT = 16;
+// export const TOP_HUD_HEIGHT = 16;
 export const BACKGROUND_HEIGHT = 84;
 export const FIELD_HEIGHT = 64;
 export const BOTTOM_HUD_HEIGHT = 32;
@@ -46,6 +46,6 @@ export const GROUND_Y = BACKGROUND_HEIGHT + (FIELD_HEIGHT + 24) / 2;
 export const MAX_Z = FIELD_HEIGHT + 24;
 export const MIN_Z = -MAX_Z;
 
-export const BOTTOM_HUD_RECT = {x: 0, y: ADVENTURE_HEIGHT - BOTTOM_HUD_HEIGHT, w: ADVENTURE_WIDTH, h: BOTTOM_HUD_HEIGHT};
+// export const BOTTOM_HUD_RECT = {x: 0, y: ADVENTURE_HEIGHT - BOTTOM_HUD_HEIGHT, w: ADVENTURE_WIDTH, h: BOTTOM_HUD_HEIGHT};
 
 export const MISSION_ANIMATION_LENGTH = 2000;

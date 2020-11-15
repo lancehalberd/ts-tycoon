@@ -93,9 +93,6 @@ export default class JobAchievement {
             color = ['#C22', '#F84', '#CCD', '#FC0', '#F4F'][this.level - 1];
         }
         drawCompositeTintedFrame(context, {...this.tintFrame, color}, this.frame, target);
-        /*drawSolidTintedFrame(context, , target);
-        drawSolidTintedImage(context, jobTrophyImage, color, {'left': 0, 'top': 0, 'width': 40, 'height': 40}, target);
-        drawImage(context, jobTrophyImage, {'left': 41, 'top': 0, 'width': 40, 'height': 40}, target);*/
     }
     helpMethod() {
         if (this.value === 0) return titleDiv('Mysterious Trophy') + bodyDiv('???');

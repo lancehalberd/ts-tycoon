@@ -5,11 +5,11 @@ type AttackAnimationType = 'bowAttack' | 'throwingAttack' | 'wandAttack';
 export type EquipmentSlot = 'weapon' | 'offhand' |
     'head' | 'body' | 'arms' | 'legs' | 'feet' |
     'ring' | 'back';
-export type WeaponType =
+type WeaponType =
     'axe' | 'sword' | 'dagger' |
     'fist' | 'wand' | 'throwing' | 'bow' | 'staff' |
     'polearm' | 'greatsword';
-export type EquipmentType =
+type EquipmentType =
     WeaponType |
     'heavyShield' | 'lightShield' |
     'heavyArmor' | 'lightArmor' | 'clothArmor' |
@@ -32,7 +32,7 @@ export interface RawItemData {
     restrictions?: string[],
     gravity?: number,
 }
-export interface UniqueItemData {
+interface UniqueItemData {
     initialChance: number,
     incrementChance: number,
     chance: number,

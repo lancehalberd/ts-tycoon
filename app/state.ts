@@ -44,7 +44,7 @@ interface SavedGuildAreas {
 type Trophies = {[key: string]: JobAchievement};
 type SavedTrophies = {[key: string]: SavedTrophy};
 
-export type SavedState = {
+type SavedState = {
     jewels: SavedJewel[],
     inventoryItems: SavedItem[],
     coins: number,
@@ -74,7 +74,7 @@ export type SavedState = {
     guildAreas: SavedGuildAreas,
     trophies: SavedTrophies,
 }
-export interface GameState {
+interface GameState {
     guildVariableObject: VariableObject,
     guildStats: GuildStats,
     savedState: SavedState,

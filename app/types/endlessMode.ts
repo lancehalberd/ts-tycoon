@@ -50,17 +50,17 @@ export interface EndlessZoneExitEvent {
     exclusiveLength: number,
     connection: EndlessZoneConnection,
 }
-export interface EndlessZoneTreasureEvent {
+interface EndlessZoneTreasureEvent {
     type: 'treasure',
     baseLength: number,
     exclusiveLength: number,
 }
-export interface EndlessZoneEncounterEvent {
+interface EndlessZoneEncounterEvent {
     type: 'encounter',
     baseLength: number,
     exclusiveLength: number,
 }
-export interface EndlessZoneWaypointEvent {
+interface EndlessZoneWaypointEvent {
     type: 'waypoint',
     baseLength: number,
     exclusiveLength: number,

@@ -42,7 +42,7 @@ export interface ActiveMission {
     failed: boolean,
 }
 
-export type AreaObjectHash = {[key in string]: AreaObjectDefinition};
+type AreaObjectHash = {[key in string]: AreaObject};
 
 export interface TilePalette {
     // The size of the tiles
@@ -70,7 +70,7 @@ export interface TileGrid {
     tiles: Tile[][],
 }
 
-export interface TileGridDefinition {
+interface TileGridDefinition {
     // The dimensions of the grid.
     w: number,
     h: number,
@@ -151,7 +151,7 @@ export interface Area {
     effects: ActiveEffect[],
     textPopups: any[],
     treasurePopups: any[],
-    objectsByKey?: {[key in string]: AreaObject},
+    objectsByKey?: AreaObjectHash,
     layers: AreaLayer[],
 
     // Used to show the chest open icon for the minimap.
