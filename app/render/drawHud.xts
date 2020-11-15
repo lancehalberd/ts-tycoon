@@ -1,0 +1,22 @@
+import { getGlobalHud } from 'app/ui/hud';
+
+
+export function drawHud(context: CanvasRenderingContext2D) {
+    for (const element of getGlobalHud()) {
+        if (element.isVisible && !element.isVisible()) continue;
+        element.render(context);
+    }
+}
+
+export function drawHudElement(context, element) {
+    if (getCanvasPopupTarget() === element) {
+        drawWhiteOutlinedFrame(context, element.frame, element);
+    } else if (element.flashColor) {
+        drawTintedFrame(context,
+            {...element.frame, color: element.flashColor, amount: .5 + .2 * Math.sin(Date.now() / 150)},
+            element
+        );
+    } else {
+        drawFrame(context, element.frame, element);
+    }
+}

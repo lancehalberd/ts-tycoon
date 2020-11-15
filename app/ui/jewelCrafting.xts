@@ -1,0 +1,55 @@
+
+import { getState } from 'app/state';
+import { createAnimation, drawFrame, getFrame } from 'app/utils/animations';
+import { isPointInShortRect } from 'app/utils/index';
+
+const [splitJewelFrame, ] =createAnimation('gfx2/hud/jeweltools.png', {w: 20, h: 20}, {cols: 4}).frames;
+
+const splitJewelButton = {
+    frame: splitJewelFrame,
+    x: 200, y: 60, w: 20, h: 20,
+    flashColor: null,
+    isVisible() {
+        const character = getState().selectedCharacter;
+        return character.context === 'jewelCrafting'
+    },
+    isPointOver(x, y) {
+        return isPointInShortRect(x, y, this);
+    },
+    render(context) {
+        const character = getState().selectedCharacter;
+        if (!character.hero.area?.zoneKey) {
+            this.flashColor = getState().selectedCharacter.hero.levelInstance.completed ? 'white' : null;
+        } else {
+            this.flashColor = null;
+        }
+        drawHudElement(context, this);
+    },
+    helpMethod() {
+        const character = getState().selectedCharacter;
+        if (!character.hero.area?.zoneKey) {
+            return 'Return to Map';
+        }
+        return 'Return to Guild';
+    },
+    onClick() {
+        const character = getState().selectedCharacter;
+        const hero = character.hero;
+        if (!hero.area?.zoneKey) {
+            character.replay = false;
+            returnToMap(character);
+        } else if (character.endlessZone && character.endlessZone.key === hero.area.zoneKey) {
+            character.endlessAreaPortal = {
+                zoneKey: hero.area.zoneKey,
+                areaKey: hero.area.key,
+                // Constrain portal to the interior of the area.
+                x: Math.max(32, Math.min(hero.area.width - 32, hero.x)),
+                z: hero.z,
+            };
+            saveGame();
+            returnToGuild(character, endlessPortalEntrance);
+        } else {
+            returnToGuild(character);
+        }
+    },
+};

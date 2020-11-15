@@ -1,0 +1,83 @@
+import { getIsAltarTrophyAvailable, setChoosingTrophyAltar } from 'app/content/achievements';
+import {
+    areaObjectFactories,
+    areaTargetToScreenTarget,
+    drawFrameToAreaTarget,
+    isPointOverAreaTarget,
+    EditableAreaObject,
+} from 'app/content/areas';
+import { editingAreaState } from 'app/development/editArea';
+import { TROPHY_SIZE } from 'app/gameConstants';
+import { getCanvasPopupTarget, removePopup } from 'app/popup';
+import { createAnimation, drawFrame, getFrame } from 'app/utils/animations';
+import { isPointInShortRect } from 'app/utils/index';
+
+import { FrameAnimation, FrameDimensions, Hero, JobAchievement, ShortRectangle } from 'app/types';
+
+const altarGeometry: FrameDimensions = {w: 24, h: 31, d: 24, content: {x: 2, y: 5, w: 20, h: 26}};
+const altar: FrameAnimation = createAnimation('gfx2/objects/trophyaltar.png', altarGeometry, {x: 6});
+const altarHover: FrameAnimation = createAnimation('gfx2/objects/trophyaltar.png', altarGeometry, {cols: 2});
+const altarGlow: FrameAnimation = createAnimation('gfx2/objects/trophyaltar.png', altarGeometry, {cols: 4, x: 2});
+const altarGlowFront: FrameAnimation = createAnimation('gfx2/objects/trophyalterfront.png', altarGeometry, {cols: 4, x: 2})
+
+export class TrophyAltar extends EditableAreaObject {
+    name = 'Trophy Pedestal';
+    trophy: JobAchievement;
+    animation = altar;
+
+    onInteract(hero: Hero): void {
+        removePopup();
+        setChoosingTrophyAltar(this);
+    }
+
+    getTrophyRectangle(): ShortRectangle {
+        const target = this.getAreaTarget();
+        if (!this.trophy) {
+            return {x: target.x, y: target.y, w: 0, h: 0};
+        }
+        const rectangle = areaTargetToScreenTarget(target);
+        return {
+            x: rectangle.x + rectangle.w / 2 - TROPHY_SIZE / 2,
+            y: rectangle.y - TROPHY_SIZE + 4 + 3 * Math.sin(this.area.time * 2),
+            w: TROPHY_SIZE,
+            h: TROPHY_SIZE,
+        };
+    }
+
+    isPointOver(x: number, y: number) {
+        return isPointOverAreaTarget(this.getAreaTarget(), x, y) || isPointInShortRect(x, y, this.getTrophyRectangle())
+    }
+
+    helpMethod() {
+        if (this.trophy) {
+            return this.trophy.helpMethod();
+        }
+        return this.name;
+    }
+
+    render(context: CanvasRenderingContext2D) {
+        // Draw with white outlines when this is the canvas target.
+        const altarFrame = this.getFrame();
+        let glowFrame = null;
+        let glowFrontFrame = null;
+        if (getCanvasPopupTarget() === this) {
+            glowFrame = getFrame(altarHover, this.area.time * 1000);
+        } else if (this.trophy || getIsAltarTrophyAvailable()) {
+            glowFrame = getFrame(altarGlow, this.area.time * 1000);
+            glowFrontFrame = getFrame(altarGlowFront, this.area.time * 1000);
+        }
+        const isEditing = editingAreaState.selectedObject === this;
+        drawFrameToAreaTarget(context, this.getAreaTarget(), {...altarFrame, flipped: this.definition.flipped}, drawFrame, isEditing);
+        if (glowFrame) {
+            drawFrameToAreaTarget(context, this.getAreaTarget(), {...glowFrame, flipped: this.definition.flipped}, drawFrame, isEditing);
+        }
+        if (this.trophy) {
+            // Note: this uses a composite drawing method, so regular draw effects may not work.
+            this.trophy.render(context, this.getTrophyRectangle());
+        }
+        if (glowFrontFrame) {
+            drawFrameToAreaTarget(context, this.getAreaTarget(), {...glowFrontFrame, flipped: this.definition.flipped}, drawFrame, isEditing);
+        }
+    }
+}
+areaObjectFactories.trophyAltar = TrophyAltar;

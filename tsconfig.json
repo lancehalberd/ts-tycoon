@@ -1,11 +1,12 @@
 {
   "compilerOptions": {
-    "outDir": "./public/",
-    "noImplicitAny": false,
-    "module": "ESNext",
-    "target": "ES2017",
     "allowJs": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": "./",
+    "module": "esnext",
+    "noImplicitAny": false,
+    "noUnusedLocals": true,
+    "outDir": "./public/",
+    "target": "ES2019"
   }
 }
-

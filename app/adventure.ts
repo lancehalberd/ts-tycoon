@@ -1,0 +1,1098 @@
+import { damageActor, healActor, initializeActorForAdventure, isActorPaused, updateActorFrame } from 'app/actor';
+import { updateAdventureButtons } from 'app/adventureButtons';
+import { getEndlessLevel, showAreaMenu } from 'app/areaMenu';
+import {
+    recomputeDirtyStats, removeBonusSourceFromObject, setStat,
+} from 'app/bonuses';
+import { baseDivinity, gainEndlessExperience, refreshStatsPanel, setSelectedCharacter, updateHero} from 'app/character';
+import { getSprite } from 'app/content/actors';
+import {
+    createAreaFromDefinition,
+    getAreaDefinition,
+    getLayer,
+    getPositionFromLocationDefinition,
+} from 'app/content/areas';
+import { cutscenes } from 'app/content/cutscenes';
+import { clearEndlessAreaMinimap, generateEndlessZone, highlightEndlessArea } from 'app/content/endlessZone';
+import { addAreaFurnitureBonuses } from 'app/content/furniture';
+import { instantiateLevel } from 'app/content/levels';
+import { map } from 'app/content/mapData';
+import { getMonsterDefinitionAreaEntity, makeMonster } from 'app/content/monsters';
+import { getZone } from 'app/content/zones';
+import { setContext } from 'app/context';
+import { editingAreaState, refreshPropertyPanel } from 'app/development/editArea';
+import { query } from 'app/dom';
+import { drawBoardBackground } from 'app/drawBoard';
+import { expireTimedEffects } from 'app/effects';
+import { unlockItemLevel } from 'app/equipmentCrafting';
+import { ADVENTURE_WIDTH, FRAME_LENGTH, MIN_SLOW, MIN_Z, MAX_Z, RANGE_UNIT } from 'app/gameConstants';
+import { increaseAgeOfApplications } from 'app/heroApplication';
+import { animaLootDrop, coinsLootDrop } from 'app/loot';
+import { setActorInteractionTarget } from 'app/main';
+import { moveActor } from 'app/moveActor';
+import { updateActorHelpText } from 'app/popup';
+import { updateActorAnimationFrame } from 'app/render/drawActor';
+import { appendTextPopup, applyAttackToTarget, findActionByTag, getBasicAttack, performAttackProper } from 'app/performAttack';
+import { gain } from 'app/points';
+import { saveGame } from 'app/saveGame';
+import { getState, guildGateEntrance } from 'app/state';
+import { DialogueBox } from 'app/ui/DialogueBox';
+import {
+    canUseReaction, canUseSkillOnTarget, gainReflectionBarrier,
+    isTargetInRangeOfSkill,
+    prepareToUseSkillOnTarget, shouldUseSkillOnTarget, useReaction, useSkill
+} from 'app/useSkill';
+import { abbreviate } from 'app/utils/formatters';
+import { ifdefor } from 'app/utils/index';
+import { isMouseDown } from 'app/utils/mouse';
+import { playSound } from 'app/utils/sounds';
+
+import {
+    Actor, Area, AreaDefinition, AreaEntity, BonusSource, Character, Exit,
+    Hero, Level, LevelData, LevelDifficulty, Monster, MonsterDefinition, MonsterSpawn,
+    ZoneType,
+} from 'app/types';
+
+
+export function limitZ(zValue: number, radius: number = 0): number {
+    return Math.max(MIN_Z + radius, Math.min(MAX_Z - radius, zValue));
+}
+export function startLevel(character: Character, index: string) {
+    if (!map[index]) {
+        throw new Error('No level found for ' + index);
+    }
+
+    if (character.currentLevelKey !== index) {
+        character.board.boardPreview = null;
+        drawBoardBackground(character.boardContext, character.board);
+    }
+    const hero = character.hero;
+    hero.heading = [1, 0, 0];
+    character.currentLevelKey = index;
+    // const levelCompleted = !!character.divinityScores[index];
+    const difficultyCompleted = !!(character.levelTimes[index] || {})[character.levelDifficulty];
+    leaveCurrentArea(hero, true);
+    // Can't bring minions with you into new areas.
+    (hero.minions || []).forEach(removeActor);
+    hero.boundEffects = [];
+    // Effects don't persist accross areas.
+    removeAdventureEffects(hero);
+    if (character.levelDifficulty === 'endless') {
+        hero.levelInstance = instantiateLevel(map[index], character.levelDifficulty, difficultyCompleted, getEndlessLevel(character, map[index]));
+    } else {
+        hero.levelInstance = instantiateLevel(map[index], character.levelDifficulty, difficultyCompleted);
+    }
+    for (const action of hero.actions.concat(hero.reactions)) {
+        action.readyAt = 0;
+    }
+    enterArea(hero, hero.levelInstance.entrance);
+    if (getState().selectedCharacter === character) {
+        updateAdventureButtons();
+    }
+    saveGame();
+}
+
+const activeAreas: {[key: string]: Area} = {};
+export function getArea(zoneKey: ZoneType, areaKey: string, reset: boolean = false): Area {
+    if (!zoneKey || !areaKey) {
+        return;
+    }
+    const fullKey = `${zoneKey}:${areaKey}`;
+    if (!reset && activeAreas[fullKey]) {
+        return activeAreas[fullKey];
+    }
+    const zone = getZone(zoneKey);
+    if (!zone) {
+        return;
+    }
+    if (!zone[areaKey]) {
+        console.log('Missing area', areaKey, zone);
+        // debugger;
+        return;
+    }
+    const area: Area = activeAreas[fullKey] = createAreaFromDefinition(areaKey, zone[areaKey]);
+    addMonstersFromAreaDefinition(area);
+    return area;
+}
+
+export function addMonstersFromAreaDefinition(area: Area) {
+    const zone = getZone(area.zoneKey);
+    const areaDefinition: AreaDefinition = zone[area.key];
+    area.enemies = [];
+    addMonstersToAreaFromDefinitions(area, (areaDefinition.monsters || []).filter(monster => !monster.isTriggered));
+}
+
+export function addMonstersToAreaFromDefinitions(area: Area, definitions: MonsterDefinition[]) {
+    const monsterSpawns: MonsterSpawn[] = definitions.map(monster => {
+        return {
+            ...monster,
+            definition: monster,
+            location: getPositionFromLocationDefinition(area, getMonsterDefinitionAreaEntity(area, monster), monster.location),
+            // By default monsters face left, but they can be flipped to face right.
+            heading: [monster.location.flipped ? 1 : -1, 0, 0],
+        };
+    });
+    addMonstersToArea(area, monsterSpawns);
+}
+
+export function triggerTargets(this: void, area: Area, targetKeys: string[], cutsceneKey: string, toggleState: boolean): void {
+    for (const key of targetKeys) {
+        const object = area.objectsByKey[key];
+        object?.onTrigger?.(toggleState);
+    }
+    const areaDefinition = getAreaDefinition(area);
+    const triggeredMonsters = (areaDefinition.monsters || []).filter(
+        monster => monster.isTriggered && targetKeys.includes(monster.triggerKey)
+    );
+    addMonstersToAreaFromDefinitions(area, triggeredMonsters);
+    if (cutsceneKey) {
+        if (!cutscenes[cutsceneKey]) {
+            console.error('Missing cutscene', cutsceneKey);
+        } else {
+            cutscenes[cutsceneKey].run();
+        }
+    }
+}
+
+export function enterArea(actor: Actor, {x, z, areaKey, objectKey, zoneKey}: Exit) {
+    if (areaKey === 'worldMap' && actor.type === 'hero') {
+        returnToMap(actor.character);
+        return;
+    }
+    let area: Area;
+    zoneKey = zoneKey || ((actor.owner || actor).area ? (actor.owner || actor).area.zoneKey : null);
+    // Someday all areas will have a `zoneKey` and we will be able to remove this block.
+    if (zoneKey) {
+        const [endless, levelString, radiusString, thetaIString] = zoneKey.split(':');
+        const level = Number(levelString);
+        const radius = Number(radiusString);
+        const thetaI = Number(thetaIString);
+        if (endless !== 'endless') {
+            area = getArea(zoneKey, areaKey);
+        } else if (level === 0) {
+            area = getArea('guild', 'endlessAdventure');
+        } else {
+            let character: Character = null;
+            if (actor.type === 'hero') {
+                character = actor.character;
+            }
+            if (actor.owner && actor.owner.type === 'hero') {
+                character = actor.owner.character;
+            }
+            if (!character) {
+                console.error('This actor does not have access to endless zones', actor);
+                debugger;
+                return;
+            }
+            if (character.endlessZone?.key !== zoneKey) {
+                // This will instantiate all areas in the zone, so no further initialization needs to
+                // done after generating the zone.
+                character.endlessZone = generateEndlessZone(
+                    character.endlessSeed,
+                    { thetaI, radius, level }
+                );
+            }
+            if (!objectKey && !areaKey) {
+                console.error('Missing objectKey and areaKey when moving to endlessZone');
+                debugger;
+                return;
+            }
+            if (areaKey) {
+                area = character.endlessZone.areas[areaKey];
+                if (!area) {
+                    console.error('Missing endless zone area', character.endlessZone, areaKey);
+                    debugger;
+                    return;
+                }
+            } else {
+                for (const checkArea of Object.values(character.endlessZone.areas)) {
+                    if (checkArea.objectsByKey[objectKey]) {
+                        area = checkArea;
+                    }
+                }
+            }
+            if (!area) {
+                console.error('Failed to find endless zone area', character.endlessZone, {areaKey, objectKey, zoneKey});
+                debugger;
+                return;
+            }
+            if (character === getState().selectedCharacter) {
+                character.endlessAreasVisited[area.zoneKey + ':' + area.key] = true;
+                highlightEndlessArea(character, area);
+            }
+        }
+    } else {
+        const levelInstance: Level = (actor.owner || actor).levelInstance;
+        if (!levelInstance) {
+            console.log('Warning, could not determine what zone to enter.');
+            debugger;
+            return;
+        }
+        area = levelInstance.areas.get(areaKey);
+    }
+    const oldArea = actor.area;
+    leaveCurrentArea(actor);
+    const state = getState();
+
+    // If the player enters an area that is not part of their current mission, end the mission.
+    // This will only happen if they exit the mission or use the editor to jump to a new zone.
+    if (actor.type === 'hero' && actor.character.mission && actor.character.mission.parameters.zoneKey !== area.zoneKey) {
+        actor.character.mission = null;
+    }
+    if (actor.type === 'hero' && actor.character.endlessZone?.key !== area.zoneKey) {
+        clearEndlessAreaMinimap();
+    }
+    if (area.zoneKey === 'guild') {
+        // Heal+restore cooldowns on switching guild areas.
+        initializeActorForAdventure(actor);
+        if (actor.type === 'hero') {
+            const character = actor.character;
+            if (character === state.selectedCharacter) {
+            }
+        }
+        if (!state.savedState.unlockedGuildAreas[area.key]) {
+            // If no allies are in a locked guild area, refresh the monsters.
+            if (!area.allies.length) {
+                addMonstersFromAreaDefinition(area);
+            }
+        } else {
+            // If the area is unlocked, make sure we don't include any enemies.
+            area.enemies = [];
+        }
+    }
+    // This can be uncommented to allow minions to follow you through areas.
+    (actor.minions || []).forEach(minion => enterArea(minion, {x:x + actor.heading[0] * 10, z: z - 90, areaKey}));
+    // Any effects bound to the hero should be added to the area they have entered.
+    (actor.boundEffects || []).forEach(effect => {
+        effect.area = area;
+        area.effects.push(effect);
+    });
+    actor.area = area;
+
+    // Update hero when changing zones, as some bonuses only apply to certain zones.
+    if (actor.type === 'hero' && (!oldArea || oldArea.zoneKey !== actor.area.zoneKey)) {
+        updateHero(actor);
+    }
+    if (objectKey) {
+        const object = area.objectsByKey[objectKey];
+        if (!object) {
+            console.error('missing object', objectKey, area);
+            debugger;
+        } else {
+            const target = object.getAreaTarget();
+            z = target.z;
+            if (target.x < 25) {
+                x = target.x + 32;
+            } else if (target.x > area.width - 25) {
+                x = target.x - 32;
+            } else if (target.z > 0) {
+                x = target.x;
+                z = target.z - 32;
+            } else {
+                x = target.x;
+                z = target.z + 32;
+            }
+        }
+    }
+    actor.x = x;
+    actor.y = 0;
+    actor.z = z;
+    // Just in case, make sure the character doesn't get set out of bounds.
+    actor.z = limitZ(actor.z, actor.d / 2);
+    // state.selectedCharacter is not set when initializing or loading a save file.
+    if (state.selectedCharacter && actor === state.selectedCharacter.hero) {
+        area.cameraX = Math.round(Math.max(0, Math.min(area.width - ADVENTURE_WIDTH, actor.x - ADVENTURE_WIDTH / 2)));
+        updateAdventureButtons();
+        // Have the sprite immediately follow the actor to new areas so that she appears
+        // at the start of missions.
+        updateSprite(area, actor, 0);
+        // Update editing property panel when area changes so it doesn't become stale.
+        if (editingAreaState.isEditing) {
+            editingAreaState.selectedLayer = null;
+            editingAreaState.selectedTiles = null;
+            refreshPropertyPanel();
+        }
+    }
+    editingAreaState.cameraX = area.cameraX;
+    editingAreaState.selectedObject = null;
+    editingAreaState.selectedMonsterIndex = -1;
+    if (isNaN(actor.x) || isNaN(actor.z)) {
+        debugger;
+    }
+    area.allies.push(actor);
+    actor.allies = area.allies;
+    actor.enemies = area.enemies;
+    if (actor.type === 'hero') {
+        actor.activity = {type: 'none'};
+    }
+}
+export function addMonstersToArea(
+    area: Area,
+    monsters: MonsterSpawn[],
+    extraBonuses: BonusSource[] = [],
+    specifiedRarity = 0
+) {
+    for (const monsterData of (monsters || [])) {
+        const bonusSources = [...(monsterData.bonusSources || []), ...extraBonuses];
+        const rarity = monsterData.rarity || specifiedRarity;
+        const newMonster = addMonsterToArea(
+            area, monsterData.key, monsterData.level, monsterData.location,
+            bonusSources, rarity
+        );
+        newMonster.definition = monsterData.definition;
+        newMonster.heading = monsterData.heading;
+        newMonster.isTarget = monsterData.isTarget;
+    }
+}
+export function addMonsterToArea(area: Area, key: string, level: number, location: {x: number, y: number, z: number}, bonusSources: BonusSource[] = [], rarity = 0): Monster {
+    const newMonster = makeMonster(area, key, level, bonusSources, rarity);
+    newMonster.heading = [-1, 0, 0];
+    newMonster.x = location.x;
+    newMonster.y = location.y;
+    newMonster.z = location.z;
+    newMonster.area = area;
+    initializeActorForAdventure(newMonster);
+    newMonster.time = 0;
+    newMonster.allies = newMonster.area.enemies;
+    newMonster.enemies = newMonster.area.allies;
+    newMonster.allies.push(newMonster);
+    return newMonster;
+}
+function checkIfActorDied(actor: Actor) {
+    const area = actor.area;
+    // The actor who has stopped time cannot die while the effect is in place.
+    if (area.timeStopEffect && area.timeStopEffect.actor === actor) {
+        return;
+    }
+    // If the actor is about to die, check to activate their temporal shield if they have one.
+    const stopTimeAction = findActionByTag(actor.reactions, 'stopTime');
+    if (actor.targetHealth <= 0 && stopTimeAction && canUseReaction(actor, stopTimeAction, null)) {
+        useReaction(actor, stopTimeAction, null);
+        return;
+    }
+    // Actor has not died if they are already dead, have postiive health, cannot die or are currently being pulled.
+    if (actor.isDead || actor.health > 0 || actor.pull) {
+        return;
+    }
+    // The actor has actually died, mark them as such and begin their death FrameAnimation and drop spoils.
+    actor.isDead = true;
+    actor.timeOfDeath = actor.time;
+    // Call on death effects for monsters that have them.
+    if (actor.type === 'monster' && actor.base.onDeath) {
+        actor.base.onDeath(actor);
+    }
+    // Each enemy that is a main character should gain experience when this actor dies.
+    actor.enemies.forEach(enemy => enemy.type === 'hero' && defeatedEnemy(enemy, actor));
+}
+
+function timeStopLoop(area: Area) {
+    if (!area.timeStopEffect) {
+        return false;
+    }
+    const actor = area.timeStopEffect.actor;
+    const delta = FRAME_LENGTH / 1000;
+    actor.time += delta;
+    actor.temporalShield -= delta;
+    if (actor.temporalShield <= 0 || actor.targetHealth > 0) {
+        area.timeStopEffect = null;
+        return false;
+    }
+    processStatusEffects(actor);
+    // The enemies of the time stopper can still die. This wil stop their life
+    // bars from going negative.
+    for (const enemy of actor.enemies) {
+        checkIfActorDied(enemy);
+    }
+    expireTimedEffects(actor);
+    runActorLoop(actor);
+    moveActor(actor);
+    capHealth(actor);
+    updateActorAnimationFrame(actor);
+    return true;
+}
+export function actorCanOverHeal(actor: Actor) {
+    return (actor.stats.overHeal > 0)
+        || (actor.stats.overHealReflection > 0 && actor.reflectBarrier < actor.maxReflectBarrier);
+}
+function capHealth(actor: Actor) {
+    if (actor.targetHealth < actor.health) {
+        // Life is lost at a rate dictated by the actors tenacity.
+        var healthLostPerFrame = actor.stats.maxHealth * FRAME_LENGTH / (actor.stats.tenacity * 1000);
+        // Lost health each frame until actor.health === actor.targetHealth.
+        actor.health = Math.max(actor.targetHealth, actor.health - healthLostPerFrame);
+    } else actor.health = actor.targetHealth; //Life gained is immediately applied
+    // Apply overhealing if the actor is over their health cap and possesses overhealing.
+    var excessHealth = actor.health - actor.stats.maxHealth;
+    if (actor.stats.overHeal && excessHealth > 0) {
+        setStat(actor.variableObject, 'bonusMaxHealth', (actor.stats.bonusMaxHealth || 0) + actor.stats.overHeal * excessHealth);
+    }
+    if (actor.stats.overHealReflection && excessHealth > 0) {
+        gainReflectionBarrier(actor, actor.stats.overHealReflection * excessHealth);
+    }
+    actor.health = Math.min(actor.stats.maxHealth, Math.max(0, actor.health));
+    actor.percentHealth = actor.health / actor.stats.maxHealth;
+    actor.targetHealth = Math.min(actor.stats.maxHealth, actor.targetHealth);
+    if (!actor.enemies.length && actor.stats.bonusMaxHealth) {
+        actor.stats.bonusMaxHealth *= .99;
+    }
+    actor.percentTargetHealth = actor.targetHealth / actor.stats.maxHealth;
+}
+// Remove bound effects from an area. Called when the actor dies or leaves the area.
+function removeBoundEffects(actor: Actor, area: Area, finishEffect = false) {
+    (actor.boundEffects || []).forEach(effect => {
+        const index = area.effects.indexOf(effect);
+        if (index >= 0) {
+            area.effects.splice(index, 1);
+        }
+        if (finishEffect && effect.finish) {
+            effect.finish();
+        }
+    });
+    if (finishEffect) {
+        actor.boundEffects = [];
+    }
+}
+export function removeActor(actor: Actor) {
+    if (actor.owner) {
+        const minionIndex = actor.owner.minions.indexOf(actor);
+        if (minionIndex >= 0) actor.owner.minions.splice(minionIndex, 1);
+    }
+    if (actor.area) {
+        removeBoundEffects(actor, actor.area, true);
+    }
+    const index = actor.allies.indexOf(actor);
+    // When a character with minions exits to the world map, this method is called on minions
+    // after they are already removed from the area, so they won't be in the list of allies already.
+    if (index < 0) return;
+    actor.allies.splice(index, 1);
+    if (actor.type === 'hero') {
+        const character = actor.character;
+        const area = actor.area;
+        if (area.zoneKey) {
+            removeAdventureEffects(actor);
+            enterArea(actor, actor.escapeExit || guildGateEntrance);
+            return;
+        }
+        const level = actor.levelInstance;
+        if (level.levelDifficulty === 'endless') {
+            const currentEndlessLevel = getEndlessLevel(character, map[character.currentLevelKey]);
+            character.levelTimes[character.currentLevelKey][level.levelDifficulty] = currentEndlessLevel - 1;
+        }
+        returnToMap(actor.character);
+        if (actor.character === getState().selectedCharacter && !actor.character.replay) {
+            showAreaMenu();
+        }
+    }
+}
+
+function unlockGuildArea(guildArea: Area) {
+    getState().savedState.unlockedGuildAreas[guildArea.key] = true;
+    // Now that the guild area is unlocked the furniture bonuses should apply.
+    addAreaFurnitureBonuses(guildArea, true);
+    saveGame();
+}
+
+function updateAllActorDetails(area: Area): void {
+    const everybody = area.allies.concat(area.enemies);
+    everybody.forEach(updateActorFrame);
+    everybody.forEach(updateActorHelpText);
+}
+
+// Special update logic for the sprite which just follow the hero around.
+export function updateSprite(area: Area, hero: Hero, delta: number) {
+    if (area.timeStopEffect && area.timeStopEffect.actor !== hero) {
+        return;
+    }
+    const sprite = getSprite();
+    const targetX = (hero.heading[0] > 0) ? (hero.x - hero.w - sprite.w / 2) : (hero.x + hero.w + sprite.w / 2);
+    if (sprite.area !== area) {
+        sprite.area = area;
+        sprite.x = targetX;
+        sprite.z = hero.z;
+    }
+    if (sprite.x < targetX) {
+        sprite.x = Math.min(targetX, sprite.x + 2);
+    } else  if (sprite.x > targetX) {
+        sprite.x = Math.max(targetX, sprite.x - 2);
+    }
+    // Only change heading if the sprite is still not at the target location.
+    // This keeps the sprite from flipping rapidly when the hero backs up slightly.
+    if (sprite.x < targetX) {
+        sprite.heading = [1, 0, 0];
+    } else if (sprite.x > targetX) {
+        sprite.heading = [-1, 0, 0];
+    } else {
+        sprite.heading = hero.heading;
+    }
+    if (sprite.z < hero.z) {
+        sprite.z = Math.min(hero.z, sprite.z + 2);
+    } else if (sprite.z > hero.z) {
+        sprite.z = Math.max(hero.z, sprite.z - 2);
+    }
+    sprite.time += delta;
+    updateActorAnimationFrame(sprite);
+    updateActorFrame(sprite);
+}
+
+export function updateArea(area: Area) {
+    if (area.zoneKey === 'guild' && !getState().savedState.unlockedGuildAreas[area.key] && !area.enemies.length && area.allies.some(actor => !actor.isDead)) {
+        unlockGuildArea(area);
+    }
+    const delta = FRAME_LENGTH / 1000;
+    let everybody = area.allies.concat(area.enemies);
+    // The sprite follows the selected character to any area.
+    const hero = getState().selectedCharacter.hero;
+    // Sprite continues updating during time stop effects if they belong to the hero
+    if (area.allies.indexOf(hero) >= 0) {
+        updateSprite(area, hero, delta);
+    }
+    if (timeStopLoop(area)) {
+        updateAllActorDetails(area);
+        return;
+    }
+    // Advance subjective time of area and each actor.
+    area.time += delta;
+    // Speed up time for actors when no enemies are around to heal+reduce cool downs
+    // after each area is cleared of monsters. Could make this something that the
+    // player can toggle on, but it will hurt dark knight when I reduce max health
+    // bonus when no monsters are around.
+    //var multiplier = area.enemies.length ? 1 : 10;
+    for (const actor of everybody) actor.time += delta;// * multiplier;
+    everybody.forEach(processStatusEffects);
+    for (const enemy of area.enemies) {
+        checkIfActorDied(enemy);
+        expireTimedEffects(enemy);
+    }
+    for (const ally of area.allies) {
+        checkIfActorDied(ally);
+        expireTimedEffects(ally);
+    }
+    for (const layer of area.layers) {
+        for (const object of layer.objects) {
+            if (object.update) {
+                object.update();
+            }
+        }
+    }
+    area.allies.forEach(runActorLoop);
+    area.enemies.forEach(runActorLoop);
+    // A skill may have removed an actor from one of the allies/enemies array, so remake everybody.
+    everybody = area.allies.concat(area.enemies);
+    everybody.forEach(actor => moveActor(actor, false));
+    // This may have changed if actors left the area.
+    everybody = area.allies.concat(area.enemies);
+    for (let i = 0; i < area.projectiles.length; i++) {
+        area.projectiles[i].update();
+        if (area.projectiles[i].done) area.projectiles.splice(i--, 1);
+    }
+    for (let i = 0; i < area.effects.length; i++) {
+        const effect = area.effects[i];
+        effect.update();
+        // If the effect was removed from the array already (when a song follows its owner between areas)
+        // we need to decrement i to not skip the next effect.
+        if (effect !== area.effects[i]) {
+            i--;
+        } else {
+            if (area.effects[i].done) area.effects.splice(i--, 1);
+        }
+    }
+    for (let i = 0; i < area.treasurePopups.length; i++) {
+        area.treasurePopups[i].update(area.treasurePopups[i]);
+        if (area.treasurePopups[i].done) area.treasurePopups.splice(i--, 1);
+    }
+    for (let i = 0; i < area.textPopups.length; i++) {
+        const textPopup = area.textPopups[i];
+        textPopup.y += ifdefor(textPopup.vy, -1);
+        textPopup.x += (textPopup.vx || 0);
+        textPopup.duration = ifdefor(textPopup.duration, 35);
+        textPopup.vy += ifdefor(textPopup.gravity, -.5);
+        if (textPopup.duration-- < 0) area.textPopups.splice(i--, 1);
+    }
+    for (const actor of everybody) {
+        if (actor.timeOfDeath < actor.time - 1) {
+            removeActor(actor);
+            continue;
+        }
+        capHealth(actor);
+    }
+    everybody.forEach(updateActorAnimationFrame);
+    updateAllActorDetails(area);
+}
+function processStatusEffects(target: Actor) {
+    if (target.isDead ) return;
+    const delta = FRAME_LENGTH / 1000;
+    // Apply DOT, movement effects and other things that happen to targets here.
+    // Target becomes 50% less slow over 1 second, or loses .1 slow over one second, whichever is faster.
+    if (target.slow) {
+        target.slow = Math.max(0, Math.min(target.slow - .5 * target.slow * delta, target.slow - .1 * delta));
+    }
+    healActor(target, (target.stats.healthRegen || 0) * delta);
+    damageActor(target, (target.stats.damageOverTime || 0) * delta);
+    if (target.pull && target.dominoAttackStats) {
+        for (let i = 0; i < target.allies.length; i++) {
+            const ally = target.allies[i];
+            if (ally === target || ally.x < target.x || target.x + target.w < ally.x) continue;
+            applyAttackToTarget(target.dominoAttackStats, ally);
+            target.dominoAttackStats = null;
+            target.pull = null;
+            target.stunned = Math.max(target.time + .3, target.stunned);
+            break;
+        }
+    }
+    if (target.pull && (target.pull.delay || 0) < target.time) {
+        if (!target.pull.duration) {
+            target.pull.duration = target.pull.time - target.time;
+        }
+        if (target.pull.attackStats) {
+            performAttackProper(target.pull.attackStats, target);
+            target.pull.attackStats = null;
+        }
+        const timeLeft = (target.pull.time - target.time);
+        const radius = target.pull.duration / 2
+        const parabolaValue = (radius**2 - (timeLeft - radius)**2) / (radius ** 2);
+        // Don't let the pull push actors out of bounds.
+        target.pull.z = limitZ(target.pull.z);
+        const left = (target.area.leftWall ? 16 + target.pull.z / 4 : 0) + target.w / 2;
+        const right = (target.area.rightWall ? -16 - target.pull.z / 4 : 0) + target.area.width - target.w / 2;
+        target.pull.x = Math.max(left, Math.min(right, target.pull.x));
+        if (timeLeft > 0) {
+            const dx = (target.pull.x - target.x) * Math.min(1, delta / timeLeft);
+            const dz = (target.pull.z - target.z) * Math.min(1, delta / timeLeft);
+            const dr = (0 - target.rotation) * Math.min(1, delta / timeLeft);
+            target.rotation += dr;
+            const damage = target.pull.damage * Math.min(1, delta / timeLeft);
+            target.pull.damage -= damage;
+            target.x += dx;
+            target.z += dz;
+            const baseY = (target.type === 'monster') && target.baseY || 0;
+            const dy = target.pull.y || 0 - baseY;
+            target.y = baseY + dy * parabolaValue;
+            damageActor(target, damage);
+        } else {
+            target.rotation = 0;
+            target.x = target.pull.x;
+            target.z = target.pull.z;
+            target.y = (target.type === 'monster') && target.baseY || 0;
+            damageActor(target, target.pull.damage);
+            if (target.pull.action) {
+                prepareToUseSkillOnTarget(target, target.pull.action, target.pull.target);
+                target.pull.action.totalPreparationTime = 0;
+            }
+            target.pull = null;
+        }
+        // End the pull if the target hits something.
+        for (const object of getLayer(target.area, 'field').objects) {
+            if (object.isSolid === false || !object.getAreaTarget) continue;
+            const distance = getDistanceOverlap(target, object.getAreaTarget());
+            if (distance <= -8) {
+                target.pull = null;
+                target.y = (target.type === 'monster') && target.baseY || 0;
+                target.rotation = 0;
+                break;
+            }
+        }
+    }
+    if (target.stunned && target.stunned <= target.time) {
+        target.stunned = null;
+    }
+}
+export function getAllInRange(x: number, range: number, targets: Actor[]) {
+    const targetsInRange = [];
+    for (let i = 0; i < targets.length; i++) {
+        if (Math.abs(targets[i].x - x) <= range * RANGE_UNIT) {
+            targetsInRange.push(targets[i]);
+        }
+    }
+    return targetsInRange
+}
+function runActorLoop(actor: Actor) {
+    const area = actor.area;
+    if (!actor.dialogueBox && actor.dialogueMessages?.length) {
+        const db = new DialogueBox();
+        db.message = actor.dialogueMessages.shift();
+        db.run(actor);
+    }
+    if (actor.dialogueBox) {
+        actor.dialogueBox.update();
+    }
+    actor.boundEffects = actor.boundEffects.filter(effect => !effect.done);
+    if (actor.isDead || actor.stunned || actor.pull || actor.chargeEffect) {
+        actor.skillInUse = null;
+        return;
+    }
+    if (actor.skillInUse) {
+        const actionDelta = FRAME_LENGTH / 1000 * Math.max(MIN_SLOW, 1 - actor.slow);
+        if (actor.preparationTime <= actor.skillInUse.totalPreparationTime) {
+            actor.preparationTime += actionDelta;
+            if (actor.preparationTime >= actor.skillInUse.totalPreparationTime) {
+                actor.preparationTime++; // make sure this is strictly greater than totalPreparation time.
+                useSkill(actor);
+            }
+            return;
+        } else if (actor.recoveryTime < actor.totalRecoveryTime) {
+            actor.recoveryTime += actionDelta;
+            return;
+        } else {
+            actor.skillInUse = null;
+            if (isActorPaused(actor) && !isMouseDown()) {
+                actor.activity = {type: 'none'};
+            }
+        }
+    }
+    if (actor.type === 'hero' && actor.activity.type !== 'none') {
+        switch (actor.activity.type) {
+            case 'attack':
+                if (actor.activity.target.isDead) {
+                    actor.activity = {type: 'none'};
+                } else {
+                    const target = actor.activity.target;
+                    // If the actor is in manual mode, only do auto attacks.
+                    if (isActorPaused(actor)) {
+                        const basicAttack = getBasicAttack(actor);
+                        if (!basicAttack) {
+                            actor.activity = {type: 'none'};
+                            break;
+                        }
+                        if (!canUseSkillOnTarget(actor, basicAttack, target)) break;
+                        if (!isTargetInRangeOfSkill(actor, basicAttack, target)) break;
+                        prepareToUseSkillOnTarget(actor, basicAttack, target);
+                    } else {
+                        checkToUseSkillOnTarget(actor, target);
+                    }
+                }
+                break;
+            case 'action':
+                const action = actor.activity.action;
+                const target = actor.activity.target;
+                // console.log([actor, action, target]);
+                // console.log('valid target? ' + canUseSkillOnTarget(actor, action, target));
+                if (!canUseSkillOnTarget(actor, action, target)) {
+                    actor.activity = {type: 'none'};
+                    break;
+                }
+                // console.log('in range? ' + isTargetInRangeOfSkill(actor, action, target));
+                if (!isTargetInRangeOfSkill(actor, action, target)) break;
+                prepareToUseSkillOnTarget(actor, action, target);
+                actor.activity = {type: 'none'};
+                break;
+        }
+        return;
+    } else if (actor.type === 'hero' && actorShouldAutoplay(actor) && !actor.enemies.filter(enemy => enemy.targetHealth >= 0).length) {
+        // Code for intracting with chest/shrine at the end of level and leaving the area.
+        // Might want to sort these by X coord at some point.
+        for (const layer of area.layers){
+            for (const object of layer.objects) {
+                if (!object.getAreaTarget || !object.shouldInteract || !object.shouldInteract(actor)) {
+                    continue;
+                }
+                const objectTarget = object.getAreaTarget();
+                if (objectTarget.x < actor.x + 100
+                    || actor.consideredObjects.has(object)
+                    || (object.isEnabled && !object.isEnabled())
+                ) {
+                    continue;
+                }
+                // The AI only considers each object once.
+                actor.consideredObjects.add(object);
+                setActorInteractionTarget(actor, objectTarget);
+                break;
+            }
+        }
+    }
+    // Manual control doesn't use the auto targeting logic.
+    if (isActorPaused(actor)) {
+        return;
+    }
+    const targets: Actor[] = [];
+    for (const ally of actor.allies) {
+        ally.priority = getDistance(actor, ally) - 1000;
+        targets.push(ally);
+    }
+    for (const enemy of actor.enemies) {
+        enemy.priority = getDistance(actor, enemy);
+        // actor.skillTarget will hold the last target the actor tried to use a skill on.
+        // This lines causes the actor to prefer to continue attacking the same enemy continuously
+        // even if they aren't the closest target any longer.
+        if (enemy === actor.skillTarget) enemy.priority -= 100;
+        // If the enemy is not in aggro range, do not target it.
+        if (actor.aggroRadius && actor.aggroRadius < enemy.priority) {
+            continue;
+        }
+        targets.push(enemy);
+    }
+    // The main purpose of this is to prevent pulled actors from passing through their enemies.
+    // Character is assumed to not be blocked each frame
+    // Target the enemy closest to you, not necessarily the one previously targeted.
+    targets.sort(function (A, B) {
+        return A.priority - B.priority;
+    });
+    for (const target of targets) {
+        if (checkToUseSkillOnTarget(actor, target)) {
+            break;
+        }
+    }
+    actor.cloaked = (actor.stats.cloaking && !actor.skillInUse);
+}
+function checkToUseSkillOnTarget(actor: Actor, target: Actor) {
+    const autoplay = actorShouldAutoplay(actor);
+    for(const action of ifdefor(actor.actions, [])) {
+        // Only basic attacks will be used by your hero when you manually control them.
+        if (!autoplay && !action.variableObject.tags['basic'] && actor.type === 'hero' &&
+            // If the player has set this skill to auto, then it will be used automatically during manual control.
+            !actor.character.autoActions[action.base.key]
+        ) {
+            continue;
+        }
+        // If the skill has been set to manual, it won't be used during autoplay.
+        if (autoplay && actor.type === 'hero' && actor.character.manualActions[action.base.key]) {
+            continue;
+        }
+        if (!canUseSkillOnTarget(actor, action, target)) {
+            // console.log("cannot use skill");
+            continue;
+        }
+        if (!isTargetInRangeOfSkill(actor, action, target)) {
+            continue;
+        }
+        if (!shouldUseSkillOnTarget(actor, action, target)) {
+            continue;
+        }
+        prepareToUseSkillOnTarget(actor, action, target);
+        return true;
+    }
+    return false;
+}
+
+export function actorShouldAutoplay(actor: Actor) {
+    if (actor.type !== 'hero') {
+        return true; // Only character heroes can be manually controlled.
+    }
+    return !actor.character.activeShrine
+        && actor.area && !actor.area.zoneKey
+        && (actor.character.autoplay || (actor.character !== getState().selectedCharacter && actor.enemies.length));
+}
+
+// The distance functions assume objects are circular in the x/z plane and are calculating
+// only distance within that plane, ignoring the height of objects and their y positions.
+export function getDistance(spriteA: AreaEntity, spriteB: AreaEntity) {
+    const distance = getDistanceOverlap(spriteA, spriteB);
+    return Math.max(0, distance);
+}
+export function getDistanceOverlap(spriteA: AreaEntity, spriteB: AreaEntity) {
+    const dx = spriteA.x - spriteB.x;
+    const dz = spriteA.z - spriteB.z;
+    const distance = Math.sqrt(dx*dx + dz*dz) - ((spriteA.w || 0) + (spriteB.w || 0)) / 2;
+    if (isNaN(distance)) {
+        console.log(JSON.stringify(['A:', spriteA.x, spriteA.y, spriteA.z, spriteA.w]));
+        console.log(JSON.stringify(['B:', spriteB.x, spriteB.y, spriteB.z, spriteB.w]));
+        debugger;
+    }
+    return distance;
+}
+window['getDistanceOverlap'] = getDistanceOverlap;
+export function getPlanarDistanceSquared(pointA, pointB) {
+    const dx = pointA.x - pointB.x;
+    const dz = pointA.z - pointB.z;
+    return dx * dx + dz * dz;
+}
+
+function defeatedEnemy(hero: Hero, enemy: Actor) {
+    if (hero.health <= 0) {
+        return;
+    }
+    const loot = [];
+    if (enemy.stats.coins) loot.push(coinsLootDrop(enemy.stats.coins));
+    if (enemy.stats.anima) loot.push(animaLootDrop(enemy.stats.anima));
+
+    // Any non-minion kill counts towards the defeated enemies total for missions.
+    if (hero.character.mission && !enemy.owner) {
+        hero.character.mission.defeatedEnemies++;
+    }
+    if (hero.character.mission && enemy.isTarget) {
+        hero.character.mission.defeatedTargets++;
+    }
+
+    const endlessZoneKey = hero.character.endlessZone?.key;
+    if (endlessZoneKey && endlessZoneKey === hero.area.zoneKey) {
+        const experience = Math.floor(100 * Math.pow(1.25, enemy.stats.level - hero.character.endlessLevel));
+        gainEndlessExperience(hero.character, experience);
+    }
+
+    loot.forEach(function (loot, index) {
+        loot.gainLoot(hero);
+        loot.addTreasurePopup(hero, enemy.x + index * 20, enemy.h, index * 10);
+        // If the last enemy is defeated in the boss area, the level is completed.
+    });
+    if (hero.area.isBossArea && hero.enemies.every(enemy => enemy.isDead)) {
+        // hero.time is set to 0 at the start of the level by initializeActorForAdventure.
+        completeLevel(hero);
+    }
+}
+
+export function completeLevel(hero: Hero, completionTime = 0) {
+    const character = hero.character;
+    completionTime = completionTime || hero.time;
+    const levelInstance = hero.levelInstance;
+    levelInstance.completed = true;
+    // If the character beat the last adventure open to them, unlock the next one
+    const level = map[character.currentLevelKey];
+    increaseAgeOfApplications();
+    const oldDivinityScore = ifdefor(character.divinityScores[character.currentLevelKey], 0);
+    if (oldDivinityScore === 0) {
+        character.fame += level.level;
+        gain('fame', level.level);
+    }
+    let newDivinityScore;
+    const currentEndlessLevel = getEndlessLevel(character, level);
+    if (levelInstance.levelDifficulty === 'endless') {
+        newDivinityScore = Math.max(10, Math.round(baseDivinity(currentEndlessLevel)));
+    } else {
+        const difficultyBonus = difficultyBonusMap[levelInstance.levelDifficulty];
+        let timeBonus = .8;
+        if (completionTime <= getGoldTimeLimit(level, levelInstance.levelDifficulty)) timeBonus = 1.2;
+        else if (completionTime <= getSilverTimeLimit(level, levelInstance.levelDifficulty)) timeBonus = 1;
+        newDivinityScore = Math.max(10, Math.round(difficultyBonus * timeBonus * baseDivinity(level.level)));
+    }
+    const gainedDivinity = newDivinityScore - oldDivinityScore;
+    if (gainedDivinity > 0) {
+        character.divinity += gainedDivinity;
+        const textPopup = {
+            value:'+' + abbreviate(gainedDivinity) + ' Divinity',
+            x: hero.x, y: hero.h, z: hero.z, color: 'gold', fontSize: 10,
+            'vx': 0, 'vy': 1, 'gravity': .1
+        };
+        appendTextPopup(hero.area, textPopup, true);
+        // Update the divinity display if this is the selected character.
+        if (hero === getState().selectedCharacter.hero) {
+            refreshStatsPanel();
+        }
+    }
+    character.divinityScores[character.currentLevelKey] = Math.max(oldDivinityScore, newDivinityScore);
+    // Initialize level times for this level if not yet set.
+    character.levelTimes[character.currentLevelKey] = character.levelTimes[character.currentLevelKey] || {};
+    if (levelInstance.levelDifficulty === 'endless') {
+        unlockItemLevel(currentEndlessLevel + 1);
+        character.levelTimes[character.currentLevelKey][levelInstance.levelDifficulty] = currentEndlessLevel + 5;
+    } else {
+        unlockItemLevel(level.level + 1);
+        const oldTime = character.levelTimes[character.currentLevelKey][levelInstance.levelDifficulty] || 99999;
+        character.levelTimes[character.currentLevelKey][levelInstance.levelDifficulty] = Math.min(completionTime, oldTime);
+    }
+    saveGame();
+}
+
+export function messageCharacter(character: Character, text: string) {
+    const hero = character.hero;
+    appendTextPopup(hero.area, {
+        'value': text, 'duration': 70, 'x': hero.x + 32, y: hero.h, z: hero.z,
+        color: 'white', fontSize: 10, 'vx': 0, 'vy': .5, 'gravity': .05
+    }, true);
+}
+
+export function returnToMap(character: Character) {
+    //character.hero.levelInstance = null
+    removeAdventureEffects(character.hero);
+    character.hero.goalTarget = null;
+    character.activeShrine = null;
+    leaveCurrentArea(character.hero, true);
+    // Can't bring minions with you to the world map.
+    (character.hero.minions || []).forEach(removeActor);
+    character.hero.boundEffects = [];
+    updateAdventureButtons();
+    if (character.autoplay && character.replay && character.currentLevelKey) {
+        startLevel(character, character.currentLevelKey);
+    } else if (getState().selectedCharacter === character) {
+        setContext('map');
+        refreshStatsPanel(character, query('.js-characterColumn .js-stats'));
+    } else {
+        character.context = 'map';
+    }
+}
+
+export function returnToGuild(character: Character, exit: Exit = guildGateEntrance) {
+    if (character.mission) {
+        if (character.mission.parameters.getCharacter) {
+            setSelectedCharacter(getState().characters[0]);
+        }
+        character.mission = null;
+    }
+    // If this was a temporary character, they have been deleted,
+    // and we can ignore the rest of this cleanup.
+    if (!character.hero) {
+        return;
+    }
+    removeAdventureEffects(character.hero);
+    character.hero.goalTarget = null;
+    character.activeShrine = null;
+    enterArea(character.hero, exit);
+    // Minions despawn when returning to the guild.
+    (character.hero.minions || []).forEach(removeActor);
+    character.hero.boundEffects = [];
+    if (getState().selectedCharacter === character) {
+        setContext('field');
+        refreshStatsPanel(character, query('.js-characterColumn .js-stats'));
+    } else {
+        character.context = 'field';
+    }
+}
+
+export function leaveCurrentArea(actor: Actor, leavingZone = false) {
+    if (!actor.area) {
+        return;
+    }
+    for (const objectKey in actor.area.objectsByKey) {
+        const object = actor.area.objectsByKey[objectKey];
+        if (object.cleanup) {
+            object.cleanup();
+        }
+    }
+    // If this is the currently selected character, make sure to cleanup any dialog boxes
+    // associated with characters in this area.
+    if (actor === getState().selectedCharacter?.hero) {
+        for (const ally of actor.area.allies) {
+            // This removes the dialogue boxes from the screen.
+            if (ally.dialogueBox) {
+                ally.dialogueBox.remove();
+            }
+            // Clear out any remaining dialogue, otherwise the character will just
+            // start speaking the next time we enter the area.
+            ally.dialogueMessages = [];
+        }
+    }
+    // If the current area is a safe guild area, it becomes the actors 'escape exit',
+    // where they will respawn next if they die.
+    if (actor.type === 'hero' && actor.area.zoneKey === 'guild' && !actor.area.enemies.length) {
+        // Only set escape exit from the field context, the cutscene context may put the actor in
+        // invalid locations while moving them between areas.
+        if (actor.character.context === 'field') {
+            actor.escapeExit = {x: actor.x, z: actor.z, areaKey: actor.area.key, zoneKey: 'guild'};
+        }
+    }
+    var allyIndex = actor.area.allies.indexOf(actor);
+    if (allyIndex >= 0) actor.area.allies.splice(allyIndex, 1);
+    (actor.minions || []).forEach(minion => leaveCurrentArea(minion, leavingZone));
+    removeBoundEffects(actor, actor.area, leavingZone);
+    actor.area = null;
+}
+
+export const difficultyBonusMap = {easy: 0.8, normal: 1, hard: 1.5, challenge: 2};
+export function getGoldTimeLimit(level: LevelData, difficulty: LevelDifficulty): number {
+    var sections = Math.max(level.events.length,  5 * Math.sqrt(level.level)) + 1;
+    return difficultyBonusMap[difficulty] * sections * (5 + level.level / 2);
+}
+export function getSilverTimeLimit(level: LevelData, difficulty: LevelDifficulty): number {
+    var sections = Math.max(level.events.length,  5 * Math.sqrt(level.level)) + 1;
+    return difficultyBonusMap[difficulty] * sections * (10 + level.level);
+}
+
+export function playAreaSound(sound: any, area: Area) {
+    if (getState().selectedCharacter.hero.area !== area ) return;
+    playSound(sound);
+}
+
+function removeAdventureEffects(actor: Actor) {
+    setStat(actor.variableObject, 'bonusMaxHealth', 0);
+    while (actor.allEffects.length) removeBonusSourceFromObject(actor.variableObject, actor.allEffects.pop(), false);
+    initializeActorForAdventure(actor);
+    recomputeDirtyStats(actor.variableObject);
+}

@@ -1,7 +1,7 @@
 const path = require('path');
 
 module.exports = {
-  entry: './src/client.ts',
+  entry: './app/client.ts',
   mode: 'development',
   module: {
     rules: [
@@ -15,7 +15,7 @@ module.exports = {
   resolve: {
     extensions: [ '.ts', '.js' ],
     alias: {
-      'app': path.resolve(__dirname, 'src')
+      'app': path.resolve(__dirname, 'app')
     },
   },
   output: {
