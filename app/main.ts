@@ -5,7 +5,7 @@ import {
     setChoosingTrophyAltar,
     trophySelectionRectangle,
 } from 'app/content/achievements';
-import { getUpgradingObject,getUpgradeRectangle, setUpgradingObject } from 'app/content/upgradeButton';
+import { getUpgradingObject,getUpgradeRectangle, setUpgradingObject } from 'app/ui/upgradeButton';
 import {
     editingAreaState,
     handleEditAreaClick,
@@ -97,6 +97,10 @@ mainCanvas.onmousedown = function (event) {
         case 'map':
             handleMapMouseDown(x, y, event);
             break;
+        case 'jewel':
+        case 'jewelCrafting':
+            handleCanvasClick(x, y);
+            break;
     }
 }
 
@@ -115,14 +119,19 @@ mainCanvas.addEventListener('mouseout', function (event) {
 function handleAdventureClick(x: number, y: number, event) {
     const state = getState();
     const hero = state.selectedCharacter.hero;
-    const canvasPopupTarget = getCanvasPopupTarget();
-    const selectedAction = getSelectedAction();
     if (hero.character.mission && !hero.character.mission.started) {
         return;
     }
     if (editingAreaState.isEditing) {
         return;
     }
+    handleCanvasClick(x, y);
+}
+export function handleCanvasClick(x: number, y: number) {
+    const state = getState();
+    const hero = state.selectedCharacter.hero;
+    const canvasPopupTarget = getCanvasPopupTarget();
+    const selectedAction = getSelectedAction();
     if (canvasPopupTarget) {
         if (selectedAction) {
             if (canvasPopupTarget.targetType === 'actor' && canUseSkillOnTarget(hero, selectedAction, canvasPopupTarget as Actor)) {

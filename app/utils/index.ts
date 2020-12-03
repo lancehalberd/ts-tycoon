@@ -68,20 +68,14 @@ export function getElementRectangle(element: HTMLElement, container = null): Sho
     return rect;
 }
 
-export function fillRectangle(context: CanvasRenderingContext2D, rectangle: FullRectangle, color: string = null) {
-    if (color) {
-        context.fillStyle = color;
-    }
-    context.fillRect(rectangle.left, rectangle.top, rectangle.width, rectangle.height);
-}
 export function fillRect(context: CanvasRenderingContext2D, {x, y, w, h}: ShortRectangle, color: string = null) {
     if (color) {
         context.fillStyle = color;
     }
     context.fillRect(x, y, w, h);
 }
-export function drawRectangle(context: CanvasRenderingContext2D, rectangle: FullRectangle) {
-    context.rect(rectangle.left, rectangle.top, rectangle.width, rectangle.height);
+export function drawRect(context: CanvasRenderingContext2D, rectangle: ShortRectangle) {
+    context.rect(rectangle.x, rectangle.y, rectangle.w, rectangle.h);
 }
 
 export function rectangle(left: number, top: number, width: number, height: number): FullRectangle {
@@ -92,10 +86,6 @@ export function r(x: number, y: number, w: number, h: number): ShortRectangle {
 }
 export function d(w: number, h: number): FrameDimensions {
     return {w, h};
-}
-export function shrinkRectangle(rectangle: FullRectangle, margin: number): FullRectangle {
-    return {'left': rectangle.left + margin, 'width': rectangle.width - 2 * margin,
-            'top': rectangle.top + margin, 'height': rectangle.height - 2 * margin};
 }
 export function pad({x, y, w, h}: ShortRectangle, m: number): ShortRectangle {
     return {x: x - m, w: w + 2 * m, y: y - m, h: h + 2 * m};

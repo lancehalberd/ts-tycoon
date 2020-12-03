@@ -3,10 +3,12 @@ import { updateAdventureButtons } from 'app/adventureButtons';
 import { hideAreaMenu } from 'app/areaMenu';
 import { refreshStatsPanel } from 'app/character';
 import { editingAreaState } from 'app/development/editArea';
-import { jewelsCanvas, query, queryAll, toggleElements } from 'app/dom';
+import { bookElement, jewelsCanvas, mainContext, query, queryAll, toggleElements } from 'app/dom';
+import { drawArea } from 'app/drawArea';
 import { drawBoardJewels } from 'app/drawBoard';
+import { ADVENTURE_WIDTH, ADVENTURE_HEIGHT } from 'app/gameConstants';
 import { stopDrag } from 'app/inventory';
-import { jewelInventoryState, stopJewelDrag } from 'app/jewelInventory';
+import { constrainBoard, jewelInventoryState, stopJewelDrag } from 'app/jewelInventory';
 import { setVisibleMapLevels } from 'app/map';
 import { hidePointsPreview } from 'app/points';
 import { removePopup, setCanvasPopupTarget } from 'app/popup';
@@ -28,12 +30,20 @@ export function setContext(context: GameContext): GameContext {
         stopDrag();
         removePopup();
     }
-    if (state.selectedCharacter.context === 'jewel') {
+    if (state.selectedCharacter.context === 'jewel' || state.selectedCharacter.context === 'jewelCrafting') {
         refreshStatsPanel(state.selectedCharacter, query('.js-characterColumn .js-stats'));
         stopJewelDrag();
         removePopup();
     }
     const currentContext = state.selectedCharacter.context;
+    if (currentContext !== 'field' && context === 'item' || context === 'jewel' || context === 'jewelCrafting') {
+        const area = state.selectedCharacter.hero.area;
+        if (area) {
+            drawArea(mainContext, area);
+        } else {
+            mainContext.fillRect(0, 0, ADVENTURE_WIDTH, ADVENTURE_HEIGHT);
+        }
+    }
     state.selectedCharacter.context = context;
     // If the player has no area, move them to the guild yard by default.
     if (context === 'field' && !state.selectedCharacter.hero.area) {
@@ -52,8 +62,15 @@ export function showContext(context: GameContext): void {
     jewelInventoryState.overJewel = null;
     jewelInventoryState.overVertex = null;
     const state = getState();
-    if (context === 'jewel') {
+    if (context === 'jewel' || context === 'jewelCrafting') {
+        // Make sure the board is visible in the canvas.
+        constrainBoard(state.selectedCharacter.board, jewelsCanvas, state.selectedCharacter.boardContext);
         drawBoardJewels(state.selectedCharacter, jewelsCanvas);
+    }
+    if (context === 'jewelCrafting') {
+        bookElement.style.left = '-480px';
+    } else {
+        bookElement.style.left = '0';
     }
     // Fade the black bars for the cutscene in/out
     const overlay = document.getElementsByClassName('js-cutsceneOverlay')[0] as HTMLElement;

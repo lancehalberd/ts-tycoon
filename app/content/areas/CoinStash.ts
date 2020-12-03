@@ -3,7 +3,7 @@ import {
     EditableAreaObject,
 } from 'app/content/areas';
 import { addFurnitureBonuses, removeFurnitureBonuses } from 'app/content/furniture';
-import { setUpgradingObject } from 'app/content/upgradeButton';
+import { setUpgradingObject } from 'app/ui/upgradeButton';
 import { editingAreaState } from 'app/development/editArea';
 import { titleDiv, bodyDiv } from 'app/dom';
 import { bonusSourceHelpText } from 'app/helpText';

@@ -117,108 +117,111 @@
             </div>
         </div>
 
-        <!-- CHARACTER STATS //-->
-        <div class="js-characterColumn displayColumn characterColumn js-jewelContext js-jewelCraftingContext js-itemContext js-enchantContext leftPanel topPanel">
-            <div class="js-stats stats playerBox">
-                <div style="position: absolute; left: 10px; top: 5px;">Level <span class="js-playerLevel">X</span> <span class="js-playerName controlBarEntry">X</span></div>
-                <canvas class="js-canvas js-previewCanvas" width="64" height="128" style="position: absolute; left: 5px; top: 20px;"></canvas>
-                <div>
-                    <span class="playerStat"><span helptext="Starting health for each adventure."><span class="icon health"></span> <span class="js-maxHealth">X</span></span>
-                    <span style="font-size: 12px" helptext="How fast your adventurer regenerates health.">(<span class="js-healthRegen" >X</span>)</span></span>
-                    <span class="playerStat" helptext="How famous this adventurer is. Famous adventurers are more powerful but also more expensive to hire.<br/> Hiring famous adventurers increases the fame of your guild.">
-                        <span class="icon fame"></span> <span class="js-fame">X</span>
-                    </span>
-                </div>
-                <div>
-                    <span class="playerStat"><span class="icon damage"></span> <span class="js-damage">X</span></span>
-                    <span helptext="Higher range will let you attack enemies safely from afar."><span class="icon range"></span> <span class="js-range">X</span></span>
-                </div>
-                <div>
-                    <span  class="playerStat"><span class="icon protection"></span> <span class="js-protection" style="margin-right: 5px;">X</span></span>
-                    <span  class="playerStat"><span class="icon protection"><span class="icon iconLayer magic" style="opacity: .7;"></span></span> <span class="js-resistance">X</span></span>
-                </div>
-                <div>
-                    <span class="playerStat"><span class="icon damage"><span class="icon iconLayer no" style="opacity: .7;"></span></span> <span class="js-evasion">X</span></span>
-                    <span class="playerStat" helptext="How fast your adventurer moves"><span class="icon speed"></span> <span class="js-speed">X</span></span>
-                </div>
-                <div style="float: right; margin-right: 5px; margin-top: 10px;"><button class="js-retire" style="display: none;" helptext="Permanently remove this adventurer from your guild.">Retire</button></div>
-                <div class="triStatBox">
-                    <div class="js-dexterity dexterity" helptext="Dexterity increases attack speed, evasion and damage with ranged weapons.">X</div>
-                    <div class="js-strength strength" helptext="Strength increases physical damage, health and damage with melee weapons.">X</div>
-                    <div class="js-intelligence intelligence" helptext="Intelligence increases accuracy, block and magic block and damage with magic weapons.">X</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- JEWEL BONUSES //-->
-        <div class="js-jewelBonuses js-jewelContext jewelBonuses leftPanel bottomPanel">
-            <div class="panelTitle" style="text-align: center;">Jewel Bonuses</div>
-            <div class="js-content"></div>
-        </div>
-
-        <!-- JEWEL INVENTORY //-->
-        <div class="displayColumn jewelColumn js-jewelContext rightPanel bottomPanel">
-            <div class="jewelOptions">
-                <button class="js-jewelSortRuby">Ruby</button>
-                <button class="js-jewelSortEmerald">Emerald</button>
-                <button class="js-jewelSortSaphire">Saphire</button>
-                <button class="js-jewelSortTopaz">Topaz</button>
-                <button class="js-jewelSortAquamarine">Aquamarine</button>
-                <button class="js-jewelSortAmethyst">Amethyst</button>
-                <br/>
-                <button class="js-jewelSortDiamond">Diamond</button>
-                <button class="js-jewelSortQuality">Quality</button>
-                Tier: <label class="js-jewelTier1 js-jewelTierLabel" helptext="Toggle display of Tier 1 (Level 1) Jewels"><input type="checkbox" checked="checked" value="1"/> 1</label>
-                <label class="js-jewelTier2 js-jewelTierLabel" helptext="Toggle display of Tier 2 (Level 10) Jewels"><input type="checkbox" checked="checked" value="2"/> 2</label>
-                <label class="js-jewelTier3 js-jewelTierLabel" helptext="Toggle display of Tier 3 (Level 20) Jewels"><input type="checkbox" checked="checked" value="3"/> 3</label>
-                <label class="js-jewelTier4 js-jewelTierLabel" helptext="Toggle display of Tier 4 (Level 40) Jewels"><input type="checkbox" checked="checked" value="4"/> 4</label>
-                <label class="js-jewelTier5 js-jewelTierLabel" helptext="Toggle display of Tier 5 (Level 60) Jewels"><input type="checkbox" checked="checked" value="5"/> 5</label>
-            </div>
-            <div class="js-jewelInventory jewel-inventory"></div>
-        </div>
-
-        <!-- JEWEL BOARD //-->
-        <div class="js-jewelColumn displayColumn js-jewelContext rightPanel topPanel">
-            <div class="js-jewelBoard jewelBoard">
-                <canvas class="js-canvas js-skillCanvas" width="320" height="320"></canvas>
-                <div class="js-augmentConfirmationButtons augmentConfirmationButtons">
-                    <button class="js-confirmSkill confirmSkill" helptext="Finalize augmentation"><span class="icon confirm"></span></button>
-                    <button class="js-cancelSkill cancelSkill" helptext="Cancel this augmentation"><span class="icon cancel"></span></button>
-                </div>
-            </div>
-        </div>
-
         <!-- JEWEL CRAFTING //-->
-        <div class="js-jewelPanel infoPanel jewelCrafting js-jewelCraftingContext rightPanel topPanel">
-            <div class="panelTitle" style="text-align: center;">Altar of Creation</div>
-            <div style="text-align: center;">
-                <div class="js-jewelCraftingSlot js-jewelCraftingSlotA jewelCraftingSlot mainJewelCraftingSlot" helptext="Drag a jewel here to craft."></div>
-                <div class="js-jewelCraftingSlot js-jewelCraftingSlotB jewelCraftingSlot mainJewelCraftingSlot" helptext="Drag a jewel here to craft."></div>
+        <div class="js-jewelCraftingContext js-jewelCraftingSlots jewelCraftingSlots">
+            <div class="js-jewelCraftingSlot jewelCraftingSlot"></div>
+            <div class="js-jewelCraftingSlot jewelCraftingSlot"></div>
+            <div class="js-jewelCraftingSlot jewelCraftingSlot"></div>
+            <div class="js-jewelCraftingSlot jewelCraftingSlot"></div>
+            <div class="js-jewelCraftingSlot jewelCraftingSlot"></div>
+            <div class="js-jewelCraftingSlot jewelCraftingSlot"></div>
+        </div>
+
+        <div class="js-bookInterface bookInterface">
+            <!-- CHARACTER STATS //-->
+            <div class="js-characterColumn displayColumn characterColumn js-jewelContext js-itemContext js-enchantContext leftPanel topPanel">
+                <div class="js-stats stats playerBox">
+                    <div style="position: absolute; left: 10px; top: 5px;">
+                        Level <span class="js-playerLevel">X</span> <span class="js-playerName controlBarEntry">X</span>
+                    </div>
+                    <canvas class="js-canvas js-previewCanvas" width="64" height="128" style="position: absolute; left: 5px; top: 20px;"></canvas>
+                    <div>
+                        <span class="playerStat"><span helptext="Starting health for each adventure."><span class="icon health"></span> <span class="js-maxHealth">X</span></span>
+                        <span style="font-size: 12px" helptext="How fast your adventurer regenerates health.">(<span class="js-healthRegen" >X</span>)</span></span>
+                        <span class="playerStat" helptext="How famous this adventurer is. Famous adventurers are more powerful but also more expensive to hire.<br/> Hiring famous adventurers increases the fame of your guild.">
+                            <span class="icon fame"></span> <span class="js-fame">X</span>
+                        </span>
+                    </div>
+                    <div>
+                        <span class="playerStat"><span class="icon damage"></span> <span class="js-damage">X</span></span>
+                        <span helptext="Higher range will let you attack enemies safely from afar."><span class="icon range"></span> <span class="js-range">X</span></span>
+                    </div>
+                    <div>
+                        <span  class="playerStat"><span class="icon protection"></span> <span class="js-protection" style="margin-right: 5px;">X</span></span>
+                        <span  class="playerStat"><span class="icon protection"><span class="icon iconLayer magic" style="opacity: .7;"></span></span> <span class="js-resistance">X</span></span>
+                    </div>
+                    <div>
+                        <span class="playerStat"><span class="icon damage"><span class="icon iconLayer no" style="opacity: .7;"></span></span> <span class="js-evasion">X</span></span>
+                        <span class="playerStat" helptext="How fast your adventurer moves"><span class="icon speed"></span> <span class="js-speed">X</span></span>
+                    </div>
+                    <div style="float: right; margin-right: 5px; margin-top: 10px;"><button class="js-retire" style="display: none;" helptext="Permanently remove this adventurer from your guild.">Retire</button></div>
+                    <div class="triStatBox">
+                        <div class="js-dexterity dexterity" helptext="Dexterity increases attack speed, evasion and damage with ranged weapons.">X</div>
+                        <div class="js-strength strength" helptext="Strength increases physical damage, health and damage with melee weapons.">X</div>
+                        <div class="js-intelligence intelligence" helptext="Intelligence increases accuracy, block and magic block and damage with magic weapons.">X</div>
+                    </div>
+                </div>
             </div>
-            <button class="js-jewelCraftingButton centered" style="display: none;">Split</button>
-            <button class="js-jewelDeformationButton centered" style="display: none;">Expand</button>
-            <button class="js-sellJewel sellItem" disabled helptext="Drag items here to sell them. <br/> You can also hover over an item and type 'S' to sell quickly."><div class="icon money"></div></button>
-            <div class="extraJewelSlots">
-                <div class="js-jewelCraftingSlot jewelCraftingSlot"></div>
-                <div class="js-jewelCraftingSlot jewelCraftingSlot"></div>
-                <div class="js-jewelCraftingSlot jewelCraftingSlot"></div>
-                <div class="js-jewelCraftingSlot jewelCraftingSlot"></div>
+
+            <!-- JEWEL BONUSES //-->
+            <div class="js-jewelBonuses js-jewelContext jewelBonuses leftPanel bottomPanel">
+                <div class="panelTitle" style="text-align: center;">Jewel Bonuses</div>
+                <div class="js-content"></div>
+            </div>
+
+            <!-- JEWEL BOARD //-->
+            <div class="js-jewelColumn displayColumn js-jewelContext js-jewelCraftingContext rightPanel topPanel">
+                <div class="js-jewelBoard jewelBoard">
+                    <canvas class="js-canvas js-skillCanvas" width="340" height="200"></canvas>
+                    <div class="js-augmentConfirmationButtons augmentConfirmationButtons">
+                        <button class="js-confirmSkill confirmSkill" helptext="Finalize augmentation"><span class="icon confirm"></span></button>
+                        <button class="js-cancelSkill cancelSkill" helptext="Cancel this augmentation"><span class="icon cancel"></span></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- JEWEL INVENTORY //-->
+            <div class="displayColumn jewelColumn js-jewelContext  js-jewelCraftingContext rightPanel bottomPanel">
+                <div class="jewelOptions">
+                    <button class="js-jewelSortRuby">Ruby</button>
+                    <button class="js-jewelSortEmerald">Emerald</button>
+                    <button class="js-jewelSortSaphire">Saphire</button>
+                    <button class="js-jewelSortTopaz">Topaz</button>
+                    <button class="js-jewelSortAquamarine">Aquamarine</button>
+                    <button class="js-jewelSortAmethyst">Amethyst</button>
+                    <br/>
+                    <button class="js-jewelSortDiamond">Diamond</button>
+                    <button class="js-jewelSortQuality">Quality</button>
+                    <button class="js-sellJewel sellItem" disabled helptext="Drag items here to sell them. <br/> You can also hover over an item and type 'S' to sell quickly."><div class="icon money"></div></button>
+                    Tier: <label class="js-jewelTier1 js-jewelTierLabel" helptext="Toggle display of Tier 1 (Level 1) Jewels"><input type="checkbox" checked="checked" value="1"/> 1</label>
+                    <label class="js-jewelTier2 js-jewelTierLabel" helptext="Toggle display of Tier 2 (Level 10) Jewels"><input type="checkbox" checked="checked" value="2"/> 2</label>
+                    <label class="js-jewelTier3 js-jewelTierLabel" helptext="Toggle display of Tier 3 (Level 20) Jewels"><input type="checkbox" checked="checked" value="3"/> 3</label>
+                    <label class="js-jewelTier4 js-jewelTierLabel" helptext="Toggle display of Tier 4 (Level 40) Jewels"><input type="checkbox" checked="checked" value="4"/> 4</label>
+                    <label class="js-jewelTier5 js-jewelTierLabel" helptext="Toggle display of Tier 5 (Level 60) Jewels"><input type="checkbox" checked="checked" value="5"/> 5</label>
+                </div>
+                <div class="js-jewelInventory jewel-inventory"></div>
+            </div>
+
+            <!-- EQUIPMENT //-->
+            <div class="js-equipment equipment playerBox js-itemContext js-enchantContext leftPanel bottomPanel">
+                <div class="js-head js-itemSlot itemSlot head"><div class="js-placeholder placeholder icon helmet" helptext="Head"></div></div>
+                <div class="js-body js-itemSlot itemSlot body"><div class="js-placeholder placeholder icon heavyArmor" helptext="Body"></div></div>
+                <div class="js-arms js-itemSlot itemSlot arms"><div class="js-placeholder placeholder icon gloves" helptext="Hands"></div></div>
+                <div class="js-weapon js-itemSlot itemSlot weapon"><div class="js-placeholder placeholder icon sword" helptext="Weapon"></div></div>
+                <div class="js-offhand js-itemSlot itemSlot offhand"><div class="js-placeholder placeholder icon heavyShield" helptext="Offhand"></div></div>
+                <div class="js-legs js-itemSlot itemSlot legs"><div class="js-placeholder placeholder icon pants" helptext="Legs"></div></div>
+                <div class="js-feet js-itemSlot itemSlot feet"><div class="js-placeholder placeholder icon feet" helptext="Feet"></div></div>
+                <div class="js-back js-itemSlot itemSlot back"><div class="js-placeholder placeholder icon cloak" helptext="Back"></div></div>
+                <div class="js-ring js-itemSlot itemSlot ring"><div class="js-placeholder placeholder icon band" helptext="Ring"></div></div>
+                <button class="js-sellItem sellItem" disabled helptext="Drag items here to sell them. <br/> You can also hover over an item and type 'S' to sell quickly."><div class="icon money"></div></button>
+            </div>
+
+            <!-- INVENTORY //-->
+            <div class="js-itemContext js-enchantContext bottomPanel rightPanel">
+                <div class="js-inventory displayColumn inventory"><div class="js-inventorySlot js-itemSlot itemSlot inventorySlot" helptext="Drag an item here to move it into your inventory."></div></div>
             </div>
         </div>
 
-        <!-- EQUIPMENT //-->
-        <div class="js-equipment equipment playerBox js-itemContext js-enchantContext leftPanel bottomPanel">
-            <div class="js-head js-itemSlot itemSlot head"><div class="js-placeholder placeholder icon helmet" helptext="Head"></div></div>
-            <div class="js-body js-itemSlot itemSlot body"><div class="js-placeholder placeholder icon heavyArmor" helptext="Body"></div></div>
-            <div class="js-arms js-itemSlot itemSlot arms"><div class="js-placeholder placeholder icon gloves" helptext="Hands"></div></div>
-            <div class="js-weapon js-itemSlot itemSlot weapon"><div class="js-placeholder placeholder icon sword" helptext="Weapon"></div></div>
-            <div class="js-offhand js-itemSlot itemSlot offhand"><div class="js-placeholder placeholder icon heavyShield" helptext="Offhand"></div></div>
-            <div class="js-legs js-itemSlot itemSlot legs"><div class="js-placeholder placeholder icon pants" helptext="Legs"></div></div>
-            <div class="js-feet js-itemSlot itemSlot feet"><div class="js-placeholder placeholder icon feet" helptext="Feet"></div></div>
-            <div class="js-back js-itemSlot itemSlot back"><div class="js-placeholder placeholder icon cloak" helptext="Back"></div></div>
-            <div class="js-ring js-itemSlot itemSlot ring"><div class="js-placeholder placeholder icon band" helptext="Ring"></div></div>
-            <button class="js-sellItem sellItem" disabled helptext="Drag items here to sell them. <br/> You can also hover over an item and type 'S' to sell quickly."><div class="icon money"></div></button>
-        </div>
 
         <!-- ITEM CREATION //-->
         <div class="js-itemPanel itemPanel js-itemContext topPanel rightPanel">
@@ -249,10 +252,6 @@
             </div>
         </div>
 
-        <!-- INVENTORY //-->
-        <div class="js-itemContext js-enchantContext bottomPanel rightPanel">
-            <div class="js-inventory displayColumn inventory"><div class="js-inventorySlot js-itemSlot itemSlot inventorySlot" helptext="Drag an item here to move it into your inventory."></div></div>
-        </div>
 
         <!-- SELECT CHARACTER TAB + DIVINITY //-->
         <div class="js-charactersBox points charactersBox">

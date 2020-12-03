@@ -10,14 +10,14 @@ import { drawJewel } from 'app/drawJewel';
 import { inventoryState, updateDragHelper } from 'app/inventory';
 import {
     clearAdjacentJewels, destroyJewel, getElementJewel, jewelAnimaBonus, jewelTierLevels,
-    makeJewel, setMaxAnimaJewelBonus,
-    updateAdjacencyBonuses, updateAdjacentJewels, updateJewelBonuses,
+    setMaxAnimaJewelBonus, updateAdjacencyBonuses, updateAdjacentJewels, updateJewelBonuses,
 } from 'app/jewels';
 import { updateActionShortcuts } from 'app/render/drawActionShortcuts';
 import { gain, hidePointsPreview, previewPointsChange } from 'app/points';
 import { checkToShowJewelToolTip, removePopup } from 'app/popup';
 import { saveGame } from 'app/saveGame'
 import { getState } from 'app/state';
+import { handleJewelCraftingClick, updateJewelCraftingOptions } from 'app/ui/jewelCrafting';
 import {
     collision, getCollisionArea, getElementRectangle,
     isPointInShortRect,
@@ -34,15 +34,19 @@ import {
     magnitude,
     rotatePoint,
     rotateShapes,
-    ShapeDefinition,
-    shapeDefinitions,
     tolerance,
     translateShapes,
     vector,
 } from 'app/utils/polygon';
 
-import { Board, Character, Jewel, JewelComponents, JewelTier, Point, } from 'app/types';
+import { Board, Character, Jewel, Point, } from 'app/types';
+import { getJewelCraftingState, isJewelValidCraftingTarget } from 'app/ui/jewelCrafting';
+import { createAnimation, drawFrame } from 'app/utils/animations';
 import { Polygon } from 'app/utils/polygon';
+
+
+const [ /*lightBorder*/, darkBorder, /*darkBack*/, greenBorder, redBorder, paleBack, /*blackBorder*/ ] = createAnimation('gfx2/hud/toolborders.png', {w: 20, h: 20}, {cols: 7}).frames;
+
 
 
 export const jewelInventoryState: {
@@ -60,18 +64,36 @@ export const jewelInventoryState: {
     // The fixed jewel being used to drag the board.
     draggingBoardJewel: null,
 }
-const craftingSlotA = query('.js-jewelCraftingSlotA');
-const craftingSlotB = query('.js-jewelCraftingSlotB');
-const jewelCraftingButton:HTMLElement = query('.js-jewelCraftingButton');
-const jewelDeformationButton:HTMLElement = query('.js-jewelDeformationButton');
 
-function redrawInventoryJewel(jewel: Jewel) {
+function redrawInventoryJewel(jewel: Jewel, inCraftingSlot: boolean = false) {
     if (!jewel) {
         console.log('no jewel');
         debugger;
     }
     //centerShapesInRectangle([jewel.shape], rectangle(0, 0, jewel.canvas.width, jewel.canvas.height));
     jewel.context.clearRect(0, 0, jewel.canvas.width, jewel.canvas.height);
+    if (jewelInventoryState.draggedJewel !== jewel) {
+        const { selectedJewel, selectedTool } = getJewelCraftingState();
+        const target = { x: 0, y: 0, w: jewel.canvas.width, h: jewel.canvas.height };
+        if (!inCraftingSlot) {
+            drawFrame(jewel.context, paleBack, target);
+        } else if (selectedTool) {
+            if (isJewelValidCraftingTarget(jewel)) {
+                drawFrame(jewel.context, greenBorder, target);
+            } else {
+                drawFrame(jewel.context, redBorder, target);
+            }
+            if (selectedJewel === jewel) {
+                drawFrame(jewel.context, darkBorder, target);
+            }
+        } else {
+            if (jewelInventoryState.draggedJewel) {
+                drawFrame(jewel.context, greenBorder, target);
+            } else {
+                drawFrame(jewel.context, paleBack, target);
+            }
+        }
+    }
     drawJewel(jewel.context, jewel.shape, getMousePosition(jewel.canvas), null, 0.4, true);
     if (jewelInventoryState.overVertex && (jewelInventoryState.draggedJewel == jewel || jewelInventoryState.overJewel == jewel)) {
         jewel.context.strokeStyle = 'black';
@@ -101,12 +123,12 @@ export function redrawInventoryJewels() {
     for (const element of jewelInventoryContainer.getElementsByClassName('js-jewel') as HTMLCollectionOf<HTMLElement>) {
         if (element.style.display !== 'none' && collision(jewelInventoryContainer, element)) {
             const jewel = getElementJewel(element);
-            redrawInventoryJewel(jewel);
+            redrawInventoryJewel(jewel, false);
         }
     }
     // Crafting slots are always visible.
     for (const element of queryAll('.js-jewelCraftingSlot .js-jewel')) {
-        redrawInventoryJewel(getElementJewel(element));
+        redrawInventoryJewel(getElementJewel(element), true);
     }
 }
 jewelInventoryContainer.onscroll = redrawInventoryJewels;
@@ -126,11 +148,10 @@ export function sellJewel(jewel: Jewel) {
     setMaxAnimaJewelBonus(getState().savedState.maxAnimaJewelMultiplier * jewelAnimaBonus(jewel));
     gain('coins', jewel.price);
     gain('anima', jewel.price);
-    updateJewelCraftingOptions();
     saveGame();
 }
 
-document.body.ondblclick = function (event) {
+document.body.addEventListener('dblclick', function (event) {
     const state = getState();
     const { overJewel } = jewelInventoryState;
     if (!overJewel || !overJewel.fixed || !overJewel.confirmed) {
@@ -162,8 +183,8 @@ document.body.ondblclick = function (event) {
     }
     removePopup();
     saveGame();
-}
-document.body.onmousedown = function (event) {
+});
+document.body.addEventListener('mousedown', function (event) {
     if (event.which !== 1) {
         return;
     }
@@ -173,6 +194,10 @@ document.body.onmousedown = function (event) {
         return;
     }
     if (!jewelInventoryState.overJewel) {
+        return;
+    }
+    // Jewel crafting UI handling takes prioirity if it applies.
+    if (handleJewelCraftingClick(jewelInventoryState.overJewel)) {
         return;
     }
     // This is primarily meant to prevent editing jewel boards displayed in applications.
@@ -190,24 +215,31 @@ document.body.onmousedown = function (event) {
         return;
     }
     if (specialClick) {
+        const selectedCharacter = getState().selectedCharacter;
         // If the jewel is on a board or in the crafting panel, return it to the inventory.
         if (jewelInventoryState.overJewel.character || jewelInventoryState.overJewel.canvas.closest('.js-jewelCraftingSlot')) {
             returnToInventory(jewelInventoryState.overJewel);
-        } else {
+        } else if (selectedCharacter.context === 'jewelCrafting') {
             const emptySlot = findEmptyElement(queryAll('.js-jewelCraftingSlot'));
             if (emptySlot) {
                 // If there is room, add the jewel to a crafting panel.
                 emptySlot.appendChild(jewelInventoryState.overJewel.domElement);
             }
+        } else if (selectedCharacter.context === 'jewel') {
+            jewelInventoryState.draggedJewel = jewelInventoryState.overJewel;
+            jewelInventoryState.draggedJewel.shape.setCenterPosition(jewelsCanvas.width / 2, jewelsCanvas.width / 2);
+            if (!equipJewel(selectedCharacter, false, true, true)) {
+                jewelInventoryState.overJewel.shape.setCenterPosition(
+                    jewelInventoryState.overJewel.canvas.width / 2,
+                    jewelInventoryState.overJewel.canvas.height / 2
+                );
+            }
+            jewelInventoryState.draggedJewel = null;
         }
-        updateJewelUnderMouse(jewelsCanvas, getState().selectedCharacter);
-        updateJewelCraftingOptions();
+        updateJewelUnderMouse(jewelsCanvas, selectedCharacter);
         return;
     }
     jewelInventoryState.draggedJewel = jewelInventoryState.overJewel;
-    for (const craftingSlot of queryAll('.js-jewelCraftingSlot .js-jewel')) {
-        craftingSlot.classList.add('active');
-    }
     jewelInventoryState.draggedJewel.startCharacter = jewelInventoryState.draggedJewel.character;
     jewelInventoryState.draggedJewel.startCenter = [jewelInventoryState.draggedJewel.shape.center[0], jewelInventoryState.draggedJewel.shape.center[1]];
     clearAdjacentJewels(jewelInventoryState.draggedJewel);
@@ -232,9 +264,15 @@ document.body.onmousedown = function (event) {
     redrawInventoryJewel(jewelInventoryState.draggedJewel);
     updateDragHelper();
     inventoryState.dragged = false;
-}
-// Replace this with generic mousemove handling.
+});
 document.body.addEventListener('mousemove', function (event) {
+    // This will clear overJewel / overVertex / draggingBoardJewel / draggedJewel if appropriate.
+    checkIfStillOverJewel();
+    // This will set overJewel / overVertex for dom elements and show tooltip.
+    checkIfMouseOverJewelInDom(event);
+    applyJewelDrag();
+});
+function checkIfMouseOverJewelInDom(event: MouseEvent) {
     const jewelContainer = (event.target as HTMLElement).closest('.js-jewel');
     if (!jewelContainer) {
         return;
@@ -242,7 +280,6 @@ document.body.addEventListener('mousemove', function (event) {
     if (jewelInventoryState.draggedJewel || inventoryState.dragHelper || jewelInventoryState.draggingBoardJewel) {
         return;
     }
-    // updateMousePosition(event);
     jewelInventoryState.overJewel = null;
     jewelInventoryState.overVertex = null;
     const jewel = getElementJewel(jewelContainer);
@@ -256,85 +293,13 @@ document.body.addEventListener('mousemove', function (event) {
     for (var j = 0; j < points.length; j++) {
         if (distanceSquared(points[j], relativePosition) < 25) {
             jewelInventoryState.overJewel = jewel;
-            jewelInventoryState.overVertex = [...points[j]] as Point;
+            jewelInventoryState.overVertex = points[j];
             checkToShowJewelToolTip();
             return;
-        }
-    }
-});
-export function updateJewelUnderMouse(activeJewelsCanvas: HTMLCanvasElement, character: Character) {
-    const [x, y] = getMousePosition(activeJewelsCanvas);
-    jewelInventoryState.overJewel = null;
-    jewelInventoryState.overVertex = null;
-    if (!isPointInShortRect(x, y, getElementRectangle(activeJewelsCanvas, activeJewelsCanvas))) {
-        for (const jewelElement of queryAll('.js-jewel')) {
-            const jewel = getElementJewel(jewelElement);
-            const points = jewel.shape.points;
-            const relativePosition = getMousePosition(jewel.canvas);
-            if (isPointInPoints(relativePosition, points)) {
-                jewelInventoryState.overJewel = jewel;
-                break;
-            }
-            for (let j = 0; j < points.length; j++) {
-                if (distanceSquared(points[j], relativePosition) < 25) {
-                    jewelInventoryState.overJewel = jewel;
-                    jewelInventoryState.overVertex = [...points[j]] as Point;
-                    checkToShowJewelToolTip();
-                    break;
-                }
-            }
-        }
-        return;
-    }
-    let jewels = character.board.jewels;
-    for (let i = 0; i < jewels.length; i++) {
-        const jewel = jewels[i];
-        const points = jewel.shape.points;
-        if (isPointInPoints([x, y], points)) {
-            jewelInventoryState.overJewel = jewel;
-            checkToShowJewelToolTip();
-            return;
-        }
-        // Disable rotation on the jewel board, it is ambiguous which vertex will be grabbed.
-        /*for (var j = 0; j < points.length; j++) {
-            if (distanceSquared(points[j], relativePosition) < 25) {
-                jewelInventoryState.overJewel = jewel;
-                jewelInventoryState.overVertex = points[j].concat();
-                return;
-            }
-        }*/
-    }
-    jewels = character.board.fixed.concat();
-    if (character.board.boardPreview) {
-        jewels = jewels.concat(character.board.boardPreview.fixed);
-    }
-    for (let i = 0; i < jewels.length; i++) {
-        const jewel = jewels[i];
-        const points = jewel.shape.points;
-        if (isPointInPoints([x, y], points)) {
-            jewelInventoryState.overJewel = jewel;
-            checkToShowJewelToolTip();
-            return;
-        }
-        for (let j = 0; j < points.length; j++) {
-            if (distanceSquared(points[j], [x, y]) < 25) {
-                jewelInventoryState.overJewel = jewel;
-                jewelInventoryState.overVertex = [...points[j]] as Point;
-                checkToShowJewelToolTip();
-                return;
-            }
         }
     }
 }
-handleChildEvent('mousemove', document.body, '.js-skillCanvas', function (targetJewelsCanvas) {
-    if (jewelInventoryState.draggedJewel || inventoryState.dragHelper || jewelInventoryState.draggingBoardJewel) {
-        return;
-    }
-    updateJewelUnderMouse(targetJewelsCanvas, getState().selectedCharacter);
-});
-// Replace this with generic mousemove handling.
-document.body.addEventListener('mousemove', function () {
-    checkIfStillOverJewel();
+function applyJewelDrag() {
     if (jewelInventoryState.draggingBoardJewel) dragBoard();
     if (!jewelInventoryState.draggedJewel) {
         return;
@@ -365,7 +330,78 @@ document.body.addEventListener('mousemove', function () {
             }
         }
     }
+}
+export function updateJewelUnderMouse(activeJewelsCanvas: HTMLCanvasElement, character: Character) {
+    const [x, y] = getMousePosition(activeJewelsCanvas);
+    jewelInventoryState.overJewel = null;
+    jewelInventoryState.overVertex = null;
+    if (!isPointInShortRect(x, y, getElementRectangle(activeJewelsCanvas, activeJewelsCanvas))) {
+        for (const jewelElement of queryAll('.js-jewel')) {
+            const jewel = getElementJewel(jewelElement);
+            const points = jewel.shape.points;
+            const relativePosition = getMousePosition(jewel.canvas);
+            if (isPointInPoints(relativePosition, points)) {
+                jewelInventoryState.overJewel = jewel;
+                break;
+            }
+            for (let j = 0; j < points.length; j++) {
+                if (distanceSquared(points[j], relativePosition) < 25) {
+                    jewelInventoryState.overJewel = jewel;
+                    jewelInventoryState.overVertex = points[j];
+                    checkToShowJewelToolTip();
+                    break;
+                }
+            }
+        }
+        return;
+    }
+    let jewels = character.board.jewels;
+    for (let i = 0; i < jewels.length; i++) {
+        const jewel = jewels[i];
+        const points = jewel.shape.points;
+        if (isPointInPoints([x, y], points)) {
+            jewelInventoryState.overJewel = jewel;
+            checkToShowJewelToolTip();
+            return;
+        }
+        // Disable rotation on the jewel board, it is ambiguous which vertex will be grabbed.
+        /*for (var j = 0; j < points.length; j++) {
+            if (distanceSquared(points[j], relativePosition) < 25) {
+                jewelInventoryState.overJewel = jewel;
+                jewelInventoryState.overVertex = points[j];
+                return;
+            }
+        }*/
+    }
+    jewels = character.board.fixed.concat();
+    if (character.board.boardPreview) {
+        jewels = jewels.concat(character.board.boardPreview.fixed);
+    }
+    for (let i = 0; i < jewels.length; i++) {
+        const jewel = jewels[i];
+        const points = jewel.shape.points;
+        if (isPointInPoints([x, y], points)) {
+            jewelInventoryState.overJewel = jewel;
+            checkToShowJewelToolTip();
+            return;
+        }
+        for (let j = 0; j < points.length; j++) {
+            if (distanceSquared(points[j], [x, y]) < 25) {
+                jewelInventoryState.overJewel = jewel;
+                jewelInventoryState.overVertex = points[j];
+                checkToShowJewelToolTip();
+                return;
+            }
+        }
+    }
+}
+handleChildEvent('mousemove', document.body, '.js-skillCanvas', function (targetJewelsCanvas) {
+    if (jewelInventoryState.draggedJewel || inventoryState.dragHelper || jewelInventoryState.draggingBoardJewel) {
+        return;
+    }
+    updateJewelUnderMouse(targetJewelsCanvas, getState().selectedCharacter);
 });
+
 function dragBoard() {
     const character = jewelInventoryState.draggingBoardJewel.character;
     let boardShapes = [];
@@ -418,6 +454,23 @@ function dragBoard() {
         }
     }
 }
+export function constrainBoard(board: Board, canvas: HTMLCanvasElement, context: CanvasRenderingContext2D) {
+    const boardShapes = [
+        ...board.jewels.map(j => j.shape),
+        ...board.fixed.map(j => j.shape),
+        ...board.spaces,
+    ];
+    const v: Point = [0, 0];
+    const bounds = getBounds(allPoints(boardShapes));
+    v[0] = Math.min(canvas.width / 2 - bounds.left, v[0]);
+    v[0] = Math.max(canvas.width / 2 - bounds.left - bounds.width, v[0]);
+    v[1] = Math.min(canvas.height / 2 - bounds.top, v[1]);
+    v[1] = Math.max(canvas.height / 2 - bounds.top - bounds.height, v[1]);
+    if (v[0] !== 0 || v[1] !== 0) {
+        translateShapes(boardShapes, v);
+        drawBoardBackground(context, board);
+    }
+}
 function checkIfStillOverJewel() {
     if (!jewelInventoryState.overJewel) return;
     //console.log(jewelInventoryState.overJewel)
@@ -446,9 +499,9 @@ function checkIfStillOverJewel() {
 }
 // I'm a bit surprised that this works since I don't think mouseout is triggered on body
 // when leaving the jewel elements...
-handleChildEvent('mouseout', document.body, '.js-jewel', function (jewelElement: HTMLElement) {
+/*handleChildEvent('mouseout', document.body, '.js-jewel', function (jewelElement: HTMLElement) {
     redrawInventoryJewel(getElementJewel(jewelElement));
-});
+});*/
 
 export function removeFromBoard(jewel: Jewel) {
     if (!jewel.character) return;
@@ -489,7 +542,6 @@ function filterJewel(jewelElement: HTMLElement) {
 }
 
 export function stopJewelDrag() {
-    queryAll('.js-jewelCraftingSlot').forEach(element => element.classList.remove('active'));
     if (jewelInventoryState.draggingBoardJewel) stopBoardDrag();
     if (!jewelInventoryState.draggedJewel) return;
     if (jewelInventoryState.overVertex) {
@@ -523,7 +575,6 @@ export function stopJewelDrag() {
         jewelInventoryState.draggedJewel.shape.setCenterPosition(relativePosition[0], relativePosition[1]);
         if (equipJewel(getState().selectedCharacter, true, true)) {
             checkToShowJewelToolTip();
-            updateJewelCraftingOptions();
             return false;
         }
     });
@@ -580,15 +631,15 @@ function appendDraggedJewelToElement(container: HTMLElement) {
     inventoryState.dragHelper = null;
     updateJewelCraftingOptions();
 }
-function appendJewelToElement(jewel: Jewel, element: HTMLElement) {
+export function appendJewelToElement(jewel: Jewel, element: HTMLElement) {
     jewel.shape.setCenterPosition(jewel.canvas.width / 2, jewel.canvas.height / 2);
     jewel.domElement.append(jewel.canvas);
     element.append(jewel.domElement);
     jewel.canvas.style.position = '';
 }
-export function equipJewel(character: Character, replace = false, updateHero = false): boolean {
+export function equipJewel(character: Character, replace = false, updateHero = false, snapAnywhere = false): boolean {
     if (jewelTierLevels[jewelInventoryState.draggedJewel.tier] <= character.hero.level
-        && snapToBoard(jewelInventoryState.draggedJewel, character.board, replace)) {
+        && snapToBoard(jewelInventoryState.draggedJewel, character.board, replace, null, snapAnywhere)) {
         jewelInventoryState.draggedJewel.character = character;
         jewelInventoryState.draggedJewel.domElement.remove();
         jewelInventoryState.draggedJewel.canvas.remove();
@@ -616,155 +667,7 @@ export function equipJewel(character: Character, replace = false, updateHero = f
     }
     return false;
 }
-function updateJewelCraftingOptions() {
-    jewelCraftingButton.style.display = 'none';
-    jewelDeformationButton.style.display = 'none';
-    const jewelA: Jewel = getElementJewel(craftingSlotA.querySelector('.js-jewel'));
-    const jewelB: Jewel = getElementJewel(craftingSlotB.querySelector('.js-jewel'));
-    if (!jewelA && !jewelB) return;
-    if (jewelA && jewelB) {
-        jewelCraftingButton.innerHTML = 'Fuse Jewels';
-        jewelCraftingButton.style.display = 'inline';
-        if (getFusedShape(jewelA, jewelB)) {
-            jewelCraftingButton.setAttribute('helpText', 'Click to fuse these jewels together');
-            jewelCraftingButton.classList.remove('disabled');
-        } else {
-            jewelCraftingButton.setAttribute('helpText', 'These jewels cannot be fused.')
-            jewelCraftingButton.classList.add('disabled');
-        }
-        return;
-    }
-    const jewel = jewelA || jewelB;
-    if (jewel.shapeType === 'triangle' || jewel.shapeType === 'diamond') {
-        jewelDeformationButton.innerHTML = 'Expand Jewel';
-        jewelDeformationButton.setAttribute('helpText', 'Click to expand the shape of this jewel.');
-        jewelDeformationButton.style.display = 'inline';
-    } else if (jewel.shapeType === 'rhombus' || jewel.shapeType === 'square') {
-        jewelDeformationButton.innerHTML = 'Compress Jewel';
-        jewelDeformationButton.setAttribute('helpText', 'Click to compress the shape of this jewel.');
-        jewelDeformationButton.style.display = 'inline';
-    }
-    jewelCraftingButton.innerHTML = 'Split Jewel';
-    jewelCraftingButton.style.display = 'inline';
-    if (jewel.shapeType == 'triangle' || jewel.shapeType == 'rhombus') {
-        jewelCraftingButton.setAttribute('helpText', 'This jewel cannot be split.');
-        jewelCraftingButton.classList.add('disabled');
-    } else {
-        jewelCraftingButton.setAttribute('helpText', 'Click to split this jewel into smaller jewels');
-        jewelCraftingButton.classList.remove('disabled');
-    }
-}
-
-function getFusedShape(jewelA: Jewel, jewelB: Jewel): ShapeDefinition {
-    var totalArea = jewelA.area + jewelB.area;
-    for (let key in shapeDefinitions) {
-        const shape:ShapeDefinition = shapeDefinitions[key][0];
-        if (Math.abs(shape.area - totalArea) < tolerance) {
-            return shape;
-        }
-    }
-    return null;
-}
-
-jewelCraftingButton.onclick = function () {
-    const jewelA = getElementJewel(craftingSlotA.querySelector('.js-jewel'));
-    const jewelB = getElementJewel(craftingSlotB.querySelector('.js-jewel'));
-    if (!jewelA && !jewelB) {
-        return;
-    }
-    if (jewelA && jewelB) {
-        fuseJewels(jewelA, jewelB);
-    } else {
-        splitJewel(jewelA || jewelB);
-    }
-};
-jewelDeformationButton.onclick = function () {
-    const jewelA = getElementJewel(craftingSlotA.querySelector('.js-jewel'));
-    const jewelB = getElementJewel(craftingSlotB.querySelector('.js-jewel'));
-    const jewel = jewelA || jewelB;
-    if (jewel.shapeType === 'triangle' || jewel.shapeType === 'diamond') {
-        expandJewel(jewel);
-    } else {
-        compressJewel(jewel);
-    }
-};
-function fuseJewels(jewelA: Jewel, jewelB: Jewel) {
-    const fusedShape = getFusedShape(jewelA, jewelB);
-    if (!fusedShape) return; // No fused shape exists for this combination of jewels.
-    const tier: JewelTier = jewelA.tier > jewelB.tier ? jewelA.tier : jewelB.tier;
-    const quality = (jewelA.quality * jewelA.area + jewelB.quality * jewelB.area) / fusedShape.area;
-    const components: JewelComponents = [0, 0, 0];
-    for (let i = 0;i < 3; i++) {
-        components[i] = (jewelA.components[i] * jewelA.area + jewelB.components[i] * jewelB.area) / (jewelA.area + jewelB.area);
-    }
-    const newJewel = makeJewel(tier, fusedShape.key, components, quality);
-    destroyJewel(jewelA);
-    destroyJewel(jewelB);
-    appendJewelToElement(newJewel, craftingSlotA);
-    updateJewelCraftingOptions();
-    saveGame();
-}
-function compressJewel(jewel: Jewel) {
-    let newShape;
-    if (jewel.shapeType === 'square') newShape = 'diamond';
-    if (jewel.shapeType === 'rhombus') newShape = 'triangle';
-    if (!newShape) return; // No compression exists for this jewel.
-    const newArea = shapeDefinitions[newShape][0].area;
-    const newJewel = makeJewel(jewel.tier, newShape, jewel.components, jewel.quality * .99 * jewel.area / newArea);
-    destroyJewel(jewel);
-    appendJewelToElement(newJewel, craftingSlotA);
-    updateJewelCraftingOptions();
-    saveGame();
-}
-function expandJewel(jewel: Jewel) {
-    let newShape;
-    if (jewel.shapeType === 'diamond') newShape = 'square';
-    if (jewel.shapeType === 'triangle') newShape = 'rhombus';
-    if (!newShape) return; // No expansion exists for this jewel.
-    const newArea = shapeDefinitions[newShape][0].area;
-    const newJewel = makeJewel(jewel.tier, newShape, jewel.components, jewel.quality * .99 * jewel.area / newArea);
-    destroyJewel(jewel);
-    appendJewelToElement(newJewel, craftingSlotA);
-    updateJewelCraftingOptions();
-    saveGame();
-}
-function splitJewel(jewel: Jewel) {
-    if (jewel.shapeType === 'triangle' || jewel.shapeType === 'rhombus') return; // Jewels are too small to split
-    let shapeDefinitionA: ShapeDefinition, shapeDefinitionB: ShapeDefinition;
-    if (jewel.shapeType === 'hexagon') {
-        shapeDefinitionA = shapeDefinitionB = shapeDefinitions['trapezoid'][0];
-    } else if (jewel.shapeType === 'trapezoid') {
-        shapeDefinitionA = shapeDefinitions['diamond'][0];
-        shapeDefinitionB = shapeDefinitions['triangle'][0];
-    } else if (jewel.shapeType === 'diamond') {
-        shapeDefinitionA = shapeDefinitionB = shapeDefinitions['triangle'][0];
-    } else {
-        shapeDefinitionA = shapeDefinitionB = shapeDefinitions['rhombus'][0];
-    }
-    let qualityA, qualityB;
-    if (Math.random() < .5) {
-        qualityA = jewel.quality * .99 * (1.1 + Math.random() * .1);
-        qualityB = (jewel.quality * .99 * jewel.area - qualityA * shapeDefinitionA.area ) / shapeDefinitionB.area;
-    } else {
-        qualityB = jewel.quality * .99 * (1.1 + Math.random() * .1);
-        qualityA = (jewel.quality * .99 * jewel.area - qualityB * shapeDefinitionB.area ) / shapeDefinitionA.area;
-    }
-    let componentsA: JewelComponents = [0, 0, 0];
-    let componentsB: JewelComponents = [0, 0, 0];
-    for (let i = 0; i < 3; i++) {
-        // A component cannot be higher than 1. ComponentA must also be high enough to insure compontentB is no greater than 1.
-        componentsA[i] = Math.max(Math.min(1, jewel.components[i] * (.6 + Math.random() * .8)), jewel.components[i] * jewel.area - shapeDefinitionB.area);
-        componentsB[i] = (jewel.components[i] * jewel.area - componentsA[i] * shapeDefinitionA.area) / shapeDefinitionB.area;
-    }
-    const newJewelA = makeJewel(jewel.tier, shapeDefinitionA.key, componentsA, qualityA);
-    const newJewelB = makeJewel(jewel.tier, shapeDefinitionB.key, componentsB, qualityB);
-    destroyJewel(jewel);
-    appendJewelToElement(newJewelA, craftingSlotA);
-    appendJewelToElement(newJewelB, craftingSlotB);
-    updateJewelCraftingOptions();
-    saveGame();
-}
-function snapToBoard(jewel: Jewel, board: Board, replace = false, extraJewel = null) {
+function snapToBoard(jewel: Jewel, board: Board, replace = false, extraJewel: Jewel = null, snapAnywhere = false) {
     const shape = jewel.shape;
     const fixedJewelShapes = board.fixed.map(j => j.shape);
     const jewelShapes = board.jewels.map(j => j.shape);
@@ -790,7 +693,7 @@ function snapToBoard(jewel: Jewel, board: Board, replace = false, extraJewel = n
                 let d2 = distanceSquared(checkedPoints[i], otherPoints[j]);
                 if (rotation) d2 += 100;
                 if (rotation % 60) d2 += 200;
-                if (d2 > 2000) continue;
+                if (!snapAnywhere && d2 > 2000) continue;
                 vectors.push({d2: d2, vector: vector(checkedPoints[i], otherPoints[j]), rotation: rotation});
             }
         }
@@ -802,7 +705,7 @@ function snapToBoard(jewel: Jewel, board: Board, replace = false, extraJewel = n
     vectors.sort(function (a, b) { return a.d2 - b.d2;});
     // If we aren't close to other shapes and there is no collision, don't
     // move this shape.
-    if (vectors[0].d2 > 2000) {
+    if (vectors[0].d2 > 2000 && !snapAnywhere) {
         return false;
     }
     for (let i = 0; i < vectors.length; i++) {

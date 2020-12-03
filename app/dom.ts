@@ -28,6 +28,8 @@ export const craftingCanvas:HTMLCanvasElement = query('.js-craftingCanvas') as H
 export const craftingContext = craftingCanvas.getContext('2d');
 craftingContext.imageSmoothingEnabled = false;
 
+export const bookElement: HTMLElement = query('.js-bookInterface');
+
 export function createCanvas(width, height, classes = ''):HTMLCanvasElement {
     const canvas = document.createElement('canvas');
     canvas.className = classes;

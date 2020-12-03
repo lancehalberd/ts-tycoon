@@ -1,5 +1,6 @@
 Test at http://localhost:81/ttt/public/
 
+Unselect jewel when change/unselecting tools.
 
     [M] Fix flat guild walls need to block movement.
     [M] Add new guild furniture:
@@ -50,7 +51,9 @@ Endless Adventure:
 
 
 Graphics:
+    [M] Add effects/teleportsheet.png teleport animation when using the guild gate.
     [M] Arrange HUD so skill tooltips+mission quest don't overlap. Remove minimap.
+    [L] Add npcs/Guardianshadow.png to fairy graphics.
     [L] Add sparkles to gold+platinum trophies.
 
     Add furniture glow:

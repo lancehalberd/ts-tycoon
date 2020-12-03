@@ -548,7 +548,7 @@ export function initializeMonsters() {
     ];
 
     const fairySource = createFairySource(
-        requireImage('gfx2/fairysheet3.png'),
+        requireImage('gfx2/npcs/fairysheet3.png'),
         {w: 32, h: 32, content: {x: 17, y: 8, w: 10, h: 20, d: 4}},
         airMonsterShadow
     );

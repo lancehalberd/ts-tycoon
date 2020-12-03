@@ -1,5 +1,6 @@
-import { Color, Point, ShapeType } from 'app/types';
 import { arrMod } from 'app/utils/index';
+
+import { Color, Point, ShapeDefinition, ShapeType } from 'app/types';
 
 export const tolerance = .000001;
 
@@ -135,14 +136,6 @@ export function isPointInPoints(point: Point, points: Point[]): boolean {
 // as you can choose any definition that starts with a 60 degree angle.
 // Overall, it seems like an ugly solution that should be cleaned up at some point.
 type ShapeArrayDefinition = [number[], number[], Color, number, number];
-export interface ShapeDefinition {
-    key: ShapeType,
-    lengths: number[],
-    angles: number[],
-    color: Color,
-    angle: number,
-    area: number,
-}
 // This is [lengths, angles, color, initialAngle, area]
 const triangleShape:ShapeArrayDefinition = [[1, 1], [60, 60], '#008800', 60, Math.sqrt(3) / 4];
 const hexagonShape:ShapeArrayDefinition = [[1, 1, 1, 1, 1], [120, 120, 120, 120, 120],'#ffbb22', 120, 6 * Math.sqrt(3) / 4];

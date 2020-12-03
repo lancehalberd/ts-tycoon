@@ -2,10 +2,8 @@
 export const images = {};
 
 import { createCanvas } from 'app/dom';
-import { drawRectangle, fillRectangle, shrinkRectangle } from 'app/utils/index';
-import {
-    drawFrame
-} from 'app/utils/animations';
+import { drawRect, fillRect, pad } from 'app/utils/index';
+import { drawFrame } from 'app/utils/animations';
 
 
 import { FullRectangle, Frame, ShortRectangle, TintedFrame } from 'app/types';
@@ -277,16 +275,16 @@ export function drawRectangleBackground(context: CanvasRenderingContext2D, {x, y
     context.restore();
 }
 
-export function drawTitleRectangle(context, rectangle: FullRectangle) {
+export function drawTitleRectangle(context, rectangle: ShortRectangle) {
     context.save();
     context.beginPath();
     context.globalAlpha = .5;
     context.fillStyle = '#999';
-    fillRectangle(context, rectangle);
+    fillRect(context, rectangle);
     context.globalAlpha = 1;
     context.beginPath();
-    drawRectangle(context, rectangle);
-    drawRectangle(context, shrinkRectangle(rectangle, 2));
+    drawRect(context, rectangle);
+    drawRect(context, pad(rectangle, -2));
     context.fill('evenodd');
     context.restore();
 }

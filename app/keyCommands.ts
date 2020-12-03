@@ -2,7 +2,7 @@ import { completeLevel, enterArea } from 'app/adventure';
 import { hideAreaMenu } from 'app/areaMenu';
 import { setChoosingTrophyAltar } from 'app/content/achievements';
 import { openWorldMap } from 'app/content/areas';
-import { setUpgradingObject } from 'app/content/upgradeButton';
+import { setUpgradingObject } from 'app/ui/upgradeButton';
 import { setContext } from 'app/context';
 import { query, queryAll } from 'app/dom';
 import { handleSkillKeyInput } from 'app/render/drawActionShortcuts';
@@ -99,7 +99,10 @@ document.addEventListener('keydown', function(event: KeyboardEvent) {
                 enterArea(state.selectedCharacter.hero, guildYardEntrance);
             }
             setContext('field');
-        } else if (state.selectedCharacter.context === 'jewel' || state.selectedCharacter.context === 'item') {
+        } else if (state.selectedCharacter.context === 'jewel' ||
+            state.selectedCharacter.context === 'jewelCrafting' ||
+            state.selectedCharacter.context === 'item'
+        ) {
             setContext('field');
         }
         if (state.selectedCharacter.context === 'field') {
@@ -123,9 +126,10 @@ document.addEventListener('keydown', function(event: KeyboardEvent) {
             setContext('item');
         }
     }
-    if (keyCode === KEY.J && state.guildStats.jewelCraftingLevel > 0) {
-        if (state.selectedCharacter.context === 'jewel') setContext('field');
-        else if (state.selectedCharacter.hero.area?.zoneKey === 'guild') {
+    if (keyCode === KEY.J) {
+        if (state.selectedCharacter.context === 'jewel' || state.selectedCharacter.context === 'jewelCrafting') {
+            setContext('field');
+        } else if (state.selectedCharacter.hero.area?.zoneKey === 'guild') {
             setContext('jewel');
         }
     }

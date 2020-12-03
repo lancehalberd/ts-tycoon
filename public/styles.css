@@ -153,35 +153,43 @@
     margin-bottom: 5px;
 }
 .jewel-inventory {
+    display: flex;
+    flex-wrap: wrap;
     white-space: normal;
     overflow-x: hidden;
-    overflow-y: scroll;
+    overflow-y: auto;
     width: 340px;
-    height: 180px;
+    max-height: 192px;
     box-sizing: border-box;
 }
 
-.extraJewelSlots {
+.bookInterface {
     position: absolute;
-    bottom: 2px;
+    /* This will be set negative for the crafting UIs. */
+    left: 0;
+    top: 0;
+}
+
+.jewelCraftingSlots {
+    position: absolute;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    white-space: normal;
+    overflow: hidden;
+    left: 582px;
+    top: 345px;
+    width: 380px;
+    box-sizing: border-box;
 }
 
 .jewel, .jewelCraftingSlot {
-    width: 68px;
-    height: 68px;
-    margin-right: 4px;
-    margin-bottom: 4px;
-    background-color: white;
-    display: inline-block;
-    /* For some reason drag and drop messes up v-align without this. */
-    vertical-align: middle;
+    width: 60px;
+    height: 60px;
+    margin-right: 3px;
+    margin-bottom: 3px;
 }
-.mainJewelCraftingSlot {
-    border: 3px solid #888;
-}
-.jewelCraftingSlot.active {
-    background-color: #88ff88;
-}
+
 .hiddenJewel {
     display: none;
 }
@@ -1011,10 +1019,9 @@ select {
     vertical-align: top;
 }
 
-
 .sellItem {
     position: absolute;
-    right: 5px;
+    right: 0px;
     bottom: 5px;
     cursor: default;
 }

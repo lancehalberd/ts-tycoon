@@ -10,7 +10,7 @@ import { saveGame } from 'app/saveGame';
 import { getState } from 'app/state';
 import { isPointInShortRect, r } from 'app/utils/index';
 
-import { UpgradeableObject } from 'app/types';
+import { HudButton, ShortRectangle, UpgradeableObject } from 'app/types';
 
 let upgradingObject: UpgradeableObject = null;
 const upgradeRectangle = r(90, 45, 140, 90);
@@ -19,12 +19,14 @@ export function getUpgradeRectangle() {
     return upgradeRectangle;
 }
 
-export const upgradeButton = {
+type UpgradeButton = HudButton & ShortRectangle;
+
+export const upgradeButton: UpgradeButton = {
     x: 0, y: 0, w: 0, h: 0,
     isVisible() {
         return !!getUpgradingObject();
     },
-    render(context: CanvasRenderingContext2D) {
+    render(this: UpgradeButton, context: CanvasRenderingContext2D) {
         const currentTier = getUpgradingObject().getCurrentTier();
         const canUpgrade = canAffordCost(currentTier.upgradeCost);
         context.textAlign = 'center'
@@ -39,7 +41,7 @@ export const upgradeButton = {
         this.h = 20 + 2 * padding;
         this.x = upgradeRectangle.x + (upgradeRectangle.w - this.w) / 2;
         this.y = upgradeRectangle.y + (upgradeRectangle.h - this.h) / 2;
-        drawTitleRectangle(context, this)
+        drawTitleRectangle(context, this);
         context.fillStyle = canUpgrade ? 'white' : '#AAA';
         context.fillText('Upgrade to...', this.x + this.w / 2, this.y + this.h / 2);
     },
@@ -48,7 +50,7 @@ export const upgradeButton = {
         previewCost(currentTier.upgradeCost);
         return null;
     },
-    isPointOver(x, y) {
+    isPointOver(this: UpgradeButton, x, y) {
         return isPointInShortRect(x, y, this);
     },
     onMouseOut() {

@@ -1,9 +1,7 @@
 import _ from 'lodash';
-import { returnToGuild, returnToMap } from 'app/adventure';
 import { getSprite } from 'app/content/actors';
 import { areaTargetToScreenTarget, areaTypes } from 'app/content/areas';
 import { effectAnimations } from 'app/content/effectAnimations';
-import { upgradeButton } from 'app/content/upgradeButton';
 import { editingMapState } from 'app/development/editLevel'
 import { editingAreaState } from 'app/development/editArea';
 import { createCanvas } from 'app/dom';
@@ -13,16 +11,10 @@ import {
     GROUND_Y, RANGE_UNIT
 } from 'app/gameConstants';
 import { getCanvasCoords, getTargetLocation } from 'app/main';
-import {
-    drawImage, drawWhiteOutlinedFrame, drawTintedFrame, requireImage,
-} from 'app/images';
-import { getCanvasPopupTarget } from 'app/popup';
 import { drawActorEffects, drawActorShadow } from 'app/render/drawActor';
-import { saveGame } from 'app/saveGame';
-import { endlessPortalEntrance, getState } from 'app/state';
+import { getState } from 'app/state';
 import { canUseSkillOnTarget } from 'app/useSkill';
 import { drawFrame, getFrame } from 'app/utils/animations';
-import { isPointInShortRect, rectangle } from 'app/utils/index';
 
 import {
     Action, Actor, FrameAnimation,
@@ -34,25 +26,13 @@ const bufferContext = bufferCanvas.getContext('2d');
 bufferContext.imageSmoothingEnabled = false;
 // document.body.append(bufferCanvas);
 
-export function getGlobalHud() {
-    return [
-        returnToMapButton,
-        upgradeButton,
-    ];
-}
-export function drawHud(context: CanvasRenderingContext2D) {
-    for (const element of getGlobalHud()) {
-        if (element.isVisible && !element.isVisible()) continue;
-        element.render(context);
-    }
-}
 
 export function drawOnGround(context: CanvasRenderingContext2D, render: (context: CanvasRenderingContext2D) => void) {
     bufferContext.clearRect(0, 0, bufferCanvas.width, bufferCanvas.height);
     render(bufferContext);
-    drawImage(context, bufferCanvas,
-        rectangle(0, BACKGROUND_HEIGHT, bufferCanvas.width, FIELD_HEIGHT),
-        rectangle(0, BACKGROUND_HEIGHT, bufferCanvas.width, FIELD_HEIGHT)
+    context.drawImage(bufferCanvas,
+        0, BACKGROUND_HEIGHT, bufferCanvas.width, FIELD_HEIGHT,
+        0, BACKGROUND_HEIGHT, bufferCanvas.width, FIELD_HEIGHT
     );
 }
 
@@ -343,66 +323,6 @@ export function drawMinimap(context: CanvasRenderingContext2D, area: Area) {
     });
 }
 
-function drawHudElement(context, element) {
-    if (getCanvasPopupTarget() === element) {
-        drawWhiteOutlinedFrame(context, element.frame, element);
-    } else if (element.flashColor) {
-        drawTintedFrame(context,
-            {...element.frame, color: element.flashColor, amount: .5 + .2 * Math.sin(Date.now() / 150)},
-            element
-        );
-    } else {
-        drawFrame(context, element.frame, element);
-    }
-}
-
-const returnToMapButton = {
-    frame: {'image': requireImage('gfx/worldIcon.png'), x: 0, y: 0, w: 72, h: 72},
-    isVisible() {
-        const character = getState().selectedCharacter;
-        return character.context === 'field' && character.hero.area?.zoneKey !== 'guild';
-    },
-    isPointOver(x, y) {
-        return isPointInShortRect(x, y, this);
-    },
-    render(context) {
-        const character = getState().selectedCharacter;
-        if (!character.hero.area?.zoneKey) {
-            this.flashColor = getState().selectedCharacter.hero.levelInstance.completed ? 'white' : null;
-        } else {
-            this.flashColor = null;
-        }
-        drawHudElement(context, this);
-    },
-    x: ADVENTURE_HEIGHT - 25, y: 8, w: 18, h: 18,
-    helpMethod() {
-        const character = getState().selectedCharacter;
-        if (!character.hero.area?.zoneKey) {
-            return 'Return to Map';
-        }
-        return 'Return to Guild';
-    },
-    onClick() {
-        const character = getState().selectedCharacter;
-        const hero = character.hero;
-        if (!hero.area?.zoneKey) {
-            character.replay = false;
-            returnToMap(character);
-        } else if (character.endlessZone && character.endlessZone.key === hero.area.zoneKey) {
-            character.endlessAreaPortal = {
-                zoneKey: hero.area.zoneKey,
-                areaKey: hero.area.key,
-                // Constrain portal to the interior of the area.
-                x: Math.max(32, Math.min(hero.area.width - 32, hero.x)),
-                z: hero.z,
-            };
-            saveGame();
-            returnToGuild(character, endlessPortalEntrance);
-        } else {
-            returnToGuild(character);
-        }
-    },
-};
 
 export function drawBar(context, x, y, w, h, background, color, percent) {
     x = x | 0;

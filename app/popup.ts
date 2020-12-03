@@ -1,11 +1,11 @@
 import { abilities } from 'app/content/abilities';
 import { getChoosingTrophyAltar, getTrophyPopupTarget } from 'app/content/achievements';
-import { getUpgradingObject, upgradeButton } from 'app/content/upgradeButton';
+import { getUpgradingObject, upgradeButton } from 'app/ui/upgradeButton';
 import {
     getElementIndex, jewelInventoryContainer, mainCanvas, mouseContainer, tagElement,
     bodyDiv, titleDiv,
 } from 'app/dom';
-import { getGlobalHud } from 'app/drawArea';
+import { getGlobalHud } from 'app/ui/hud';
 import { getAbilityPopupTarget } from 'app/render/drawActionShortcuts';
 import { equipmentCraftingState } from 'app/equipmentCrafting';
 import { ADVENTURE_SCALE } from 'app/gameConstants';
@@ -19,7 +19,7 @@ import { abbreviate } from 'app/utils/formatters';
 import { ifdefor, isPointInRect, isPointInRectObject, isPointInShortRect } from 'app/utils/index';
 import { getMousePosition, isMouseOverElement } from 'app/utils/mouse';
 
-import { Actor, Area } from 'app/types';
+import { Actor, CanvasPopupTarget } from 'app/types';
 
 interface Popup {
     target: any,
@@ -42,21 +42,6 @@ export function updateActorHelpText(actor: Actor) {
         popup.element.innerHTML = actor.helpMethod();
         return;
     }
-}
-
-interface CanvasPopupTarget {
-    isPointOver: (x: number, y: number) => boolean,
-    isVisible?: () => boolean,
-    onClick?: () => void,
-    onMouseOut?: () => void,
-    helpMethod?: () => string,
-    helpText?: string,
-    // These are only set on actors.
-    isDead?: boolean,
-    area?: Area,
-    targetType?: string,
-    getAreaTarget?: Function,
-    onInteract?: Function,
 }
 
 let canvasPopupTarget: CanvasPopupTarget = null;
@@ -178,6 +163,19 @@ function getMainCanvasMouseTarget(x, y): CanvasPopupTarget {
         }
         return null;
     }
+    for (const hudObject of getGlobalHud()) {
+        if (!hudObject.onClick || (hudObject.isVisible && !hudObject.isVisible())) {
+            continue;
+        }
+        if (hudObject.isPointOver(x, y)) {
+            return hudObject;
+        }
+    }
+
+    // Everything after this are only field interactive in the field context.
+    if (state.selectedCharacter.context !== 'field') {
+        return null;
+    }
     const abilityTarget = getAbilityPopupTarget(x, y);
     if (abilityTarget) {
         return abilityTarget;
@@ -186,14 +184,6 @@ function getMainCanvasMouseTarget(x, y): CanvasPopupTarget {
     for (const actor of area.allies.concat(area.enemies)) {
         if (!actor.isDead && actor.isPointOver(x, y)) {
             return actor;
-        }
-    }
-    for (const hudObject of getGlobalHud()) {
-        if (!hudObject.onClick || (hudObject.isVisible && !hudObject.isVisible())) {
-            continue;
-        }
-        if (isPointInShortRect(x, y, hudObject)) {
-            return hudObject;
         }
     }
     // Traverse layers in reverse order to find the highest object under the mouse.

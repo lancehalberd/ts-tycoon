@@ -14,7 +14,7 @@ import {
 } from 'app/types';
 
 export const originalJewelScale = 30;
-export const displayJewelShapeScale = 30;
+export const displayJewelShapeScale = 28;
 const qualifierNames: JewelQualifierName[] = ['Perfect', 'Brilliant', 'Shining', '', 'Dull'];
 
 let nextJewelId: number = 0;
@@ -102,7 +102,7 @@ export function makeJewelProper(tier: JewelTier, shape: Polygon, components: Jew
     }
     const area = shapeDefinitions[shape.key][0].area;
     const domElement = tagElement('div', 'js-jewel jewel');
-    const canvas = createCanvas(68, 68);
+    const canvas = createCanvas(60, 60);
     domElement.append(canvas);
     const jewel: Jewel = {
         id: `jewel-${nextJewelId++}`,
@@ -129,6 +129,7 @@ export function makeJewelProper(tier: JewelTier, shape: Polygon, components: Jew
     };
     domElement.setAttribute('jewelId', jewel.id);
     jewel.shape.color = arrayToCssRGB(RGB);
+    jewel.context.imageSmoothingEnabled = false;
     // Jewels can be displayed in 3 different states:
     // Drawn directly inside of the canvas for a character's jewel board.
     // Drawn on the jewel.canvas canvas while being dragged by the user.

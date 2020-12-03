@@ -1,5 +1,14 @@
-import { Ability, Bonuses, Character, Point, SavedShape, ShapeType } from 'app/types';
+import { Ability, Bonuses, Character, Color, Point, SavedShape, ShapeType } from 'app/types';
 import { Polygon } from 'app/utils/polygon'
+
+export interface ShapeDefinition {
+    key: ShapeType,
+    lengths: number[],
+    angles: number[],
+    color: Color,
+    angle: number,
+    area: number,
+}
 
 export type JewelTier = 1 | 2 | 3 | 4 | 5;
 export type JewelComponents = [number, number, number];

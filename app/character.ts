@@ -161,7 +161,7 @@ export function newCharacter(job: Job): Character {
         // so as long as this doesn't fail, that should not matter.
         jewelInventoryState.draggedJewel = loot.generateLootDrop().gainLoot(hero);
         jewelInventoryState.draggedJewel.shape.setCenterPosition(jewelsCanvas.width / 2, jewelsCanvas.width / 2);
-        if (!equipJewel(character, false, false)) {
+        if (!equipJewel(character, false, false, true)) {
             console.log("Failed to place jewel on starting board.");
         }
     }

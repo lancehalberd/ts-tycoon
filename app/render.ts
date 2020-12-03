@@ -1,19 +1,21 @@
 
 import { readBoardFromData } from 'app/character';
 import { drawTrophyPopups, drawTrophySelection, getChoosingTrophyAltar } from 'app/content/achievements';
-import { drawUpgradeBox, getUpgradingObject } from 'app/content/upgradeButton';
+import { drawUpgradeBox, getUpgradingObject } from 'app/ui/upgradeButton';
 import { abilities } from 'app/content/abilities';
 import { boards } from 'app/content/boards';
 import { editingMapState } from 'app/development/editLevel';
 import { renderEditAreaOverlay } from 'app/development/editArea';
 import { jewelsCanvas, mainCanvas, mainContext, previewContext } from 'app/dom';
-import { drawArea, drawHud, drawMinimap } from 'app/drawArea';
+import { drawArea, drawMinimap } from 'app/drawArea';
 import { drawBoardBackground, drawBoardJewels, drawBoardJewelsProper } from 'app/drawBoard';
 import { drawMap } from 'app/drawMap';
 import { drawActionShortcuts } from 'app/render/drawActionShortcuts';
+import { drawJewelCrafting } from 'app/render/drawJewelCrafting';
 import { drawCraftingCanvas } from 'app/equipmentCrafting';
 import { drawImage, requireImage } from 'app/images';
 import { redrawInventoryJewels } from 'app/jewelInventory';
+import { drawHud } from 'app/render/drawHud';
 import { drawMissionHUD } from 'app/render/drawMission';
 import { getState } from 'app/state';
 import { renderChooseBlessing } from 'app/ui/chooseBlessing';
@@ -41,7 +43,7 @@ export function render() {
     }
     lastTimeRendered = state.time;
     const gameContext = state.selectedCharacter.context;
-    if (gameContext === 'jewel') {
+    if (gameContext === 'jewel' || gameContext === 'jewelCrafting') {
         redrawInventoryJewels();
     }
     const { editingLevel, testingLevel } = editingMapState;
@@ -72,11 +74,15 @@ export function render() {
         }
     }
     if (gameContext === 'enchant' || gameContext === 'item' || gameContext === 'jewel' || gameContext === 'jewelCrafting') {
-        drawFrame(mainContext, bookFrame, {x: 0, y: 0, w: bookFrame.w, h: bookFrame.h});
-        drawFrame(mainContext, bookPanels, {x: 0, y: 0, w: bookFrame.w, h: bookFrame.h});
-        drawFrame(mainContext, bookClose, {x: 0, y: 0, w: bookFrame.w, h: bookFrame.h});
+        let x = (gameContext === 'jewelCrafting' ? -160 : 0);
+        drawFrame(mainContext, bookFrame, {x, y: 0, w: bookFrame.w, h: bookFrame.h});
+        drawFrame(mainContext, bookPanels, {x, y: 0, w: bookFrame.w, h: bookFrame.h});
+        drawFrame(mainContext, bookClose, {x, y: 0, w: bookFrame.w, h: bookFrame.h});
         if (gameContext === 'item' || gameContext ==='enchant') {
-            drawFrame(mainContext, bookPerson, {x: 0, y: 0, w: bookFrame.w, h: bookFrame.h});
+            drawFrame(mainContext, bookPerson, {x, y: 0, w: bookFrame.w, h: bookFrame.h});
+        }
+        if (gameContext === 'jewelCrafting') {
+            drawJewelCrafting(mainContext);
         }
     } else if (gameContext === 'field') {
         const area = state.selectedCharacter.hero.area;
@@ -107,7 +113,9 @@ export function render() {
     }
     if (gameContext === 'map') drawMap();
     if (gameContext === 'item') drawCraftingCanvas();
-    if (gameContext === 'jewel') drawBoardJewels(state.selectedCharacter, jewelsCanvas);
+    if (gameContext === 'jewel' || gameContext === 'jewelCrafting') {
+        drawBoardJewels(state.selectedCharacter, jewelsCanvas);
+    }
     if (getChoosingTrophyAltar()) drawTrophySelection();
     if (getUpgradingObject()) drawUpgradeBox();
     if (mainCanvas.style.display === '') {

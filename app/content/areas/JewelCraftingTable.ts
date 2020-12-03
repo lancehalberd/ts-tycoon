@@ -55,7 +55,7 @@ export class JewelCraftingTable extends EditableAreaObject implements Upgradeabl
         return this.getCurrentTier().frame;
     }
     onInteract(hero: Hero): void {
-        setContext('jewel');
+        setContext('jewelCrafting');
     }
 
     getCurrentTier() {

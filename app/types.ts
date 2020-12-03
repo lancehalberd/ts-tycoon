@@ -7,6 +7,7 @@ export * from 'app/types/bonuses';
 export * from 'app/types/character';
 export * from 'app/types/enchantments';
 export * from 'app/types/endlessMode';
+export * from 'app/types/hud';
 export * from 'app/types/items';
 export * from 'app/types/jewels';
 export * from 'app/types/jobs';
